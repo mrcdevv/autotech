@@ -33,6 +33,8 @@ frontend/*.tsbuildinfo
 *~
 .vscode/*
 !.vscode/mcp.json
+.cursor
+.windsurft
 
 # ========================
 # OS
