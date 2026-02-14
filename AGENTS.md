@@ -41,6 +41,26 @@ Use conventional commits:
 - **Code must be written in English**: variable names, function names, class names, comments, commit messages, documentation, etc.
 - **User-facing text must be in Spanish (Latin American)**: all UI labels, messages, notifications, error messages, placeholders, tooltips, and any text visible to the end user. This software is targeted at a Latin American audience.
 
+## Environment Setup
+
+### Java Version (Backend)
+
+The backend **requires Java 21 LTS**. Lombok's annotation processor is incompatible with Java 22+ and will crash at compile time with `ExceptionInInitializerError`. Always verify: `java -version` must show `21.x.x`.
+
+### IDE Build Interference (Backend)
+
+VS Code's JDT (Java Language Server) runs its own Eclipse compiler in the background and can overwrite Maven-compiled `.class` files in `target/` with broken versions. This is especially problematic for Lombok-generated methods inherited from `BaseEntity` (getId, getCreatedAt, etc.). **Always use `./mvnw clean` before `spring-boot:run` or `package`**.
+
+### Mappers (Backend)
+
+Use **manual `@Component` mapper classes**, not MapStruct interfaces. MapStruct's generated code gets corrupted by the IDE's background compiler. See `backend/.agentic-rules/dto-rules.md` for the full pattern.
+
+> **Spec files note**: Some specs in `docs/specs/` may still show MapStruct `@Mapper` interfaces in their code examples. **Ignore that pattern** -- always use manual `@Component` mappers as defined in `dto-rules.md`. The `.agentic-rules/` conventions take precedence over spec code examples.
+
+### Missing Dependencies
+
+Before writing code that requires a new dependency (e.g., Apache POI for Excel export), **check pom.xml** first and add it if missing. Do not assume any library is present just because a spec references it.
+
 ## General Rules
 
 1. Never expose sensitive data in logs, responses, or commits.
@@ -48,3 +68,4 @@ Use conventional commits:
 3. Keep the architecture clean but simple. Avoid over-engineering.
 4. Follow the coding rules in each subfolder's `.agentic-rules` file.
 5. When in doubt, prioritize readability and simplicity over cleverness.
+6. Always verify the build compiles and the app starts before considering a task complete.
