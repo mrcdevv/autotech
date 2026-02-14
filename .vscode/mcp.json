@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "mui": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/mui-mcp@latest"]
+    }
+  }
+}
