@@ -49,13 +49,25 @@ Package-by-feature structure under `com.autotech`:
 
 ## Running
 
+**Java 21 is required.** Lombok crashes on Java 22+ at compile time. Verify with `java -version` before building.
+
 ```bash
-export JAVA_HOME=$(/usr/libexec/java_home -v 21)
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+# Ensure Java 21 is active (sdkman example)
+sdk use java 21.0.6-tem
+
+# Always use clean to avoid IDE-overwritten class files
+./mvnw clean spring-boot:run -Dspring-boot.run.profiles=dev
+
+# Or build a jar and run it (more reliable, avoids IDE interference)
+./mvnw clean package -DskipTests
+java -jar target/autotech-backend-0.0.1-SNAPSHOT.jar
 ```
+
+> **Why `clean`?** VS Code's JDT (Java Language Server) compiles files in the background and can overwrite Maven's correctly compiled `.class` files in `target/classes/`. Always `clean` before running to ensure a consistent build.
 
 ## Testing
 
 ```bash
-./mvnw test
+sdk use java 21.0.6-tem
+./mvnw clean test
 ```

@@ -10,17 +10,22 @@ Read ONLY the rule files relevant to your current task. See the AGENTS.md rule-s
 
 ## Technology Stack
 
-- **Language**: Java 21 LTS
+- **Language**: Java 21 LTS (**required** -- Lombok is incompatible with Java 22+)
 - **Framework**: Spring Boot 3.x with Maven
 - **ORM**: Spring Data JPA + Hibernate
 - **Database**: PostgreSQL
 - **Migrations**: Flyway (SQL-based)
-- **Mapping**: MapStruct (compile-time DTO mapping)
+- **Mapping**: Manual `@Component` mapper classes (see `dto-rules.md` for why not MapStruct)
 - **Boilerplate**: Lombok
 - **Validation**: Spring Validation (jakarta.validation)
 - **API Docs**: SpringDoc OpenAPI (Swagger)
 - **Logging**: SLF4J + Logback
 - **Testing**: JUnit 5, Mockito, Testcontainers
+
+## Build Environment
+
+- **Java 21 is mandatory**. The Lombok annotation processor crashes at compile time on Java 22+ with `ExceptionInInitializerError: com.sun.tools.javac.code.TypeTag :: UNKNOWN`. If you have a newer JDK active, switch to 21 before building: `sdk use java 21.0.6-tem` (or equivalent).
+- **Always use `mvn clean` before `spring-boot:run`**. VS Code's JDT compiler runs in the background and can overwrite Maven-compiled `.class` files in `target/` with broken versions. Running `./mvnw clean spring-boot:run` (or packaging as a jar first) ensures a clean build.
 
 ## Architecture
 

@@ -286,22 +286,67 @@ public record RoleResponse(
 
 Location: `com.autotech.employee.dto.EmployeeMapper`
 
+> **Important**: Use a manual `@Component` class, NOT a MapStruct `@Mapper` interface. MapStruct's generated code is corrupted by VS Code's JDT background compiler, which cannot resolve Lombok-generated methods inherited from `BaseEntity`. See `backend/.agentic-rules/dto-rules.md` for details.
+
 ```java
-@Mapper(componentModel = "spring")
-public interface EmployeeMapper {
+@Component
+public class EmployeeMapper {
 
-    @Mapping(target = "roles", source = "roles")
-    EmployeeResponse toResponse(Employee entity);
+    public EmployeeResponse toResponse(Employee entity) {
+        if (entity == null) return null;
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "roles", ignore = true)  // roles assigned separately via service
-    Employee toEntity(EmployeeRequest request);
+        List<RoleResponse> roles = entity.getRoles().stream()
+                .map(this::toRoleResponse)
+                .toList();
 
-    RoleResponse toRoleResponse(Role role);
+        return new EmployeeResponse(
+                entity.getId(),
+                entity.getFirstName(),
+                entity.getLastName(),
+                entity.getDni(),
+                entity.getEmail(),
+                entity.getPhone(),
+                entity.getAddress(),
+                entity.getProvince(),
+                entity.getCountry(),
+                entity.getMaritalStatus(),
+                entity.getChildrenCount(),
+                entity.getEntryDate(),
+                entity.getStatus(),
+                roles,
+                entity.getCreatedAt(),
+                entity.getUpdatedAt()
+        );
+    }
 
-    List<EmployeeResponse> toResponseList(List<Employee> entities);
+    public Employee toEntity(EmployeeRequest request) {
+        if (request == null) return null;
+
+        return Employee.builder()
+                .firstName(request.firstName())
+                .lastName(request.lastName())
+                .dni(request.dni())
+                .email(request.email())
+                .phone(request.phone())
+                .address(request.address())
+                .province(request.province())
+                .country(request.country())
+                .maritalStatus(request.maritalStatus())
+                .childrenCount(request.childrenCount())
+                .entryDate(request.entryDate())
+                .status(request.status())
+                .build();
+    }
+
+    public RoleResponse toRoleResponse(Role role) {
+        if (role == null) return null;
+        return new RoleResponse(role.getId(), role.getName(), role.getDescription());
+    }
+
+    public List<EmployeeResponse> toResponseList(List<Employee> entities) {
+        if (entities == null) return null;
+        return entities.stream().map(this::toResponse).toList();
+    }
 }
 ```
 
