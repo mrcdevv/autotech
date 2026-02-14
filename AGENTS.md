@@ -36,6 +36,11 @@ Use conventional commits:
 - `chore: update dependencies`
 - `test: add unit tests for estimate service`
 
+## Language Convention
+
+- **Code must be written in English**: variable names, function names, class names, comments, commit messages, documentation, etc.
+- **User-facing text must be in Spanish (Latin American)**: all UI labels, messages, notifications, error messages, placeholders, tooltips, and any text visible to the end user. This software is targeted at a Latin American audience.
+
 ## General Rules
 
 1. Never expose sensitive data in logs, responses, or commits.

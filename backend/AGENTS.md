@@ -17,8 +17,14 @@ This is the backend of Autotech, a mechanical workshop management system built w
 | Creating/modifying DTOs or mappers | `dto-rules.md` |
 | Adding logging | `logging-rules.md` |
 | Creating a Flyway migration | `migration-rules.md` |
+| Adding/reviewing indexes or optimizing queries | `database-rules.md` |
 | Writing tests | `testing-rules.md` |
-| Full feature (all layers) | `entity-rules.md`, `repository-rules.md`, `service-rules.md`, `controller-rules.md`, `dto-rules.md` |
+| Full feature (all layers) | `entity-rules.md`, `repository-rules.md`, `service-rules.md`, `controller-rules.md`, `dto-rules.md`, `database-rules.md` |
+
+## Language Convention
+
+- **Code in English**: class names, method names, variables, comments, and all source code.
+- **User-facing text in Spanish (Latin American)**: API error messages, validation messages, and any response text shown to the end user.
 
 ## Architecture
 

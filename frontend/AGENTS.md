@@ -17,6 +17,11 @@ This is the frontend of Autotech, a mechanical workshop management system built 
 | Writing tests | `testing-rules.md` |
 | Full feature (component + API + types) | `component-rules.md`, `typescript-rules.md`, `api-and-state-rules.md` |
 
+## Language Convention
+
+- **Code in English**: component names, function names, variables, type definitions, comments, and all source code.
+- **User-facing text in Spanish (Latin American)**: all UI labels, button text, form placeholders, error messages, notifications, tooltips, page titles, and any text visible to the end user. This software targets a Latin American audience.
+
 ## MCP Server
 
 The MUI MCP server is configured in `.vscode/mcp.json` at the project root. It provides AI assistants with access to MUI component documentation, props, and code examples. Always consult it when using MUI components.

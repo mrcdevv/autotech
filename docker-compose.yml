@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: autotech-db
+    environment:
+      POSTGRES_DB: autotech
+      POSTGRES_USER: autotech
+      POSTGRES_PASSWORD: autotech
+    ports:
+      - "5432:5432"
+    volumes:
+      - autotech-pgdata:/var/lib/postgresql/data
+
+volumes:
+  autotech-pgdata:
