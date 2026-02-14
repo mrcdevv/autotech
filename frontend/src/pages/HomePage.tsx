@@ -13,6 +13,7 @@ import BuildIcon from "@mui/icons-material/Build";
 import PeopleIcon from "@mui/icons-material/People";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import SaveIcon from "@mui/icons-material/Save";
 
 const stats = [
   { label: "Ordenes activas", value: 12, icon: <BuildIcon fontSize="large" color="primary" /> },
@@ -32,7 +33,7 @@ export default function HomePage() {
       </Typography>
 
       <Alert severity="success" sx={{ mb: 3 }}>
-        La integracion con MUI esta funcionando correctamente. Este componente
+        La integracion con MUI está funcionando correctamente. Este componente
         utiliza: Typography, Card, Grid, Button, Alert, Chip, Stack e iconos de
         @mui/icons-material.
       </Alert>
@@ -64,9 +65,19 @@ export default function HomePage() {
         <Chip label="Vite" variant="outlined" />
       </Stack>
 
-      <Button variant="contained" color="primary">
-        Componente MUI funcional
-      </Button>
+      <Stack direction="row" spacing={2}>
+        <Button variant="contained" color="primary">
+          Componente MUI funcional
+        </Button>
+        <Button
+          variant="contained"
+          color="success"
+          startIcon={<SaveIcon />}
+          onClick={() => console.log("Guardado!")}
+        >
+          Guardar
+        </Button>
+      </Stack>
     </Box>
   );
 }
