@@ -13,7 +13,7 @@ This feature provides full CRUD management for employees of the mechanical works
 | Item | Value |
 |---|---|
 | Branch | `feature/gestion-empleados` |
-| Base | `main` |
+| Base | `develop` |
 | Commit style | Conventional commits (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`) |
 
 Example commits:

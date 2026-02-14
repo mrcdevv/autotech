@@ -20,7 +20,7 @@ The Configuration page has **4 tabs**:
 | Item | Value |
 |---|---|
 | Branch | `feature/configuracion` |
-| Base | `main` |
+| Base | `develop` |
 | Commit style | Conventional commits (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`) |
 
 Example commits:

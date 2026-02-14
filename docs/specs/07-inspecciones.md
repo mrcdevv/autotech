@@ -17,7 +17,7 @@ This feature covers two related areas:
 | Item | Value |
 |---|---|
 | Branch | `feature/inspecciones` |
-| Base | `main` |
+| Base | `develop` |
 | Commit style | Conventional commits (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`) |
 
 Example commits:

@@ -13,7 +13,7 @@ This module implements full CRUD management for vehicles in the Autotech worksho
 | Item | Value |
 |------|-------|
 | Branch | `feature/gestion-vehiculos` |
-| Base | `main` |
+| Base | `develop` |
 | Commit style | `feat: ...`, `fix: ...`, `test: ...` (conventional commits) |
 
 ---

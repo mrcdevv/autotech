@@ -15,7 +15,7 @@ This spec implements the **core shell** of the Repair Orders module — the cent
 | Item | Value |
 |------|-------|
 | Branch | `feature/ordenes-trabajo` |
-| Base | `main` |
+| Base | `develop` |
 | Commit style | Conventional commits (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`) |
 
 Example commits:

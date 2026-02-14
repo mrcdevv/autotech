@@ -20,7 +20,7 @@ Key capabilities:
 | Item | Value |
 |------|-------|
 | Branch | `feature/calendario-citas` |
-| Base | `main` |
+| Base | `develop` |
 | Commit style | Conventional commits (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`) |
 
 Example commits:
