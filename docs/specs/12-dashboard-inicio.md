@@ -599,3 +599,74 @@ const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
 | `StatusBreakdownCard.test.tsx` | Renders status labels with counts, maps status enum to Spanish labels, shows empty state when no statuses |
 | `TopUnpaidInvoicesList.test.tsx` | Renders invoice list with client name, plate, and formatted total, shows empty state when no unpaid invoices |
 | `useDashboard.test.ts` | Hook fetches summary on mount, handles loading/error states, refetch works correctly |
+
+---
+
+## 8. Implementation Checklist
+
+> **Instructions for AI agents**: Check off each item as you complete it. Do not remove items. If an item is not applicable, mark it with `[x]` and add "(N/A)" next to it.
+>
+> **Note**: This is a **read-only** feature — no new entities, repositories, or mappers are needed. The backend performs aggregation queries using existing repositories.
+
+### 8.1 Backend
+
+- [x] Create enum(s) (N/A — no new enums; uses existing `RepairOrderStatus`)
+- [x] Create entity/entities (N/A — no new entities; reads from existing tables)
+- [x] Create repository/repositories (N/A — no new repositories; adds methods to existing ones)
+- [ ] Add aggregation methods to existing repositories:
+  - [ ] `RepairOrderRepository.countByStatusNot(RepairOrderStatus status)`
+  - [ ] `RepairOrderRepository.countGroupByStatus()` (JPQL `GROUP BY` query)
+  - [ ] `AppointmentRepository.countByStartTimeBetween(LocalDateTime start, LocalDateTime end)`
+  - [ ] `InvoiceRepository.sumTotalByStatus(String status)`
+  - [ ] `InvoiceRepository.sumTotalByStatusAndCreatedAtBetween(String status, LocalDateTime start, LocalDateTime end)`
+  - [ ] `InvoiceRepository.findTopUnpaidInvoices(Pageable pageable)`
+- [x] Create request DTO(s) (N/A — read-only feature, no request DTOs)
+- [ ] Create response DTOs:
+  - [ ] `DashboardSummaryResponse` (record with all 6 KPI fields)
+  - [ ] `StatusCountResponse` (record with `status` and `count`)
+  - [ ] `UnpaidInvoiceResponse` (record with `invoiceId`, `clientFullName`, `vehiclePlate`, `total`, `createdAt`)
+- [x] Create mapper(s) (N/A — DTOs are assembled directly in service, no entity-to-DTO mapping needed)
+- [ ] Create `DashboardService` interface with `getSummary()`
+- [ ] Create `DashboardServiceImpl`:
+  - [ ] `getSummary()` — aggregates all 6 KPIs: open order count, pending billing, today's appointments, monthly revenue, status breakdown, top unpaid invoices
+- [ ] Create `DashboardController` with endpoint:
+  - [ ] `GET /api/dashboard/summary` — returns full dashboard summary
+- [ ] Verify backend compiles: `./mvnw clean compile`
+- [ ] Verify backend starts: `./mvnw clean spring-boot:run`
+
+### 8.2 Frontend
+
+- [ ] Create types file (`src/features/dashboard/types.ts`) with `DashboardSummaryResponse`, `StatusCountResponse`, `UnpaidInvoiceResponse`
+- [ ] Create API layer (`src/api/dashboard.ts`) with `getSummary`
+- [ ] Create `useDashboard` hook (`src/features/dashboard/hooks/useDashboard.ts`)
+- [ ] Create `DashboardPage` (`src/pages/DashboardPage.tsx`) with KPI cards grid and bottom row
+- [ ] Create `KpiCard` component — displays a single KPI with title, value, icon, and `adminOnly` prop
+- [ ] Create `StatusBreakdownCard` component — renders repair order counts grouped by status with Spanish labels
+- [ ] Create `TopUnpaidInvoicesList` component — renders top 10 unpaid invoices with client name, plate, and formatted total
+- [ ] Register route `/` (home) with lazy loading
+- [ ] Verify frontend compiles
+- [ ] Verify frontend runs
+
+### 8.3 Business Rules Verification
+
+- [ ] Read-only feature — no CRUD operations, single `GET` endpoint returns all KPIs
+- [ ] Open repair orders = non-`ENTREGADO` — count excludes `ENTREGADO` status
+- [ ] Pending billing = sum of unpaid invoice totals (status `PENDIENTE`)
+- [ ] Today's appointments — count where `start_time` falls within today's date range
+- [ ] Monthly revenue — sum of paid invoice totals (status `PAGADA`) for current calendar month
+- [ ] Status breakdown — groups repair orders by status with count for each
+- [ ] Top unpaid invoices limited to 10, ordered by `total` DESC
+- [ ] Admin-only sections — `adminOnly` prop on KPI cards for "Pendiente de cobro", "Facturación del mes"; `TopUnpaidInvoicesList` is admin-only (enforced when spec 13 is implemented)
+- [ ] Single API call — frontend fetches all data in one request
+- [ ] Currency formatting — monetary values displayed as Argentine pesos (e.g., `$1.234,56`)
+
+### 8.4 Testing
+
+- [ ] `DashboardServiceImplTest` — unit tests with Mockito for `getSummary()`: all 6 KPIs, zero counts, null sums, status grouping, top unpaid limit, empty data
+- [ ] `DashboardControllerTest` — `@WebMvcTest`: GET returns 200 with all fields, returns 200 with empty data
+- [ ] `DashboardIntegrationTest` — `@SpringBootTest` + Testcontainers: seed data, verify aggregated values via HTTP
+- [ ] `DashboardPage.test.tsx` — loading spinner, all KPI cards, status breakdown, unpaid invoices, error alert
+- [ ] `KpiCard.test.tsx` — renders title, value, icon; applies `adminOnly` prop
+- [ ] `StatusBreakdownCard.test.tsx` — renders status labels with counts, Spanish labels, empty state
+- [ ] `TopUnpaidInvoicesList.test.tsx` — renders invoice list, empty state
+- [ ] `useDashboard.test.ts` — hook fetch, loading/error states, refetch

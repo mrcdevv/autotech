@@ -1843,3 +1843,109 @@ const EstimateDetailPage = lazy(() => import("@/pages/EstimateDetailPage"));
 | `EstimateTab.test.tsx` | Renders inside repair order detail, shows "Crear presupuesto" if none exists, loads existing estimate for repair order, client/vehicle fields are pre-filled and readonly |
 | `useEstimates.test.ts` | Fetches data on mount, handles filter changes (clientName, plate, status), pagination changes trigger refetch, delete triggers refetch |
 | `useEstimate.test.ts` | Fetches by id, fetches by repairOrderId, create/update/approve/reject trigger state update, handles loading/error states |
+
+---
+
+## 8. Implementation Checklist
+
+> **Instructions for AI agents**: Check off each item as you complete it. Do not remove items. If an item is not applicable, mark it with `[x]` and add "(N/A)" next to it.
+
+### 8.1 Backend
+
+- [ ] Create `EstimateStatus` enum (`PENDIENTE`, `ACEPTADO`, `RECHAZADO`)
+- [ ] Create `Estimate` entity (relationships: `Client`, `Vehicle`, `RepairOrder`, `EstimateServiceItem`, `EstimateProduct`)
+- [ ] Create `EstimateServiceItem` entity (relationship: `Estimate`)
+- [ ] Create `EstimateProduct` entity (relationship: `Estimate`)
+- [ ] Create `EstimateRepository` with methods: `findWithDetailsById`, `findByRepairOrderId`, `findAllByRepairOrderId`, `search` (custom JPQL query)
+- [ ] Create `EstimateServiceItemRepository` with methods: `findByEstimateId`, `deleteByEstimateId`
+- [ ] Create `EstimateProductRepository` with methods: `findByEstimateId`, `deleteByEstimateId`
+- [ ] Create `EstimateRequest` record with Jakarta Validation annotations (`@NotNull`, `@DecimalMin`, `@DecimalMax`, `@Digits`, `@Valid`)
+- [ ] Create `EstimateServiceItemRequest` record with Jakarta Validation annotations (`@NotBlank`, `@Size`, `@NotNull`, `@DecimalMin`, `@Digits`)
+- [ ] Create `EstimateProductRequest` record with Jakarta Validation annotations (`@NotBlank`, `@Size`, `@NotNull`, `@Min`, `@DecimalMin`, `@Digits`)
+- [ ] Create `EstimateResponse` record (list view DTO)
+- [ ] Create `EstimateDetailResponse` record (detail view DTO with client/vehicle/inspection data)
+- [ ] Create `EstimateServiceItemResponse` record
+- [ ] Create `EstimateProductResponse` record
+- [ ] Create `InspectionIssueResponse` record
+- [ ] Create `EstimateInvoiceDataResponse` record
+- [ ] Create `EstimateMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
+  - [ ] `toResponse(Estimate)` → `EstimateResponse`
+  - [ ] `toDetailResponse(Estimate)` → `EstimateDetailResponse`
+  - [ ] `toServiceItemResponse(EstimateServiceItem)` → `EstimateServiceItemResponse`
+  - [ ] `toProductResponse(EstimateProduct)` → `EstimateProductResponse`
+  - [ ] `toEntity(EstimateRequest)` → `Estimate`
+  - [ ] `toInvoiceDataResponse(Estimate)` → `EstimateInvoiceDataResponse`
+- [ ] Create `EstimateService` interface
+- [ ] Create `EstimateServiceImpl` implementation
+  - [ ] `getAll(Pageable)` — paginated list of all estimates
+  - [ ] `search(clientName, plate, status, Pageable)` — filtered search
+  - [ ] `getById(Long)` — detail with inspection issues
+  - [ ] `getByRepairOrderId(Long)` — detail for repair order's estimate
+  - [ ] `create(EstimateRequest)` — create estimate with children, calculate total
+  - [ ] `update(Long, EstimateRequest)` — update only PENDIENTE, replace children, recalculate total
+  - [ ] `approve(Long)` — PENDIENTE → ACEPTADO
+  - [ ] `reject(Long)` — PENDIENTE → RECHAZADO
+  - [ ] `delete(Long)` — delete estimate
+  - [ ] `calculateTotal(services, products, discount, tax)` — total calculation logic
+  - [ ] `convertToInvoiceData(Long)` — return invoice pre-load data (only ACEPTADO)
+  - [ ] `getInspectionIssues(Long)` — fetch PROBLEMA/REVISAR items from inspections
+- [ ] Create `EstimateController` with all endpoints:
+  - [ ] `GET /api/estimates` — list/search (paginated)
+  - [ ] `GET /api/estimates/{id}` — get by ID
+  - [ ] `POST /api/estimates` — create
+  - [ ] `PUT /api/estimates/{id}` — update
+  - [ ] `PUT /api/estimates/{id}/approve` — approve
+  - [ ] `PUT /api/estimates/{id}/reject` — reject
+  - [ ] `DELETE /api/estimates/{id}` — delete
+  - [ ] `GET /api/estimates/{id}/invoice-data` — invoice pre-load data
+- [ ] Add `GET /api/repair-orders/{id}/estimate` endpoint in `RepairOrderController`
+- [ ] Verify backend compiles: `./mvnw clean compile`
+- [ ] Verify backend starts: `./mvnw clean spring-boot:run`
+
+### 8.2 Frontend
+
+- [ ] Create types file `src/types/estimate.ts` (`EstimateStatus`, `EstimateServiceItemRequest`, `EstimateServiceItemResponse`, `EstimateProductRequest`, `EstimateProductResponse`, `EstimateRequest`, `EstimateResponse`, `EstimateDetailResponse`, `InspectionIssueResponse`, `EstimateInvoiceDataResponse`)
+- [ ] Create API layer `src/api/estimates.ts` (all estimate API methods)
+- [ ] Create `useEstimates` hook — list with pagination, filtering, delete
+- [ ] Create `useEstimate` hook — single estimate CRUD operations
+- [ ] Create `EstimatesPage` — route `/presupuestos` with filters and DataGrid
+- [ ] Create `EstimateDetailPage` — route `/presupuestos/:id` and `/presupuestos/nuevo`
+- [ ] Create `EstimateList` component — DataGrid with columns (date, client, plate, model, status chip, repair order, total, actions with delete/view/facturar)
+- [ ] Create `EstimateDetail` component — main detail form with client/vehicle autocomplete, mechanic notes, inspection issues, services/products grids, summary, action buttons
+- [ ] Create `ServicesGrid` component — editable services grid with catalog autocomplete, add/remove rows, subtotal
+- [ ] Create `ProductsGrid` component — editable products grid with catalog autocomplete, quantity, unit price, total price, add/remove rows, subtotal
+- [ ] Create `EstimateSummary` component — discount %, tax %, final price calculation
+- [ ] Create `EstimateTab` component — for repair order detail "Presupuesto" tab
+- [ ] Register routes with lazy loading (`/presupuestos`, `/presupuestos/:id`)
+- [ ] Verify frontend compiles
+- [ ] Verify frontend runs
+
+### 8.3 Business Rules Verification
+
+- [ ] Snapshot line items: service/product names and prices are copied by value at creation, not FK references
+- [ ] Status workflow is one-way: PENDIENTE → ACEPTADO or RECHAZADO only, never back
+- [ ] Only PENDIENTE estimates can be edited (update throws BusinessRuleException otherwise)
+- [ ] Discount and tax percentages validated between 0 and 100
+- [ ] Total calculation: `(servicesSum + productsSum) - discount + tax` with HALF_UP rounding
+- [ ] Product total_price = quantity × unit_price computed server-side
+- [ ] Children replaced on update (clear + re-add, orphanRemoval = true)
+- [ ] Conversion to invoice only available for ACEPTADO estimates
+- [ ] Inspection issues (PROBLEMA/REVISAR) shown when estimate belongs to repair order
+- [ ] Client/vehicle pre-filled and readonly when creating from repair order tab
+- [ ] Pagination defaults: page size 12, sort by createdAt desc
+- [ ] Delete cascades to estimate_services and estimate_products
+- [ ] One estimate per repair order enforced
+
+### 8.4 Testing
+
+- [ ] `EstimateServiceImplTest` — all service layer test methods
+- [ ] `EstimateControllerTest` — all controller layer test methods
+- [ ] `EstimateMapperTest` — all mapper test methods
+- [ ] `EstimateList.test.tsx` — grid rendering, actions, pagination
+- [ ] `EstimateDetail.test.tsx` — form rendering, client/vehicle autocomplete, mechanic notes, inspection issues, save/approve/reject
+- [ ] `ServicesGrid.test.tsx` — add/remove rows, catalog autocomplete, subtotal, readonly mode
+- [ ] `ProductsGrid.test.tsx` — add/remove rows, catalog autocomplete, quantity × price, subtotal, readonly mode
+- [ ] `EstimateSummary.test.tsx` — subtotal, discount/tax clamping, final price, readonly mode
+- [ ] `EstimateTab.test.tsx` — renders inside repair order, create/load behavior
+- [ ] `useEstimates.test.ts` — fetching, filtering, pagination, delete
+- [ ] `useEstimate.test.ts` — fetch by id/repairOrderId, CRUD operations, loading/error states
