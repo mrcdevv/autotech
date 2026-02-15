@@ -1656,3 +1656,101 @@ const AppointmentsPage = lazy(() => import("@/pages/AppointmentsPage"));
 | `AppointmentDetailDialog.test.tsx` | Renders all appointment fields, shows "Pendiente" for null timestamps, shows "Sí"/"No" for client arrived |
 | `useAppointments.test.ts` | Fetches appointments for current date range, handles view mode changes, handles employee filter, create/update/delete trigger refetch, markClientArrived/markVehicleArrived/markVehiclePickedUp trigger refetch |
 | `useCalendarConfig.test.ts` | Fetches config on mount, handles loading/error states, updateConfig triggers refetch |
+
+---
+
+## 8. Implementation Checklist
+
+> **Instructions for AI agents**: Check off each item as you complete it. Do not remove items. If an item is not applicable, mark it with `[x]` and add "(N/A)" next to it.
+
+### 8.1 Backend
+
+- [ ] Create `VehicleDeliveryMethod` enum (`PROPIO`, `GRUA`, `TERCERO`)
+- [ ] Create `Appointment` entity with relationships to `Client`, `Vehicle`, `Employee` (ManyToMany), `Tag` (ManyToMany)
+- [ ] Create `CalendarConfig` entity with `defaultAppointmentDurationMinutes`, `startTime`, `endTime`
+- [ ] Create `AppointmentRepository` with `findWithDetailsById`, `findByDateRange`, `findByEmployeeAndDateRange`
+- [ ] Create `CalendarConfigRepository` with `getConfig()` default method
+- [ ] Create `AppointmentRequest` record with Jakarta Validation (`@NotNull` on `startTime`/`endTime`, `@Size` on `title`/`purpose`)
+- [ ] Create `AppointmentUpdateRequest` record with Jakarta Validation (`@NotNull` on `startTime`/`endTime`)
+- [ ] Create `AppointmentResponse` record (with nested `EmployeeSummaryResponse`, `TagResponse`)
+- [ ] Create `CalendarConfigRequest` record with Jakarta Validation (`@NotNull`/`@Min` on `defaultAppointmentDurationMinutes`)
+- [ ] Create `CalendarConfigResponse` record
+- [ ] Create `AppointmentMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
+- [ ] Create `AppointmentService` interface
+- [ ] Create `AppointmentServiceImpl` with methods:
+  - [ ] `getAll(Pageable)` — paginated list
+  - [ ] `getById(Long)` — fetch with details
+  - [ ] `create(AppointmentRequest)` — validate time range, resolve client/vehicle/employees/tags
+  - [ ] `update(Long, AppointmentUpdateRequest)` — update date/time only
+  - [ ] `delete(Long)` — delete appointment
+  - [ ] `markClientArrived(Long, boolean)` — toggle client arrived
+  - [ ] `markVehicleArrived(Long)` — set vehicleArrivedAt timestamp
+  - [ ] `markVehiclePickedUp(Long)` — set vehiclePickedUpAt timestamp
+  - [ ] `getByDateRange(LocalDateTime, LocalDateTime)` — filter by date range
+  - [ ] `getByEmployeeAndDateRange(Long, LocalDateTime, LocalDateTime)` — filter by employee and date range
+- [ ] Create `CalendarConfigService` interface
+- [ ] Create `CalendarConfigServiceImpl` with methods:
+  - [ ] `getConfig()` — get or create default config
+  - [ ] `updateConfig(CalendarConfigRequest)` — update config fields
+- [ ] Create `AppointmentController` with all endpoints:
+  - [ ] `GET /api/appointments` — paginated list
+  - [ ] `GET /api/appointments/{id}` — get by ID
+  - [ ] `POST /api/appointments` — create
+  - [ ] `PUT /api/appointments/{id}` — update (date/time only)
+  - [ ] `DELETE /api/appointments/{id}` — delete
+  - [ ] `PATCH /api/appointments/{id}/client-arrived` — toggle client arrived
+  - [ ] `PATCH /api/appointments/{id}/vehicle-arrived` — mark vehicle arrived
+  - [ ] `PATCH /api/appointments/{id}/vehicle-picked-up` — mark vehicle picked up
+  - [ ] `GET /api/appointments/range` — get by date range (with optional employeeId filter)
+- [ ] Create `CalendarConfigController` with endpoints:
+  - [ ] `GET /api/calendar-config` — get config
+  - [ ] `PUT /api/calendar-config` — update config
+- [ ] Verify backend compiles: `./mvnw clean compile`
+- [ ] Verify backend starts: `./mvnw clean spring-boot:run`
+
+### 8.2 Frontend
+
+- [ ] Create `src/types/appointment.ts` with types: `VehicleDeliveryMethod`, `CalendarViewMode`, `AppointmentResponse`, `AppointmentRequest`, `AppointmentUpdateRequest`, `EmployeeSummaryResponse`, `TagResponse`, `CalendarConfigResponse`, `CalendarConfigRequest`
+- [ ] Create `src/api/appointments.ts` API layer (all appointment endpoints)
+- [ ] Create `src/api/calendarConfig.ts` API layer (get/update config)
+- [ ] Create `useAppointments` hook — fetch by date range, CRUD operations, mark arrived/picked up
+- [ ] Create `useCalendarConfig` hook — fetch and update config
+- [ ] Create `AppointmentsPage` (`/calendario`) with toolbar (view toggle, date nav, employee filter, "Nueva cita" button)
+- [ ] Create `CalendarView` component with day/week/month sub-views
+- [ ] Create `AppointmentCard` component — compact card with title, client, plate, tags, client arrived chip
+- [ ] Create `AppointmentActions` component — 3-dot menu with mark client arrived, mark vehicle arrived, edit, delete
+- [ ] Create `AppointmentFormDialog` component — modal form with cascading client→vehicle dropdowns, tags, employees, delivery method, date pickers
+- [ ] Create `AppointmentDetailDialog` component — read-only detail view with all appointment fields
+- [ ] Register route `/calendario` with lazy loading
+- [ ] Verify frontend compiles
+- [ ] Verify frontend runs
+
+### 8.3 Business Rules Verification
+
+- [ ] `startTime` must be before `endTime` (backend validation + frontend DateTimePicker constraint)
+- [ ] Default appointment duration from `calendar_config` applied on form open
+- [ ] Cascading client → vehicle: vehicle dropdown loads only selected client's vehicles; clears on client change
+- [ ] Tags `Autocomplete` set to `readOnly` if no tags exist
+- [ ] Title placeholder: `"Cita #[id] - [clientName] - [plate]"` — optional, falls back to `"Cita #[id]"`
+- [ ] Edit limited to date/time only (`PUT` accepts `AppointmentUpdateRequest`)
+- [ ] Vehicle arrived / picked up are one-way timestamp actions
+- [ ] Client arrived is a boolean toggle (can be toggled back and forth)
+- [ ] Vehicle must belong to client when both are provided
+- [ ] Employees and tags are optional (allow empty sets)
+- [ ] Calendar config is a singleton (one row, created if missing)
+- [ ] Delete cascades to `appointment_employees` and `appointment_tags` join tables
+
+### 8.4 Testing
+
+- [ ] `AppointmentServiceImplTest` — unit tests (getAll, getById, create, update, delete, markClientArrived, markVehicleArrived, markVehiclePickedUp, getByDateRange, getByEmployeeAndDateRange, validation errors)
+- [ ] `CalendarConfigServiceImplTest` — unit tests (getConfig, updateConfig)
+- [ ] `AppointmentControllerTest` — MockMvc tests (all endpoints, validation errors)
+- [ ] `CalendarConfigControllerTest` — MockMvc tests (getConfig, updateConfig, validation errors)
+- [ ] `AppointmentMapperTest` — mapping tests (toResponse, toEntity, nested DTOs, null handling)
+- [ ] `CalendarView.test.tsx` — renders views, loading spinner, appointment cards
+- [ ] `AppointmentCard.test.tsx` — renders title, client, plate, arrived chip
+- [ ] `AppointmentActions.test.tsx` — menu items, action handlers
+- [ ] `AppointmentFormDialog.test.tsx` — default dates, cascading dropdowns, tags readonly, validation, save payload
+- [ ] `AppointmentDetailDialog.test.tsx` — renders all fields, handles null timestamps
+- [ ] `useAppointments.test.ts` — fetch, view mode, employee filter, CRUD refetch
+- [ ] `useCalendarConfig.test.ts` — fetch, loading/error, update refetch
