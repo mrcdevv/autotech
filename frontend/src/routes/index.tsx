@@ -5,6 +5,7 @@ import { CircularProgress, Box } from "@mui/material";
 
 const HomePage = lazy(() => import("@/pages/HomePage"));
 const EmployeesPage = lazy(() => import("@/pages/EmployeesPage"));
+const ClientsPage = lazy(() => import("@/pages/ClientsPage"));
 
 function Loading() {
   return (
@@ -20,6 +21,7 @@ export default function AppRoutes() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/empleados" element={<EmployeesPage />} />
+        <Route path="/clientes" element={<ClientsPage />} />
       </Routes>
     </Suspense>
   );
