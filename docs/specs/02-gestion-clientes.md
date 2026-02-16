@@ -19,7 +19,7 @@ Clients are a foundational entity — they are referenced by vehicles, repair or
 ## 2. Git
 
 - **Branch**: `feature/gestion-clientes`
-- **Base**: `main`
+- **Base**: `develop`
 - **Commit style**: Conventional commits
 
 | Scope | Example |

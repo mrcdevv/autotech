@@ -1,5 +1,6 @@
 package com.autotech.client.controller;
 
+import com.autotech.client.dto.ClientAutocompleteResponse;
 import com.autotech.client.dto.ClientRequest;
 import com.autotech.client.dto.ClientResponse;
 import com.autotech.client.dto.ClientUpgradeRequest;
@@ -17,6 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/clients")
@@ -91,6 +94,12 @@ public class ClientController {
         return ResponseEntity.ok(
                 ApiResponse.success("Cliente actualizado exitosamente",
                         clientService.upgradeToRegistered(id, request)));
+    }
+
+    @GetMapping("/autocomplete")
+    public ResponseEntity<ApiResponse<List<ClientAutocompleteResponse>>> autocomplete(
+            @RequestParam(required = false) String query) {
+        return ResponseEntity.ok(ApiResponse.success(clientService.autocomplete(query)));
     }
 
     @GetMapping("/export")

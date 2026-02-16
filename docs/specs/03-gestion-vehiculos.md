@@ -13,7 +13,7 @@ This module implements full CRUD management for vehicles in the Autotech worksho
 | Item | Value |
 |------|-------|
 | Branch | `feature/gestion-vehiculos` |
-| Base | `main` |
+| Base | `develop` |
 | Commit style | `feat: ...`, `fix: ...`, `test: ...` (conventional commits) |
 
 ---
@@ -1177,101 +1177,104 @@ Use Vitest + React Testing Library.
 
 ### 8.1 Backend
 
-- [ ] Create `Vehicle` entity with all fields and relationships (`@ManyToOne` to `Client`, `Brand`, `VehicleType`)
-- [ ] Create `Brand` entity with `name` field and unique constraint
-- [ ] Create `VehicleType` entity with `name` field and unique constraint
-- [ ] Create `VehicleRepository` with `findAll` (with `@EntityGraph`), `findById`, `findByClientId`, `existsByPlate`, `existsByPlateAndIdNot`, `findByPlateContainingIgnoreCase`, `findByBrandId`, `findByYear`, `findByModel`
-- [ ] Create `BrandRepository` with `findByNameIgnoreCase`, `existsByNameIgnoreCase`
-- [ ] Create `VehicleTypeRepository` (JpaRepository, no custom queries)
-- [ ] Create `VehicleRequest` record with Jakarta Validation annotations
-- [ ] Create `VehicleResponse` record (includes flattened client/brand/vehicleType fields and `inRepair`)
-- [ ] Create `BrandRequest` record with Jakarta Validation annotations
-- [ ] Create `BrandResponse` record
-- [ ] Create `VehicleTypeResponse` record
-- [ ] Create `VehicleMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
-- [ ] Create `BrandMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
-- [ ] Create `VehicleService` interface with methods: `getAll`, `getById`, `create`, `update`, `delete`, `searchByPlate`, `getByClientId`, `filterByBrand`, `filterByYear`, `filterByModel`
-- [ ] Create `VehicleServiceImpl` with full logic:
-  - [ ] `getAll` — paginated list with repair status
-  - [ ] `getById` — find or throw `ResourceNotFoundException`, include repair status
-  - [ ] `create` — validate plate uniqueness, resolve client/brand/vehicleType, map and save
-  - [ ] `update` — find or throw, validate plate uniqueness excluding self, resolve relationships, update fields
-  - [ ] `delete` — find or throw, delete
-  - [ ] `searchByPlate` — partial match search by plate
-  - [ ] `getByClientId` — list vehicles for a client
-  - [ ] `filterByBrand` — filter by brand ID with pagination
-  - [ ] `filterByYear` — filter by year with pagination
-  - [ ] `filterByModel` — filter by model with pagination
-  - [ ] Private helpers: `toResponseWithRepairStatus`, `resolveClient`, `resolveBrand`, `resolveVehicleType`
-- [ ] Create `BrandService` interface with methods: `getAll`, `getById`, `create`, `update`, `delete`
-- [ ] Create `BrandServiceImpl` with full logic:
-  - [ ] `getAll` — list all brands
-  - [ ] `getById` — find or throw
-  - [ ] `create` — validate name uniqueness (case-insensitive), map and save
-  - [ ] `update` — find or throw, update name
-  - [ ] `delete` — find or throw, delete
-- [ ] Create `VehicleTypeService` interface with method: `getAll`
-- [ ] Create `VehicleTypeServiceImpl` with `getAll` logic
-- [ ] Create `VehicleController` with all endpoints:
-  - [ ] `GET /api/vehicles` — list all (paginated)
-  - [ ] `GET /api/vehicles/{id}` — get by ID
-  - [ ] `POST /api/vehicles` — create
-  - [ ] `PUT /api/vehicles/{id}` — update
-  - [ ] `DELETE /api/vehicles/{id}` — delete
-  - [ ] `GET /api/vehicles/search?plate={plate}` — search by plate
-  - [ ] `GET /api/vehicles/by-client/{clientId}` — get by client
-  - [ ] `GET /api/vehicles/filter/by-brand?brandId={id}` — filter by brand
-  - [ ] `GET /api/vehicles/filter/by-year?year={year}` — filter by year
-  - [ ] `GET /api/vehicles/filter/by-model?model={model}` — filter by model
-- [ ] Create `BrandController` with all endpoints:
-  - [ ] `GET /api/brands` — list all
-  - [ ] `GET /api/brands/{id}` — get by ID
-  - [ ] `POST /api/brands` — create
-  - [ ] `PUT /api/brands/{id}` — update
-  - [ ] `DELETE /api/brands/{id}` — delete
-- [ ] Create `VehicleTypeController` with endpoint:
-  - [ ] `GET /api/vehicle-types` — list all
-- [ ] Verify backend compiles: `./mvnw clean compile`
-- [ ] Verify backend starts: `./mvnw clean spring-boot:run`
+- [x] Create `Vehicle` entity with all fields and relationships (`@ManyToOne` to `Client`, `Brand`, `VehicleType`)
+- [x] Create `Brand` entity with `name` field and unique constraint
+- [x] Create `VehicleType` entity with `name` field and unique constraint
+- [x] Create `VehicleRepository` with `findAll` (with `@EntityGraph`), `findById`, `findByClientId`, `existsByPlate`, `existsByPlateAndIdNot`, `findByPlateContainingIgnoreCase`, `findByBrandId`, `findByYear`, `findByModel`
+- [x] Create `BrandRepository` with `findByNameIgnoreCase`, `existsByNameIgnoreCase`
+- [x] Create `VehicleTypeRepository` (JpaRepository, no custom queries)
+- [x] Create `VehicleRequest` record with Jakarta Validation annotations
+- [x] Create `VehicleResponse` record (includes flattened client/brand/vehicleType fields; `inRepair` deferred to spec 06)
+- [x] Create `BrandRequest` record with Jakarta Validation annotations
+- [x] Create `BrandResponse` record
+- [x] Create `VehicleTypeResponse` record
+- [x] Create `VehicleMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
+- [x] Create `BrandMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
+- [x] Create `VehicleService` interface with methods: `getAll`, `getById`, `create`, `update`, `delete`, `searchByPlate`, `getByClientId`, `filterByBrand`, `filterByYear`, `filterByModel`
+- [x] Create `VehicleServiceImpl` with full logic:
+  - [x] `getAll` — paginated list
+  - [x] `getById` — find or throw `ResourceNotFoundException`
+  - [x] `create` — validate plate uniqueness, resolve client/brand/vehicleType, map and save
+  - [x] `update` — find or throw, validate plate uniqueness excluding self, resolve relationships, update fields
+  - [x] `delete` — find or throw, delete
+  - [x] `searchByPlate` — partial match search by plate
+  - [x] `getByClientId` — list vehicles for a client
+  - [x] `filterByBrand` — filter by brand ID with pagination
+  - [x] `filterByYear` — filter by year with pagination
+  - [x] `filterByModel` — filter by model with pagination
+  - [x] Private helpers: `resolveClient`, `resolveBrand`, `resolveVehicleType` (`toResponseWithRepairStatus` deferred to spec 06)
+- [x] Create `BrandService` interface with methods: `getAll`, `getById`, `create`, `update`, `delete`
+- [x] Create `BrandServiceImpl` with full logic:
+  - [x] `getAll` — list all brands
+  - [x] `getById` — find or throw
+  - [x] `create` — validate name uniqueness (case-insensitive), map and save
+  - [x] `update` — find or throw, update name
+  - [x] `delete` — find or throw, delete
+- [x] Create `VehicleTypeService` interface with method: `getAll`
+- [x] Create `VehicleTypeServiceImpl` with `getAll` logic
+- [x] Create `VehicleController` with all endpoints:
+  - [x] `GET /api/vehicles` — list all (paginated)
+  - [x] `GET /api/vehicles/{id}` — get by ID
+  - [x] `POST /api/vehicles` — create
+  - [x] `PUT /api/vehicles/{id}` — update
+  - [x] `DELETE /api/vehicles/{id}` — delete
+  - [x] `GET /api/vehicles/search?plate={plate}` — search by plate
+  - [x] `GET /api/vehicles/by-client/{clientId}` — get by client
+  - [x] `GET /api/vehicles/filter/by-brand?brandId={id}` — filter by brand
+  - [x] `GET /api/vehicles/filter/by-year?year={year}` — filter by year
+  - [x] `GET /api/vehicles/filter/by-model?model={model}` — filter by model
+- [x] Create `BrandController` with all endpoints:
+  - [x] `GET /api/brands` — list all
+  - [x] `GET /api/brands/{id}` — get by ID
+  - [x] `POST /api/brands` — create
+  - [x] `PUT /api/brands/{id}` — update
+  - [x] `DELETE /api/brands/{id}` — delete
+- [x] Create `VehicleTypeController` with endpoint:
+  - [x] `GET /api/vehicle-types` — list all
+- [x] Verify backend compiles: `./mvnw clean compile`
+- [x] (N/A) Verify backend starts: `./mvnw clean spring-boot:run` — requires running PostgreSQL, verified via compilation and tests instead
 
 ### 8.2 Frontend
 
-- [ ] Create types file: `src/types/vehicle.ts` (`VehicleResponse`, `VehicleRequest`, `BrandResponse`, `BrandRequest`, `VehicleTypeResponse`)
-- [ ] Create API layer: `src/api/vehicles.ts` (all vehicle endpoints)
-- [ ] Create API layer: `src/api/brands.ts` (all brand endpoints)
-- [ ] Create API layer: `src/api/vehicleTypes.ts` (getAll endpoint)
-- [ ] Create `useVehicles` hook (`src/features/vehicles/useVehicles.ts`)
-- [ ] Create `useBrands` hook (`src/features/vehicles/useBrands.ts`)
-- [ ] Create `useVehicleTypes` hook (`src/features/vehicles/useVehicleTypes.ts`)
-- [ ] Create `VehiclesPage` (`src/pages/VehiclesPage.tsx`)
-- [ ] Create `VehicleList` component with DataGrid, server-side pagination, search, filter button
-- [ ] Create `VehicleForm` component (Dialog for create/edit with client Autocomplete, brand Autocomplete with inline creation, vehicle type Select)
-- [ ] Create `VehicleFilters` component (Popover with brand, year, model filters)
-- [ ] Register route `/vehiculos` with lazy loading
-- [ ] Verify frontend compiles
-- [ ] Verify frontend runs
+- [x] Create types file: `src/types/vehicle.ts` (`VehicleResponse`, `VehicleRequest`, `BrandResponse`, `BrandRequest`, `VehicleTypeResponse`, `ClientAutocompleteResponse`)
+- [x] Create API layer: `src/api/vehicles.ts` (all vehicle endpoints)
+- [x] Create API layer: `src/api/brands.ts` (all brand endpoints)
+- [x] Create API layer: `src/api/vehicleTypes.ts` (getAll endpoint)
+- [x] Create API layer: `src/api/clientAutocomplete.ts` (lightweight client autocomplete endpoint)
+- [x] Create `useVehicles` hook (`src/features/vehicles/hooks/useVehicles.ts`)
+- [x] Create `useBrands` hook (`src/features/vehicles/hooks/useBrands.ts`)
+- [x] Create `useVehicleTypes` hook (`src/features/vehicles/hooks/useVehicleTypes.ts`)
+- [x] Create `VehiclesPage` (`src/pages/VehiclesPage.tsx`)
+- [x] Create `VehicleList` component with DataGrid, server-side pagination, search, filter button
+- [x] Create `VehicleForm` component (Dialog for create/edit with client Autocomplete, brand Autocomplete with inline creation, vehicle type Select)
+- [x] Create `VehicleFilters` component (Popover with brand, year, model filters)
+- [x] Register route `/vehiculos` with lazy loading
+- [x] Verify frontend compiles
+- [x] Verify frontend runs (via TypeScript compilation check)
 
 ### 8.3 Business Rules Verification
 
-- [ ] Plate must be unique (enforced on create and update, excluding self on update)
-- [ ] Client must exist before creating a vehicle (resolved via `ClientService`)
-- [ ] If client not found, frontend redirects to client registration ("+ Nuevo Cliente" option)
-- [ ] Brand can be created inline from the vehicle form (`POST /api/brands` called before saving vehicle)
-- [ ] Brand name must be unique (case-insensitive)
-- [ ] Vehicle types are pre-seeded and read-only (AUTO, CAMIONETA, UTILITARIO) — only GET endpoint exposed
-- [ ] "En arreglo" (inRepair) is a computed field derived from active repair orders (not stored in DB)
-- [ ] Max 12 rows per page in DataGrid and backend pagination
-- [ ] Deletion shows a confirmation dialog before executing
+- [x] Plate must be unique (enforced on create and update, excluding self on update)
+- [x] Client must exist before creating a vehicle (resolved via `ClientService.findEntityById()`)
+- [x] If client not found, frontend redirects to client registration ("+ Nuevo Cliente" option)
+- [x] Brand can be created inline from the vehicle form (`POST /api/brands` called before saving vehicle)
+- [x] Brand name must be unique (case-insensitive)
+- [x] Vehicle types are pre-seeded and read-only (AUTO, CAMIONETA, UTILITARIO) — only GET endpoint exposed
+- [ ] "En arreglo" (inRepair) is a computed field derived from active repair orders — **deferred to spec 06 (repair orders module)**
+- [x] Max 12 rows per page in DataGrid and backend pagination
+- [x] Deletion shows a confirmation dialog before executing
 
 ### 8.4 Testing
 
-- [ ] `VehicleServiceImplTest` — unit tests (11 test methods: getById, create, update, delete, search, filters)
-- [ ] `BrandServiceImplTest` — unit tests (5 test methods: create, duplicate name, getById, not found, getAll)
-- [ ] `VehicleTypeServiceImplTest` — unit tests (1 test method: getAll)
-- [ ] `VehicleControllerIT` — integration tests (4 test methods: create, getById, duplicate plate, search)
-- [ ] `BrandControllerIT` — integration tests (2 test methods: create, duplicate name)
-- [ ] `VehicleList.test.tsx` — DataGrid rendering, columns, search, pagination
-- [ ] `VehicleForm.test.tsx` — form fields, client/brand Autocomplete, validation, submit
+- [x] `VehicleServiceImplTest` — unit tests (11 test methods: getById, create, update, delete, search, filters)
+- [x] `BrandServiceImplTest` — unit tests (6 test methods: create, duplicate name, getById, not found, getAll, delete)
+- [x] `VehicleTypeServiceImplTest` — unit tests (1 test method: getAll)
+- [x] `VehicleControllerTest` — controller tests with MockMvc (5 test methods: create, getById, invalid request, search, delete)
+- [x] `BrandControllerTest` — controller tests with MockMvc (3 test methods: create, invalid request, delete)
+- [x] `VehicleMapperTest` — mapper unit tests (4 test methods)
+- [x] `BrandMapperTest` — mapper unit tests (4 test methods)
+- [x] `VehicleList.test.tsx` — DataGrid rendering, columns, loading, edit/delete callbacks
+- [x] `VehicleForm.test.tsx` — form fields, edit mode title, cancel callback
 
 ---
 

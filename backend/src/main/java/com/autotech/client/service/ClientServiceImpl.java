@@ -1,5 +1,6 @@
 package com.autotech.client.service;
 
+import com.autotech.client.dto.ClientAutocompleteResponse;
 import com.autotech.client.dto.ClientMapper;
 import com.autotech.client.dto.ClientRequest;
 import com.autotech.client.dto.ClientResponse;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +46,27 @@ public class ClientServiceImpl implements ClientService {
         Client client = clientRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Client not found with id: " + id));
         return clientMapper.toResponse(client);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Client findEntityById(Long id) {
+        return clientRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Client", id));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ClientAutocompleteResponse> autocomplete(String query) {
+        Page<Client> results;
+        if (query != null && !query.isBlank()) {
+            results = clientRepository.search(query, PageRequest.of(0, 20));
+        } else {
+            results = clientRepository.findAll(PageRequest.of(0, 20));
+        }
+        return results.getContent().stream()
+                .map(c -> new ClientAutocompleteResponse(c.getId(), c.getFirstName(), c.getLastName(), c.getDni()))
+                .toList();
     }
 
     @Override

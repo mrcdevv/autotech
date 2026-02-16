@@ -15,7 +15,7 @@ This spec implements the **core shell** of the Repair Orders module — the cent
 | Item | Value |
 |------|-------|
 | Branch | `feature/ordenes-trabajo` |
-| Base | `main` |
+| Base | `develop` |
 | Commit style | Conventional commits (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`) |
 
 Example commits:
@@ -2249,6 +2249,8 @@ pages/
 ---
 
 ## 8. Implementation Checklist
+
+> **Deferred from spec 03 (Vehicles)**: The `inRepair` field was excluded from `VehicleResponse` because it depends on `RepairOrder` which didn't exist yet. When implementing this spec, add `inRepair` (boolean) to `VehicleResponse` and compute it in `VehicleServiceImpl.toResponseWithRepairStatus()` by checking `RepairOrderRepository.existsByVehicleIdAndStatusNot(vehicleId, ENTREGADO)`. Also add the `inRepair` column to the frontend `VehicleList` DataGrid (render as "Si"/"No" chip).
 
 > **Instructions for AI agents**: Check off each item as you complete it. Do not remove items. If an item is not applicable, mark it with `[x]` and add "(N/A)" next to it.
 
