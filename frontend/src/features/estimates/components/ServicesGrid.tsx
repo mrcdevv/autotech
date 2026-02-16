@@ -13,9 +13,10 @@ interface ServicesGridProps {
   services: EstimateServiceItemRequest[];
   onChange: (services: EstimateServiceItemRequest[]) => void;
   readonly?: boolean;
+  showErrors?: boolean;
 }
 
-export function ServicesGrid({ services, onChange, readonly = false }: ServicesGridProps) {
+export function ServicesGrid({ services, onChange, readonly = false, showErrors = false }: ServicesGridProps) {
   const [catalogServices, setCatalogServices] = useState<CatalogServiceResponse[]>([]);
 
   const fetchCatalogServices = useCallback(async (query?: string) => {
@@ -77,7 +78,13 @@ export function ServicesGrid({ services, onChange, readonly = false }: ServicesG
               }
             }}
             renderInput={(params) => (
-              <TextField {...params} label="Servicio" size="small" />
+              <TextField
+                {...params}
+                label="Servicio"
+                size="small"
+                error={showErrors && !svc.serviceName.trim()}
+                helperText={showErrors && !svc.serviceName.trim() ? "El nombre es obligatorio" : undefined}
+              />
             )}
             disabled={readonly}
             sx={{ flex: 2 }}
@@ -91,6 +98,8 @@ export function ServicesGrid({ services, onChange, readonly = false }: ServicesG
             size="small"
             sx={{ flex: 1 }}
             slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
+            error={showErrors && svc.price < 0}
+            helperText={showErrors && svc.price < 0 ? "No puede ser negativo" : undefined}
           />
           {!readonly && (
             <IconButton onClick={() => removeService(index)} color="error" size="small">

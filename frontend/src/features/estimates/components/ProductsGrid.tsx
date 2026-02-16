@@ -13,9 +13,10 @@ interface ProductsGridProps {
   products: EstimateProductRequest[];
   onChange: (products: EstimateProductRequest[]) => void;
   readonly?: boolean;
+  showErrors?: boolean;
 }
 
-export function ProductsGrid({ products, onChange, readonly = false }: ProductsGridProps) {
+export function ProductsGrid({ products, onChange, readonly = false, showErrors = false }: ProductsGridProps) {
   const [catalogProducts, setCatalogProducts] = useState<ProductResponse[]>([]);
 
   const fetchCatalogProducts = useCallback(async (query?: string) => {
@@ -81,7 +82,13 @@ export function ProductsGrid({ products, onChange, readonly = false }: ProductsG
               }
             }}
             renderInput={(params) => (
-              <TextField {...params} label="Producto" size="small" />
+              <TextField
+                {...params}
+                label="Producto"
+                size="small"
+                error={showErrors && !prod.productName.trim()}
+                helperText={showErrors && !prod.productName.trim() ? "El nombre es obligatorio" : undefined}
+              />
             )}
             disabled={readonly}
             sx={{ flex: 2 }}
@@ -95,6 +102,8 @@ export function ProductsGrid({ products, onChange, readonly = false }: ProductsG
             size="small"
             sx={{ flex: 1 }}
             slotProps={{ htmlInput: { min: 1, step: 1 } }}
+            error={showErrors && prod.quantity < 1}
+            helperText={showErrors && prod.quantity < 1 ? "Debe ser al menos 1" : undefined}
           />
           <TextField
             type="number"
@@ -105,6 +114,8 @@ export function ProductsGrid({ products, onChange, readonly = false }: ProductsG
             size="small"
             sx={{ flex: 1 }}
             slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
+            error={showErrors && prod.unitPrice < 0}
+            helperText={showErrors && prod.unitPrice < 0 ? "No puede ser negativo" : undefined}
           />
           <TextField
             label="Precio total"

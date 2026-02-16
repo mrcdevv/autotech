@@ -93,7 +93,7 @@ export function EstimateDetail({ estimateId, repairOrderId }: EstimateDetailProp
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [taxPercentage, setTaxPercentage] = useState(0);
   const [saving, setSaving] = useState(false);
-  const [formErrors, setFormErrors] = useState<string[]>([]);
+  const [showErrors, setShowErrors] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
   const isNew = !estimateId && !repairOrderId;
@@ -194,14 +194,14 @@ export function EstimateDetail({ estimateId, repairOrderId }: EstimateDetailProp
   const handleSave = async () => {
     if (!selectedClient || !selectedVehicle) return;
 
-    setFormErrors([]);
     setApiError(null);
 
     const validationErrors = validateForm(services, products);
     if (validationErrors.length > 0) {
-      setFormErrors(validationErrors);
+      setShowErrors(true);
       return;
     }
+    setShowErrors(false);
 
     setSaving(true);
     try {
@@ -304,14 +304,6 @@ export function EstimateDetail({ estimateId, repairOrderId }: EstimateDetailProp
       {apiError && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setApiError(null)}>
           {apiError}
-        </Alert>
-      )}
-
-      {formErrors.length > 0 && (
-        <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setFormErrors([])}>
-          {formErrors.map((err, i) => (
-            <Typography key={i} variant="body2">{err}</Typography>
-          ))}
         </Alert>
       )}
 
@@ -445,11 +437,11 @@ export function EstimateDetail({ estimateId, repairOrderId }: EstimateDetailProp
 
       <Divider sx={{ my: 3 }} />
 
-      <ServicesGrid services={services} onChange={setServices} readonly={isReadonly} />
+      <ServicesGrid services={services} onChange={setServices} readonly={isReadonly} showErrors={showErrors} />
 
       <Divider sx={{ my: 3 }} />
 
-      <ProductsGrid products={products} onChange={setProducts} readonly={isReadonly} />
+      <ProductsGrid products={products} onChange={setProducts} readonly={isReadonly} showErrors={showErrors} />
 
       <Divider sx={{ my: 3 }} />
 
