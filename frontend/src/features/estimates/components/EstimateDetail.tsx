@@ -49,6 +49,9 @@ function validateForm(
   products: EstimateProductRequest[],
 ): string[] {
   const errors: string[] = [];
+  if (services.length === 0 && products.length === 0) {
+    errors.push("Debés agregar al menos un servicio o un producto");
+  }
   services.forEach((svc, i) => {
     if (!svc.serviceName.trim()) {
       errors.push(`Servicio #${i + 1}: el nombre es obligatorio`);
@@ -94,6 +97,7 @@ export function EstimateDetail({ estimateId, repairOrderId }: EstimateDetailProp
   const [taxPercentage, setTaxPercentage] = useState(0);
   const [saving, setSaving] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
 
   const isNew = !estimateId && !repairOrderId;
@@ -195,10 +199,13 @@ export function EstimateDetail({ estimateId, repairOrderId }: EstimateDetailProp
     if (!selectedClient || !selectedVehicle) return;
 
     setApiError(null);
+    setFormError(null);
 
     const validationErrors = validateForm(services, products);
     if (validationErrors.length > 0) {
       setShowErrors(true);
+      const nonFieldError = validationErrors.find((e) => e.startsWith("Debés"));
+      if (nonFieldError) setFormError(nonFieldError);
       return;
     }
     setShowErrors(false);
@@ -304,6 +311,12 @@ export function EstimateDetail({ estimateId, repairOrderId }: EstimateDetailProp
       {apiError && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setApiError(null)}>
           {apiError}
+        </Alert>
+      )}
+
+      {formError && (
+        <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setFormError(null)}>
+          {formError}
         </Alert>
       )}
 
