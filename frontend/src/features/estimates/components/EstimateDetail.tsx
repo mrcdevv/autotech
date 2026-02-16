@@ -81,7 +81,7 @@ interface EstimateDetailProps {
 
 export function EstimateDetail({ estimateId, repairOrderId }: EstimateDetailProps) {
   const navigate = useNavigate();
-  const { estimate, loading, error, createEstimate, updateEstimate, approveEstimate, rejectEstimate } =
+  const { estimate, loading, error, clearError, createEstimate, updateEstimate, approveEstimate, rejectEstimate } =
     useEstimate(estimateId, repairOrderId);
 
   const [clients, setClients] = useState<ClientAutocompleteResponse[]>([]);
@@ -282,6 +282,7 @@ export function EstimateDetail({ estimateId, repairOrderId }: EstimateDetailProp
             setProducts([]);
             setDiscountPercentage(0);
             setTaxPercentage(0);
+            clearError();
           }}>
             Crear presupuesto
           </Button>

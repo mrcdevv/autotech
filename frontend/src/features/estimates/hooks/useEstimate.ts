@@ -60,10 +60,13 @@ export function useEstimate(id?: number, repairOrderId?: number) {
     return res.data.data;
   };
 
+  const clearError = () => setError(null);
+
   return {
     estimate,
     loading,
     error,
+    clearError,
     createEstimate,
     updateEstimate,
     approveEstimate,
