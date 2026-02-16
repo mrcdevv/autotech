@@ -1551,122 +1551,124 @@ For each service (`CatalogServiceServiceImpl`, `ProductServiceImpl`, `CannedJobS
 
 ### 8.1 Backend
 
-- [ ] Create `CatalogService` entity with fields: `name`, `description`, `price`
-- [ ] Create `Product` entity with fields: `name`, `description`, `quantity`, `unitPrice`
-- [ ] Create `CannedJob` entity with fields: `title`, `description`, and `@OneToMany` relationships to `CannedJobService` and `CannedJobProduct` (cascade ALL, orphanRemoval)
-- [ ] Create `CannedJobService` entity with fields: `cannedJob` (ManyToOne), `serviceName`, `price`
-- [ ] Create `CannedJobProduct` entity with fields: `cannedJob` (ManyToOne), `productName`, `quantity`, `unitPrice`
-- [ ] Create `CatalogServiceRepository` with `findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase`
-- [ ] Create `ProductRepository` with `findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase`
-- [ ] Create `CannedJobRepository` with `findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase` and `findWithDetailsById` (`@EntityGraph`)
-- [ ] Create `CannedJobServiceRepository` with `findByCannedJobId`, `deleteByCannedJobId`
-- [ ] Create `CannedJobProductRepository` with `findByCannedJobId`, `deleteByCannedJobId`
-- [ ] Create `CatalogServiceRequest` record with Jakarta Validation annotations
-- [ ] Create `CatalogServiceResponse` record
-- [ ] Create `ProductRequest` record with Jakarta Validation annotations
-- [ ] Create `ProductResponse` record
-- [ ] Create `CannedJobRequest` record with `@Valid` nested lists of `CannedJobServiceRequest` and `CannedJobProductRequest`
-- [ ] Create `CannedJobResponse` record (list view, without children)
-- [ ] Create `CannedJobDetailResponse` record (detail view, with service and product lists)
-- [ ] Create `CannedJobServiceRequest` record with Jakarta Validation annotations
-- [ ] Create `CannedJobServiceResponse` record
-- [ ] Create `CannedJobProductRequest` record with Jakarta Validation annotations
-- [ ] Create `CannedJobProductResponse` record
-- [ ] Create `CatalogServiceMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
-- [ ] Create `ProductMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
-- [ ] Create `CannedJobMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
-- [ ] Create `CatalogServiceService` interface with methods: `search`, `getById`, `create`, `update`, `delete`
-- [ ] Create `CatalogServiceServiceImpl` with full logic:
-  - [ ] `search` — return all if blank query, else filter by name/description
-  - [ ] `getById` — find or throw `ResourceNotFoundException`
-  - [ ] `create` — map and save
-  - [ ] `update` — find or throw, update fields, save
-  - [ ] `delete` — check existence, delete
-- [ ] Create `ProductService` interface with methods: `search`, `getById`, `create`, `update`, `delete`
-- [ ] Create `ProductServiceImpl` with full logic:
-  - [ ] `search` — return all if blank query, else filter by name/description
-  - [ ] `getById` — find or throw `ResourceNotFoundException`
-  - [ ] `create` — map and save
-  - [ ] `update` — find or throw, update fields, save
-  - [ ] `delete` — check existence, delete
-- [ ] Create `CannedJobService` interface with methods: `search`, `getById`, `create`, `update`, `delete`
-- [ ] Create `CannedJobServiceImpl` with full logic:
-  - [ ] `search` — return all if blank query, else filter by title/description
-  - [ ] `getById` — find with details or throw `ResourceNotFoundException`
-  - [ ] `create` — map parent, add child entities (services + products), save
-  - [ ] `update` — find with details or throw, update title/description, clear and re-add children, save
-  - [ ] `delete` — check existence, delete (cascade to children)
-  - [ ] Private helper: `addChildEntities` — build and attach `CannedJobService` and `CannedJobProduct` entities
-- [ ] Create `CatalogServiceController` with endpoints:
-  - [ ] `GET /api/services` — search/list (paginated, sorted by name)
-  - [ ] `GET /api/services/{id}` — get by ID
-  - [ ] `POST /api/services` — create
-  - [ ] `PUT /api/services/{id}` — update
-  - [ ] `DELETE /api/services/{id}` — delete
-- [ ] Create `ProductController` with endpoints:
-  - [ ] `GET /api/products` — search/list (paginated, sorted by name)
-  - [ ] `GET /api/products/{id}` — get by ID
-  - [ ] `POST /api/products` — create
-  - [ ] `PUT /api/products/{id}` — update
-  - [ ] `DELETE /api/products/{id}` — delete
-- [ ] Create `CannedJobController` with endpoints:
-  - [ ] `GET /api/canned-jobs` — search/list (paginated, sorted by title)
-  - [ ] `GET /api/canned-jobs/{id}` — get by ID (returns detail with children)
-  - [ ] `POST /api/canned-jobs` — create (with nested services and products)
-  - [ ] `PUT /api/canned-jobs/{id}` — update (replaces children)
-  - [ ] `DELETE /api/canned-jobs/{id}` — delete (cascades to children)
-- [ ] Verify backend compiles: `./mvnw clean compile`
-- [ ] Verify backend starts: `./mvnw clean spring-boot:run`
+- [x] Create `CatalogService` entity with fields: `name`, `description`, `price`
+- [x] Create `Product` entity with fields: `name`, `description`, `quantity`, `unitPrice`
+- [x] Create `CannedJob` entity with fields: `title`, `description`, and `@OneToMany` relationships to `CannedJobService` and `CannedJobProduct` (cascade ALL, orphanRemoval)
+- [x] Create `CannedJobService` entity with fields: `cannedJob` (ManyToOne), `serviceName`, `price`
+- [x] Create `CannedJobProduct` entity with fields: `cannedJob` (ManyToOne), `productName`, `quantity`, `unitPrice`
+- [x] Create `CatalogServiceRepository` with `findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase`
+- [x] Create `ProductRepository` with `findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase`
+- [x] Create `CannedJobRepository` with `findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase` and `findWithDetailsById` (`@EntityGraph`)
+- [x] Create `CannedJobServiceRepository` with `findByCannedJobId`, `deleteByCannedJobId`
+- [x] Create `CannedJobProductRepository` with `findByCannedJobId`, `deleteByCannedJobId`
+- [x] Create `CatalogServiceRequest` record with Jakarta Validation annotations
+- [x] Create `CatalogServiceResponse` record
+- [x] Create `ProductRequest` record with Jakarta Validation annotations
+- [x] Create `ProductResponse` record
+- [x] Create `CannedJobRequest` record with `@Valid` nested lists of `CannedJobServiceRequest` and `CannedJobProductRequest`
+- [x] Create `CannedJobResponse` record (list view, without children)
+- [x] Create `CannedJobDetailResponse` record (detail view, with service and product lists)
+- [x] Create `CannedJobServiceRequest` record with Jakarta Validation annotations
+- [x] Create `CannedJobServiceResponse` record
+- [x] Create `CannedJobProductRequest` record with Jakarta Validation annotations
+- [x] Create `CannedJobProductResponse` record
+- [x] Create `CatalogServiceMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
+- [x] Create `ProductMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
+- [x] Create `CannedJobMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
+- [x] Create `CatalogServiceService` interface with methods: `search`, `getById`, `create`, `update`, `delete`
+- [x] Create `CatalogServiceServiceImpl` with full logic:
+  - [x] `search` — return all if blank query, else filter by name/description
+  - [x] `getById` — find or throw `ResourceNotFoundException`
+  - [x] `create` — map and save
+  - [x] `update` — find or throw, update fields, save
+  - [x] `delete` — check existence, delete
+- [x] Create `ProductService` interface with methods: `search`, `getById`, `create`, `update`, `delete`
+- [x] Create `ProductServiceImpl` with full logic:
+  - [x] `search` — return all if blank query, else filter by name/description
+  - [x] `getById` — find or throw `ResourceNotFoundException`
+  - [x] `create` — map and save
+  - [x] `update` — find or throw, update fields, save
+  - [x] `delete` — check existence, delete
+- [x] Create `CannedJobService` interface with methods: `search`, `getById`, `create`, `update`, `delete`
+- [x] Create `CannedJobServiceImpl` with full logic:
+  - [x] `search` — return all if blank query, else filter by title/description
+  - [x] `getById` — find with details or throw `ResourceNotFoundException`
+  - [x] `create` — map parent, add child entities (services + products), save
+  - [x] `update` — find with details or throw, update title/description, clear and re-add children, save
+  - [x] `delete` — check existence, delete (cascade to children)
+  - [x] Private helper: `addChildEntities` — build and attach `CannedJobService` and `CannedJobProduct` entities
+- [x] Create `CatalogServiceController` with endpoints:
+  - [x] `GET /api/services` — search/list (paginated, sorted by name)
+  - [x] `GET /api/services/{id}` — get by ID
+  - [x] `POST /api/services` — create
+  - [x] `PUT /api/services/{id}` — update
+  - [x] `DELETE /api/services/{id}` — delete
+- [x] Create `ProductController` with endpoints:
+  - [x] `GET /api/products` — search/list (paginated, sorted by name)
+  - [x] `GET /api/products/{id}` — get by ID
+  - [x] `POST /api/products` — create
+  - [x] `PUT /api/products/{id}` — update
+  - [x] `DELETE /api/products/{id}` — delete
+- [x] Create `CannedJobController` with endpoints:
+  - [x] `GET /api/canned-jobs` — search/list (paginated, sorted by title)
+  - [x] `GET /api/canned-jobs/{id}` — get by ID (returns detail with children)
+  - [x] `POST /api/canned-jobs` — create (with nested services and products)
+  - [x] `PUT /api/canned-jobs/{id}` — update (replaces children)
+  - [x] `DELETE /api/canned-jobs/{id}` — delete (cascades to children)
+- [x] Verify backend compiles: `./mvnw clean compile`
+- [x] Verify backend starts: `./mvnw clean spring-boot:run`
 
 ### 8.2 Frontend
 
-- [ ] Create types file: `src/types/catalog.ts` (all service, product, and canned job request/response interfaces)
-- [ ] Create API layer: `src/api/catalogServices.ts` (search, getById, create, update, delete)
-- [ ] Create API layer: `src/api/products.ts` (search, getById, create, update, delete)
-- [ ] Create API layer: `src/api/cannedJobs.ts` (search, getById, create, update, delete)
-- [ ] Create `useCatalogServices` hook (`src/features/catalog/hooks/useCatalogServices.ts`)
-- [ ] Create `useProducts` hook (`src/features/catalog/hooks/useProducts.ts`)
-- [ ] Create `useCannedJobs` hook (`src/features/catalog/hooks/useCannedJobs.ts`)
-- [ ] Create `ServicesPage` (`src/pages/ServicesPage.tsx`) with inline-editable DataGrid
-- [ ] Create `ProductsPage` (`src/pages/ProductsPage.tsx`) with inline-editable DataGrid
-- [ ] Create `CannedJobsPage` (`src/pages/CannedJobsPage.tsx`) with DataGrid and form dialog
-- [ ] Create `ServicesDataGrid` component (inline editing, server-side pagination, delete action)
-- [ ] Create `ProductsDataGrid` component (inline editing, server-side pagination, delete action)
-- [ ] Create `CannedJobsDataGrid` component (non-editable, edit/delete actions)
-- [ ] Create `CannedJobFormDialog` component (Dialog for create/edit with dynamic service and product rows)
-- [ ] Register route `/servicios` with lazy loading
-- [ ] Register route `/productos` with lazy loading
-- [ ] Register route `/trabajos-enlatados` with lazy loading
-- [ ] Verify frontend compiles
-- [ ] Verify frontend runs
+- [x] Create types file: `src/types/catalog.ts` (all service, product, and canned job request/response interfaces)
+- [x] Create API layer: `src/api/catalogServices.ts` (search, getById, create, update, delete)
+- [x] Create API layer: `src/api/products.ts` (search, getById, create, update, delete)
+- [x] Create API layer: `src/api/cannedJobs.ts` (search, getById, create, update, delete)
+- [x] Create `useCatalogServices` hook (`src/features/catalog/hooks/useCatalogServices.ts`)
+- [x] Create `useProducts` hook (`src/features/catalog/hooks/useProducts.ts`)
+- [x] Create `useCannedJobs` hook (`src/features/catalog/hooks/useCannedJobs.ts`)
+- [x] Create `ServicesPage` (`src/pages/ServicesPage.tsx`) with DataGrid and form dialog
+- [x] Create `ProductsPage` (`src/pages/ProductsPage.tsx`) with DataGrid and form dialog
+- [x] Create `CannedJobsPage` (`src/pages/CannedJobsPage.tsx`) with DataGrid and form dialog
+- [x] Create `ServicesDataGrid` component (server-side pagination, edit/delete actions)
+- [x] Create `ProductsDataGrid` component (server-side pagination, edit/delete actions)
+- [x] Create `CannedJobsDataGrid` component (non-editable, edit/delete actions)
+- [x] Create `ServiceFormDialog` component (Dialog for create/edit services)
+- [x] Create `ProductFormDialog` component (Dialog for create/edit products)
+- [x] Create `CannedJobFormDialog` component (Dialog for create/edit with Autocomplete search for existing services/products)
+- [x] Register route `/servicios` with lazy loading
+- [x] Register route `/productos` with lazy loading
+- [x] Register route `/trabajos-enlatados` with lazy loading
+- [x] Verify frontend compiles
+- [x] Verify frontend runs
 
 ### 8.3 Business Rules Verification
 
-- [ ] `services.name`, `products.name`, and `canned_jobs.title` are mandatory (DTO validation + DB NOT NULL)
-- [ ] `services.price` and `products.unit_price` are optional in the catalog (nullable)
-- [ ] `products.quantity` defaults to 0 if not provided
-- [ ] Canned job services/products store snapshot data (plain strings, not FK references) — changes to catalog don't affect existing canned jobs
-- [ ] Updating a canned job replaces entire list of children (clear + re-add)
-- [ ] Deleting a canned job cascades to its `canned_job_services` and `canned_job_products`
-- [ ] Services and products can have duplicate names (no uniqueness constraint)
-- [ ] All list endpoints are server-side paginated with default page size of 12
-- [ ] Search is case-insensitive on name/title and description fields
+- [x] `services.name`, `products.name`, and `canned_jobs.title` are mandatory (DTO validation + DB NOT NULL)
+- [x] `services.price` and `products.unit_price` are optional in the catalog (nullable)
+- [x] `products.quantity` defaults to 0 if not provided
+- [x] Canned job services/products store snapshot data (plain strings, not FK references) — changes to catalog don't affect existing canned jobs
+- [x] Updating a canned job replaces entire list of children (clear + re-add)
+- [x] Deleting a canned job cascades to its `canned_job_services` and `canned_job_products`
+- [x] Services and products can have duplicate names (no uniqueness constraint)
+- [x] All list endpoints are server-side paginated with default page size of 12
+- [x] Search is case-insensitive on name/title and description fields
 
 ### 8.4 Testing
 
-- [ ] `CatalogServiceServiceImplTest` — unit tests (9 test methods: search with/without query, getById, create, update, delete, not found cases)
-- [ ] `ProductServiceImplTest` — unit tests (same pattern as CatalogServiceServiceImplTest)
-- [ ] `CannedJobServiceImplTest` — unit tests (same pattern + `create_withServicesAndProducts_savesChildren`, `update_replacesChildren`)
-- [ ] `CatalogServiceControllerTest` — controller tests (6 test methods: search, getById, create valid/invalid, update, delete)
-- [ ] `ProductControllerTest` — controller tests (same pattern)
-- [ ] `CannedJobControllerTest` — controller tests (same pattern)
-- [ ] `CatalogServiceMapperTest` — mapper tests (`toResponse`, `toEntity`, `updateEntity`)
-- [ ] `ProductMapperTest` — mapper tests (same pattern)
-- [ ] `CannedJobMapperTest` — mapper tests (`toResponse`, `toDetailResponse`, `toEntity`)
-- [ ] `ServicesDataGrid.test.tsx` — renders columns, loading state, delete action, processRowUpdate
-- [ ] `ProductsDataGrid.test.tsx` — same pattern
-- [ ] `CannedJobsDataGrid.test.tsx` — renders columns, edit/delete actions
-- [ ] `CannedJobFormDialog.test.tsx` — create/edit mode, add/remove service/product rows, validation, onSave
+- [x] `CatalogServiceServiceImplTest` — unit tests (9 test methods: search with/without query, getById, create, update, delete, not found cases)
+- [x] `ProductServiceImplTest` — unit tests (same pattern as CatalogServiceServiceImplTest)
+- [x] `CannedJobServiceImplTest` — unit tests (same pattern + `create_withServicesAndProducts_savesChildren`, `update_replacesChildren`)
+- [x] `CatalogServiceControllerTest` — controller tests (6 test methods: search, getById, create valid/invalid, update, delete)
+- [x] `ProductControllerTest` — controller tests (same pattern)
+- [x] `CannedJobControllerTest` — controller tests (same pattern)
+- [x] `CatalogServiceMapperTest` — mapper tests (`toResponse`, `toEntity`, `updateEntity`)
+- [x] `ProductMapperTest` — mapper tests (same pattern)
+- [x] `CannedJobMapperTest` — mapper tests (`toResponse`, `toDetailResponse`, `toEntity`)
+- [x] `ServicesDataGrid.test.tsx` — renders columns, loading state, edit/delete actions
+- [x] `ProductsDataGrid.test.tsx` — same pattern
+- [x] `CannedJobsDataGrid.test.tsx` — renders columns, edit/delete actions
+- [x] `CannedJobFormDialog.test.tsx` — create/edit mode, add/remove service/product rows, validation, onSave
 - [ ] `useCatalogServices.test.ts` — fetch on mount, search, CRUD triggers refetch
 - [ ] `useProducts.test.ts` — same pattern
 - [ ] `useCannedJobs.test.ts` — same pattern
