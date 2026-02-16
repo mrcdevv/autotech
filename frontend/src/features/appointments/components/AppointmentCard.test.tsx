@@ -51,7 +51,7 @@ describe("AppointmentCard", () => {
     expect(screen.getByText("ABC123")).toBeInTheDocument();
   });
 
-  it("given client arrived, when rendered, then shows arrived chip", () => {
+  it("given client arrived, when rendered, then shows person icon indicator", () => {
     render(
       <AppointmentCard
         {...defaultProps}
@@ -59,7 +59,7 @@ describe("AppointmentCard", () => {
       />,
     );
 
-    expect(screen.getByText("Cliente presente")).toBeInTheDocument();
+    expect(screen.getByTestId("PersonIcon")).toBeInTheDocument();
   });
 
   it("given appointment, when clicking card, then calls onClick", async () => {

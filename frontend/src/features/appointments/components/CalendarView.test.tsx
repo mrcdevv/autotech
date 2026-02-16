@@ -65,7 +65,7 @@ describe("CalendarView", () => {
 
     expect(screen.getByText("15")).toBeInTheDocument();
     expect(screen.getByText("Lun")).toBeInTheDocument();
-    expect(screen.getByText("Mar")).toBeInTheDocument();
+    expect(screen.getByText("10:00 - 11:00")).toBeInTheDocument();
   });
 
   it("given day view with appointment, when rendered, then shows appointment card", () => {
