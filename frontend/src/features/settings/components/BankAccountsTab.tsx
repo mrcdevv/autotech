@@ -2,12 +2,14 @@ import { useState } from "react";
 
 import {
   Alert,
+  Avatar,
   Box,
   Button,
   CircularProgress,
   IconButton,
   List,
   ListItem,
+  ListItemAvatar,
   ListItemText,
   Snackbar,
   Stack,
@@ -16,10 +18,12 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 
 import { bankAccountsApi } from "@/api/bankAccounts";
 import { useBankAccounts } from "@/features/payments/hooks/useBankAccounts";
 import { BankAccountFormDialog } from "@/features/settings/components/BankAccountFormDialog";
+import { getBankLogo } from "@/assets/bank-logos";
 
 import type { BankAccountResponse } from "@/types/payment";
 import type { ApiResponse } from "@/types/api";
@@ -92,6 +96,13 @@ export function BankAccountsTab() {
               </>
             }
           >
+            <ListItemAvatar>
+              {getBankLogo(account.bankName) ? (
+                <Avatar src={getBankLogo(account.bankName)} variant="rounded" />
+              ) : (
+                <Avatar variant="rounded"><AccountBalanceIcon /></Avatar>
+              )}
+            </ListItemAvatar>
             <ListItemText
               primary={account.alias}
               secondary={`${account.bankName}${account.cbuCvu ? ` — ${account.cbuCvu}` : ""}`}

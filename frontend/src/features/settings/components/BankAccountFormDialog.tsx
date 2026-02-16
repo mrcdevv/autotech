@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 
 import {
   Autocomplete,
+  Avatar,
+  Box,
   Button,
   Dialog,
   DialogTitle,
@@ -10,8 +12,10 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
+import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 
 import { bankAccountsApi } from "@/api/bankAccounts";
+import { getBankLogo } from "@/assets/bank-logos";
 
 import type { BankAccountResponse, BankResponse } from "@/types/payment";
 
@@ -66,6 +70,19 @@ export function BankAccountFormDialog({ open, account, onClose, onSave }: BankAc
             getOptionLabel={(b) => b.name}
             value={selectedBank}
             onChange={(_, v) => setBankId(v?.id ?? null)}
+            renderOption={(props, option) => {
+              const logo = getBankLogo(option.name);
+              return (
+                <Box component="li" {...props} sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  {logo ? (
+                    <Avatar src={logo} variant="rounded" sx={{ width: 28, height: 28 }} />
+                  ) : (
+                    <Avatar variant="rounded" sx={{ width: 28, height: 28 }}><AccountBalanceIcon sx={{ fontSize: 16 }} /></Avatar>
+                  )}
+                  {option.name}
+                </Box>
+              );
+            }}
             renderInput={(params) => <TextField {...params} label="Banco" required />}
           />
           <TextField
