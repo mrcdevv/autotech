@@ -74,12 +74,29 @@ function validateForm(
   return errors;
 }
 
+interface RepairOrderClientData {
+  id: number;
+  firstName: string;
+  lastName: string;
+  dni: string | null;
+}
+
+interface RepairOrderVehicleData {
+  id: number;
+  plate: string;
+  brandName: string | null;
+  model: string | null;
+  year: number | null;
+}
+
 interface EstimateDetailProps {
   estimateId?: number;
   repairOrderId?: number;
+  repairOrderClient?: RepairOrderClientData;
+  repairOrderVehicle?: RepairOrderVehicleData;
 }
 
-export function EstimateDetail({ estimateId, repairOrderId }: EstimateDetailProps) {
+export function EstimateDetail({ estimateId, repairOrderId, repairOrderClient, repairOrderVehicle }: EstimateDetailProps) {
   const navigate = useNavigate();
   const { estimate, loading, error, clearError, createEstimate, updateEstimate, approveEstimate, rejectEstimate } =
     useEstimate(estimateId, repairOrderId);
@@ -278,6 +295,39 @@ export function EstimateDetail({ estimateId, repairOrderId }: EstimateDetailProp
             No hay presupuesto asociado a esta orden de trabajo.
           </Typography>
           <Button variant="contained" onClick={() => {
+            if (repairOrderClient) {
+              setSelectedClient({
+                id: repairOrderClient.id,
+                firstName: repairOrderClient.firstName,
+                lastName: repairOrderClient.lastName,
+                dni: repairOrderClient.dni,
+              });
+              setClientInputValue(`${repairOrderClient.firstName} ${repairOrderClient.lastName}`);
+            }
+            if (repairOrderVehicle) {
+              setSelectedVehicle({
+                id: repairOrderVehicle.id,
+                clientId: repairOrderClient?.id ?? 0,
+                clientFirstName: "",
+                clientLastName: "",
+                clientDni: null,
+                plate: repairOrderVehicle.plate,
+                chassisNumber: null,
+                engineNumber: null,
+                brandId: null,
+                brandName: repairOrderVehicle.brandName,
+                model: repairOrderVehicle.model,
+                year: repairOrderVehicle.year,
+                vehicleTypeId: null,
+                vehicleTypeName: null,
+                observations: null,
+                inRepair: false,
+                createdAt: "",
+              });
+              setVehicleInputValue(
+                `${repairOrderVehicle.plate}${repairOrderVehicle.model ? ` - ${repairOrderVehicle.model}` : ""}`,
+              );
+            }
             setServices([]);
             setProducts([]);
             setDiscountPercentage(0);
