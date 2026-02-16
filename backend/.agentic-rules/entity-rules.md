@@ -35,6 +35,26 @@ When using `@Builder` on an entity that extends `BaseEntity`, the generated buil
 
 When writing manual mappers (see `dto-rules.md`), use `entity.getId()` / `entity.getCreatedAt()` / `entity.getUpdatedAt()` directly -- these come from Lombok's `@Getter` on `BaseEntity` and are always available at runtime.
 
+## OneToMany Collections — Use `Set`, NOT `List`
+
+When an entity has multiple `@OneToMany` collections, **always use `Set<T>` (with `HashSet`)**, never `List<T>` (with `ArrayList`).
+
+Hibernate treats `List` as a "bag" type. When a `@EntityGraph` or eager fetch tries to load two or more `List`-typed collections simultaneously, Hibernate throws `MultipleBagFetchException: cannot simultaneously fetch multiple bags`. Using `Set` avoids this because Hibernate treats sets differently.
+
+```java
+// CORRECT — always use Set for @OneToMany
+@OneToMany(mappedBy = "invoice", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+@Builder.Default
+private Set<InvoiceServiceItem> services = new HashSet<>();
+
+// WRONG — List causes MultipleBagFetchException when combined with @EntityGraph
+@OneToMany(mappedBy = "invoice", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+@Builder.Default
+private List<InvoiceServiceItem> services = new ArrayList<>();
+```
+
+**Rule**: Even if the entity currently has only one `@OneToMany`, use `Set` to be safe for future additions.
+
 ## Enum Fields
 
 Use `@Enumerated(EnumType.STRING)` always. Never use `EnumType.ORDINAL` (breaks if enum order changes).
@@ -66,7 +86,7 @@ public class Client extends BaseEntity {
 
     @OneToMany(mappedBy = "client", fetch = FetchType.LAZY)
     @Builder.Default
-    private List<Vehicle> vehicles = new ArrayList<>();
+    private Set<Vehicle> vehicles = new HashSet<>();
 
     @Override
     public boolean equals(Object o) {

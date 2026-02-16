@@ -18,6 +18,10 @@ vi.mock("@/features/estimates/components/EstimateTab", () => ({
   EstimateTab: () => <div data-testid="estimate-tab">EstimateTab</div>,
 }));
 
+vi.mock("@/features/invoices/components/InvoiceTab", () => ({
+  InvoiceTab: () => <div data-testid="invoice-tab">InvoiceTab</div>,
+}));
+
 const mockRefetch = vi.fn();
 
 const sampleOrder: RepairOrderDetailResponse = {
@@ -81,5 +85,14 @@ describe("RepairOrderDetailTabs", () => {
     await user.click(screen.getByText("Presupuesto"));
 
     expect(screen.getByTestId("estimate-tab")).toBeInTheDocument();
+  });
+
+  it("given order, when clicking Factura tab, then shows InvoiceTab", async () => {
+    const user = userEvent.setup();
+    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />);
+
+    await user.click(screen.getByText("Factura"));
+
+    expect(screen.getByTestId("invoice-tab")).toBeInTheDocument();
   });
 });
