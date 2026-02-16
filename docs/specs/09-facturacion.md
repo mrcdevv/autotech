@@ -1949,3 +1949,98 @@ Use Vitest + React Testing Library.
 | `InvoiceSummary` | `InvoiceSummary.test.tsx` | Calculates final price; clamps discount 0–100; clamps tax 0–100; renders readonly |
 | `InvoiceTab` | `InvoiceTab.test.tsx` | Shows creation form when no invoice exists; shows detail view when invoice exists |
 | `PaymentsTabPlaceholder` | `PaymentsTabPlaceholder.test.tsx` | Renders placeholder text "Próximamente" |
+
+---
+
+## 8. Implementation Checklist
+
+> **Instructions for AI agents**: Check off each item as you complete it. Do not remove items. If an item is not applicable, mark it with `[x]` and add "(N/A)" next to it.
+
+### 8.1 Backend
+
+- [ ] Create `InvoiceStatus` enum (`PENDIENTE`, `PAGADA`)
+- [ ] Create `Invoice` entity (relationships: `Client`, `Vehicle`, `RepairOrder`, `Estimate`, `InvoiceServiceItem`, `InvoiceProduct`)
+- [ ] Create `InvoiceServiceItem` entity (relationship: `Invoice`)
+- [ ] Create `InvoiceProduct` entity (relationship: `Invoice`)
+- [ ] Create `InvoiceRepository` with methods: `findWithDetailsById`, `findByRepairOrderId`, `findByEstimateId`, `search` (custom JPQL query)
+- [ ] Create `InvoiceServiceItemRepository` with methods: `findByInvoiceId`, `deleteByInvoiceId`
+- [ ] Create `InvoiceProductRepository` with methods: `findByInvoiceId`, `deleteByInvoiceId`
+- [ ] Create `InvoiceRequest` record with Jakarta Validation annotations (`@NotNull`, `@DecimalMin`, `@DecimalMax`, `@Digits`, `@Valid`)
+- [ ] Create `InvoiceServiceItemRequest` record with Jakarta Validation annotations (`@NotBlank`, `@Size`, `@NotNull`, `@DecimalMin`, `@Digits`)
+- [ ] Create `InvoiceProductRequest` record with Jakarta Validation annotations (`@NotBlank`, `@Size`, `@NotNull`, `@Min`, `@DecimalMin`, `@Digits`)
+- [ ] Create `InvoiceResponse` record (list view DTO)
+- [ ] Create `InvoiceDetailResponse` record (detail view DTO with client/vehicle/estimate data)
+- [ ] Create `InvoiceServiceItemResponse` record
+- [ ] Create `InvoiceProductResponse` record
+- [ ] Create `InvoiceMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
+  - [ ] `toResponse(Invoice)` → `InvoiceResponse`
+  - [ ] `toDetailResponse(Invoice)` → `InvoiceDetailResponse`
+  - [ ] `toServiceItemResponse(InvoiceServiceItem)` → `InvoiceServiceItemResponse`
+  - [ ] `toProductResponse(InvoiceProduct)` → `InvoiceProductResponse`
+  - [ ] `toEntity(InvoiceRequest)` → `Invoice`
+- [ ] Create `InvoiceService` interface
+- [ ] Create `InvoiceServiceImpl` implementation
+  - [ ] `getAll(Pageable)` — paginated list of all invoices
+  - [ ] `search(clientName, plate, status, Pageable)` — filtered search
+  - [ ] `getById(Long)` — detail response
+  - [ ] `getByRepairOrderId(Long)` — detail for repair order's invoice
+  - [ ] `create(InvoiceRequest)` — create invoice with children, validate TEMPORAL client restriction, calculate total
+  - [ ] `createFromEstimate(Long)` — create invoice pre-loaded from ACEPTADO estimate
+  - [ ] `delete(Long)` — delete invoice (only standalone, not paid)
+  - [ ] `calculateTotal(services, products, discount, tax)` — total calculation logic
+  - [ ] `markAsPaid(Long)` — set status to PAGADA
+- [ ] Create `InvoiceController` with all endpoints:
+  - [ ] `GET /api/invoices` — list/search (paginated)
+  - [ ] `GET /api/invoices/{id}` — get by ID
+  - [ ] `POST /api/invoices` — create
+  - [ ] `POST /api/invoices/from-estimate/{estimateId}` — create from accepted estimate
+  - [ ] `DELETE /api/invoices/{id}` — delete
+- [ ] Add `GET /api/repair-orders/{id}/invoice` endpoint in `RepairOrderController`
+- [ ] Verify backend compiles: `./mvnw clean compile`
+- [ ] Verify backend starts: `./mvnw clean spring-boot:run`
+
+### 8.2 Frontend
+
+- [ ] Create types file `src/types/invoice.ts` (`InvoiceStatus`, `InvoiceServiceItemRequest`, `InvoiceServiceItemResponse`, `InvoiceProductRequest`, `InvoiceProductResponse`, `InvoiceRequest`, `InvoiceResponse`, `InvoiceDetailResponse`)
+- [ ] Create API layer `src/api/invoices.ts` (all invoice API methods)
+- [ ] Create `useInvoices` hook — list with pagination, filtering, delete
+- [ ] Create `useInvoice` hook — single invoice fetch, create, createFromEstimate
+- [ ] Create `InvoicesPage` — route `/facturas` with filters and DataGrid
+- [ ] Create `InvoiceDetailPage` — route `/facturas/:id` and `/facturas/nueva` with estimateId query param support
+- [ ] Create `InvoiceList` component — DataGrid with columns (date, client, plate, status chip, repair order, total, actions with view/delete)
+- [ ] Create `InvoiceDetail` component — main detail with tabs (Datos de la Factura / Pagos), download button
+- [ ] Create `InvoiceDataTab` component — invoice form with client/vehicle autocomplete, TEMPORAL client restriction, estimate pre-loading, services/products grids, summary, confirmation dialog
+- [ ] Create `PaymentsTabPlaceholder` component — placeholder "Próximamente" for payments tab
+- [ ] Create `ServicesGrid` component — editable services grid with catalog autocomplete, add/remove rows, subtotal (hidden for TEMPORAL clients)
+- [ ] Create `ProductsGrid` component — editable products grid with catalog autocomplete, quantity, unit price, total price, add/remove rows, subtotal
+- [ ] Create `InvoiceSummary` component — discount %, tax %, final price calculation
+- [ ] Create `InvoiceTab` component — for repair order detail "Factura" tab
+- [ ] Register routes with lazy loading (`/facturas`, `/facturas/nueva`, `/facturas/:id`)
+- [ ] Verify frontend compiles
+- [ ] Verify frontend runs
+
+### 8.3 Business Rules Verification
+
+- [ ] Immutability after creation: no PUT endpoint, all fields readonly in view mode
+- [ ] TEMPORAL client restriction: only products allowed, no services; vehicle optional
+- [ ] Estimate pre-loading: `/facturas/nueva?estimateId={id}` copies services, products, discount, tax from ACEPTADO estimate
+- [ ] Snapshot line items: service/product names and prices are copied by value at creation
+- [ ] Status auto-update: PENDIENTE → PAGADA when total payments equal invoice total (handled by spec 10)
+- [ ] Deletion restrictions: cannot delete invoices linked to repair order or with status PAGADA
+- [ ] Total calculation: `(servicesSum + productsSum) - discount + tax` with HALF_UP rounding
+- [ ] Confirmation dialog before invoice creation ("Una vez creada, la factura no se podrá editar")
+- [ ] Invoices linked to repair orders navigate to repair order detail on row click
+
+### 8.4 Testing
+
+- [ ] `InvoiceServiceImplTest` — all service layer test methods (create, createFromEstimate, TEMPORAL client, delete restrictions, calculateTotal, markAsPaid)
+- [ ] `InvoiceControllerTest` (if applicable) — controller layer tests
+- [ ] `InvoiceMapperTest` (if applicable) — mapper tests
+- [ ] `InvoiceList.test.tsx` — grid rendering, actions, delete disabled for repair order invoices
+- [ ] `InvoiceDetail.test.tsx` — create/view modes, tab switching, confirmation dialog
+- [ ] `InvoiceDataTab.test.tsx` — client/vehicle autocomplete, TEMPORAL client restriction, estimate pre-loading, readonly mode
+- [ ] `ServicesGrid.test.tsx` — add/remove rows, catalog autocomplete, subtotal, readonly mode
+- [ ] `ProductsGrid.test.tsx` — add/remove rows, catalog autocomplete, quantity × price, subtotal, readonly mode
+- [ ] `InvoiceSummary.test.tsx` — subtotal, discount/tax clamping, final price, readonly mode
+- [ ] `InvoiceTab.test.tsx` — renders inside repair order, create/load behavior
+- [ ] `PaymentsTabPlaceholder.test.tsx` — renders placeholder text "Próximamente"

@@ -6,6 +6,7 @@ services:
       POSTGRES_DB: autotech
       POSTGRES_USER: autotech
       POSTGRES_PASSWORD: autotech
+      TZ: UTC
     ports:
       - "5432:5432"
     volumes:

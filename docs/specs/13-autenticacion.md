@@ -784,3 +784,94 @@ apiClient.interceptors.response.use(
 | `ForgotPasswordPage.test.tsx` | Renders placeholder message, back to login link works |
 | `ProtectedRoute.test.tsx` | Redirects to `/login` when not authenticated, renders children when authenticated, redirects to `/` when missing required role/permission |
 | `AuthContext.test.tsx` | Login stores token and user, logout clears token and user, hasRole returns correct boolean, hasPermission returns correct boolean, restores session from localStorage on mount |
+
+---
+
+## 8. Implementation Checklist
+
+> **Instructions for AI agents**: Check off each item as you complete it. Do not remove items. If an item is not applicable, mark it with `[x]` and add "(N/A)" next to it.
+>
+> ⚠️ **DEFERRED**: This spec is currently deferred. The checklist below documents all planned implementation items for when the spec is officially activated. Do not implement until the spec status changes.
+
+### 8.1 Backend
+
+- [ ] Create `V2__add_auth_fields.sql` migration — adds `username` (VARCHAR(50), UNIQUE) and `password_hash` (VARCHAR(255)) columns to `employees` table
+- [ ] Add `username` and `passwordHash` fields to existing `Employee` entity
+- [ ] Add repository methods to `EmployeeRepository`:
+  - [ ] `findByUsername(String username)`
+  - [ ] `existsByUsername(String username)`
+  - [ ] `existsByUsernameAndIdNot(String username, Long id)`
+- [ ] Create `JwtProperties` configuration record (`autotech.jwt.secret`, `expirationMs`, `refreshExpirationMs`)
+- [ ] Create `LoginRequest` DTO with Jakarta Validation annotations (`@NotBlank` on `username` and `password`)
+- [ ] Create `LoginResponse` DTO (record with `accessToken`, `tokenType`, `expiresIn`, `user`)
+- [ ] Create `AuthenticatedUserResponse` DTO (record with `id`, `firstName`, `lastName`, `username`, `roles`, `permissions`)
+- [ ] Create `JwtService`:
+  - [ ] `generateToken(UserDetails)` — build claims, sign with HMAC-SHA256, set expiration
+  - [ ] `extractUsername(String token)` — parse token and return subject
+  - [ ] `isTokenValid(String token, UserDetails)` — verify username match and not expired
+- [ ] Create `AuthService` interface with `login()` and `getCurrentUser()`
+- [ ] Create `AuthServiceImpl`:
+  - [ ] `login()` — authenticate via `AuthenticationManager`, generate JWT, return `LoginResponse`
+  - [ ] `getCurrentUser()` — get principal from `SecurityContextHolder`, return `AuthenticatedUserResponse`
+- [ ] Create `CustomUserDetailsService` implementing `UserDetailsService`:
+  - [ ] `loadUserByUsername()` — find employee by username, build `UserDetails` with roles and permissions as authorities
+- [ ] Create `JwtAuthenticationFilter` extending `OncePerRequestFilter`:
+  - [ ] Extract `Authorization: Bearer` header, validate token, set `SecurityContext`
+- [ ] Update `SecurityConfig`:
+  - [ ] Configure stateless session management
+  - [ ] Permit `/api/auth/**` without authentication
+  - [ ] Require authentication for all other `/api/**` endpoints
+  - [ ] Register `JwtAuthenticationFilter` before `UsernamePasswordAuthenticationFilter`
+  - [ ] Configure `BCryptPasswordEncoder` and `AuthenticationManager` beans
+- [ ] Create `AuthController`:
+  - [ ] `POST /api/auth/login` — authenticate and return JWT token
+  - [ ] `GET /api/auth/me` — return current authenticated user info
+- [ ] Verify backend compiles: `./mvnw clean compile`
+- [ ] Verify backend starts: `./mvnw clean spring-boot:run`
+
+### 8.2 Frontend
+
+- [ ] Create types file (`src/features/auth/types.ts`) with `LoginRequest`, `AuthenticatedUserResponse`, `LoginResponse`, `AuthContextType`
+- [ ] Create API layer (`src/api/auth.ts`) with `login` and `getCurrentUser`
+- [ ] Create `AuthContext` (`src/context/AuthContext.tsx`) with `AuthProvider` and `useAuth` hook:
+  - [ ] Token storage in `localStorage` (key: `autotech_token`)
+  - [ ] `login()`, `logout()`, `hasRole()`, `hasPermission()` methods
+  - [ ] On mount: restore session from stored token via `/api/auth/me`
+- [ ] Create `LoginPage` (`src/pages/LoginPage.tsx`) with username/password form, error handling, redirect on success
+- [ ] Create `ForgotPasswordPage` (`src/pages/ForgotPasswordPage.tsx`) — placeholder with "próximamente" message
+- [ ] Create `ProtectedRoute` component (`src/features/auth/components/ProtectedRoute.tsx`) — redirects to `/login` if unauthenticated, supports `requiredRole` and `requiredPermission` props
+- [ ] Update API client interceptor (`src/api/client.ts`) — handle 401 responses by clearing token and redirecting to `/login`
+- [ ] Register routes:
+  - [ ] `/login` (public, lazy loaded)
+  - [ ] `/olvide-contrasena` (public, lazy loaded)
+  - [ ] Wrap all other routes with `ProtectedRoute`
+  - [ ] Wrap `/configuracion` with `requiredPermission="manage_config"`
+- [ ] Verify frontend compiles
+- [ ] Verify frontend runs
+
+### 8.3 Business Rules Verification
+
+- [ ] Employees are users — `employees` table extended with `username` and `password_hash`
+- [ ] Username must be unique — `DuplicateResourceException` (HTTP 409) on create/update
+- [ ] Password hashing — BCrypt, never store or log raw passwords
+- [ ] Default password — first 3 lowercase letters of first name + last 3 digits of DNI
+- [ ] JWT token — stateless auth with `sub`, `roles`, `permissions`, `iat`, `exp` claims; HMAC-SHA256 signed; 24h expiration
+- [ ] JWT secret — provided via `JWT_SECRET` environment variable, never hardcoded
+- [ ] Login error message — vague "Usuario y/o contraseña incorrectos" (HTTP 401), does not reveal which field is wrong
+- [ ] Protected endpoints — all `/api/**` require auth except `/api/auth/**`
+- [ ] Role-based access — `hasRole()` and `hasPermission()` in frontend, `@PreAuthorize` in backend (future)
+- [ ] Token storage — `localStorage` key `autotech_token`, `Authorization: Bearer` header on requests
+- [ ] 401 handling — clear token and redirect to `/login` on any 401 response
+- [ ] Forgot password — deferred placeholder page
+
+### 8.4 Testing
+
+- [ ] `JwtServiceTest` — token generation, validation (valid/expired/wrong username), username extraction
+- [ ] `AuthServiceImplTest` — login happy path, invalid credentials, getCurrentUser
+- [ ] `CustomUserDetailsServiceTest` — loadByUsername happy path, unknown username, authorities include roles and permissions
+- [ ] `AuthControllerTest` — `@WebMvcTest`: login 200, login 401, me 200, me 401 without token
+- [ ] `AuthIntegrationTest` — `@SpringBootTest` + Testcontainers: full login flow (create employee → login → use token → verify 401 without token)
+- [ ] `LoginPage.test.tsx` — renders fields, error on invalid creds, redirect on success, forgot password link
+- [ ] `ForgotPasswordPage.test.tsx` — renders placeholder, back to login link
+- [ ] `ProtectedRoute.test.tsx` — redirects when unauthenticated, renders children when authenticated, role/permission checks
+- [ ] `AuthContext.test.tsx` — login stores token/user, logout clears, hasRole, hasPermission, session restore from localStorage

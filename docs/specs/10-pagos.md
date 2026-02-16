@@ -2045,3 +2045,116 @@ No new routes are added. Payments live within:
 | `usePayments.test.ts` | Fetches payments on mount, createPayment triggers refetch, updatePayment triggers refetch, deletePayment triggers refetch, handles loading and error states |
 | `usePaymentSummary.test.ts` | Fetches summary on mount, refetch updates summary, handles loading and error states |
 | `useBankAccounts.test.ts` | Fetches bank accounts and banks on mount, handles loading and error states |
+
+---
+
+## 8. Implementation Checklist
+
+> **Instructions for AI agents**: Check off each item as you complete it. Do not remove items. If an item is not applicable, mark it with `[x]` and add "(N/A)" next to it.
+
+### 8.1 Backend
+
+- [ ] Create `PaymentType` enum (`EFECTIVO`, `CUENTA_BANCARIA`)
+- [ ] Create `AuditAction` enum (`CREATED`, `MODIFIED`, `DELETED`)
+- [ ] Create `Bank` entity
+- [ ] Create `BankAccount` entity (relationship: `Bank`)
+- [ ] Create `Payment` entity (relationships: `Invoice`, `BankAccount`, `Employee`)
+- [ ] Create `PaymentAuditLog` entity (relationships: `Payment`, `Employee`) — does NOT extend `BaseEntity`
+- [ ] Create `BankRepository` with method: `findAllByOrderByNameAsc`
+- [ ] Create `BankAccountRepository` with methods: `findAllByOrderByAliasAsc`, `findWithBankById`, `findByBankId`
+- [ ] Create `PaymentRepository` with methods: `findByInvoiceIdOrderByPaymentDateDesc`, `findWithDetailsById`, `sumAmountByInvoiceId` (custom `@Query`)
+- [ ] Create `PaymentAuditLogRepository` with method: `findByPaymentIdOrderByCreatedAtDesc`
+- [ ] Create `PaymentRequest` record with Jakarta Validation annotations (`@NotNull`, `@DecimalMin`, `@Digits`, `@Size`)
+- [ ] Create `BankAccountRequest` record with Jakarta Validation annotations (`@NotNull`, `@NotBlank`, `@Size`)
+- [ ] Create `PaymentResponse` record (payment history grid DTO)
+- [ ] Create `PaymentSummaryResponse` record (totalServices, totalProducts, taxAmount, discountAmount, total, totalPaid, remaining)
+- [ ] Create `BankAccountResponse` record
+- [ ] Create `BankResponse` record
+- [ ] Create `PaymentMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
+  - [ ] `toResponse(Payment)` → `PaymentResponse`
+  - [ ] `toEntity(PaymentRequest)` → `Payment`
+- [ ] Create `BankAccountMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
+  - [ ] `toResponse(BankAccount)` → `BankAccountResponse`
+  - [ ] `toBankResponse(Bank)` → `BankResponse`
+  - [ ] `toEntity(BankAccountRequest)` → `BankAccount`
+- [ ] Create `PaymentService` interface
+- [ ] Create `PaymentServiceImpl` implementation
+  - [ ] `getByInvoiceId(Long)` — list payments for an invoice
+  - [ ] `getById(Long)` — single payment detail
+  - [ ] `getSummary(Long)` — calculate payment summary (services total, products total, tax, discount, total, paid, remaining)
+  - [ ] `create(Long invoiceId, PaymentRequest)` — register payment, validate remaining > 0, validate amount ≤ remaining, validate bank account for CUENTA_BANCARIA, create audit log, auto-update invoice to PAGADA if fully paid
+  - [ ] `update(Long paymentId, PaymentRequest)` — modify payment, recalculate remaining excluding current, validate amount, create audit log, re-check invoice status
+  - [ ] `delete(Long paymentId, Long performedByEmployeeId)` — delete payment, create audit log before deletion, re-check invoice status (may revert to PENDIENTE)
+- [ ] Create `BankAccountService` interface
+- [ ] Create `BankAccountServiceImpl` implementation
+  - [ ] `getAll()` — list all bank accounts sorted by alias
+  - [ ] `getById(Long)` — single bank account
+  - [ ] `create(BankAccountRequest)` — create bank account
+  - [ ] `update(Long, BankAccountRequest)` — update bank account
+  - [ ] `delete(Long)` — delete bank account
+  - [ ] `getAllBanks()` — list all banks sorted by name
+  - [ ] `findEntityById(Long)` — internal method for PaymentService
+- [ ] Create `PaymentController` with all endpoints:
+  - [ ] `GET /api/invoices/{invoiceId}/payments` — list payments for invoice
+  - [ ] `GET /api/invoices/{invoiceId}/payments/summary` — payment summary
+  - [ ] `POST /api/invoices/{invoiceId}/payments` — register payment
+  - [ ] `PUT /api/invoices/{invoiceId}/payments/{paymentId}` — modify payment
+  - [ ] `DELETE /api/invoices/{invoiceId}/payments/{paymentId}?performedBy={employeeId}` — delete payment
+- [ ] Create `BankAccountController` with all endpoints:
+  - [ ] `GET /api/bank-accounts` — list all bank accounts
+  - [ ] `GET /api/bank-accounts/{id}` — get by ID
+  - [ ] `POST /api/bank-accounts` — create
+  - [ ] `PUT /api/bank-accounts/{id}` — update
+  - [ ] `DELETE /api/bank-accounts/{id}` — delete
+  - [ ] `GET /api/bank-accounts/banks` — list all banks
+- [ ] Verify backend compiles: `./mvnw clean compile`
+- [ ] Verify backend starts: `./mvnw clean spring-boot:run`
+
+### 8.2 Frontend
+
+- [ ] Create types file `src/types/payment.ts` (`PaymentType`, `AuditAction`, `PaymentRequest`, `PaymentResponse`, `PaymentSummaryResponse`, `BankAccountRequest`, `BankAccountResponse`, `BankResponse`)
+- [ ] Create API layer `src/api/payments.ts` (all payment API methods)
+- [ ] Create API layer `src/api/bankAccounts.ts` (all bank account API methods)
+- [ ] Create `usePayments` hook — list payments, create, update, delete with auto-refetch
+- [ ] Create `usePaymentSummary` hook — fetch and refetch payment summary
+- [ ] Create `useBankAccounts` hook — fetch bank accounts and banks
+- [ ] Create `PaymentsTab` component — replaces PaymentsTabPlaceholder in invoice detail, with summary, action buttons (cash/bank), and history grid
+- [ ] Create `PaymentSummary` component — read-only summary display (totalServices, totalProducts, tax, discount, total, totalPaid, remaining with color coding)
+- [ ] Create `CashPaymentDialog` component — modal for cash payment (date, remaining display, amount, payer name, confirmation alert)
+- [ ] Create `BankPaymentDialog` component — modal for bank payment (same as cash + bank account Autocomplete selector)
+- [ ] Create `PaymentHistoryGrid` component — DataGrid with columns (date/time, payer name, registered by, amount, payment type chip, edit/delete actions)
+- [ ] Replace `PaymentsTabPlaceholder` with `PaymentsTab` in invoice detail views
+- [ ] Verify frontend compiles
+- [ ] Verify frontend runs
+
+### 8.3 Business Rules Verification
+
+- [ ] Amount cannot exceed remaining balance
+- [ ] No payments allowed if remaining = 0 (buttons disabled)
+- [ ] CUENTA_BANCARIA payment type requires bankAccountId
+- [ ] Audit log created on every mutation (CREATED/MODIFIED/DELETED) with JSONB old/new value snapshots
+- [ ] Invoice auto-transitions to PAGADA when fully paid (totalPaid >= total)
+- [ ] Invoice reverts to PENDIENTE when payment deleted/modified and totalPaid < total
+- [ ] Payment amount must be > 0 (validated with @DecimalMin("0.01"))
+- [ ] Payment date defaults to today on frontend
+- [ ] Payer name is optional (client full name shown as placeholder)
+- [ ] Confirmation alert before submitting payment (create/edit)
+- [ ] Payments tab disabled during invoice creation (no invoiceId yet)
+- [ ] Audit log preserves records even after payment deletion (ON DELETE SET NULL)
+
+### 8.4 Testing
+
+- [ ] `PaymentServiceImplTest` — all service layer test methods (getByInvoiceId, getSummary, create cash/bank, amount validation, audit log creation, invoice auto-status, update, delete with status revert)
+- [ ] `BankAccountServiceImplTest` — all service layer test methods (CRUD, getAllBanks, findEntityById)
+- [ ] `PaymentControllerTest` — all controller layer test methods (list, summary, create, update, delete)
+- [ ] `BankAccountControllerTest` — all controller layer test methods (CRUD, banks list)
+- [ ] `PaymentMapperTest` — toResponse (with/without bank account), toEntity
+- [ ] `BankAccountMapperTest` — toResponse, toBankResponse, toEntity
+- [ ] `PaymentsTab.test.tsx` — summary rendering, action buttons, button disabling when fully paid, payment create/delete refreshes
+- [ ] `PaymentSummary.test.tsx` — displays all fields, remaining color coding, handles null summary
+- [ ] `CashPaymentDialog.test.tsx` — date defaulting, remaining display, amount clamping, payer name placeholder, confirmation alert, create/edit modes
+- [ ] `BankPaymentDialog.test.tsx` — same as cash tests plus bank account Autocomplete, required validation, edit mode pre-selection
+- [ ] `PaymentHistoryGrid.test.tsx` — column rendering, empty state, edit/delete actions, payment type chip
+- [ ] `usePayments.test.ts` — fetch, create/update/delete with refetch, loading/error states
+- [ ] `usePaymentSummary.test.ts` — fetch, refetch, loading/error states
+- [ ] `useBankAccounts.test.ts` — fetch accounts and banks, loading/error states

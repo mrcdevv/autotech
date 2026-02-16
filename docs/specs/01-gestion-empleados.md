@@ -286,22 +286,67 @@ public record RoleResponse(
 
 Location: `com.autotech.employee.dto.EmployeeMapper`
 
+> **Important**: Use a manual `@Component` class, NOT a MapStruct `@Mapper` interface. MapStruct's generated code is corrupted by VS Code's JDT background compiler, which cannot resolve Lombok-generated methods inherited from `BaseEntity`. See `backend/.agentic-rules/dto-rules.md` for details.
+
 ```java
-@Mapper(componentModel = "spring")
-public interface EmployeeMapper {
+@Component
+public class EmployeeMapper {
 
-    @Mapping(target = "roles", source = "roles")
-    EmployeeResponse toResponse(Employee entity);
+    public EmployeeResponse toResponse(Employee entity) {
+        if (entity == null) return null;
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "roles", ignore = true)  // roles assigned separately via service
-    Employee toEntity(EmployeeRequest request);
+        List<RoleResponse> roles = entity.getRoles().stream()
+                .map(this::toRoleResponse)
+                .toList();
 
-    RoleResponse toRoleResponse(Role role);
+        return new EmployeeResponse(
+                entity.getId(),
+                entity.getFirstName(),
+                entity.getLastName(),
+                entity.getDni(),
+                entity.getEmail(),
+                entity.getPhone(),
+                entity.getAddress(),
+                entity.getProvince(),
+                entity.getCountry(),
+                entity.getMaritalStatus(),
+                entity.getChildrenCount(),
+                entity.getEntryDate(),
+                entity.getStatus(),
+                roles,
+                entity.getCreatedAt(),
+                entity.getUpdatedAt()
+        );
+    }
 
-    List<EmployeeResponse> toResponseList(List<Employee> entities);
+    public Employee toEntity(EmployeeRequest request) {
+        if (request == null) return null;
+
+        return Employee.builder()
+                .firstName(request.firstName())
+                .lastName(request.lastName())
+                .dni(request.dni())
+                .email(request.email())
+                .phone(request.phone())
+                .address(request.address())
+                .province(request.province())
+                .country(request.country())
+                .maritalStatus(request.maritalStatus())
+                .childrenCount(request.childrenCount())
+                .entryDate(request.entryDate())
+                .status(request.status())
+                .build();
+    }
+
+    public RoleResponse toRoleResponse(Role role) {
+        if (role == null) return null;
+        return new RoleResponse(role.getId(), role.getName(), role.getDescription());
+    }
+
+    public List<EmployeeResponse> toResponseList(List<Employee> entities) {
+        if (entities == null) return null;
+        return entities.stream().map(this::toResponse).toList();
+    }
 }
 ```
 
@@ -873,3 +918,95 @@ Lazy loaded via `React.lazy(() => import("@/pages/EmployeesPage"))`.
 | `EmployeeForm.test.tsx` | Form renders all fields, validation errors shown (empty required fields, invalid email), submits correct payload |
 | `EmployeeFilters.test.tsx` | Filter inputs render, onChange callbacks fire with correct values |
 | `useEmployees.test.ts` | Hook fetches data, handles loading/error states, pagination changes trigger refetch |
+
+---
+
+## 8. Implementation Checklist
+
+> **Instructions for AI agents**: Check off each item as you complete it. Do not remove items. If an item is not applicable, mark it with `[x]` and add "(N/A)" next to it.
+
+### 8.1 Backend
+
+- [x] Create `EmployeeStatus` enum (`ACTIVO`, `INACTIVO`)
+- [x] Create `Employee` entity with all fields and `@ManyToMany` relationship to `Role`
+- [x] Create `EmployeeRepository` with all query methods (`existsByDni`, `existsByDniAndIdNot`, `findByDni`, `findWithRolesById`, `findByStatus`, `searchByDni`, `findByRoleId`, `findAll` with `@EntityGraph`)
+- [x] Create `EmployeeRequest` DTO (record) with Jakarta Validation annotations
+- [x] Create `EmployeeResponse` DTO (record)
+- [x] Create `RoleResponse` DTO (record, if not already existing)
+- [x] Create `EmployeeMapper` as a manual `@Component` class (NOT MapStruct)
+- [x] Create `EmployeeService` interface with all method signatures
+- [x] Create `EmployeeServiceImpl` with full implementations:
+  - [x] `getAll` — paginated list with roles
+  - [x] `getById` — single employee with roles
+  - [x] `create` — DNI uniqueness check, role resolution, save
+  - [x] `update` — find or 404, DNI uniqueness (excluding self), update fields and roles
+  - [x] `delete` — find or 404, delete
+  - [x] `searchByDni` — partial match search
+  - [x] `filterByStatus` — filter by `ACTIVO`/`INACTIVO`
+  - [x] `filterByRole` — filter by role ID
+  - [x] `assignRoles` — clear and reassign roles
+  - [x] `exportToExcel` — Apache POI `XSSFWorkbook` generation
+- [x] Add Apache POI dependency to `pom.xml` (if not present)
+- [x] Create `EmployeeController` with all endpoints:
+  - [x] `GET /api/employees` — paginated list
+  - [x] `GET /api/employees/{id}` — get by ID
+  - [x] `POST /api/employees` — create
+  - [x] `PUT /api/employees/{id}` — update
+  - [x] `DELETE /api/employees/{id}` — delete
+  - [x] `GET /api/employees/search?dni=...` — search by DNI
+  - [x] `GET /api/employees/filter/status?status=...` — filter by status
+  - [x] `GET /api/employees/filter/role?roleId=...` — filter by role
+  - [x] `PUT /api/employees/{id}/roles` — assign roles
+  - [x] `GET /api/employees/export/excel` — export to Excel
+- [ ] Verify backend compiles: `./mvnw clean compile`
+- [ ] Verify backend starts: `./mvnw clean spring-boot:run`
+
+### 8.2 Frontend
+
+- [x] Create types file (`src/features/employees/types.ts`) with `EmployeeStatus`, `RoleResponse`, `EmployeeResponse`, `EmployeeRequest`
+- [x] Create API layer (`src/api/employees.ts`) with all API calls
+- [x] Create `useEmployees` hook (paginated list, loading, error, refetch)
+- [x] Create `useEmployee` hook (single employee by ID)
+- [x] Create `EmployeesPage` (`src/pages/EmployeesPage.tsx`) with toolbar, filters, and DataGrid
+- [x] Create `EmployeeList` component with MUI `DataGrid`:
+  - [x] Columns: Documento, Nombre Completo, Telefono, Correo Electronico, Estado (Chip), Accion
+  - [x] Server-side pagination (`pageSize=12`)
+  - [x] Action buttons: view, edit, delete
+- [x] Create `EmployeeForm` component (MUI `Dialog`):
+  - [x] All form fields with proper labels (Spanish)
+  - [x] `DatePicker` for `entryDate`
+  - [x] Role multi-select from backend
+  - [x] Status select (`Activo`/`Inactivo`)
+  - [x] Client-side validation (required fields, email format)
+  - [x] Create and edit modes
+- [ ] Create `EmployeeFilters` component:
+  - [ ] DNI search input (debounced) — **PARTIAL: implemented but missing debounce**
+  - [x] Role dropdown filter
+  - [x] Status dropdown filter
+- [x] Register route `/empleados` with lazy loading
+- [x] Export to Excel button (blob download)
+- [ ] Verify frontend compiles: `npm run build` (or equivalent)
+- [ ] Verify frontend runs: `npm run dev` (or equivalent)
+
+### 8.3 Business Rules Verification
+
+- [x] DNI uniqueness enforced on create (409 if duplicate)
+- [x] DNI uniqueness enforced on update (excluding self)
+- [x] Email format validated (backend `@Email` + frontend)
+- [x] Status only accepts `ACTIVO` / `INACTIVO`
+- [x] At least one role required (`@NotEmpty` on `roleIds`)
+- [x] Invalid role IDs return 404
+- [x] Pagination defaults to 12 rows
+- [x] Excel export includes all employees with columns: DNI, Nombre Completo, Telefono, Email, Estado, Roles
+
+### 8.4 Testing
+
+- [ ] `EmployeeServiceImplTest` — unit tests with Mockito for all service methods
+- [ ] `EmployeeControllerTest` — `@WebMvcTest` for all endpoints
+- [ ] `EmployeeMapperTest` — mapper correctness tests
+- [ ] `EmployeeRepositoryTest` — `@DataJpaTest` for custom queries
+- [ ] `EmployeeIntegrationTest` — full CRUD flow via HTTP
+- [ ] `EmployeeList.test.tsx` — DataGrid renders, pagination, actions
+- [ ] `EmployeeForm.test.tsx` — form fields, validation, submit
+- [ ] `EmployeeFilters.test.tsx` — filter inputs and callbacks
+- [ ] `useEmployees.test.ts` — hook lifecycle and state management

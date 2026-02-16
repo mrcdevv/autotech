@@ -29,6 +29,12 @@ public int hashCode() {
 
 This pattern works correctly with JPA proxies and lazy loading.
 
+## Builder and BaseEntity
+
+When using `@Builder` on an entity that extends `BaseEntity`, the generated builder does NOT include `BaseEntity` fields (`id`, `createdAt`, `updatedAt`). This is expected -- those fields are managed by JPA (`@GeneratedValue`, `@PrePersist`, `@PreUpdate`). Never try to set them via the builder.
+
+When writing manual mappers (see `dto-rules.md`), use `entity.getId()` / `entity.getCreatedAt()` / `entity.getUpdatedAt()` directly -- these come from Lombok's `@Getter` on `BaseEntity` and are always available at runtime.
+
 ## Enum Fields
 
 Use `@Enumerated(EnumType.STRING)` always. Never use `EnumType.ORDINAL` (breaks if enum order changes).

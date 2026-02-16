@@ -1046,3 +1046,83 @@ export function useClient(id: number | null) {
 | renders search input | Search field visible |
 | debounces search input | Waits 300ms before calling API |
 | triggers search on input | Calls search API with query |
+
+---
+
+## 8. Implementation Checklist
+
+> **Instructions for AI agents**: Check off each item as you complete it. Do not remove items. If an item is not applicable, mark it with `[x]` and add "(N/A)" next to it.
+
+### 8.1 Backend
+
+- [ ] Create `ClientType` enum (`PERSONAL`, `EMPRESA`, `TEMPORAL`)
+- [ ] Create `Client` entity with all fields and `@OneToMany` relationship to vehicles
+- [ ] Create `ClientRepository` with `existsByDni`, `findByClientType`, `findByDniContaining`, `search`, and `findWithVehiclesById` query methods
+- [ ] Create `ClientRequest` record with Jakarta Validation annotations (conditional validation handled in service)
+- [ ] Create `ClientResponse` record
+- [ ] Create `ClientUpgradeRequest` record with Jakarta Validation annotations
+- [ ] Create `ClientMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
+- [ ] Create `ClientService` interface with methods: `getAll`, `getById`, `create`, `update`, `delete`, `search`, `findByClientType`, `upgradeToRegistered`, `exportToExcel`
+- [ ] Create `ClientServiceImpl` with full logic:
+  - [ ] `getAll` — paginated list
+  - [ ] `getById` — find or throw `ResourceNotFoundException`
+  - [ ] `create` — validate client type fields, validate DNI uniqueness, map and save
+  - [ ] `update` — find or throw, validate type fields, validate DNI uniqueness excluding self, update fields and save
+  - [ ] `delete` — check existence, check for dependent records (vehicles, orders, etc.), delete
+  - [ ] `search` — search by firstName, lastName, or DNI
+  - [ ] `findByClientType` — filter by type with pagination
+  - [ ] `upgradeToRegistered` — validate TEMPORAL status, validate target type, validate DNI uniqueness, update fields
+  - [ ] `exportToExcel` — generate `.xlsx` using Apache POI with all client data
+  - [ ] Private helpers: `validateClientType`, `validateDniUniqueness`, `validateDniUniquenessForUpdate`
+- [ ] Create `ClientController` with all endpoints:
+  - [ ] `GET /api/clients` — list all (paginated, sorted)
+  - [ ] `GET /api/clients/{id}` — get by ID
+  - [ ] `POST /api/clients` — create
+  - [ ] `PUT /api/clients/{id}` — update
+  - [ ] `DELETE /api/clients/{id}` — delete
+  - [ ] `GET /api/clients/search` — search by query
+  - [ ] `GET /api/clients/by-type` — filter by client type
+  - [ ] `PATCH /api/clients/{id}/upgrade` — upgrade TEMPORAL
+  - [ ] `GET /api/clients/export` — export to Excel
+- [ ] Add Apache POI dependency (`poi-ooxml`) to `pom.xml` if missing
+- [ ] Verify backend compiles: `./mvnw clean compile`
+- [ ] Verify backend starts: `./mvnw clean spring-boot:run`
+
+### 8.2 Frontend
+
+- [ ] Create types file: `src/features/clients/types/client.ts` (`ClientType`, `Client`, `ClientRequest`, `ClientUpgradeRequest`, `ClientResponse`)
+- [ ] Create API layer: `src/api/clients.ts` (all endpoints: `getAll`, `getById`, `create`, `update`, `delete`, `search`, `findByType`, `upgrade`, `exportToExcel`)
+- [ ] Create `useClients` hook (`src/features/clients/hooks/useClients.ts`)
+- [ ] Create `useClient` hook (`src/features/clients/hooks/useClient.ts`)
+- [ ] Create `ClientsPage` (`src/pages/ClientsPage.tsx`)
+- [ ] Create `ClientList` component with DataGrid, server-side pagination, multi-select delete
+- [ ] Create `ClientForm` component (Dialog for create/edit with dynamic field visibility by client type)
+- [ ] Create `ClientFilters` component (search TextField with debounce)
+- [ ] Create `ClientDetailDialog` component (read-only view with vehicle list)
+- [ ] Register route `/clientes` with lazy loading
+- [ ] Verify frontend compiles
+- [ ] Verify frontend runs
+
+### 8.3 Business Rules Verification
+
+- [ ] `firstName`, `lastName`, `phone` are always required for all client types
+- [ ] `dni`, `address`, `province`, `country` are required only for PERSONAL and EMPRESA
+- [ ] `commercialName`, `email`, `entryDate` are always optional
+- [ ] Form hides non-required fields for TEMPORAL clients
+- [ ] DNI uniqueness is enforced via partial unique index and service-level check
+- [ ] DNI uniqueness check on update excludes the current client's own DNI
+- [ ] Only TEMPORAL clients can be upgraded (to PERSONAL or EMPRESA)
+- [ ] Upgrade target type cannot be TEMPORAL
+- [ ] DNI uniqueness is validated during upgrade
+- [ ] TEMPORAL clients cannot have estimates or repair orders (they can have product-only invoices)
+- [ ] Clients with associated vehicles, repair orders, estimates, or invoices cannot be deleted
+- [ ] Multi-select deletion validates each client individually and shows blocked clients
+- [ ] Export to Excel exports ALL clients (not just current page) as `clientes.xlsx`
+
+### 8.4 Testing
+
+- [ ] `ClientServiceImplTest` — unit tests for all service methods (18 test methods)
+- [ ] `ClientControllerIT` — integration tests for all endpoints (9 test methods)
+- [ ] `ClientList.test.tsx` — DataGrid rendering, pagination, delete confirmation (6 tests)
+- [ ] `ClientForm.test.tsx` — create/edit form, field visibility, validation (8 tests)
+- [ ] `ClientFilters.test.tsx` — search input, debounce, API trigger (3 tests)
