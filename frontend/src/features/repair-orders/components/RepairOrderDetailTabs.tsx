@@ -4,12 +4,14 @@ import { Box, Tabs, Tab } from "@mui/material";
 
 import { GeneralInfoTab } from "./GeneralInfoTab";
 import { PlaceholderTab } from "./PlaceholderTab";
+import { InspectionsTab } from "@/features/inspections/InspectionsTab";
 
 import type { RepairOrderDetailResponse } from "../types";
 
 interface RepairOrderDetailTabsProps {
   order: RepairOrderDetailResponse | null;
   loading: boolean;
+  onRefetch: () => void;
 }
 
 const TAB_LABELS = [
@@ -20,7 +22,7 @@ const TAB_LABELS = [
   "Factura",
 ];
 
-export function RepairOrderDetailTabs({ order, loading }: RepairOrderDetailTabsProps) {
+export function RepairOrderDetailTabs({ order, loading, onRefetch }: RepairOrderDetailTabsProps) {
   const [activeTab, setActiveTab] = useState(0);
 
   return (
@@ -32,7 +34,14 @@ export function RepairOrderDetailTabs({ order, loading }: RepairOrderDetailTabsP
       </Tabs>
 
       {activeTab === 0 && <GeneralInfoTab order={order} loading={loading} />}
-      {activeTab === 1 && <PlaceholderTab />}
+      {activeTab === 1 && order && (
+        <InspectionsTab
+          repairOrderId={order.id}
+          reason={order.reason}
+          mechanicNotes={order.mechanicNotes}
+          onRepairOrderUpdated={onRefetch}
+        />
+      )}
       {activeTab === 2 && <PlaceholderTab />}
       {activeTab === 3 && <PlaceholderTab />}
       {activeTab === 4 && <PlaceholderTab />}

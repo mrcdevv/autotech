@@ -10,6 +10,12 @@ vi.mock("@mui/x-data-grid", () => ({
   DataGrid: () => <div data-testid="mock-datagrid" />,
 }));
 
+vi.mock("@/features/inspections/InspectionsTab", () => ({
+  InspectionsTab: () => <div data-testid="inspections-tab">InspectionsTab</div>,
+}));
+
+const mockRefetch = vi.fn();
+
 const sampleOrder: RepairOrderDetailResponse = {
   id: 1,
   title: "OT-1 Perez - ABC123",
@@ -39,7 +45,7 @@ const sampleOrder: RepairOrderDetailResponse = {
 
 describe("RepairOrderDetailTabs", () => {
   it("given order, when rendered, then shows 5 tab labels", () => {
-    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} />);
+    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />);
 
     expect(screen.getByText("Información General")).toBeInTheDocument();
     expect(screen.getByText("Inspecciones")).toBeInTheDocument();
@@ -49,24 +55,24 @@ describe("RepairOrderDetailTabs", () => {
   });
 
   it("given order, when first tab active, then shows GeneralInfoTab content", () => {
-    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} />);
+    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />);
 
     expect(screen.getByText("Datos del Cliente")).toBeInTheDocument();
     expect(screen.getByText("Datos del Vehículo")).toBeInTheDocument();
   });
 
-  it("given order, when clicking Inspecciones tab, then shows Próximamente", async () => {
+  it("given order, when clicking Inspecciones tab, then shows InspectionsTab", async () => {
     const user = userEvent.setup();
-    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} />);
+    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />);
 
     await user.click(screen.getByText("Inspecciones"));
 
-    expect(screen.getByText("Próximamente")).toBeInTheDocument();
+    expect(screen.getByTestId("inspections-tab")).toBeInTheDocument();
   });
 
   it("given order, when clicking Presupuesto tab, then shows Próximamente", async () => {
     const user = userEvent.setup();
-    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} />);
+    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />);
 
     await user.click(screen.getByText("Presupuesto"));
 

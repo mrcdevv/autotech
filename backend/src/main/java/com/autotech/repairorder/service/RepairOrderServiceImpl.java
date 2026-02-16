@@ -7,6 +7,7 @@ import com.autotech.client.repository.ClientRepository;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.employee.model.Employee;
 import com.autotech.employee.repository.EmployeeRepository;
+import com.autotech.repairorder.dto.NotesUpdateRequest;
 import com.autotech.repairorder.dto.RepairOrderDetailResponse;
 import com.autotech.repairorder.dto.RepairOrderMapper;
 import com.autotech.repairorder.dto.RepairOrderRequest;
@@ -281,6 +282,19 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         return repairOrderRepository.findByTagId(tagId).stream()
                 .map(repairOrderMapper::toResponse)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public RepairOrderDetailResponse updateNotes(Long id, NotesUpdateRequest request) {
+        RepairOrder order = repairOrderRepository.findWithDetailsById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", id));
+
+        order.setReason(request.reason());
+        order.setMechanicNotes(request.mechanicNotes());
+        repairOrderRepository.save(order);
+        log.info("Updated notes for repair order {}", id);
+        return getById(id);
     }
 
     private Set<Employee> resolveEmployees(List<Long> employeeIds) {
