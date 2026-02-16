@@ -23,7 +23,7 @@ Key capabilities:
 | Item | Value |
 |---|---|
 | Branch | `feature/autenticacion` |
-| Base | `main` |
+| Base | `develop` |
 | Commit style | Conventional commits (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`) |
 
 Example commits:

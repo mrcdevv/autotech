@@ -21,7 +21,7 @@ Key capabilities:
 | Item | Value |
 |---|---|
 | Branch | `feature/presupuestos` |
-| Base | `main` |
+| Base | `develop` |
 | Commit style | Conventional commits (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`) |
 
 Example commits:

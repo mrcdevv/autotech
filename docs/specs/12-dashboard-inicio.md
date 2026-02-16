@@ -22,7 +22,7 @@ The dashboard displays:
 | Item | Value |
 |---|---|
 | Branch | `feature/dashboard` |
-| Base | `main` |
+| Base | `develop` |
 | Commit style | Conventional commits (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`) |
 
 Example commits:
