@@ -19,6 +19,8 @@ const InspectionTemplateBuilderPage = lazy(() => import("@/pages/InspectionTempl
 const CommonProblemsPage = lazy(() => import("@/pages/CommonProblemsPage"));
 const EstimatesPage = lazy(() => import("@/pages/EstimatesPage"));
 const EstimateDetailPage = lazy(() => import("@/pages/EstimateDetailPage"));
+const InvoicesPage = lazy(() => import("@/pages/InvoicesPage"));
+const InvoiceDetailPage = lazy(() => import("@/pages/InvoiceDetailPage"));
 
 function Loading() {
   return (
@@ -49,6 +51,8 @@ export default function AppRoutes() {
         <Route path="/configuracion/problemas-comunes" element={<CommonProblemsPage />} />
         <Route path="/presupuestos" element={<EstimatesPage />} />
         <Route path="/presupuestos/:id" element={<EstimateDetailPage />} />
+        <Route path="/facturas" element={<InvoicesPage />} />
+        <Route path="/facturas/:id" element={<InvoiceDetailPage />} />
       </Routes>
     </Suspense>
   );

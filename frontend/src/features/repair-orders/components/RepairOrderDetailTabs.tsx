@@ -6,6 +6,7 @@ import { GeneralInfoTab } from "./GeneralInfoTab";
 import { PlaceholderTab } from "./PlaceholderTab";
 import { InspectionsTab } from "@/features/inspections/InspectionsTab";
 import { EstimateTab } from "@/features/estimates/components/EstimateTab";
+import { InvoiceTab } from "@/features/invoices/components/InvoiceTab";
 
 import type { RepairOrderDetailResponse } from "../types";
 
@@ -58,7 +59,7 @@ export function RepairOrderDetailTabs({ order, loading, onRefetch }: RepairOrder
         />
       )}
       {activeTab === 3 && <PlaceholderTab />}
-      {activeTab === 4 && <PlaceholderTab />}
+      {activeTab === 4 && order && <InvoiceTab repairOrderId={order.id} />}
     </Box>
   );
 }

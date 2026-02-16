@@ -3,6 +3,8 @@ package com.autotech.repairorder.controller;
 import com.autotech.common.dto.ApiResponse;
 import com.autotech.estimate.dto.EstimateDetailResponse;
 import com.autotech.estimate.service.EstimateService;
+import com.autotech.invoice.dto.InvoiceDetailResponse;
+import com.autotech.invoice.service.InvoiceService;
 import com.autotech.repairorder.dto.NotesUpdateRequest;
 import com.autotech.repairorder.dto.RepairOrderDetailResponse;
 import com.autotech.repairorder.dto.RepairOrderRequest;
@@ -35,6 +37,7 @@ public class RepairOrderController {
 
     private final RepairOrderService repairOrderService;
     private final EstimateService estimateService;
+    private final InvoiceService invoiceService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<RepairOrderResponse>>> getAll() {
@@ -135,5 +138,10 @@ public class RepairOrderController {
     @GetMapping("/{id}/estimate")
     public ResponseEntity<ApiResponse<EstimateDetailResponse>> getEstimateByRepairOrder(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(estimateService.getByRepairOrderId(id)));
+    }
+
+    @GetMapping("/{id}/invoice")
+    public ResponseEntity<ApiResponse<InvoiceDetailResponse>> getInvoiceByRepairOrder(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(invoiceService.getByRepairOrderId(id)));
     }
 }
