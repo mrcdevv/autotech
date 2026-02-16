@@ -91,11 +91,25 @@ interface TimeGridProps {
   onDelete: (id: number) => void;
 }
 
-function getTopAndHeight(apt: AppointmentResponse, startHour: number): { top: number; height: number } {
-  const start = dayjs(apt.startTime);
-  const end = dayjs(apt.endTime);
-  const startMinutes = start.hour() * 60 + start.minute() - startHour * 60;
-  const durationMinutes = end.diff(start, "minute");
+function appointmentOverlapsDay(apt: AppointmentResponse, dateStr: string): boolean {
+  const dayStart = dayjs(dateStr).startOf("day");
+  const dayEnd = dayStart.endOf("day");
+  const aptStart = dayjs(apt.startTime);
+  const aptEnd = dayjs(apt.endTime);
+  return aptStart.isBefore(dayEnd) && aptEnd.isAfter(dayStart);
+}
+
+function getTopAndHeight(apt: AppointmentResponse, dateStr: string, startHour: number, endHour: number): { top: number; height: number } {
+  const dayStart = dayjs(dateStr).hour(startHour).minute(0).second(0);
+  const dayEnd = dayjs(dateStr).hour(endHour).minute(0).second(0);
+  const aptStart = dayjs(apt.startTime);
+  const aptEnd = dayjs(apt.endTime);
+
+  const clampedStart = aptStart.isBefore(dayStart) ? dayStart : aptStart;
+  const clampedEnd = aptEnd.isAfter(dayEnd) ? dayEnd : aptEnd;
+
+  const startMinutes = clampedStart.hour() * 60 + clampedStart.minute() - startHour * 60;
+  const durationMinutes = clampedEnd.diff(clampedStart, "minute");
   return {
     top: (startMinutes / 60) * HOUR_HEIGHT,
     height: Math.max((durationMinutes / 60) * HOUR_HEIGHT, 20),
@@ -111,7 +125,7 @@ interface DayViewProps extends TimeGridProps {
 function DayView({ appointments, date, startHour, endHour, onAppointmentClick, ...cardProps }: DayViewProps) {
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
   const dateStr = dayjs(date).format("YYYY-MM-DD");
-  const dayAppts = appointments.filter((a) => dayjs(a.startTime).format("YYYY-MM-DD") === dateStr);
+  const dayAppts = appointments.filter((a) => appointmentOverlapsDay(a, dateStr));
 
   return (
     <Paper sx={{ p: 1, overflow: "auto" }}>
@@ -133,7 +147,7 @@ function DayView({ appointments, date, startHour, endHour, onAppointmentClick, .
           </Box>
         ))}
         {dayAppts.map((apt) => {
-          const { top, height } = getTopAndHeight(apt, startHour);
+          const { top, height } = getTopAndHeight(apt, dateStr, startHour, endHour);
           return (
             <Box key={apt.id} sx={{ position: "absolute", top, left: 55, right: 8, height, zIndex: 1 }}>
               <AppointmentCard appointment={apt} onClick={onAppointmentClick} {...cardProps} />
@@ -183,7 +197,7 @@ function WeekView({ appointments, date, startHour, endHour, onAppointmentClick, 
         </Box>
         {days.map((d, i) => {
           const dateStr = d.format("YYYY-MM-DD");
-          const dayAppts = appointments.filter((a) => dayjs(a.startTime).format("YYYY-MM-DD") === dateStr);
+          const dayAppts = appointments.filter((a) => appointmentOverlapsDay(a, dateStr));
           return (
             <Box
               key={i}
@@ -199,7 +213,7 @@ function WeekView({ appointments, date, startHour, endHour, onAppointmentClick, 
                 <Box key={h} sx={{ height: HOUR_HEIGHT, borderBottom: 1, borderColor: "divider" }} />
               ))}
               {dayAppts.map((apt) => {
-                const { top, height } = getTopAndHeight(apt, startHour);
+                const { top, height } = getTopAndHeight(apt, dateStr, startHour, endHour);
                 return (
                   <Box key={apt.id} sx={{ position: "absolute", top, left: 2, right: 2, height, zIndex: 1 }}>
                     <AppointmentCard appointment={apt} onClick={onAppointmentClick} {...cardProps} />
@@ -246,7 +260,7 @@ function MonthView({ appointments, date, onAppointmentClick, ...cardProps }: Mon
         ))}
         {cells.map((d, i) => {
           const dateStr = d.format("YYYY-MM-DD");
-          const dayAppts = appointments.filter((a) => dayjs(a.startTime).format("YYYY-MM-DD") === dateStr);
+          const dayAppts = appointments.filter((a) => appointmentOverlapsDay(a, dateStr));
           const isCurrentMonth = d.month() === dayjs(date).month();
           return (
             <Box
