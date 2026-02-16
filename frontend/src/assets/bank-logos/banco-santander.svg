@@ -1,4 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none">
   <rect width="40" height="40" rx="8" fill="#EC0000"/>
-  <text x="20" y="26" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="18" fill="white">S</text>
+  <g transform="translate(20,21)" fill="white">
+    <path d="M0-10 L2.5-2 L0 3 L-2.5-2Z"/>
+    <path d="M0-10 L2.5-2 L0 3 L-2.5-2Z" transform="rotate(72)"/>
+    <path d="M0-10 L2.5-2 L0 3 L-2.5-2Z" transform="rotate(144)"/>
+    <path d="M0-10 L2.5-2 L0 3 L-2.5-2Z" transform="rotate(216)"/>
+    <path d="M0-10 L2.5-2 L0 3 L-2.5-2Z" transform="rotate(288)"/>
+  </g>
 </svg>

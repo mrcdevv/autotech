@@ -1,4 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none">
   <rect width="40" height="40" rx="8" fill="#1B3A6B"/>
-  <text x="20" y="26" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="18" fill="white">BC</text>
+  <path d="M10 26 Q20 6 30 26" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M13 26 Q20 12 27 26" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <line x1="8" y1="26" x2="32" y2="26" stroke="white" stroke-width="2" stroke-linecap="round"/>
 </svg>

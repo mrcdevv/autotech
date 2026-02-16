@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none">
   <rect width="40" height="40" rx="8" fill="#3F37C9"/>
-  <text x="20" y="26" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="18" fill="white">U</text>
+  <path d="M12 12v10c0 5.5 3.6 9 8 9s8-3.5 8-9V12" fill="none" stroke="#4CC9F0" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M12 12v10c0 5.5 3.6 9 8 9s8-3.5 8-9V12" fill="none" stroke="#F72585" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="0 25 50"/>
 </svg>
