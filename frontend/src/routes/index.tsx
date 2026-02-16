@@ -10,6 +10,7 @@ const ProductsPage = lazy(() => import("@/pages/ProductsPage"));
 const CannedJobsPage = lazy(() => import("@/pages/CannedJobsPage"));
 const ClientsPage = lazy(() => import("@/pages/ClientsPage"));
 const VehiclesPage = lazy(() => import("@/pages/VehiclesPage"));
+const AppointmentsPage = lazy(() => import("@/pages/AppointmentsPage"));
 
 function Loading() {
   return (
@@ -30,6 +31,7 @@ export default function AppRoutes() {
         <Route path="/trabajos-enlatados" element={<CannedJobsPage />} />
         <Route path="/clientes" element={<ClientsPage />} />
         <Route path="/vehiculos" element={<VehiclesPage />} />
+        <Route path="/calendario" element={<AppointmentsPage />} />
       </Routes>
     </Suspense>
   );
