@@ -15,6 +15,7 @@ interface ClientFormProps {
     onClose: () => void;
     client: Client | null;
     onSuccess: () => void;
+    onClientCreated?: (client: Client) => void;
 }
 
 const initialFormState: ClientRequest = {
@@ -31,7 +32,7 @@ const initialFormState: ClientRequest = {
     entryDate: dayjs().format("YYYY-MM-DD"),
 };
 
-export default function ClientForm({ open, onClose, client, onSuccess }: ClientFormProps) {
+export default function ClientForm({ open, onClose, client, onSuccess, onClientCreated }: ClientFormProps) {
     const [formData, setFormData] = useState<ClientRequest>(initialFormState);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -83,7 +84,10 @@ export default function ClientForm({ open, onClose, client, onSuccess }: ClientF
             if (client) {
                 await clientsApi.update(client.id, formData);
             } else {
-                await clientsApi.create(formData);
+                const res = await clientsApi.create(formData);
+                if (onClientCreated) {
+                    onClientCreated(res.data.data);
+                }
             }
             onSuccess();
         } catch (err: any) {
