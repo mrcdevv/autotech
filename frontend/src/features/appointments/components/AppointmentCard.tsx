@@ -1,6 +1,7 @@
 import { Box, Typography } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import PersonIcon from "@mui/icons-material/Person";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import dayjs from "dayjs";
 
 import { AppointmentActions } from "./AppointmentActions";
@@ -9,7 +10,7 @@ import type { AppointmentResponse } from "@/types/appointment";
 
 interface AppointmentCardProps {
   appointment: AppointmentResponse;
-  compact?: boolean;
+  variant?: "block" | "chip";
   onClick: (appointment: AppointmentResponse) => void;
   onMarkClientArrived: (id: number, arrived: boolean) => void;
   onMarkVehicleArrived: (id: number) => void;
@@ -17,69 +18,89 @@ interface AppointmentCardProps {
   onDelete: (id: number) => void;
 }
 
+function getEventColor(appointment: AppointmentResponse): string {
+  return appointment.tags[0]?.color ?? "#1a73e8";
+}
+
 export function AppointmentCard({
   appointment,
-  compact = false,
+  variant = "block",
   onClick,
   onMarkClientArrived,
   onMarkVehicleArrived,
   onEdit,
   onDelete,
 }: AppointmentCardProps) {
-  const tagColor = appointment.tags[0]?.color ?? "#1976d2";
+  const color = getEventColor(appointment);
+  const title = appointment.title ?? `Cita #${appointment.id}`;
   const timeLabel = `${dayjs(appointment.startTime).format("HH:mm")} - ${dayjs(appointment.endTime).format("HH:mm")}`;
+
+  if (variant === "chip") {
+    return (
+      <Box
+        onClick={() => onClick(appointment)}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 0.5,
+          px: 0.5,
+          py: 0.25,
+          borderRadius: 0.5,
+          cursor: "pointer",
+          "&:hover": { bgcolor: "action.hover" },
+          overflow: "hidden",
+        }}
+      >
+        <FiberManualRecordIcon sx={{ fontSize: 8, color, flexShrink: 0 }} />
+        <Typography variant="caption" sx={{ fontSize: "0.7rem", color: "text.primary" }} noWrap>
+          <Box component="span" sx={{ color: "text.secondary", mr: 0.5 }}>
+            {dayjs(appointment.startTime).format("HH:mm")}
+          </Box>
+          {title}
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box
       sx={{
-        px: 1,
-        py: compact ? 0.25 : 0.5,
-        cursor: "pointer",
+        bgcolor: color,
+        color: "#fff",
         borderRadius: 1,
-        bgcolor: alpha(tagColor, 0.12),
-        borderLeft: 3,
-        borderColor: tagColor,
-        transition: "box-shadow 0.15s, background-color 0.15s",
-        "&:hover": {
-          boxShadow: 1,
-          bgcolor: alpha(tagColor, 0.2),
-        },
+        px: 1,
+        py: 0.5,
+        cursor: "pointer",
         overflow: "hidden",
         height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        transition: "filter 0.15s",
+        "&:hover": {
+          filter: "brightness(0.9)",
+        },
       }}
       onClick={() => onClick(appointment)}
     >
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 0.5 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <Box sx={{ minWidth: 0, flex: 1 }}>
           <Typography
-            variant="caption"
-            sx={{ fontWeight: 600, color: tagColor, lineHeight: 1.3 }}
+            sx={{ fontSize: "0.75rem", fontWeight: 600, lineHeight: 1.3 }}
             noWrap
           >
-            {compact ? timeLabel : (appointment.title ?? `Cita #${appointment.id}`)}
+            {title}
           </Typography>
-          {!compact && (
-            <Typography variant="caption" display="block" sx={{ color: "text.secondary", fontSize: "0.68rem" }} noWrap>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.25, opacity: 0.9 }}>
+            <AccessTimeIcon sx={{ fontSize: 11 }} />
+            <Typography sx={{ fontSize: "0.68rem", lineHeight: 1.2 }} noWrap>
               {timeLabel}
             </Typography>
-          )}
-          {!compact && appointment.clientFullName && (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.3, mt: 0.25 }}>
-              {appointment.clientArrived && (
-                <PersonIcon sx={{ fontSize: 12, color: "success.main" }} />
-              )}
-              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.68rem" }} noWrap>
-                {appointment.clientFullName}
-              </Typography>
-            </Box>
-          )}
-          {!compact && appointment.vehiclePlate && (
-            <Typography variant="caption" display="block" sx={{ color: "text.secondary", fontSize: "0.68rem" }} noWrap>
-              {appointment.vehiclePlate}
-            </Typography>
-          )}
+          </Box>
         </Box>
-        {!compact && (
+        <Box
+          onClick={(e) => e.stopPropagation()}
+          sx={{ "& .MuiIconButton-root": { color: alpha("#fff", 0.8), "&:hover": { color: "#fff" } } }}
+        >
           <AppointmentActions
             appointment={appointment}
             onMarkClientArrived={onMarkClientArrived}
@@ -87,8 +108,15 @@ export function AppointmentCard({
             onEdit={onEdit}
             onDelete={onDelete}
           />
-        )}
+        </Box>
       </Box>
+      {appointment.clientFullName && (
+        <Typography sx={{ fontSize: "0.68rem", opacity: 0.9, mt: 0.25 }} noWrap>
+          {appointment.clientArrived && "● "}
+          {appointment.clientFullName}
+          {appointment.vehiclePlate && ` — ${appointment.vehiclePlate}`}
+        </Typography>
+      )}
     </Box>
   );
 }
@@ -99,27 +127,27 @@ interface MultiDayBarProps {
 }
 
 export function MultiDayBar({ appointment, onClick }: MultiDayBarProps) {
-  const tagColor = appointment.tags[0]?.color ?? "#1976d2";
+  const color = getEventColor(appointment);
 
   return (
     <Box
       onClick={() => onClick(appointment)}
       sx={{
         px: 1,
-        py: 0.25,
         borderRadius: 1,
-        bgcolor: alpha(tagColor, 0.85),
+        bgcolor: color,
         color: "#fff",
         cursor: "pointer",
-        fontSize: "0.7rem",
-        fontWeight: 600,
+        fontSize: "0.72rem",
+        fontWeight: 500,
         whiteSpace: "nowrap",
         overflow: "hidden",
         textOverflow: "ellipsis",
-        lineHeight: 1.5,
-        transition: "background-color 0.15s",
+        lineHeight: "22px",
+        height: "100%",
+        transition: "filter 0.15s",
         "&:hover": {
-          bgcolor: tagColor,
+          filter: "brightness(0.9)",
         },
       }}
     >

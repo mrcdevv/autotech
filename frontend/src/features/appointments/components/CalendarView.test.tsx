@@ -50,7 +50,7 @@ describe("CalendarView", () => {
   it("given day view, when rendered, then shows time slots", () => {
     render(<CalendarView {...defaultProps} viewMode="day" />);
 
-    expect(screen.getByText("08:00")).toBeInTheDocument();
+    expect(screen.getByText("09:00")).toBeInTheDocument();
     expect(screen.getByText("10:00")).toBeInTheDocument();
   });
 
@@ -64,8 +64,8 @@ describe("CalendarView", () => {
     render(<CalendarView {...defaultProps} viewMode="month" />);
 
     expect(screen.getByText("15")).toBeInTheDocument();
-    expect(screen.getByText("Lun")).toBeInTheDocument();
-    expect(screen.getByText("10:00 - 11:00")).toBeInTheDocument();
+    expect(screen.getByText("LUN")).toBeInTheDocument();
+    expect(screen.getByText("Test Appointment")).toBeInTheDocument();
   });
 
   it("given day view with appointment, when rendered, then shows appointment card", () => {

@@ -42,16 +42,16 @@ describe("AppointmentCard", () => {
     render(<AppointmentCard {...defaultProps} />);
 
     expect(screen.getByText("Revisión general")).toBeInTheDocument();
-    expect(screen.getByText("Juan Perez")).toBeInTheDocument();
+    expect(screen.getByText(/Juan Perez/)).toBeInTheDocument();
   });
 
   it("given appointment with plate, when rendered, then shows plate", () => {
     render(<AppointmentCard {...defaultProps} />);
 
-    expect(screen.getByText("ABC123")).toBeInTheDocument();
+    expect(screen.getByText(/ABC123/)).toBeInTheDocument();
   });
 
-  it("given client arrived, when rendered, then shows person icon indicator", () => {
+  it("given client arrived, when rendered, then shows arrived indicator", () => {
     render(
       <AppointmentCard
         {...defaultProps}
@@ -59,7 +59,7 @@ describe("AppointmentCard", () => {
       />,
     );
 
-    expect(screen.getByTestId("PersonIcon")).toBeInTheDocument();
+    expect(screen.getByText(/● Juan Perez/)).toBeInTheDocument();
   });
 
   it("given appointment, when clicking card, then calls onClick", async () => {
