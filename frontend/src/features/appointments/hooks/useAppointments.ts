@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 
+import dayjs from "dayjs";
+
 import { appointmentsApi } from "@/api/appointments";
 
 import type {
@@ -22,8 +24,8 @@ export function useAppointments() {
     try {
       const { start, end } = getDateRange(currentDate, viewMode);
       const res = await appointmentsApi.getByDateRange(
-        start.toISOString(),
-        end.toISOString(),
+        dayjs(start).format("YYYY-MM-DDTHH:mm:ss"),
+        dayjs(end).format("YYYY-MM-DDTHH:mm:ss"),
         employeeFilter ?? undefined,
       );
       setAppointments(res.data.data);

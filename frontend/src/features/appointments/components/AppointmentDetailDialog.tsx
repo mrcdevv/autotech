@@ -31,7 +31,9 @@ export function AppointmentDetailDialog({ open, appointment, onClose }: Appointm
           <Box>
             <Typography variant="subtitle2" color="text.secondary">Fecha y hora</Typography>
             <Typography>
-              {dayjs(appointment.startTime).format("DD/MM/YYYY HH:mm")} — {dayjs(appointment.endTime).format("HH:mm")}
+              {dayjs(appointment.startTime).format("DD/MM/YYYY HH:mm")} — {dayjs(appointment.startTime).isSame(dayjs(appointment.endTime), "day")
+                ? dayjs(appointment.endTime).format("HH:mm")
+                : dayjs(appointment.endTime).format("DD/MM/YYYY HH:mm")}
             </Typography>
           </Box>
 
