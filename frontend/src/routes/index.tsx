@@ -3,7 +3,7 @@ import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router";
 import { CircularProgress, Box } from "@mui/material";
 
-const HomePage = lazy(() => import("@/pages/HomePage"));
+const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
 const EmployeesPage = lazy(() => import("@/pages/EmployeesPage"));
 const ServicesPage = lazy(() => import("@/pages/ServicesPage"));
 const ProductsPage = lazy(() => import("@/pages/ProductsPage"));
@@ -21,6 +21,7 @@ const EstimatesPage = lazy(() => import("@/pages/EstimatesPage"));
 const EstimateDetailPage = lazy(() => import("@/pages/EstimateDetailPage"));
 const InvoicesPage = lazy(() => import("@/pages/InvoicesPage"));
 const InvoiceDetailPage = lazy(() => import("@/pages/InvoiceDetailPage"));
+const ReportesPage = lazy(() => import("@/pages/ReportesPage"));
 const SettingsPage = lazy(() => import("@/pages/SettingsPage"));
 
 function Loading() {
@@ -35,7 +36,7 @@ export default function AppRoutes() {
   return (
     <Suspense fallback={<Loading />}>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<DashboardPage />} />
         <Route path="/empleados" element={<EmployeesPage />} />
         <Route path="/servicios" element={<ServicesPage />} />
         <Route path="/productos" element={<ProductsPage />} />
@@ -54,6 +55,7 @@ export default function AppRoutes() {
         <Route path="/presupuestos/:id" element={<EstimateDetailPage />} />
         <Route path="/facturas" element={<InvoicesPage />} />
         <Route path="/facturas/:id" element={<InvoiceDetailPage />} />
+        <Route path="/reportes" element={<ReportesPage />} />
         <Route path="/configuracion" element={<SettingsPage />} />
       </Routes>
     </Suspense>

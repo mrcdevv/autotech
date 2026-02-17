@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,4 +41,20 @@ public interface EstimateRepository extends JpaRepository<Estimate, Long> {
             @Param("plate") String plate,
             @Param("status") EstimateStatus status,
             Pageable pageable);
+
+    Long countByStatus(EstimateStatus status);
+
+    Long countByStatusAndCreatedAtBetween(EstimateStatus status, LocalDateTime start, LocalDateTime end);
+
+    Long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
+
+    @Query("""
+            SELECT e FROM Estimate e
+            JOIN FETCH e.client JOIN FETCH e.vehicle
+            WHERE e.status = :status AND e.createdAt < :threshold
+            ORDER BY e.createdAt ASC
+            """)
+    List<Estimate> findPendingOlderThan(
+            @Param("status") EstimateStatus status,
+            @Param("threshold") LocalDateTime threshold);
 }

@@ -47,4 +47,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             @Param("rangeStart") LocalDateTime rangeStart,
             @Param("rangeEnd") LocalDateTime rangeEnd
     );
+
+    Long countByStartTimeBetween(LocalDateTime start, LocalDateTime end);
 }
