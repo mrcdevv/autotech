@@ -12,11 +12,11 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState(0);
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Configuración
+    <Box sx={{ px: 3, py: 2.5 }}>
+      <Typography variant="h3" sx={{ mb: 2 }}>
+        Configuracion
       </Typography>
-      <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mt: 2, mb: 3 }}>
+      <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 2.5 }}>
         <Tab label="Pagos / Cuentas bancarias" />
         <Tab label="Fichas técnicas" />
         <Tab label="Calendario" />

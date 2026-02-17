@@ -7,12 +7,12 @@ export default function ReportesPage() {
   const [activeTab, setActiveTab] = useState(0);
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" sx={{ mb: 3 }}>
+    <Box sx={{ px: 3, py: 2.5 }}>
+      <Typography variant="h3" sx={{ mb: 2 }}>
         Reportes
       </Typography>
 
-      <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 3 }}>
+      <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 2.5 }}>
         <Tab label="Financiero" />
         <Tab label="Productividad" />
       </Tabs>

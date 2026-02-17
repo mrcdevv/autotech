@@ -76,8 +76,8 @@ export default function ProductsPage() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
+    <Box sx={{ px: 3, py: 2.5 }}>
+      <Typography variant="h3" sx={{ mb: 2 }}>
         Productos
       </Typography>
 

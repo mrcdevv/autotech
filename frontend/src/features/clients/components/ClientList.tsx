@@ -110,8 +110,8 @@ export default function ClientList() {
     };
 
     return (
-        <Box sx={{ p: 3 }}>
-            <Typography variant="h4" gutterBottom>Gestión de Clientes</Typography>
+        <Box sx={{ px: 3, py: 2.5 }}>
+            <Typography variant="h3" sx={{ mb: 2 }}>Clientes</Typography>
             <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center' }}>
                 <ClientFilters onSearch={setQuery} />
                 <Box sx={{ flexGrow: 1 }} />

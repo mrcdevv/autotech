@@ -92,12 +92,12 @@ export default function InvoicesPage() {
   };
 
   return (
-    <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
+    <Box sx={{ px: 3, py: 2.5 }}>
+      <Typography variant="h3" sx={{ mb: 2 }}>
         Facturas
       </Typography>
 
-      <Box display="flex" gap={2} mb={3} flexWrap="wrap" alignItems="center">
+      <Box display="flex" gap={2} mb={2.5} flexWrap="wrap" alignItems="center">
         <TextField
           placeholder="Buscar por nombre de cliente..."
           value={clientNameInput}

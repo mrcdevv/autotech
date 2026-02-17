@@ -1,4 +1,4 @@
-import { Box, CircularProgress, Paper, Typography } from "@mui/material";
+import { Box, CircularProgress, Typography } from "@mui/material";
 import dayjs from "dayjs";
 
 import { AppointmentCard, MultiDayBar } from "./AppointmentCard";
@@ -180,16 +180,16 @@ function DayView({ appointments, date, startHour, endHour, onAppointmentClick, .
   const timed = appointments.filter((a) => !isMultiDay(a) && overlapsDay(a, dateStr));
 
   return (
-    <Paper variant="outlined" sx={{ bgcolor: "background.paper", overflow: "auto" }}>
+    <Box sx={{ bgcolor: "background.paper", overflow: "auto", border: "1px solid", borderColor: "grey.200", borderRadius: 3 }}>
       {/* Header */}
-      <Box sx={{ display: "flex", borderBottom: 1, borderColor: "divider" }}>
+      <Box sx={{ display: "flex", borderBottom: 1, borderColor: "grey.200" }}>
         <Box sx={{ width: TIME_GUTTER, flexShrink: 0 }} />
         <DayHeader d={dayjs(date)} />
       </Box>
 
       {/* All-day */}
       {allDay.length > 0 && (
-        <Box sx={{ display: "flex", borderBottom: 1, borderColor: "divider" }}>
+        <Box sx={{ display: "flex", borderBottom: 1, borderColor: "grey.200" }}>
           <Box sx={{ width: TIME_GUTTER, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", pr: 1 }}>
             <Typography sx={{ fontSize: "0.65rem", color: "text.disabled" }}>todo el día</Typography>
           </Box>
@@ -204,9 +204,9 @@ function DayView({ appointments, date, startHour, endHour, onAppointmentClick, .
       {/* Time grid */}
       <Box sx={{ display: "flex" }}>
         <TimeGutter hours={hours} />
-        <Box sx={{ flex: 1, position: "relative", minHeight: hours.length * HOUR_HEIGHT, borderLeft: 1, borderColor: "divider" }}>
+        <Box sx={{ flex: 1, position: "relative", minHeight: hours.length * HOUR_HEIGHT, borderLeft: 1, borderColor: "grey.200" }}>
           {hours.map((h) => (
-            <Box key={h} sx={{ height: HOUR_HEIGHT, borderBottom: 1, borderColor: "divider" }} />
+            <Box key={h} sx={{ height: HOUR_HEIGHT, borderBottom: 1, borderColor: "grey.200" }} />
           ))}
           {timed.map((apt) => {
             const { top, height } = getTopAndHeight(apt, dateStr, startHour, endHour);
@@ -218,7 +218,7 @@ function DayView({ appointments, date, startHour, endHour, onAppointmentClick, .
           })}
         </Box>
       </Box>
-    </Paper>
+    </Box>
   );
 }
 
@@ -240,9 +240,9 @@ function WeekView({ appointments, date, startHour, endHour, onAppointmentClick, 
   const allDayRows = layoutMultiDayRows(multiDay, days);
 
   return (
-    <Paper variant="outlined" sx={{ bgcolor: "background.paper", overflow: "auto" }}>
+    <Box sx={{ bgcolor: "background.paper", overflow: "auto", border: "1px solid", borderColor: "grey.200", borderRadius: 3 }}>
       {/* Header row */}
-      <Box sx={{ display: "flex", borderBottom: 1, borderColor: "divider" }}>
+      <Box sx={{ display: "flex", borderBottom: 1, borderColor: "grey.200" }}>
         <Box sx={{ width: TIME_GUTTER, flexShrink: 0 }} />
         {days.map((d, i) => (
           <DayHeader key={i} d={d} />
@@ -251,7 +251,7 @@ function WeekView({ appointments, date, startHour, endHour, onAppointmentClick, 
 
       {/* All-day section */}
       {allDayRows.length > 0 && (
-        <Box sx={{ display: "flex", borderBottom: 1, borderColor: "divider" }}>
+        <Box sx={{ display: "flex", borderBottom: 1, borderColor: "grey.200" }}>
           <Box sx={{ width: TIME_GUTTER, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", pr: 1 }}>
             <Typography sx={{ fontSize: "0.65rem", color: "text.disabled" }}>todo el día</Typography>
           </Box>
@@ -290,13 +290,13 @@ function WeekView({ appointments, date, startHour, endHour, onAppointmentClick, 
                 flex: 1,
                 position: "relative",
                 borderLeft: 1,
-                borderColor: "divider",
+                borderColor: "grey.200",
                 minHeight: hours.length * HOUR_HEIGHT,
                 bgcolor: isToday ? "rgba(26,115,232,0.04)" : "transparent",
               }}
             >
               {hours.map((h) => (
-                <Box key={h} sx={{ height: HOUR_HEIGHT, borderBottom: 1, borderColor: "divider" }} />
+                <Box key={h} sx={{ height: HOUR_HEIGHT, borderBottom: 1, borderColor: "grey.200" }} />
               ))}
               {dayAppts.map((apt) => {
                 const { top, height } = getTopAndHeight(apt, dateStr, startHour, endHour);
@@ -310,7 +310,7 @@ function WeekView({ appointments, date, startHour, endHour, onAppointmentClick, 
           );
         })}
       </Box>
-    </Paper>
+    </Box>
   );
 }
 
@@ -374,9 +374,9 @@ function MonthView({ appointments, date, onAppointmentClick, ...cardProps }: Mon
   const singleDay = appointments.filter((a) => !isMultiDay(a));
 
   return (
-    <Paper variant="outlined" sx={{ bgcolor: "background.paper" }}>
+    <Box sx={{ bgcolor: "background.paper", border: "1px solid", borderColor: "grey.200", borderRadius: 3 }}>
       {/* Day headers */}
-      <Box sx={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", borderBottom: 1, borderColor: "divider" }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", borderBottom: 1, borderColor: "grey.200" }}>
         {DAY_NAMES.map((name) => (
           <Box key={name} sx={{ textAlign: "center", py: 1 }}>
             <Typography sx={{ fontSize: "0.7rem", fontWeight: 500, color: "text.disabled", letterSpacing: 0.5 }}>
@@ -401,7 +401,7 @@ function MonthView({ appointments, date, onAppointmentClick, ...cardProps }: Mon
               display: "grid",
               gridTemplateColumns: "repeat(7, 1fr)",
               borderBottom: weekIdx < weeks - 1 ? 1 : 0,
-              borderColor: "divider",
+              borderColor: "grey.200",
               position: "relative",
             }}
           >
@@ -436,7 +436,7 @@ function MonthView({ appointments, date, onAppointmentClick, ...cardProps }: Mon
                   sx={{
                     minHeight: 100 + multiH,
                     borderRight: colIdx < 6 ? 1 : 0,
-                    borderColor: "divider",
+                    borderColor: "grey.200",
                     pt: 0.5,
                     px: 0.5,
                   }}
@@ -485,6 +485,6 @@ function MonthView({ appointments, date, onAppointmentClick, ...cardProps }: Mon
           </Box>
         );
       })}
-    </Paper>
+    </Box>
   );
 }

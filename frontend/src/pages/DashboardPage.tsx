@@ -29,11 +29,12 @@ export default function DashboardPage() {
   if (!summary) return null;
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h4">Inicio</Typography>
+    <Box sx={{ px: 3, py: 2.5 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2.5 }}>
+        <Typography variant="h3">Inicio</Typography>
         <Button
           variant="outlined"
+          size="small"
           startIcon={<AssessmentIcon />}
           onClick={() => navigate("/reportes")}
         >
@@ -41,7 +42,7 @@ export default function DashboardPage() {
         </Button>
       </Box>
 
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={2} sx={{ mb: 2.5 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <KpiCard title="Vehículos en taller" value={summary.openRepairOrderCount} icon={<DirectionsCarIcon color="primary" fontSize="large" />} />
         </Grid>
@@ -56,7 +57,7 @@ export default function DashboardPage() {
         </Grid>
       </Grid>
 
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={2} sx={{ mb: 2.5 }}>
         <Grid size={{ xs: 12, md: 4 }}>
           <StatusBreakdownCard statusCounts={summary.repairOrderStatusCounts} />
         </Grid>

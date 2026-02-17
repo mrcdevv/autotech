@@ -45,12 +45,12 @@ export default function RepairOrdersPage() {
   );
 
   return (
-    <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        Órdenes de Trabajo
+    <Box sx={{ px: 3, py: 2.5 }}>
+      <Typography variant="h3" sx={{ mb: 2 }}>
+        Ordenes de trabajo
       </Typography>
 
-      <Box display="flex" gap={2} mb={3} flexWrap="wrap" alignItems="center">
+      <Box display="flex" gap={2} mb={2.5} flexWrap="wrap" alignItems="center">
         <TextField
           placeholder="Buscar por título, nombre, patente, marca, modelo..."
           value={searchQuery}

@@ -11,9 +11,9 @@ export default function CreateRepairOrderPage() {
   };
 
   return (
-    <Box>
-      <Typography variant="h4" sx={{ mb: 2 }}>
-        Nueva Orden de Trabajo
+    <Box sx={{ px: 3, py: 2.5 }}>
+      <Typography variant="h3" sx={{ mb: 2 }}>
+        Nueva orden de trabajo
       </Typography>
       <CreateRepairOrderForm onSuccess={handleSuccess} />
     </Box>

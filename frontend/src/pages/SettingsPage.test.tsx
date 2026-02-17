@@ -24,7 +24,7 @@ describe("SettingsPage", () => {
   it("given page, when rendered, then shows title and 4 tabs", () => {
     render(<SettingsPage />);
 
-    expect(screen.getByText("Configuración")).toBeInTheDocument();
+    expect(screen.getByText("Configuracion")).toBeInTheDocument();
     expect(screen.getByText("Pagos / Cuentas bancarias")).toBeInTheDocument();
     expect(screen.getByText("Fichas técnicas")).toBeInTheDocument();
     expect(screen.getByText("Calendario")).toBeInTheDocument();

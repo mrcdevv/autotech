@@ -199,9 +199,9 @@ export default function InspectionTemplateBuilder() {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        {isEditing ? "Editar Plantilla de Inspección" : "Nueva Plantilla de Inspección"}
+    <Box sx={{ px: 3, py: 2.5 }}>
+      <Typography variant="h3" sx={{ mb: 2 }}>
+        {isEditing ? "Editar plantilla de inspeccion" : "Nueva plantilla de inspeccion"}
       </Typography>
 
       <TextField

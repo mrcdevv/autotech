@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 
 import { Routes, Route } from "react-router";
 import { CircularProgress, Box } from "@mui/material";
+import MainLayout from "@/layouts/MainLayout";
 
 const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
 const EmployeesPage = lazy(() => import("@/pages/EmployeesPage"));
@@ -36,27 +37,29 @@ export default function AppRoutes() {
   return (
     <Suspense fallback={<Loading />}>
       <Routes>
-        <Route path="/" element={<DashboardPage />} />
-        <Route path="/empleados" element={<EmployeesPage />} />
-        <Route path="/servicios" element={<ServicesPage />} />
-        <Route path="/productos" element={<ProductsPage />} />
-        <Route path="/trabajos-enlatados" element={<CannedJobsPage />} />
-        <Route path="/clientes" element={<ClientsPage />} />
-        <Route path="/vehiculos" element={<VehiclesPage />} />
-        <Route path="/calendario" element={<AppointmentsPage />} />
-        <Route path="/ordenes-trabajo" element={<RepairOrdersPage />} />
-        <Route path="/ordenes-trabajo/nueva" element={<CreateRepairOrderPage />} />
-        <Route path="/ordenes-trabajo/:id" element={<RepairOrderDetailPage />} />
-        <Route path="/configuracion/plantillas-inspeccion" element={<InspectionTemplateListPage />} />
-        <Route path="/configuracion/plantillas-inspeccion/nueva" element={<InspectionTemplateBuilderPage />} />
-        <Route path="/configuracion/plantillas-inspeccion/:id/editar" element={<InspectionTemplateBuilderPage />} />
-        <Route path="/configuracion/problemas-comunes" element={<CommonProblemsPage />} />
-        <Route path="/presupuestos" element={<EstimatesPage />} />
-        <Route path="/presupuestos/:id" element={<EstimateDetailPage />} />
-        <Route path="/facturas" element={<InvoicesPage />} />
-        <Route path="/facturas/:id" element={<InvoiceDetailPage />} />
-        <Route path="/reportes" element={<ReportesPage />} />
-        <Route path="/configuracion" element={<SettingsPage />} />
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/empleados" element={<EmployeesPage />} />
+          <Route path="/servicios" element={<ServicesPage />} />
+          <Route path="/productos" element={<ProductsPage />} />
+          <Route path="/trabajos-enlatados" element={<CannedJobsPage />} />
+          <Route path="/clientes" element={<ClientsPage />} />
+          <Route path="/vehiculos" element={<VehiclesPage />} />
+          <Route path="/calendario" element={<AppointmentsPage />} />
+          <Route path="/ordenes-trabajo" element={<RepairOrdersPage />} />
+          <Route path="/ordenes-trabajo/nueva" element={<CreateRepairOrderPage />} />
+          <Route path="/ordenes-trabajo/:id" element={<RepairOrderDetailPage />} />
+          <Route path="/configuracion/plantillas-inspeccion" element={<InspectionTemplateListPage />} />
+          <Route path="/configuracion/plantillas-inspeccion/nueva" element={<InspectionTemplateBuilderPage />} />
+          <Route path="/configuracion/plantillas-inspeccion/:id/editar" element={<InspectionTemplateBuilderPage />} />
+          <Route path="/configuracion/problemas-comunes" element={<CommonProblemsPage />} />
+          <Route path="/presupuestos" element={<EstimatesPage />} />
+          <Route path="/presupuestos/:id" element={<EstimateDetailPage />} />
+          <Route path="/facturas" element={<InvoicesPage />} />
+          <Route path="/facturas/:id" element={<InvoiceDetailPage />} />
+          <Route path="/reportes" element={<ReportesPage />} />
+          <Route path="/configuracion" element={<SettingsPage />} />
+        </Route>
       </Routes>
     </Suspense>
   );

@@ -5,11 +5,12 @@ import {
   Autocomplete,
   Box,
   Button,
+  Chip,
   IconButton,
+  MenuItem,
+  Select,
   Snackbar,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
@@ -26,6 +27,12 @@ import { AppointmentDetailDialog } from "@/features/appointments/components/Appo
 
 import type { AppointmentResponse, CalendarViewMode } from "@/types/appointment";
 import type { EmployeeResponse } from "@/features/employees/types";
+
+const VIEW_LABELS: Record<CalendarViewMode, string> = {
+  day: "Vista diaria",
+  week: "Vista semanal",
+  month: "Vista mensual",
+};
 
 export default function AppointmentsPage() {
   const {
@@ -79,15 +86,18 @@ export default function AppointmentsPage() {
     }
   };
 
-  const getDateLabel = (): string => {
+  const getNavigationLabel = (): string => {
     const d = dayjs(currentDate);
     switch (viewMode) {
       case "day":
-        return d.format("dddd DD/MM/YYYY");
+        return d.format("DD [de] MMMM YYYY");
       case "week": {
         const weekStart = d.startOf("week");
         const weekEnd = weekStart.add(6, "day");
-        return `${weekStart.format("DD/MM")} — ${weekEnd.format("DD/MM/YYYY")}`;
+        if (weekStart.month() === weekEnd.month()) {
+          return `${weekStart.format("DD")} - ${weekEnd.format("DD [de] MMMM YYYY")}`;
+        }
+        return `${weekStart.format("DD MMM")} - ${weekEnd.format("DD MMM YYYY")}`;
       }
       case "month":
         return d.format("MMMM YYYY");
@@ -136,61 +146,86 @@ export default function AppointmentsPage() {
   const businessStartHour = config?.startTime ? parseInt(config.startTime.split(":")[0] ?? "8", 10) : 8;
   const businessEndHour = config?.endTime ? parseInt(config.endTime.split(":")[0] ?? "20", 10) : 20;
 
-  return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Calendario
-      </Typography>
+  const todayLabel = dayjs().format("dddd, DD MMM, YYYY");
 
+  return (
+    <Box sx={{ px: 3, py: 2.5 }}>
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
 
-      <Box sx={{ display: "flex", gap: 2, mb: 2, alignItems: "center", flexWrap: "wrap" }}>
-        <ToggleButtonGroup
-          value={viewMode}
-          exclusive
-          onChange={(_, v: CalendarViewMode | null) => v && setViewMode(v)}
-          size="small"
-        >
-          <ToggleButton value="day">Día</ToggleButton>
-          <ToggleButton value="week">Semana</ToggleButton>
-          <ToggleButton value="month">Mes</ToggleButton>
-        </ToggleButtonGroup>
-
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          <IconButton size="small" onClick={() => navigateDate(-1)}>
-            <ChevronLeftIcon />
-          </IconButton>
-          <Typography variant="body2" sx={{ minWidth: 160, textAlign: "center" }}>
-            {getDateLabel()}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Typography variant="h3" sx={{ textTransform: "capitalize" }}>
+            {todayLabel}
           </Typography>
-          <IconButton size="small" onClick={() => navigateDate(1)}>
-            <ChevronRightIcon />
-          </IconButton>
-          <Button size="small" onClick={() => setCurrentDate(new Date())}>
-            Hoy
+          <Chip
+            label="Hoy"
+            size="small"
+            variant="outlined"
+            onClick={() => setCurrentDate(new Date())}
+            sx={{ fontWeight: 500, cursor: "pointer" }}
+          />
+        </Box>
+        <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+          <Autocomplete
+            options={employees}
+            getOptionLabel={(o) => `${o.firstName} ${o.lastName}`}
+            value={employees.find((e) => e.id === employeeFilter) ?? null}
+            onChange={(_e, v) => setEmployeeFilter(v?.id ?? null)}
+            isOptionEqualToValue={(opt, val) => opt.id === val.id}
+            renderInput={(params) => (
+              <TextField {...params} placeholder="Filtrar empleado" size="small" sx={{ width: 200 }} />
+            )}
+            size="small"
+            sx={{ width: 200 }}
+          />
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setFormOpen(true)}
+          >
+            Nueva cita
           </Button>
         </Box>
+      </Box>
 
-        <Autocomplete
-          options={employees}
-          getOptionLabel={(o) => `${o.firstName} ${o.lastName}`}
-          value={employees.find((e) => e.id === employeeFilter) ?? null}
-          onChange={(_e, v) => setEmployeeFilter(v?.id ?? null)}
-          isOptionEqualToValue={(opt, val) => opt.id === val.id}
-          renderInput={(params) => (
-            <TextField {...params} label="Filtrar por empleado" size="small" sx={{ minWidth: 220 }} />
-          )}
+      {/* Navigation row */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          <IconButton size="small" onClick={() => navigateDate(-1)} sx={{ color: "text.secondary" }}>
+            <ChevronLeftIcon fontSize="small" />
+          </IconButton>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 600,
+              color: "text.primary",
+              minWidth: 200,
+              textAlign: "center",
+              textTransform: "capitalize",
+              fontSize: "1.1rem",
+            }}
+          >
+            {getNavigationLabel()}
+          </Typography>
+          <IconButton size="small" onClick={() => navigateDate(1)} sx={{ color: "text.secondary" }}>
+            <ChevronRightIcon fontSize="small" />
+          </IconButton>
+        </Box>
+
+        <Select
+          value={viewMode}
+          onChange={(e) => setViewMode(e.target.value as CalendarViewMode)}
           size="small"
-          sx={{ minWidth: 220 }}
-        />
-
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setFormOpen(true)}>
-          Nueva cita
-        </Button>
+          sx={{ minWidth: 140, fontSize: "0.85rem" }}
+        >
+          <MenuItem value="day">{VIEW_LABELS.day}</MenuItem>
+          <MenuItem value="week">{VIEW_LABELS.week}</MenuItem>
+          <MenuItem value="month">{VIEW_LABELS.month}</MenuItem>
+        </Select>
       </Box>
 
       <CalendarView

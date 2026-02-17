@@ -71,9 +71,9 @@ export default function InspectionTemplateListPage() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Plantillas de Inspección
+    <Box sx={{ px: 3, py: 2.5 }}>
+      <Typography variant="h3" sx={{ mb: 2 }}>
+        Plantillas de inspeccion
       </Typography>
 
       {error && (
