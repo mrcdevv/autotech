@@ -26,7 +26,7 @@ public class TagServiceImpl implements TagService {
     @Transactional(readOnly = true)
     public List<TagResponse> getAll() {
         log.debug("Fetching all tags");
-        return tagMapper.toResponseList(tagRepository.findAll());
+        return tagMapper.toResponseList(tagRepository.findAllByOrderByNameAsc());
     }
 
     @Override
@@ -55,6 +55,9 @@ public class TagServiceImpl implements TagService {
     public TagResponse update(Long id, TagRequest request) {
         Tag entity = tagRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tag", id));
+        if (tagRepository.existsByNameAndIdNot(request.name(), id)) {
+            throw new DuplicateResourceException("Ya existe una etiqueta con el nombre: " + request.name());
+        }
         entity.setName(request.name());
         entity.setColor(request.color());
         Tag saved = tagRepository.save(entity);

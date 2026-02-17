@@ -21,6 +21,7 @@ const EstimatesPage = lazy(() => import("@/pages/EstimatesPage"));
 const EstimateDetailPage = lazy(() => import("@/pages/EstimateDetailPage"));
 const InvoicesPage = lazy(() => import("@/pages/InvoicesPage"));
 const InvoiceDetailPage = lazy(() => import("@/pages/InvoiceDetailPage"));
+const SettingsPage = lazy(() => import("@/pages/SettingsPage"));
 
 function Loading() {
   return (
@@ -53,6 +54,7 @@ export default function AppRoutes() {
         <Route path="/presupuestos/:id" element={<EstimateDetailPage />} />
         <Route path="/facturas" element={<InvoicesPage />} />
         <Route path="/facturas/:id" element={<InvoiceDetailPage />} />
+        <Route path="/configuracion" element={<SettingsPage />} />
       </Routes>
     </Suspense>
   );
