@@ -7,7 +7,10 @@ import {
   Autocomplete,
   Alert,
   CircularProgress,
+  Paper,
+  Typography,
 } from "@mui/material";
+import Grid from "@mui/material/Grid2";
 
 import { clientsApi } from "@/api/clients";
 import { vehiclesApi } from "@/api/vehicles";
@@ -53,6 +56,9 @@ export function CreateRepairOrderForm({ onSuccess }: CreateRepairOrderFormProps)
     }
     setSelectedVehicleId(null);
   }, [selectedClientId]);
+
+  const selectedClient = clients.find((c) => c.id === selectedClientId) ?? null;
+  const selectedVehicle = vehicles.find((v) => v.id === selectedVehicleId) ?? null;
 
   const handleSubmit = async () => {
     if (!selectedClientId || !selectedVehicleId) return;
@@ -108,6 +114,52 @@ export function CreateRepairOrderForm({ onSuccess }: CreateRepairOrderFormProps)
         </Button>
       </Box>
 
+      {selectedClient && (
+        <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+            Datos del cliente
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Nombre completo"
+                value={`${selectedClient.firstName} ${selectedClient.lastName}`}
+                slotProps={{ input: { readOnly: true } }}
+                fullWidth
+                size="small"
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="DNI"
+                value={selectedClient.dni || "—"}
+                slotProps={{ input: { readOnly: true } }}
+                fullWidth
+                size="small"
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Teléfono"
+                value={selectedClient.phone}
+                slotProps={{ input: { readOnly: true } }}
+                fullWidth
+                size="small"
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Email"
+                value={selectedClient.email || "—"}
+                slotProps={{ input: { readOnly: true } }}
+                fullWidth
+                size="small"
+              />
+            </Grid>
+          </Grid>
+        </Paper>
+      )}
+
       <Box display="flex" alignItems="center" gap={1} mb={2}>
         <Autocomplete
           options={vehicles}
@@ -135,6 +187,61 @@ export function CreateRepairOrderForm({ onSuccess }: CreateRepairOrderFormProps)
           Nuevo vehículo
         </Button>
       </Box>
+
+      {selectedVehicle && (
+        <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+            Datos del vehículo
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Patente"
+                value={selectedVehicle.plate}
+                slotProps={{ input: { readOnly: true } }}
+                fullWidth
+                size="small"
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Marca"
+                value={selectedVehicle.brandName || "—"}
+                slotProps={{ input: { readOnly: true } }}
+                fullWidth
+                size="small"
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Modelo"
+                value={selectedVehicle.model || "—"}
+                slotProps={{ input: { readOnly: true } }}
+                fullWidth
+                size="small"
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Año"
+                value={selectedVehicle.year ?? "—"}
+                slotProps={{ input: { readOnly: true } }}
+                fullWidth
+                size="small"
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Número de chasis"
+                value={selectedVehicle.chassisNumber || "—"}
+                slotProps={{ input: { readOnly: true } }}
+                fullWidth
+                size="small"
+              />
+            </Grid>
+          </Grid>
+        </Paper>
+      )}
 
       <TextField
         label="Motivo"
