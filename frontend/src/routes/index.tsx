@@ -11,6 +11,9 @@ const CannedJobsPage = lazy(() => import("@/pages/CannedJobsPage"));
 const ClientsPage = lazy(() => import("@/pages/ClientsPage"));
 const VehiclesPage = lazy(() => import("@/pages/VehiclesPage"));
 const AppointmentsPage = lazy(() => import("@/pages/AppointmentsPage"));
+const RepairOrdersPage = lazy(() => import("@/pages/RepairOrdersPage"));
+const CreateRepairOrderPage = lazy(() => import("@/pages/CreateRepairOrderPage"));
+const RepairOrderDetailPage = lazy(() => import("@/pages/RepairOrderDetailPage"));
 
 function Loading() {
   return (
@@ -32,6 +35,9 @@ export default function AppRoutes() {
         <Route path="/clientes" element={<ClientsPage />} />
         <Route path="/vehiculos" element={<VehiclesPage />} />
         <Route path="/calendario" element={<AppointmentsPage />} />
+        <Route path="/ordenes-trabajo" element={<RepairOrdersPage />} />
+        <Route path="/ordenes-trabajo/nueva" element={<CreateRepairOrderPage />} />
+        <Route path="/ordenes-trabajo/:id" element={<RepairOrderDetailPage />} />
       </Routes>
     </Suspense>
   );
