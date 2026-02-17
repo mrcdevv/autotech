@@ -1,14 +1,14 @@
-import mercadopago from "./mercadopago.svg";
-import bancoDeCordoba from "./banco-de-cordoba.svg";
-import bbvaFrances from "./bbva-frances.svg";
-import bancoGalicia from "./banco-galicia.svg";
-import bancoSantander from "./banco-santander.svg";
-import bancoNacion from "./banco-nacion.svg";
-import bancoProvincia from "./banco-provincia.svg";
-import hsbc from "./hsbc.svg";
-import bancoMacro from "./banco-macro.svg";
-import brubank from "./brubank.svg";
-import uala from "./uala.svg";
+import mercadopago from "./mercadopago.png";
+import bancoDeCordoba from "./banco-de-cordoba.png";
+import bbvaFrances from "./bbva-frances.png";
+import bancoGalicia from "./banco-galicia.png";
+import bancoSantander from "./banco-santander.png";
+import bancoNacion from "./banco-nacion.png";
+import bancoProvincia from "./banco-provincia.png";
+import hsbc from "./hsbc.png";
+import bancoMacro from "./banco-macro.png";
+import brubank from "./brubank.png";
+import uala from "./uala.png";
 
 const bankLogos: Record<string, string> = {
   "Mercadopago": mercadopago,
