@@ -34,10 +34,11 @@ class VehicleMapperTest {
         vehicle.setId(10L);
 
         // Act
-        VehicleResponse response = mapper.toResponse(vehicle);
+        VehicleResponse response = mapper.toResponse(vehicle, true);
 
         // Assert
         assertThat(response.id()).isEqualTo(10L);
+        assertThat(response.inRepair()).isTrue();
         assertThat(response.clientId()).isEqualTo(1L);
         assertThat(response.clientFirstName()).isEqualTo("Juan");
         assertThat(response.clientLastName()).isEqualTo("Perez");
@@ -69,7 +70,7 @@ class VehicleMapperTest {
 
     @Test
     void givenNullVehicle_whenToResponse_thenReturnNull() {
-        assertThat(mapper.toResponse(null)).isNull();
+        assertThat(mapper.toResponse(null, false)).isNull();
     }
 
     @Test

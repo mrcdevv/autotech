@@ -1,4 +1,5 @@
 import { DataGrid, GridActionsCellItem } from "@mui/x-data-grid";
+import { Chip } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -42,6 +43,19 @@ export function VehicleList({
         `${row.clientFirstName} ${row.clientLastName}`,
     },
     { field: "clientDni", headerName: "Documento Propietario", flex: 1 },
+    {
+      field: "inRepair",
+      headerName: "En reparación",
+      width: 130,
+      renderCell: (params) => (
+        <Chip
+          label={params.value ? "Sí" : "No"}
+          size="small"
+          color={params.value ? "warning" : "default"}
+          variant="outlined"
+        />
+      ),
+    },
     {
       field: "actions",
       type: "actions",
