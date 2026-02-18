@@ -22,8 +22,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "estimates")
@@ -64,11 +64,11 @@ public class Estimate extends BaseEntity {
 
     @OneToMany(mappedBy = "estimate", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<EstimateServiceItem> services = new ArrayList<>();
+    private Set<EstimateServiceItem> services = new HashSet<>();
 
     @OneToMany(mappedBy = "estimate", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<EstimateProduct> products = new ArrayList<>();
+    private Set<EstimateProduct> products = new HashSet<>();
 
     @Override
     public boolean equals(Object o) {
