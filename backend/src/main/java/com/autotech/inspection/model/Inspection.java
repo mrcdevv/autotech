@@ -16,8 +16,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "inspections")
@@ -38,7 +38,7 @@ public class Inspection extends BaseEntity {
 
     @OneToMany(mappedBy = "inspection", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<InspectionItem> items = new ArrayList<>();
+    private Set<InspectionItem> items = new HashSet<>();
 
     @Override
     public boolean equals(Object o) {
