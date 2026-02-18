@@ -5,6 +5,7 @@ import { Box, Tabs, Tab } from "@mui/material";
 import { GeneralInfoTab } from "./GeneralInfoTab";
 import { PlaceholderTab } from "./PlaceholderTab";
 import { InspectionsTab } from "@/features/inspections/InspectionsTab";
+import { EstimateTab } from "@/features/estimates/components/EstimateTab";
 
 import type { RepairOrderDetailResponse } from "../types";
 
@@ -42,7 +43,7 @@ export function RepairOrderDetailTabs({ order, loading, onRefetch }: RepairOrder
           onRepairOrderUpdated={onRefetch}
         />
       )}
-      {activeTab === 2 && <PlaceholderTab />}
+      {activeTab === 2 && order && <EstimateTab repairOrderId={order.id} />}
       {activeTab === 3 && <PlaceholderTab />}
       {activeTab === 4 && <PlaceholderTab />}
     </Box>

@@ -17,6 +17,8 @@ const RepairOrderDetailPage = lazy(() => import("@/pages/RepairOrderDetailPage")
 const InspectionTemplateListPage = lazy(() => import("@/pages/InspectionTemplateListPage"));
 const InspectionTemplateBuilderPage = lazy(() => import("@/pages/InspectionTemplateBuilderPage"));
 const CommonProblemsPage = lazy(() => import("@/pages/CommonProblemsPage"));
+const EstimatesPage = lazy(() => import("@/pages/EstimatesPage"));
+const EstimateDetailPage = lazy(() => import("@/pages/EstimateDetailPage"));
 
 function Loading() {
   return (
@@ -45,6 +47,8 @@ export default function AppRoutes() {
         <Route path="/configuracion/plantillas-inspeccion/nueva" element={<InspectionTemplateBuilderPage />} />
         <Route path="/configuracion/plantillas-inspeccion/:id/editar" element={<InspectionTemplateBuilderPage />} />
         <Route path="/configuracion/problemas-comunes" element={<CommonProblemsPage />} />
+        <Route path="/presupuestos" element={<EstimatesPage />} />
+        <Route path="/presupuestos/:id" element={<EstimateDetailPage />} />
       </Routes>
     </Suspense>
   );
