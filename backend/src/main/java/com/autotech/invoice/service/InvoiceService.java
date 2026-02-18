@@ -34,4 +34,8 @@ public interface InvoiceService {
                               BigDecimal taxPercentage);
 
     void markAsPaid(Long id);
+
+    void updateStatusToPagada(Long id);
+
+    void updateStatusToPendiente(Long id);
 }

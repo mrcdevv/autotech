@@ -31,7 +31,7 @@ import { useInvoice } from "@/features/invoices/hooks/useInvoice";
 import { ServicesGrid } from "./ServicesGrid";
 import { ProductsGrid } from "./ProductsGrid";
 import { InvoiceSummary } from "./InvoiceSummary";
-import { PaymentsTabPlaceholder } from "./PaymentsTabPlaceholder";
+import { PaymentsTab } from "@/features/payments/components/PaymentsTab";
 
 import type { ClientAutocompleteResponse } from "@/types/vehicle";
 import type { VehicleResponse } from "@/types/vehicle";
@@ -535,8 +535,11 @@ export function InvoiceDetail({ invoiceId, repairOrderId, estimateId }: InvoiceD
         </Box>
       )}
 
-      {activeTab === 1 && (
-        <PaymentsTabPlaceholder invoiceId={invoice?.id} />
+      {activeTab === 1 && invoice?.id && (
+        <PaymentsTab
+          invoiceId={invoice.id}
+          clientFullName={invoice.clientFullName}
+        />
       )}
 
       <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>

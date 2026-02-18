@@ -217,6 +217,26 @@ public class InvoiceServiceImpl implements InvoiceService {
         log.info("Marked invoice {} as PAGADA", id);
     }
 
+    @Override
+    @Transactional
+    public void updateStatusToPagada(Long id) {
+        Invoice entity = invoiceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice", id));
+        entity.setStatus(InvoiceStatus.PAGADA);
+        invoiceRepository.save(entity);
+        log.info("Updated invoice {} status to PAGADA", id);
+    }
+
+    @Override
+    @Transactional
+    public void updateStatusToPendiente(Long id) {
+        Invoice entity = invoiceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice", id));
+        entity.setStatus(InvoiceStatus.PENDIENTE);
+        invoiceRepository.save(entity);
+        log.info("Updated invoice {} status to PENDIENTE", id);
+    }
+
     private void addChildEntities(Invoice entity, InvoiceRequest request) {
         if (request.services() != null) {
             for (InvoiceServiceItemRequest svcReq : request.services()) {
