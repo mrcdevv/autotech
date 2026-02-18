@@ -129,7 +129,10 @@ public class InspectionServiceImpl implements InspectionService {
         Map<Long, List<InspectionItem>> itemsByGroupId = inspection.getItems().stream()
                 .collect(Collectors.groupingBy(item -> item.getTemplateItem().getGroup().getId()));
 
-        List<InspectionGroupWithItemsResponse> groups = inspection.getTemplate().getGroups().stream()
+        InspectionTemplate fullTemplate = templateRepository.findWithGroupsAndItemsById(
+                inspection.getTemplate().getId()).orElse(inspection.getTemplate());
+
+        List<InspectionGroupWithItemsResponse> groups = fullTemplate.getGroups().stream()
                 .filter(group -> itemsByGroupId.containsKey(group.getId()))
                 .sorted(Comparator.comparing(InspectionTemplateGroup::getSortOrder))
                 .map(group -> new InspectionGroupWithItemsResponse(
@@ -146,8 +149,8 @@ public class InspectionServiceImpl implements InspectionService {
         return new InspectionResponse(
                 inspection.getId(),
                 inspection.getRepairOrder().getId(),
-                inspection.getTemplate().getId(),
-                inspection.getTemplate().getTitle(),
+                fullTemplate.getId(),
+                fullTemplate.getTitle(),
                 groups,
                 inspection.getCreatedAt(),
                 inspection.getUpdatedAt()

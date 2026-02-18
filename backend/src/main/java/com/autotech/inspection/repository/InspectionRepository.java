@@ -11,9 +11,9 @@ import java.util.Optional;
 @Repository
 public interface InspectionRepository extends JpaRepository<Inspection, Long> {
 
-    @EntityGraph(attributePaths = {"items", "items.templateItem", "items.templateItem.group", "template", "template.groups", "template.groups.items"})
+    @EntityGraph(attributePaths = {"items", "items.templateItem", "items.templateItem.group", "template"})
     List<Inspection> findByRepairOrderId(Long repairOrderId);
 
-    @EntityGraph(attributePaths = {"items", "items.templateItem", "items.templateItem.group", "template", "template.groups", "template.groups.items"})
+    @EntityGraph(attributePaths = {"items", "items.templateItem", "items.templateItem.group", "template"})
     Optional<Inspection> findWithItemsById(Long id);
 }
