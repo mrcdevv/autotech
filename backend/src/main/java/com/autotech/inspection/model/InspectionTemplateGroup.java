@@ -17,8 +17,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "inspection_template_groups")
@@ -43,7 +43,7 @@ public class InspectionTemplateGroup extends BaseEntity {
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder ASC")
     @Builder.Default
-    private List<InspectionTemplateItem> items = new ArrayList<>();
+    private Set<InspectionTemplateItem> items = new LinkedHashSet<>();
 
     @Override
     public boolean equals(Object o) {
