@@ -8,7 +8,7 @@ import { useRepairOrder } from "@/features/repair-orders/hooks/useRepairOrder";
 
 export default function RepairOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { order, loading, error, updateTitle } = useRepairOrder(Number(id));
+  const { order, loading, error, refetch, updateTitle } = useRepairOrder(Number(id));
 
   const [editableTitle, setEditableTitle] = useState("");
 
@@ -54,7 +54,7 @@ export default function RepairOrderDetailPage() {
           Guardar
         </Button>
       </Box>
-      <RepairOrderDetailTabs order={order} loading={loading} />
+      <RepairOrderDetailTabs order={order} loading={loading} onRefetch={refetch} />
     </Box>
   );
 }

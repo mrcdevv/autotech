@@ -1,5 +1,6 @@
 package com.autotech.repairorder.service;
 
+import com.autotech.repairorder.dto.NotesUpdateRequest;
 import com.autotech.repairorder.dto.RepairOrderDetailResponse;
 import com.autotech.repairorder.dto.RepairOrderRequest;
 import com.autotech.repairorder.dto.RepairOrderResponse;
@@ -36,4 +37,6 @@ public interface RepairOrderService {
     List<RepairOrderResponse> filterByEmployee(Long employeeId);
 
     List<RepairOrderResponse> filterByTag(Long tagId);
+
+    RepairOrderDetailResponse updateNotes(Long id, NotesUpdateRequest request);
 }

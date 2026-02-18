@@ -1,6 +1,7 @@
 package com.autotech.repairorder.controller;
 
 import com.autotech.common.dto.ApiResponse;
+import com.autotech.repairorder.dto.NotesUpdateRequest;
 import com.autotech.repairorder.dto.RepairOrderDetailResponse;
 import com.autotech.repairorder.dto.RepairOrderRequest;
 import com.autotech.repairorder.dto.RepairOrderResponse;
@@ -70,6 +71,14 @@ public class RepairOrderController {
             @Valid @RequestBody StatusUpdateRequest request) {
         return ResponseEntity.ok(
                 ApiResponse.success("Estado actualizado", repairOrderService.updateStatus(id, request)));
+    }
+
+    @PatchMapping("/{id}/notes")
+    public ResponseEntity<ApiResponse<RepairOrderDetailResponse>> updateNotes(
+            @PathVariable Long id,
+            @RequestBody NotesUpdateRequest request) {
+        return ResponseEntity.ok(
+                ApiResponse.success("Notas actualizadas", repairOrderService.updateNotes(id, request)));
     }
 
     @PatchMapping("/{id}/title")

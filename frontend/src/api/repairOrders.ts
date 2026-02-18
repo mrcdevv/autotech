@@ -9,6 +9,7 @@ import type {
   TitleUpdateRequest,
   RepairOrderStatus,
 } from "@/features/repair-orders/types";
+import type { NotesUpdateRequest } from "@/features/inspections/types";
 
 export const repairOrdersApi = {
   getAll: () =>
@@ -57,4 +58,7 @@ export const repairOrdersApi = {
     apiClient.get<ApiResponse<RepairOrderResponse[]>>("/repair-orders/filter/by-tag", {
       params: { tagId },
     }),
+
+  updateNotes: (id: number, data: NotesUpdateRequest) =>
+    apiClient.patch<ApiResponse<RepairOrderDetailResponse>>(`/repair-orders/${id}/notes`, data),
 };
