@@ -2,6 +2,7 @@ package com.autotech.repairorder.controller;
 
 import com.autotech.common.exception.GlobalExceptionHandler;
 import com.autotech.common.exception.ResourceNotFoundException;
+import com.autotech.estimate.service.EstimateService;
 import com.autotech.repairorder.dto.RepairOrderDetailResponse;
 import com.autotech.repairorder.dto.RepairOrderRequest;
 import com.autotech.repairorder.dto.RepairOrderResponse;
@@ -48,6 +49,9 @@ class RepairOrderControllerTest {
 
     @MockitoBean
     private RepairOrderService repairOrderService;
+
+    @MockitoBean
+    private EstimateService estimateService;
 
     private final RepairOrderResponse sampleResponse = new RepairOrderResponse(
             1L, "OT-1 Perez - ABC123", RepairOrderStatus.INGRESO_VEHICULO,
