@@ -1,23 +1,22 @@
-import { useState } from "react";
-import { Box, Typography, CircularProgress, Alert, Tabs, Tab } from "@mui/material";
+import { Box, Typography, CircularProgress, Alert, Button } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import BuildIcon from "@mui/icons-material/Build";
 import EventIcon from "@mui/icons-material/Event";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import ReceiptIcon from "@mui/icons-material/Receipt";
+import AssessmentIcon from "@mui/icons-material/Assessment";
+import { useNavigate } from "react-router";
 import { useDashboard } from "@/features/dashboard/hooks/useDashboard";
 import { KpiCard } from "@/features/dashboard/components/KpiCard";
 import { StatusBreakdownCard } from "@/features/dashboard/components/StatusBreakdownCard";
 import { TodayAppointmentsList } from "@/features/dashboard/components/TodayAppointmentsList";
 import { StaleOrderAlerts } from "@/features/dashboard/components/StaleOrderAlerts";
 import { PendingEstimateAlerts } from "@/features/dashboard/components/PendingEstimateAlerts";
-import { FinancieroTab } from "@/features/dashboard/components/FinancieroTab";
-import { ProductividadTab } from "@/features/dashboard/components/ProductividadTab";
 import { formatCurrency } from "@/utils/formatCurrency";
 
 export default function DashboardPage() {
   const { summary, loading, error } = useDashboard();
-  const [activeTab, setActiveTab] = useState(0);
+  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -31,9 +30,16 @@ export default function DashboardPage() {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        Inicio
-      </Typography>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+        <Typography variant="h4">Inicio</Typography>
+        <Button
+          variant="outlined"
+          startIcon={<AssessmentIcon />}
+          onClick={() => navigate("/reportes")}
+        >
+          Ver reportes
+        </Button>
+      </Box>
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -50,7 +56,7 @@ export default function DashboardPage() {
         </Grid>
       </Grid>
 
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 4 }}>
           <StatusBreakdownCard statusCounts={summary.repairOrderStatusCounts} />
         </Grid>
@@ -62,14 +68,6 @@ export default function DashboardPage() {
           <PendingEstimateAlerts alerts={summary.pendingEstimateAlerts} thresholdDays={summary.staleThresholdDays} />
         </Grid>
       </Grid>
-
-      <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 2 }}>
-        <Tab label="Financiero" />
-        <Tab label="Productividad" />
-      </Tabs>
-
-      {activeTab === 0 && <FinancieroTab />}
-      {activeTab === 1 && <ProductividadTab />}
     </Box>
   );
 }
