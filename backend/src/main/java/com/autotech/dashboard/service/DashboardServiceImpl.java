@@ -202,10 +202,10 @@ public class DashboardServiceImpl implements DashboardService {
         LocalDateTime d60 = now.minusDays(60);
         LocalDateTime d90 = now.minusDays(90);
 
-        Object[] r0_30 = invoiceRepository.countAndSumByStatusAndCreatedAtBetween(InvoiceStatus.PENDIENTE, d30, now);
-        Object[] r31_60 = invoiceRepository.countAndSumByStatusAndCreatedAtBetween(InvoiceStatus.PENDIENTE, d60, d30);
-        Object[] r61_90 = invoiceRepository.countAndSumByStatusAndCreatedAtBetween(InvoiceStatus.PENDIENTE, d90, d60);
-        Object[] r90plus = invoiceRepository.countAndSumByStatusAndCreatedAtBefore(InvoiceStatus.PENDIENTE, d90);
+        Object[] r0_30 = unwrapRow(invoiceRepository.countAndSumByStatusAndCreatedAtBetween(InvoiceStatus.PENDIENTE, d30, now));
+        Object[] r31_60 = unwrapRow(invoiceRepository.countAndSumByStatusAndCreatedAtBetween(InvoiceStatus.PENDIENTE, d60, d30));
+        Object[] r61_90 = unwrapRow(invoiceRepository.countAndSumByStatusAndCreatedAtBetween(InvoiceStatus.PENDIENTE, d90, d60));
+        Object[] r90plus = unwrapRow(invoiceRepository.countAndSumByStatusAndCreatedAtBefore(InvoiceStatus.PENDIENTE, d90));
 
         return List.of(
                 new DebtAgingResponse("0-30", toLong(r0_30[0]), toBigDecimal(r0_30[1])),
@@ -215,11 +215,22 @@ public class DashboardServiceImpl implements DashboardService {
         );
     }
 
+    private Object[] unwrapRow(Object[] result) {
+        if (result != null && result.length == 1 && result[0] instanceof Object[]) {
+            return (Object[]) result[0];
+        }
+        return result != null ? result : new Object[]{0L, BigDecimal.ZERO};
+    }
+
     private Long toLong(Object val) {
-        return val != null ? (Long) val : 0L;
+        if (val == null) return 0L;
+        if (val instanceof Long l) return l;
+        return ((Number) val).longValue();
     }
 
     private BigDecimal toBigDecimal(Object val) {
-        return val != null ? (BigDecimal) val : BigDecimal.ZERO;
+        if (val == null) return BigDecimal.ZERO;
+        if (val instanceof BigDecimal bd) return bd;
+        return new BigDecimal(val.toString());
     }
 }
