@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 
 import {
   Box,
@@ -9,6 +9,11 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import { useNavigate } from "react-router";
@@ -39,24 +44,28 @@ export default function EstimatesPage() {
   const [clientNameInput, setClientNameInput] = useState("");
   const [plateInput, setPlateInput] = useState("");
   const [statusInput, setStatusInput] = useState("");
+  const [deleteDialogId, setDeleteDialogId] = useState<number | null>(null);
 
-  const handleClientNameChange = (value: string) => {
+  const clientNameTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const plateTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const handleClientNameChange = useCallback((value: string) => {
     setClientNameInput(value);
-    const timer = setTimeout(() => {
+    clearTimeout(clientNameTimer.current);
+    clientNameTimer.current = setTimeout(() => {
       setClientName(value || undefined);
       setPage(0);
     }, 300);
-    return () => clearTimeout(timer);
-  };
+  }, [setClientName, setPage]);
 
-  const handlePlateChange = (value: string) => {
+  const handlePlateChange = useCallback((value: string) => {
     setPlateInput(value);
-    const timer = setTimeout(() => {
+    clearTimeout(plateTimer.current);
+    plateTimer.current = setTimeout(() => {
       setPlate(value || undefined);
       setPage(0);
     }, 300);
-    return () => clearTimeout(timer);
-  };
+  }, [setPlate, setPage]);
 
   const handleStatusChange = (e: SelectChangeEvent) => {
     const val = e.target.value;
@@ -68,6 +77,13 @@ export default function EstimatesPage() {
   const handleRowClick = (id: number) => navigate(`/presupuestos/${id}`);
   const handleCreate = () => navigate("/presupuestos/nuevo");
   const handleInvoice = (id: number) => navigate(`/facturas/nuevo?estimateId=${id}`);
+
+  const handleDeleteConfirm = async () => {
+    if (deleteDialogId != null) {
+      await deleteEstimate(deleteDialogId);
+      setDeleteDialogId(null);
+    }
+  };
 
   return (
     <Box>
@@ -119,9 +135,24 @@ export default function EstimatesPage() {
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
         onRowClick={handleRowClick}
-        onDelete={deleteEstimate}
+        onDelete={(id) => setDeleteDialogId(id)}
         onInvoice={handleInvoice}
       />
+
+      <Dialog open={deleteDialogId != null} onClose={() => setDeleteDialogId(null)}>
+        <DialogTitle>Eliminar presupuesto</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Estás seguro de que querés eliminar este presupuesto? Esta acción no se puede deshacer.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogId(null)}>Cancelar</Button>
+          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

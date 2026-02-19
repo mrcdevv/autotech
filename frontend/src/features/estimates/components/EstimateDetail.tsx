@@ -16,6 +16,7 @@ import SaveIcon from "@mui/icons-material/Save";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import { useNavigate } from "react-router";
+import axios from "axios";
 
 import { clientAutocompleteApi } from "@/api/clientAutocomplete";
 import { vehiclesApi } from "@/api/vehicles";
@@ -31,6 +32,44 @@ import type {
   EstimateProductRequest,
   EstimateRequest,
 } from "@/types/estimate";
+
+function extractApiError(err: unknown): string {
+  if (axios.isAxiosError(err) && err.response?.data) {
+    const data = err.response.data;
+    if (data.data && typeof data.data === "object") {
+      return Object.values(data.data).join(". ");
+    }
+    if (data.message) return data.message;
+  }
+  return "Ocurrió un error inesperado";
+}
+
+function validateForm(
+  services: EstimateServiceItemRequest[],
+  products: EstimateProductRequest[],
+): string[] {
+  const errors: string[] = [];
+  services.forEach((svc, i) => {
+    if (!svc.serviceName.trim()) {
+      errors.push(`Servicio #${i + 1}: el nombre es obligatorio`);
+    }
+    if (svc.price < 0) {
+      errors.push(`Servicio #${i + 1}: el precio no puede ser negativo`);
+    }
+  });
+  products.forEach((prod, i) => {
+    if (!prod.productName.trim()) {
+      errors.push(`Producto #${i + 1}: el nombre es obligatorio`);
+    }
+    if (prod.quantity < 1) {
+      errors.push(`Producto #${i + 1}: la cantidad debe ser al menos 1`);
+    }
+    if (prod.unitPrice < 0) {
+      errors.push(`Producto #${i + 1}: el precio unitario no puede ser negativo`);
+    }
+  });
+  return errors;
+}
 
 interface EstimateDetailProps {
   estimateId?: number;
@@ -54,6 +93,8 @@ export function EstimateDetail({ estimateId, repairOrderId }: EstimateDetailProp
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [taxPercentage, setTaxPercentage] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [formErrors, setFormErrors] = useState<string[]>([]);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const isNew = !estimateId && !repairOrderId;
   const isReadonly = estimate != null && estimate.status !== "PENDIENTE";
@@ -152,6 +193,16 @@ export function EstimateDetail({ estimateId, repairOrderId }: EstimateDetailProp
 
   const handleSave = async () => {
     if (!selectedClient || !selectedVehicle) return;
+
+    setFormErrors([]);
+    setApiError(null);
+
+    const validationErrors = validateForm(services, products);
+    if (validationErrors.length > 0) {
+      setFormErrors(validationErrors);
+      return;
+    }
+
     setSaving(true);
     try {
       const data: EstimateRequest = {
@@ -166,13 +217,13 @@ export function EstimateDetail({ estimateId, repairOrderId }: EstimateDetailProp
       if (estimate?.id) {
         await updateEstimate(estimate.id, data);
       } else {
-        const created = await createEstimate(data);
-        if (!fromRepairOrder) {
-          navigate(`/presupuestos/${created.id}`);
-        }
+        await createEstimate(data);
       }
-    } catch {
-      // error handled by hook
+      if (!fromRepairOrder) {
+        navigate("/presupuestos");
+      }
+    } catch (err) {
+      setApiError(extractApiError(err));
     } finally {
       setSaving(false);
     }
@@ -180,12 +231,28 @@ export function EstimateDetail({ estimateId, repairOrderId }: EstimateDetailProp
 
   const handleApprove = async () => {
     if (!estimate?.id) return;
-    await approveEstimate(estimate.id);
+    setApiError(null);
+    try {
+      await approveEstimate(estimate.id);
+      if (!fromRepairOrder) {
+        navigate("/presupuestos");
+      }
+    } catch (err) {
+      setApiError(extractApiError(err));
+    }
   };
 
   const handleReject = async () => {
     if (!estimate?.id) return;
-    await rejectEstimate(estimate.id);
+    setApiError(null);
+    try {
+      await rejectEstimate(estimate.id);
+      if (!fromRepairOrder) {
+        navigate("/presupuestos");
+      }
+    } catch (err) {
+      setApiError(extractApiError(err));
+    }
   };
 
   if (loading && !isNew) {
@@ -232,6 +299,20 @@ export function EstimateDetail({ estimateId, repairOrderId }: EstimateDetailProp
             }
           />
         </Box>
+      )}
+
+      {apiError && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setApiError(null)}>
+          {apiError}
+        </Alert>
+      )}
+
+      {formErrors.length > 0 && (
+        <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setFormErrors([])}>
+          {formErrors.map((err, i) => (
+            <Typography key={i} variant="body2">{err}</Typography>
+          ))}
+        </Alert>
       )}
 
       <Paper sx={{ p: 3, mb: 3 }}>
