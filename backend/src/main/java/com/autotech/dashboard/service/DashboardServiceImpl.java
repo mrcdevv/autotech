@@ -9,6 +9,7 @@ import com.autotech.dashboard.dto.DebtAgingResponse;
 import com.autotech.dashboard.dto.MechanicProductivityResponse;
 import com.autotech.dashboard.dto.MonthlyRevenueResponse;
 import com.autotech.dashboard.dto.PendingEstimateAlertResponse;
+import com.autotech.dashboard.dto.ReadyForPickupResponse;
 import com.autotech.dashboard.dto.StaleOrderAlertResponse;
 import com.autotech.dashboard.dto.StatusCountResponse;
 import com.autotech.dashboard.dto.TodayAppointmentResponse;
@@ -52,20 +53,13 @@ public class DashboardServiceImpl implements DashboardService {
         DashboardConfig config = getConfigInternal();
 
         Long openOrderCount = repairOrderRepository.countByStatusNot(RepairOrderStatus.ENTREGADO);
+        Long readyForPickupCount = repairOrderRepository.countByStatus(RepairOrderStatus.LISTO_PARA_ENTREGAR);
 
         LocalDateTime todayStart = LocalDate.now().atStartOfDay();
         LocalDateTime todayEnd = todayStart.plusDays(1);
         Long todayAppointmentCount = appointmentRepository.countByStartTimeBetween(todayStart, todayEnd);
 
-        LocalDateTime monthStart = LocalDate.now().withDayOfMonth(1).atStartOfDay();
-        LocalDateTime monthEnd = monthStart.plusMonths(1);
-        BigDecimal monthlyRevenue = invoiceRepository.sumTotalByStatusAndCreatedAtBetween(
-                InvoiceStatus.PAGADA, monthStart, monthEnd);
-        if (monthlyRevenue == null) monthlyRevenue = BigDecimal.ZERO;
-
-        BigDecimal averageTicket = invoiceRepository.avgTotalByStatusAndCreatedAtBetween(
-                InvoiceStatus.PAGADA, monthStart, monthEnd);
-        if (averageTicket == null) averageTicket = BigDecimal.ZERO;
+        Long pendingEstimateCount = estimateRepository.countByStatus(EstimateStatus.PENDIENTE);
 
         List<StatusCountResponse> statusCounts = repairOrderRepository.countGroupByStatus().stream()
                 .map(row -> new StatusCountResponse(
@@ -81,6 +75,16 @@ public class DashboardServiceImpl implements DashboardService {
                         a.getClient() != null ? a.getClient().getFirstName() + " " + a.getClient().getLastName() : null,
                         a.getVehicle() != null ? a.getVehicle().getPlate() : null,
                         a.getPurpose()))
+                .toList();
+
+        List<ReadyForPickupResponse> readyForPickupOrders = repairOrderRepository
+                .findByStatusWithClientAndVehicle(RepairOrderStatus.LISTO_PARA_ENTREGAR).stream()
+                .map(ro -> new ReadyForPickupResponse(
+                        ro.getId(),
+                        ro.getTitle(),
+                        ro.getClient().getFirstName() + " " + ro.getClient().getLastName(),
+                        ro.getClient().getPhone(),
+                        ro.getVehicle().getPlate()))
                 .toList();
 
         LocalDateTime staleThreshold = LocalDateTime.now().minusDays(config.getStaleThresholdDays());
@@ -106,8 +110,8 @@ public class DashboardServiceImpl implements DashboardService {
                 .toList();
 
         return new DashboardSummaryResponse(
-                openOrderCount, todayAppointmentCount, monthlyRevenue, averageTicket,
-                statusCounts, todayAppointments, staleAlerts, pendingEstimates,
+                openOrderCount, readyForPickupCount, todayAppointmentCount, pendingEstimateCount,
+                statusCounts, todayAppointments, readyForPickupOrders, staleAlerts, pendingEstimates,
                 config.getStaleThresholdDays());
     }
 

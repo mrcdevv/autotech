@@ -8,11 +8,12 @@ vi.mock("@/api/dashboard", () => ({
       data: {
         data: {
           openRepairOrderCount: 5,
+          readyForPickupCount: 2,
           todayAppointmentCount: 3,
-          monthlyRevenue: 50000,
-          averageTicket: 10000,
+          pendingEstimateCount: 4,
           repairOrderStatusCounts: [],
           todayAppointments: [],
+          readyForPickupOrders: [],
           staleOrderAlerts: [],
           pendingEstimateAlerts: [],
           staleThresholdDays: 5,

@@ -7,11 +7,12 @@ vi.mock("@/features/dashboard/hooks/useDashboard", () => ({
   useDashboard: () => ({
     summary: {
       openRepairOrderCount: 5,
+      readyForPickupCount: 2,
       todayAppointmentCount: 3,
-      monthlyRevenue: 50000,
-      averageTicket: 10000,
+      pendingEstimateCount: 4,
       repairOrderStatusCounts: [{ status: "REPARACION", count: 3 }],
       todayAppointments: [],
+      readyForPickupOrders: [],
       staleOrderAlerts: [],
       pendingEstimateAlerts: [],
       staleThresholdDays: 5,
@@ -35,9 +36,13 @@ describe("DashboardPage", () => {
     renderWithRouter();
 
     expect(screen.getByText("Inicio")).toBeInTheDocument();
-    expect(screen.getByText("Órdenes abiertas")).toBeInTheDocument();
-    expect(screen.getByText("Facturación del mes")).toBeInTheDocument();
-    expect(screen.getByText("Ticket promedio")).toBeInTheDocument();
+    expect(screen.getByText("Vehículos en taller")).toBeInTheDocument();
+    const kpiValues = screen.getAllByTestId("kpi-value");
+    expect(kpiValues).toHaveLength(4);
+    expect(kpiValues[0]).toHaveTextContent("5");
+    expect(kpiValues[1]).toHaveTextContent("2");
+    expect(kpiValues[2]).toHaveTextContent("3");
+    expect(kpiValues[3]).toHaveTextContent("4");
   });
 
   it("given summary loaded, when rendered, then shows status breakdown", () => {
@@ -56,6 +61,5 @@ describe("DashboardPage", () => {
     renderWithRouter();
 
     expect(screen.getByText(/Órdenes inactivas/)).toBeInTheDocument();
-    expect(screen.getByText(/Presupuestos pendientes/)).toBeInTheDocument();
   });
 });

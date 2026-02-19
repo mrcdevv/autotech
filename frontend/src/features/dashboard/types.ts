@@ -28,13 +28,22 @@ export interface PendingEstimateAlertResponse {
   daysPending: number;
 }
 
+export interface ReadyForPickupResponse {
+  repairOrderId: number;
+  title: string | null;
+  clientFullName: string;
+  clientPhone: string;
+  vehiclePlate: string;
+}
+
 export interface DashboardSummaryResponse {
   openRepairOrderCount: number;
+  readyForPickupCount: number;
   todayAppointmentCount: number;
-  monthlyRevenue: number;
-  averageTicket: number;
+  pendingEstimateCount: number;
   repairOrderStatusCounts: StatusCountResponse[];
   todayAppointments: TodayAppointmentResponse[];
+  readyForPickupOrders: ReadyForPickupResponse[];
   staleOrderAlerts: StaleOrderAlertResponse[];
   pendingEstimateAlerts: PendingEstimateAlertResponse[];
   staleThresholdDays: number;

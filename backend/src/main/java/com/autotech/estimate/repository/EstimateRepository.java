@@ -42,6 +42,8 @@ public interface EstimateRepository extends JpaRepository<Estimate, Long> {
             @Param("status") EstimateStatus status,
             Pageable pageable);
 
+    Long countByStatus(EstimateStatus status);
+
     Long countByStatusAndCreatedAtBetween(EstimateStatus status, LocalDateTime start, LocalDateTime end);
 
     Long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);

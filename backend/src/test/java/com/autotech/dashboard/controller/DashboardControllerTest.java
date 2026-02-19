@@ -51,18 +51,19 @@ class DashboardControllerTest {
     void givenData_whenGetSummary_thenReturn200() throws Exception {
         // Arrange
         DashboardSummaryResponse summary = new DashboardSummaryResponse(
-                5L, 3L, new BigDecimal("50000"), new BigDecimal("10000"),
+                5L, 2L, 3L, 4L,
                 Collections.emptyList(), Collections.emptyList(),
-                Collections.emptyList(), Collections.emptyList(), 5);
+                Collections.emptyList(), Collections.emptyList(),
+                Collections.emptyList(), 5);
         when(dashboardService.getSummary()).thenReturn(summary);
 
         // Act & Assert
         mockMvc.perform(get("/api/dashboard/summary"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.openRepairOrderCount").value(5))
+                .andExpect(jsonPath("$.data.readyForPickupCount").value(2))
                 .andExpect(jsonPath("$.data.todayAppointmentCount").value(3))
-                .andExpect(jsonPath("$.data.monthlyRevenue").value(50000))
-                .andExpect(jsonPath("$.data.averageTicket").value(10000))
+                .andExpect(jsonPath("$.data.pendingEstimateCount").value(4))
                 .andExpect(jsonPath("$.data.staleThresholdDays").value(5));
     }
 

@@ -61,8 +61,18 @@ public interface RepairOrderRepository extends JpaRepository<RepairOrder, Long> 
 
     Long countByStatusNot(RepairOrderStatus status);
 
+    Long countByStatus(RepairOrderStatus status);
+
     @Query("SELECT ro.status, COUNT(ro) FROM RepairOrder ro GROUP BY ro.status")
     List<Object[]> countGroupByStatus();
+
+    @Query("""
+            SELECT ro FROM RepairOrder ro
+            JOIN FETCH ro.client JOIN FETCH ro.vehicle
+            WHERE ro.status = :status
+            ORDER BY ro.updatedAt ASC
+            """)
+    List<RepairOrder> findByStatusWithClientAndVehicle(@Param("status") RepairOrderStatus status);
 
     @Query("""
             SELECT ro FROM RepairOrder ro

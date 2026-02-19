@@ -66,16 +66,16 @@ class DashboardServiceImplTest {
         DashboardConfig config = buildConfig();
         when(dashboardConfigRepository.findAll()).thenReturn(List.of(config));
         when(repairOrderRepository.countByStatusNot(RepairOrderStatus.ENTREGADO)).thenReturn(5L);
+        when(repairOrderRepository.countByStatus(RepairOrderStatus.LISTO_PARA_ENTREGAR)).thenReturn(2L);
         when(appointmentRepository.countByStartTimeBetween(any(), any())).thenReturn(3L);
-        when(invoiceRepository.sumTotalByStatusAndCreatedAtBetween(eq(InvoiceStatus.PAGADA), any(), any()))
-                .thenReturn(new BigDecimal("50000"));
-        when(invoiceRepository.avgTotalByStatusAndCreatedAtBetween(eq(InvoiceStatus.PAGADA), any(), any()))
-                .thenReturn(new BigDecimal("10000"));
+        when(estimateRepository.countByStatus(EstimateStatus.PENDIENTE)).thenReturn(4L);
         List<Object[]> statusData = new java.util.ArrayList<>();
         statusData.add(new Object[]{RepairOrderStatus.REPARACION, 3L});
         statusData.add(new Object[]{RepairOrderStatus.ENTREGADO, 2L});
         when(repairOrderRepository.countGroupByStatus()).thenReturn(statusData);
         when(appointmentRepository.findByDateRange(any(), any())).thenReturn(Collections.emptyList());
+        when(repairOrderRepository.findByStatusWithClientAndVehicle(RepairOrderStatus.LISTO_PARA_ENTREGAR))
+                .thenReturn(Collections.emptyList());
         when(repairOrderRepository.findStaleOrders(any(), any())).thenReturn(Collections.emptyList());
         when(estimateRepository.findPendingOlderThan(any(), any())).thenReturn(Collections.emptyList());
 
@@ -84,9 +84,9 @@ class DashboardServiceImplTest {
 
         // Assert
         assertThat(result.openRepairOrderCount()).isEqualTo(5L);
+        assertThat(result.readyForPickupCount()).isEqualTo(2L);
         assertThat(result.todayAppointmentCount()).isEqualTo(3L);
-        assertThat(result.monthlyRevenue()).isEqualByComparingTo(new BigDecimal("50000"));
-        assertThat(result.averageTicket()).isEqualByComparingTo(new BigDecimal("10000"));
+        assertThat(result.pendingEstimateCount()).isEqualTo(4L);
         assertThat(result.repairOrderStatusCounts()).hasSize(2);
         assertThat(result.staleThresholdDays()).isEqualTo(5);
     }
@@ -97,13 +97,12 @@ class DashboardServiceImplTest {
         DashboardConfig config = buildConfig();
         when(dashboardConfigRepository.findAll()).thenReturn(List.of(config));
         when(repairOrderRepository.countByStatusNot(RepairOrderStatus.ENTREGADO)).thenReturn(0L);
+        when(repairOrderRepository.countByStatus(RepairOrderStatus.LISTO_PARA_ENTREGAR)).thenReturn(0L);
         when(appointmentRepository.countByStartTimeBetween(any(), any())).thenReturn(0L);
-        when(invoiceRepository.sumTotalByStatusAndCreatedAtBetween(eq(InvoiceStatus.PAGADA), any(), any()))
-                .thenReturn(null);
-        when(invoiceRepository.avgTotalByStatusAndCreatedAtBetween(eq(InvoiceStatus.PAGADA), any(), any()))
-                .thenReturn(null);
+        when(estimateRepository.countByStatus(EstimateStatus.PENDIENTE)).thenReturn(0L);
         when(repairOrderRepository.countGroupByStatus()).thenReturn(Collections.emptyList());
         when(appointmentRepository.findByDateRange(any(), any())).thenReturn(Collections.emptyList());
+        when(repairOrderRepository.findByStatusWithClientAndVehicle(any())).thenReturn(Collections.emptyList());
         when(repairOrderRepository.findStaleOrders(any(), any())).thenReturn(Collections.emptyList());
         when(estimateRepository.findPendingOlderThan(any(), any())).thenReturn(Collections.emptyList());
 
@@ -112,11 +111,12 @@ class DashboardServiceImplTest {
 
         // Assert
         assertThat(result.openRepairOrderCount()).isZero();
+        assertThat(result.readyForPickupCount()).isZero();
         assertThat(result.todayAppointmentCount()).isZero();
-        assertThat(result.monthlyRevenue()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(result.averageTicket()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(result.pendingEstimateCount()).isZero();
         assertThat(result.repairOrderStatusCounts()).isEmpty();
         assertThat(result.todayAppointments()).isEmpty();
+        assertThat(result.readyForPickupOrders()).isEmpty();
         assertThat(result.staleOrderAlerts()).isEmpty();
         assertThat(result.pendingEstimateAlerts()).isEmpty();
     }
@@ -127,9 +127,9 @@ class DashboardServiceImplTest {
         DashboardConfig config = buildConfig();
         when(dashboardConfigRepository.findAll()).thenReturn(List.of(config));
         when(repairOrderRepository.countByStatusNot(any())).thenReturn(0L);
+        when(repairOrderRepository.countByStatus(any())).thenReturn(0L);
         when(appointmentRepository.countByStartTimeBetween(any(), any())).thenReturn(6L);
-        when(invoiceRepository.sumTotalByStatusAndCreatedAtBetween(any(), any(), any())).thenReturn(null);
-        when(invoiceRepository.avgTotalByStatusAndCreatedAtBetween(any(), any(), any())).thenReturn(null);
+        when(estimateRepository.countByStatus(any())).thenReturn(0L);
         when(repairOrderRepository.countGroupByStatus()).thenReturn(Collections.emptyList());
 
         List<Appointment> appointments = new java.util.ArrayList<>();
@@ -143,6 +143,7 @@ class DashboardServiceImplTest {
             appointments.add(a);
         }
         when(appointmentRepository.findByDateRange(any(), any())).thenReturn(appointments);
+        when(repairOrderRepository.findByStatusWithClientAndVehicle(any())).thenReturn(Collections.emptyList());
         when(repairOrderRepository.findStaleOrders(any(), any())).thenReturn(Collections.emptyList());
         when(estimateRepository.findPendingOlderThan(any(), any())).thenReturn(Collections.emptyList());
 
@@ -159,11 +160,12 @@ class DashboardServiceImplTest {
         DashboardConfig config = buildConfig();
         when(dashboardConfigRepository.findAll()).thenReturn(List.of(config));
         when(repairOrderRepository.countByStatusNot(any())).thenReturn(1L);
+        when(repairOrderRepository.countByStatus(any())).thenReturn(0L);
         when(appointmentRepository.countByStartTimeBetween(any(), any())).thenReturn(0L);
-        when(invoiceRepository.sumTotalByStatusAndCreatedAtBetween(any(), any(), any())).thenReturn(null);
-        when(invoiceRepository.avgTotalByStatusAndCreatedAtBetween(any(), any(), any())).thenReturn(null);
+        when(estimateRepository.countByStatus(any())).thenReturn(0L);
         when(repairOrderRepository.countGroupByStatus()).thenReturn(Collections.emptyList());
         when(appointmentRepository.findByDateRange(any(), any())).thenReturn(Collections.emptyList());
+        when(repairOrderRepository.findByStatusWithClientAndVehicle(any())).thenReturn(Collections.emptyList());
 
         RepairOrder staleOrder = buildRepairOrder(1L, "Cambio de aceite", RepairOrderStatus.REPARACION);
         staleOrder.setUpdatedAt(LocalDateTime.now().minusDays(10));
@@ -185,11 +187,12 @@ class DashboardServiceImplTest {
         DashboardConfig config = buildConfig();
         when(dashboardConfigRepository.findAll()).thenReturn(List.of(config));
         when(repairOrderRepository.countByStatusNot(any())).thenReturn(0L);
+        when(repairOrderRepository.countByStatus(any())).thenReturn(0L);
         when(appointmentRepository.countByStartTimeBetween(any(), any())).thenReturn(0L);
-        when(invoiceRepository.sumTotalByStatusAndCreatedAtBetween(any(), any(), any())).thenReturn(null);
-        when(invoiceRepository.avgTotalByStatusAndCreatedAtBetween(any(), any(), any())).thenReturn(null);
+        when(estimateRepository.countByStatus(any())).thenReturn(0L);
         when(repairOrderRepository.countGroupByStatus()).thenReturn(Collections.emptyList());
         when(appointmentRepository.findByDateRange(any(), any())).thenReturn(Collections.emptyList());
+        when(repairOrderRepository.findByStatusWithClientAndVehicle(any())).thenReturn(Collections.emptyList());
         when(repairOrderRepository.findStaleOrders(any(), any())).thenReturn(Collections.emptyList());
 
         Estimate pendingEstimate = buildEstimate(1L);
