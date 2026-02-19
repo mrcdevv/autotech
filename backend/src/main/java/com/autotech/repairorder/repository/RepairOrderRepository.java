@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,4 +58,41 @@ public interface RepairOrderRepository extends JpaRepository<RepairOrder, Long> 
             WHERE t.id = :tagId
             """)
     List<RepairOrder> findByTagId(@Param("tagId") Long tagId);
+
+    Long countByStatusNot(RepairOrderStatus status);
+
+    @Query("SELECT ro.status, COUNT(ro) FROM RepairOrder ro GROUP BY ro.status")
+    List<Object[]> countGroupByStatus();
+
+    @Query("""
+            SELECT ro FROM RepairOrder ro
+            JOIN FETCH ro.client JOIN FETCH ro.vehicle
+            WHERE ro.updatedAt < :threshold AND ro.status <> :excludedStatus
+            ORDER BY ro.updatedAt ASC
+            """)
+    List<RepairOrder> findStaleOrders(
+            @Param("threshold") LocalDateTime threshold,
+            @Param("excludedStatus") RepairOrderStatus excludedStatus);
+
+    @Query(value = """
+            SELECT AVG(EXTRACT(EPOCH FROM (ro.updated_at - ro.created_at)) / 86400)
+            FROM repair_orders ro
+            WHERE ro.status = :#{#status.name()} AND ro.updated_at >= :start AND ro.updated_at < :end
+            """, nativeQuery = true)
+    BigDecimal avgRepairDaysByStatusAndUpdatedAtBetween(
+            @Param("status") RepairOrderStatus status,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
+
+    @Query("""
+            SELECT e.id, CONCAT(e.firstName, ' ', e.lastName), COUNT(ro)
+            FROM RepairOrder ro JOIN ro.employees e
+            WHERE ro.status = :status AND ro.updatedAt >= :start AND ro.updatedAt < :end
+            GROUP BY e.id, e.firstName, e.lastName
+            ORDER BY COUNT(ro) DESC
+            """)
+    List<Object[]> countCompletedByEmployee(
+            @Param("status") RepairOrderStatus status,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
 }
