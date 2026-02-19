@@ -3,7 +3,7 @@ import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router";
 import { CircularProgress, Box } from "@mui/material";
 
-const HomePage = lazy(() => import("@/pages/HomePage"));
+const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
 const EmployeesPage = lazy(() => import("@/pages/EmployeesPage"));
 const ServicesPage = lazy(() => import("@/pages/ServicesPage"));
 const ProductsPage = lazy(() => import("@/pages/ProductsPage"));
@@ -35,7 +35,7 @@ export default function AppRoutes() {
   return (
     <Suspense fallback={<Loading />}>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<DashboardPage />} />
         <Route path="/empleados" element={<EmployeesPage />} />
         <Route path="/servicios" element={<ServicesPage />} />
         <Route path="/productos" element={<ProductsPage />} />
