@@ -12,9 +12,11 @@ export default function ClientFilters({ onSearch }: ClientFiltersProps) {
     useEffect(() => {
         const handler = setTimeout(() => {
             onSearch(value);
-        }, 300);
+        }, 300); // 300ms debounce delay
 
-        return () => clearTimeout(handler);
+        return () => {
+            clearTimeout(handler);
+        };
     }, [value, onSearch]);
 
     return (

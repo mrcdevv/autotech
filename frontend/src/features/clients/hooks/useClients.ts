@@ -19,8 +19,8 @@ export function useClients(initialPage = 0, initialSize = 12) {
                 ? await clientsApi.search(query, page, size)
                 : await clientsApi.getAll(page, size);
 
-            setClients(res.data.data.content);
-            setTotalElements(res.data.data.totalElements);
+            setClients(res.data.data.content || []);
+            setTotalElements(res.data.data.totalElements || 0);
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "Error al cargar los clientes");
         } finally {
