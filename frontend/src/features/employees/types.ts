@@ -11,6 +11,7 @@ export interface EmployeeResponse {
   phone: string;
   address: string | null;
   province: string | null;
+  city: string | null;
   country: string | null;
   maritalStatus: string | null;
   childrenCount: number;
@@ -29,6 +30,7 @@ export interface EmployeeRequest {
   phone: string;
   address: string | null;
   province: string | null;
+  city: string | null;
   country: string | null;
   maritalStatus: string | null;
   childrenCount: number;

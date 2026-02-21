@@ -39,6 +39,9 @@ public record EmployeeRequest(
     @Size(max = 100, message = "La provincia no debe superar los 100 caracteres")
     String province,
 
+    @Size(max = 100, message = "La ciudad no debe superar los 100 caracteres")
+    String city,
+
     @Size(max = 100, message = "El país no debe superar los 100 caracteres")
     String country,
 

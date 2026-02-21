@@ -26,6 +26,7 @@ public class EmployeeMapper {
                 entity.getPhone(),
                 entity.getAddress(),
                 entity.getProvince(),
+                entity.getCity(),
                 entity.getCountry(),
                 entity.getMaritalStatus(),
                 entity.getChildrenCount(),
@@ -48,6 +49,7 @@ public class EmployeeMapper {
                 .phone(request.phone())
                 .address(request.address())
                 .province(request.province())
+                .city(request.city())
                 .country(request.country())
                 .maritalStatus(request.maritalStatus())
                 .childrenCount(request.childrenCount())

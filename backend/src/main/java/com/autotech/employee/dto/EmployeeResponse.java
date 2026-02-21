@@ -16,6 +16,7 @@ public record EmployeeResponse(
     String phone,
     String address,
     String province,
+    String city,
     String country,
     String maritalStatus,
     Integer childrenCount,
