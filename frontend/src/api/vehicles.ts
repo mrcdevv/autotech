@@ -42,4 +42,9 @@ export const vehiclesApi = {
     apiClient.get<ApiResponse<PageResponse<VehicleResponse>>>("/vehicles/filter/by-model", {
       params: { model, page, size },
     }),
+
+  filterByInRepair: (inRepair: boolean, page = 0, size = 12) =>
+    apiClient.get<ApiResponse<PageResponse<VehicleResponse>>>("/vehicles/filter/in-repair", {
+      params: { inRepair, page, size },
+    }),
 };
