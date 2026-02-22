@@ -341,10 +341,5 @@ export const cities = [
     {
         "code": "BSA",
         "name": "Gral. Pacheco"
-    },
-    {
-        "code": "BSA",
-        "name":.
-    ..
-    // The rest of the cities data
+    }
 ];
