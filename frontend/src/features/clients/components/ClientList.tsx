@@ -98,7 +98,7 @@ export default function ClientList() {
                 setSelectedIds([]);
                 refetch();
             }
-        } catch (err) {
+        } catch {
             setActionError("Error al eliminar clientes.");
         }
     };
@@ -114,7 +114,7 @@ export default function ClientList() {
             document.body.appendChild(link);
             link.click();
             link.remove();
-        } catch (e) {
+        } catch {
             setActionError("Error al exportar a Excel");
         }
     };
