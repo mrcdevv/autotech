@@ -45,6 +45,7 @@ export function EmployeeDetail({ open, employee, onClose }: EmployeeDetailProps)
           <Field label="Teléfono" value={employee.phone} />
           <Field label="Dirección" value={employee.address} />
           <Field label="Provincia" value={employee.province} />
+          <Field label="Ciudad" value={employee.city} />
           <Field label="País" value={employee.country} />
           <Field label="Estado Civil" value={employee.maritalStatus} />
           <Field label="Cantidad de Hijos" value={String(employee.childrenCount)} />

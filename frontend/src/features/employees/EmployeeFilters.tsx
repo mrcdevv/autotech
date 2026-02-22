@@ -42,15 +42,18 @@ export function EmployeeFilters({ onFilterChange }: EmployeeFiltersProps) {
         size="small"
         placeholder="Buscar por DNI"
         value={dni}
-        onChange={(e) => setDni(e.target.value)}
-        slotProps={{
-          input: {
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          },
+        onChange={(e) => {
+          const value = e.target.value;
+          if (value === "" || /^[0-9]{1,8}$/.test(value)) {
+            setDni(value);
+          }
+        }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon />
+            </InputAdornment>
+          ),
         }}
       />
 

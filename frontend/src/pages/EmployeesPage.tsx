@@ -9,6 +9,7 @@ import { EmployeeList } from "@/features/employees/EmployeeList";
 import { EmployeeForm } from "@/features/employees/EmployeeForm";
 import { EmployeeFilters } from "@/features/employees/EmployeeFilters";
 import { EmployeeDetail } from "@/features/employees/EmployeeDetail";
+import { WarningDialog } from "@/components/Shared/WarningDialog";
 import type { EmployeeResponse, EmployeeRequest } from "@/features/employees/types";
 import type { PageResponse, ApiResponse } from "@/types/api";
 import type { GridPaginationModel } from "@mui/x-data-grid";
@@ -30,6 +31,9 @@ export default function EmployeesPage() {
     message: "",
     severity: "success",
   });
+  const [warningDialogOpen, setWarningDialogOpen] = useState(false);
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<number | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -83,14 +87,23 @@ export default function EmployeesPage() {
     setDetailOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-    try {
-      await employeesApi.delete(id);
-      showSnackbar("Empleado eliminado", "success");
-      fetchData();
-    } catch {
-      showSnackbar("Error al eliminar el empleado", "error");
+  const handleDelete = (id: number) => {
+    setEmployeeToDelete(id);
+    setDeleteConfirmationOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (employeeToDelete) {
+      try {
+        await employeesApi.delete(employeeToDelete);
+        showSnackbar("Empleado eliminado", "success");
+        fetchData();
+      } catch {
+        showSnackbar("Error al eliminar el empleado", "error");
+      }
     }
+    setDeleteConfirmationOpen(false);
+    setEmployeeToDelete(null);
   };
 
   const handleSave = async (request: EmployeeRequest) => {
@@ -107,7 +120,12 @@ export default function EmployeesPage() {
     } catch (err) {
       const error = err as { response?: { data?: ApiResponse<unknown> } };
       const message = error.response?.data?.message ?? "Error al guardar el empleado";
-      showSnackbar(message, "error");
+
+      if (message.includes("El DNI ya se encuentra registrado")) {
+        setWarningDialogOpen(true);
+      } else {
+        showSnackbar(message, "error");
+      }
     }
   };
 
@@ -195,6 +213,22 @@ export default function EmployeesPage() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      <WarningDialog
+        open={warningDialogOpen}
+        onClose={() => setWarningDialogOpen(false)}
+        onConfirm={() => setWarningDialogOpen(false)}
+        title="DNI ya registrado"
+        message="El DNI que ha ingresado ya se encuentra registrado en el sistema. Por favor, verifique los datos e intente nuevamente."
+      />
+
+      <WarningDialog
+        open={deleteConfirmationOpen}
+        onClose={() => setDeleteConfirmationOpen(false)}
+        onConfirm={confirmDelete}
+        title="Confirmar Eliminación"
+        message="¿Está seguro de que desea eliminar este empleado? Esta acción no se puede deshacer."
+      />
     </Box>
   );
 }
