@@ -49,7 +49,6 @@ const INITIAL_FORM: ClientRequest = {
 export default function ClientForm({ open, onClose, client, onSuccess }: ClientFormProps) {
   const [form, setForm] = useState<ClientRequest>(INITIAL_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [isFormValid, setIsFormValid] = useState(false);
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -73,7 +72,6 @@ export default function ClientForm({ open, onClose, client, onSuccess }: ClientF
         setForm(INITIAL_FORM);
       }
       setErrors({});
-      setIsFormValid(false);
       setApiError(null);
     }
   }, [client, open]);
@@ -97,7 +95,7 @@ export default function ClientForm({ open, onClose, client, onSuccess }: ClientF
     );
   };
 
-  const validate = (formToValidate: ClientRequest): boolean => {
+  const validate = (formToValidate: ClientRequest, showErrors: boolean = true): boolean => {
     const newErrors: FormErrors = {};
 
     if (!formToValidate.firstName.trim()) newErrors.firstName = "El nombre es obligatorio";
@@ -119,14 +117,18 @@ export default function ClientForm({ open, onClose, client, onSuccess }: ClientF
       newErrors.email = "El formato del correo electrónico no es válido";
     }
 
-    setErrors(newErrors);
+    if (showErrors) {
+      setErrors(newErrors);
+    }
     return Object.keys(newErrors).length === 0 && isFormComplete(formToValidate);
   };
 
   const handleChange = (field: keyof ClientRequest, value: unknown) => {
     const newForm = { ...form, [field]: value };
     setForm(newForm);
-    setIsFormValid(validate(newForm));
+    if (Object.keys(errors).length > 0) {
+      validate(newForm, true);
+    }
   };
 
   const handleLetterInputChange = (field: keyof ClientRequest, value: string) => {
@@ -334,7 +336,7 @@ export default function ClientForm({ open, onClose, client, onSuccess }: ClientF
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={loading}>Cancelar</Button>
-        <Button variant="contained" onClick={handleSubmit} disabled={!isFormValid || loading}>
+        <Button variant="contained" onClick={handleSubmit} disabled={loading}>
           {loading ? <CircularProgress size={24} /> : "Guardar"}
         </Button>
       </DialogActions>

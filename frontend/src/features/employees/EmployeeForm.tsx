@@ -58,7 +58,6 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
   const [form, setForm] = useState<EmployeeRequest>(INITIAL_FORM);
   const [roles, setRoles] = useState<RoleResponse[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [isFormValid, setIsFormValid] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -88,7 +87,6 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
       setForm(INITIAL_FORM);
     }
     setErrors({});
-    setIsFormValid(false);
   }, [employee, open]);
 
   const isFormComplete = (form: EmployeeRequest) => {
@@ -101,7 +99,7 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
     );
   };
 
-  const validate = (formToValidate: EmployeeRequest): boolean => {
+  const validate = (formToValidate: EmployeeRequest, showErrors: boolean = true): boolean => {
     const newErrors: FormErrors = {};
 
     if (!formToValidate.firstName.trim()) newErrors.firstName = "El nombre es obligatorio";
@@ -117,14 +115,21 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
     }
     if (formToValidate.roleIds.length === 0) newErrors.roleIds = "Debe asignar al menos un rol";
 
-    setErrors(newErrors);
+    if (showErrors) {
+      setErrors(newErrors);
+    }
     return Object.keys(newErrors).length === 0 && isFormComplete(formToValidate);
   };
 
   const handleChange = (field: keyof EmployeeRequest, value: unknown) => {
     const newForm = { ...form, [field]: value };
     setForm(newForm);
-    setIsFormValid(validate(newForm));
+    // If there were already errors showing, update them silently to clear them as user types, 
+    // but don't show new ones. Actually, to be strict: "only when save is pressed".
+    // If user is fixing an error, it's nice if it disappears.
+    if (Object.keys(errors).length > 0) {
+      validate(newForm, true);
+    }
   };
 
   const handleLetterInputChange = (field: keyof EmployeeRequest, value: string) => {
@@ -315,7 +320,7 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>
-        <Button variant="contained" onClick={handleSubmit} disabled={!isFormValid}>
+        <Button variant="contained" onClick={handleSubmit}>
           Guardar
         </Button>
       </DialogActions>
