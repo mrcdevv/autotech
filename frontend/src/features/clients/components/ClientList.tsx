@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DataGrid, GridColDef, GridPaginationModel, GridRowSelectionModel } from "@mui/x-data-grid";
 import { Box, Button, IconButton, Chip, Dialog, DialogTitle, DialogContent, DialogActions, Typography, Alert, Snackbar } from "@mui/material";
 import { Edit as EditIcon, Delete as DeleteIcon, Visibility as VisibilityIcon, Add as AddIcon, FileDownload as ExportIcon } from "@mui/icons-material";
@@ -12,12 +12,22 @@ import type { Client } from "@/features/clients/types/client";
 export default function ClientList() {
     const { clients, totalElements, page, size, setPage, setSize, loading, error: fetchError, refetch, setQuery } = useClients();
     const [selectedIds, setSelectedIds] = useState<GridRowSelectionModel>([]);
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] =useState(false);
     const [formOpen, setFormOpen] = useState(false);
     const [detailOpen, setDetailOpen] = useState(false);
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
+    const isInitialMount = useRef(true);
+
+    useEffect(() => {
+        // This effect should only run when the form is closed, not on initial mount.
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+        } else if (!formOpen) {
+            refetch();
+        }
+    }, [formOpen, refetch]);
 
     const columns: GridColDef<Client>[] = [
         { field: "dni", headerName: "Documento", width: 150, valueGetter: (val) => val || "—" },
@@ -109,6 +119,11 @@ export default function ClientList() {
         }
     };
 
+    const handleFormSuccess = (savedClient: Client) => {
+        setFormOpen(false);
+        setSuccessMsg(`Cliente ${savedClient.firstName} ${savedClient.lastName} guardado correctamente.`);
+    };
+
     return (
         <Box sx={{ px: 3, py: 2.5 }}>
             <Typography variant="h3" sx={{ mb: 2 }}>Clientes</Typography>
@@ -121,6 +136,9 @@ export default function ClientList() {
 
             {fetchError && <Alert severity="error" sx={{ mb: 2 }}>{fetchError}</Alert>}
             {actionError && <Alert severity="error" sx={{ mb: 2 }}>{actionError}</Alert>}
+            {setQuery && !loading && totalElements === 0 && (
+                <Alert severity="error" sx={{ mb: 2 }}>No se encuentra ningún cliente registrado con esos datos.</Alert>
+            )}
 
             <Box sx={{ height: 600, width: '100%' }}>
                 <DataGrid
@@ -145,19 +163,28 @@ export default function ClientList() {
                 </Button>
             )}
 
-            <ClientForm open={formOpen} onClose={() => setFormOpen(false)} client={selectedClient} onSuccess={() => { setFormOpen(false); refetch(); setSuccessMsg("Operación exitosa"); }} />
+            <ClientForm open={formOpen} onClose={() => setFormOpen(false)} client={selectedClient} onSuccess={handleFormSuccess} />
             <ClientDetailDialog open={detailOpen} onClose={() => setDetailOpen(false)} client={selectedClient} />
 
-            <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+            <Dialog open={deleteDialogOpen} onClose={() => { setDeleteDialogOpen(false); setSelectedIds([]); }}>
                 <DialogTitle>Confirmar eliminación</DialogTitle>
                 <DialogContent>¿Está seguro de eliminar los clientes seleccionados?</DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+                    <Button onClick={() => { setDeleteDialogOpen(false); setSelectedIds([]); }}>Cancelar</Button>
                     <Button onClick={handleConfirmDelete} color="error" variant="contained">Eliminar</Button>
                 </DialogActions>
             </Dialog>
 
-            <Snackbar open={!!successMsg} autoHideDuration={6000} onClose={() => setSuccessMsg(null)} message={successMsg} />
+            <Snackbar
+                open={!!successMsg}
+                autoHideDuration={6000}
+                onClose={() => setSuccessMsg(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert onClose={() => setSuccessMsg(null)} severity="success" sx={{ width: '100%' }}>
+                    {successMsg}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 }
