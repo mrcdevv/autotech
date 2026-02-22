@@ -113,38 +113,65 @@ export default function VehiclesPage() {
 
   return (
     <Box sx={{ px: 3, py: 2.5 }}>
-      <Typography variant="h3" sx={{ mb: 2 }}>
-        Vehiculos
-      </Typography>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, color: "#111827" }}>
+          Vehículos
+        </Typography>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, gap: 2 }}>
-        <TextField
-          placeholder="Buscar por patente..."
-          value={searchPlate}
-          onChange={(e) => {
-            setSearchPlate(e.target.value);
-            setPage(0);
-          }}
-          size="small"
-          sx={{ minWidth: 300 }}
-        />
-        <Box sx={{ display: "flex", gap: 1 }}>
+        <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+          <TextField
+            placeholder="Buscar por patente..."
+            value={searchPlate}
+            onChange={(e) => {
+              setSearchPlate(e.target.value);
+              setPage(0);
+            }}
+            size="small"
+            sx={{
+              minWidth: 260,
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "8px",
+                backgroundColor: "#fff",
+                "& fieldset": { borderColor: "#e2e8f0" },
+                "&:hover fieldset": { borderColor: "#cbd5e1" },
+              },
+              "& .MuiInputBase-input": {
+                padding: "8px 14px",
+                fontSize: "0.875rem",
+              },
+            }}
+          />
           <VehicleFilters
             brands={brands}
             onApplyFilter={applyFilter}
             onClearFilters={clearFilters}
           />
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreate}
+            sx={{
+              borderRadius: "8px",
+              textTransform: "none",
+              fontWeight: 600,
+              boxShadow: "none",
+              backgroundColor: "#0ea5e9", // A nice soft blue similar to the image
+              "&:hover": {
+                backgroundColor: "#0284c7",
+                boxShadow: "none",
+              },
+            }}
+          >
             Nuevo vehículo
           </Button>
         </Box>
       </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3, borderRadius: "8px" }}>
+          {error}
+        </Alert>
+      )}
 
       <VehicleList
         rows={vehicles}
