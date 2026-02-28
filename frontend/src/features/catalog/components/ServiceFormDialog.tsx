@@ -8,6 +8,7 @@ import {
   Button,
   TextField,
   Stack,
+  InputAdornment,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 
@@ -71,6 +72,7 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
               <TextField
                 fullWidth
                 label="Nombre"
+                placeholder="Ej: Cambio de aceite"
                 value={form.name}
                 onChange={(e) => handleChange("name", e.target.value)}
                 error={!!errors.name}
@@ -82,6 +84,7 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
               <TextField
                 fullWidth
                 label="Descripción"
+                placeholder="Ej: Cambio de aceite sintético 10W-40 y filtro de aceite"
                 value={form.description ?? ""}
                 onChange={(e) => handleChange("description", e.target.value || null)}
                 multiline
@@ -92,13 +95,19 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
               <TextField
                 fullWidth
                 label="Precio"
+                placeholder="Ej: 5000.00"
                 type="number"
                 value={form.price ?? ""}
                 onChange={(e) => {
                   const val = e.target.value;
                   handleChange("price", val === "" ? null : parseFloat(val));
                 }}
-                slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
+                slotProps={{
+                  htmlInput: { min: 0, step: "0.01" },
+                  input: {
+                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                  },
+                }}
               />
             </Grid>
           </Grid>

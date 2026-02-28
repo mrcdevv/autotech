@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { Box, Typography, Button, TextField, Alert, Snackbar } from "@mui/material";
+import { Box, Typography, Button, TextField, Alert, Snackbar, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 
 import { useCatalogServices } from "@/features/catalog/hooks/useCatalogServices";
@@ -33,6 +33,8 @@ export default function ServicesPage() {
     message: "",
     severity: "success",
   });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [serviceToDelete, setServiceToDelete] = useState<number | null>(null);
 
   const showSnackbar = (message: string, severity: "success" | "error") => {
     setSnackbar({ open: true, message, severity });
@@ -66,12 +68,21 @@ export default function ServicesPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const confirmDelete = (id: number) => {
+    setServiceToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (serviceToDelete === null) return;
     try {
-      await deleteService(id);
+      await deleteService(serviceToDelete);
       showSnackbar("Servicio eliminado", "success");
     } catch {
       showSnackbar("Error al eliminar el servicio", "error");
+    } finally {
+      setDeleteDialogOpen(false);
+      setServiceToDelete(null);
     }
   };
 
@@ -112,7 +123,7 @@ export default function ServicesPage() {
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
         onEditRow={handleEdit}
-        onDeleteRow={handleDelete}
+        onDeleteRow={confirmDelete}
       />
 
       <ServiceFormDialog
@@ -121,6 +132,21 @@ export default function ServicesPage() {
         onSave={handleSave}
         initialData={editingService}
       />
+
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Confirmar eliminación</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Estás seguro de que deseas eliminar este servicio? Esta acción no se puede deshacer.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+          <Button onClick={handleDelete} color="error" variant="contained">
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar
         open={snackbar.open}
