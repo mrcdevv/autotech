@@ -61,7 +61,7 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
 
   useEffect(() => {
     if (open) {
-      rolesApi.getAll().then((res) => setRoles(res.data.data)).catch(() => {});
+      rolesApi.getAll().then((res) => setRoles(res.data.data)).catch(() => { });
     }
   }, [open]);
 
@@ -95,6 +95,13 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
       form.lastName.trim() !== "" &&
       form.dni.trim() !== "" &&
       form.phone.trim() !== "" &&
+      form.email !== null && form.email.trim() !== "" &&
+      form.address !== null && form.address.trim() !== "" &&
+      form.province !== null && form.province.trim() !== "" &&
+      form.city !== null && form.city.trim() !== "" &&
+      form.country !== null && form.country.trim() !== "" &&
+      form.maritalStatus !== null && form.maritalStatus.trim() !== "" &&
+      form.entryDate !== null && form.entryDate.trim() !== "" &&
       form.roleIds.length > 0
     );
   };
@@ -110,9 +117,20 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
       newErrors.dni = "El DNI debe contener 8 dígitos numéricos";
     }
     if (!formToValidate.phone.trim()) newErrors.phone = "El teléfono es obligatorio";
-    if (formToValidate.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formToValidate.email)) {
+
+    if (!formToValidate.email || !formToValidate.email.trim()) {
+      newErrors.email = "El correo electrónico es obligatorio";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formToValidate.email)) {
       newErrors.email = "El formato del correo electrónico no es válido";
     }
+
+    if (!formToValidate.address || !formToValidate.address.trim()) newErrors.address = "La dirección es obligatoria";
+    if (!formToValidate.province || !formToValidate.province.trim()) newErrors.province = "La provincia es obligatoria";
+    if (!formToValidate.city || !formToValidate.city.trim()) newErrors.city = "La ciudad es obligatoria";
+    if (!formToValidate.country || !formToValidate.country.trim()) newErrors.country = "El país es obligatorio";
+    if (!formToValidate.maritalStatus || !formToValidate.maritalStatus.trim()) newErrors.maritalStatus = "El estado civil es obligatorio";
+    if (!formToValidate.entryDate || !formToValidate.entryDate.trim()) newErrors.entryDate = "La fecha de entrada es obligatoria";
+
     if (formToValidate.roleIds.length === 0) newErrors.roleIds = "Debe asignar al menos un rol";
 
     if (showErrors) {
@@ -137,7 +155,7 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
     const filteredValue = value.replace(/[^a-zA-Z\u00C0-\u017F\s]/g, "");
     handleChange(field, filteredValue);
   };
-  
+
   const handleDniChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (value === "" || /^[0-9]{1,8}$/.test(value)) {
@@ -201,6 +219,7 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
                 onChange={(e) => handleChange("email", e.target.value || null)}
                 error={!!errors.email}
                 helperText={errors.email}
+                required
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -220,6 +239,9 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
                 label="Dirección"
                 value={form.address ?? ""}
                 onChange={(e) => handleChange("address", e.target.value || null)}
+                error={!!errors.address}
+                helperText={errors.address}
+                required
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -228,6 +250,9 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
                 label="Provincia"
                 value={form.province ?? ""}
                 onChange={(e) => handleChange("province", e.target.value || null)}
+                error={!!errors.province}
+                helperText={errors.province}
+                required
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -236,6 +261,9 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
                 label="Ciudad"
                 value={form.city ?? ""}
                 onChange={(e) => handleChange("city", e.target.value || null)}
+                error={!!errors.city}
+                helperText={errors.city}
+                required
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -244,6 +272,9 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
                 label="País"
                 value={form.country ?? ""}
                 onChange={(e) => handleChange("country", e.target.value || null)}
+                error={!!errors.country}
+                helperText={errors.country}
+                required
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -252,6 +283,9 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
                 label="Estado Civil"
                 value={form.maritalStatus ?? ""}
                 onChange={(e) => handleChange("maritalStatus", e.target.value || null)}
+                error={!!errors.maritalStatus}
+                helperText={errors.maritalStatus}
+                required
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -273,7 +307,14 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
                 onChange={(date) =>
                   handleChange("entryDate", date ? date.format("YYYY-MM-DD") : null)
                 }
-                slotProps={{ textField: { fullWidth: true } }}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    required: true,
+                    error: !!errors.entryDate,
+                    helperText: errors.entryDate,
+                  },
+                }}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -320,7 +361,7 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>
-        <Button variant="contained" onClick={handleSubmit}>
+        <Button variant="contained" onClick={handleSubmit} disabled={!isFormComplete(form)}>
           Guardar
         </Button>
       </DialogActions>
