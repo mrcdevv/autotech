@@ -26,7 +26,11 @@ interface FormErrors {
 }
 
 export function ServiceFormDialog({ open, onClose, onSave, initialData }: ServiceFormDialogProps) {
-  const [form, setForm] = useState<CatalogServiceRequest>({ name: "", description: null, price: null });
+  const [form, setForm] = useState<Omit<CatalogServiceRequest, "price"> & { price: number | string | null }>({
+    name: "",
+    description: null,
+    price: null,
+  });
   const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
@@ -38,7 +42,7 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
           price: initialData.price,
         });
       } else {
-        setForm({ name: "", description: null, price: null });
+        setForm({ name: "", description: null, price: "" });
       }
       setErrors({});
     }
@@ -52,13 +56,19 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
     if (!form.name.trim()) newErrors.name = "El nombre del servicio es obligatorio";
+    if (form.price === "" || form.price === null || form.price === undefined) {
+      newErrors.price = "El precio es obligatorio";
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
     if (validate()) {
-      await onSave(form);
+      await onSave({
+        ...form,
+        price: Number(form.price),
+      } as CatalogServiceRequest);
     }
   };
 
@@ -100,8 +110,11 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
                 value={form.price ?? ""}
                 onChange={(e) => {
                   const val = e.target.value;
-                  handleChange("price", val === "" ? null : parseFloat(val));
+                  handleChange("price", val === "" ? "" : parseFloat(val));
                 }}
+                error={!!errors.price}
+                helperText={errors.price}
+                required
                 slotProps={{
                   htmlInput: { min: 0, step: "0.01" },
                   input: {
