@@ -25,7 +25,7 @@ interface FormErrors {
 }
 
 export function ProductFormDialog({ open, onClose, onSave, initialData }: ProductFormDialogProps) {
-  const [form, setForm] = useState<ProductRequest>({
+  const [form, setForm] = useState<Omit<ProductRequest, "quantity"> & { quantity: number | string }>({
     name: "",
     description: null,
     quantity: 0,
@@ -57,10 +57,10 @@ export function ProductFormDialog({ open, onClose, onSave, initialData }: Produc
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
     if (!form.name.trim()) newErrors.name = "El nombre del producto es obligatorio";
-    if (form.quantity === null || form.quantity === undefined) {
+    if (form.quantity === "" || form.quantity === null || form.quantity === undefined) {
       newErrors.quantity = "La cantidad es obligatoria";
     }
-    if (form.unitPrice === null || form.unitPrice === undefined) {
+    if (form.unitPrice === "" || form.unitPrice === null || form.unitPrice === undefined) {
       newErrors.unitPrice = "El precio unitario es obligatorio";
     }
     setErrors(newErrors);
@@ -69,7 +69,11 @@ export function ProductFormDialog({ open, onClose, onSave, initialData }: Produc
 
   const handleSubmit = async () => {
     if (validate()) {
-      await onSave(form);
+      await onSave({
+        ...form,
+        quantity: Number(form.quantity),
+        unitPrice: Number(form.unitPrice),
+      } as ProductRequest);
     }
   };
 
@@ -124,7 +128,7 @@ export function ProductFormDialog({ open, onClose, onSave, initialData }: Produc
                 value={form.unitPrice ?? ""}
                 onChange={(e) => {
                   const val = e.target.value;
-                  handleChange("unitPrice", val === "" ? null : parseFloat(val));
+                  handleChange("unitPrice", val === "" ? "" : parseFloat(val));
                 }}
                 error={!!errors.unitPrice}
                 helperText={errors.unitPrice}

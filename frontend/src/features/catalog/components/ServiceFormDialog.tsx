@@ -26,7 +26,7 @@ interface FormErrors {
 }
 
 export function ServiceFormDialog({ open, onClose, onSave, initialData }: ServiceFormDialogProps) {
-  const [form, setForm] = useState<CatalogServiceRequest>({
+  const [form, setForm] = useState<Omit<CatalogServiceRequest, "price"> & { price: number | string | null }>({
     name: "",
     description: null,
     price: null,
@@ -42,7 +42,7 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
           price: initialData.price,
         });
       } else {
-        setForm({ name: "", description: null, price: null });
+        setForm({ name: "", description: null, price: "" });
       }
       setErrors({});
     }
@@ -56,7 +56,7 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
     if (!form.name.trim()) newErrors.name = "El nombre del servicio es obligatorio";
-    if (form.price === null || form.price === undefined) {
+    if (form.price === "" || form.price === null || form.price === undefined) {
       newErrors.price = "El precio es obligatorio";
     }
     setErrors(newErrors);
@@ -65,7 +65,10 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
 
   const handleSubmit = async () => {
     if (validate()) {
-      await onSave(form);
+      await onSave({
+        ...form,
+        price: Number(form.price),
+      } as CatalogServiceRequest);
     }
   };
 
@@ -107,7 +110,7 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
                 value={form.price ?? ""}
                 onChange={(e) => {
                   const val = e.target.value;
-                  handleChange("price", val === "" ? null : parseFloat(val));
+                  handleChange("price", val === "" ? "" : parseFloat(val));
                 }}
                 error={!!errors.price}
                 helperText={errors.price}
