@@ -109,8 +109,11 @@ export function ProductFormDialog({ open, onClose, onSave, initialData }: Produc
                 fullWidth
                 label="Cantidad"
                 type="number"
-                value={form.quantity}
-                onChange={(e) => handleChange("quantity", e.target.value)}
+                value={form.quantity ?? ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleChange("quantity", val === "" ? null : Math.max(0, parseInt(val)));
+                }}
                 error={!!errors.quantity}
                 helperText={errors.quantity}
                 required

@@ -62,6 +62,22 @@ export function ServicesGrid({ services, onChange, readonly = false, showErrors 
             getOptionLabel={(option) =>
               typeof option === "string" ? option : option.name
             }
+            filterOptions={(options, state) => {
+              const filtered = options.filter(
+                (opt) => !services.some((s, i) => i !== index && s.serviceName === opt.name)
+              );
+              if (state.inputValue) {
+                return filtered.filter((opt) =>
+                  opt.name.toLowerCase().includes(state.inputValue.toLowerCase())
+                );
+              }
+              return filtered;
+            }}
+            onOpen={() => {
+              if (!svc.serviceName) {
+                fetchCatalogServices("");
+              }
+            }}
             inputValue={svc.serviceName}
             onInputChange={(_, value) => {
               updateService(index, "serviceName", value);
@@ -92,12 +108,17 @@ export function ServicesGrid({ services, onChange, readonly = false, showErrors 
           <TextField
             type="number"
             label="Precio"
-            value={svc.price}
-            onChange={(e) => updateService(index, "price", Number(e.target.value))}
+            value={svc.price === 0 ? "" : svc.price}
+            onChange={(e) => {
+              const val = e.target.value;
+              updateService(index, "price", val === "" ? 0 : Number(val));
+            }}
+            slotProps={{
+              htmlInput: { min: 0, step: "0.01", readOnly: true },
+            }}
             disabled={readonly}
             size="small"
             sx={{ flex: 1 }}
-            slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
             error={showErrors && svc.price < 0}
             helperText={showErrors && svc.price < 0 ? "No puede ser negativo" : undefined}
           />
