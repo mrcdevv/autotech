@@ -308,10 +308,6 @@ export function InvoiceDetail({ invoiceId, repairOrderId, estimateId }: InvoiceD
     setVehicleInputValue("");
     setVehicles([]);
     if (value) {
-      // Check client type from API response - we need to detect TEMPORAL
-      // The autocomplete doesn't have clientType, so we check if DNI is null
-      // For a proper implementation, we'd need to add clientType to the autocomplete response
-      // For now we'll handle it when the invoice is created (backend validates)
       setIsTemporalClient(false);
       setClientType(null);
     } else {
@@ -322,7 +318,7 @@ export function InvoiceDetail({ invoiceId, repairOrderId, estimateId }: InvoiceD
 
   if (loading && !isCreateMode) {
     return (
-      <Box display="flex" justifyContent="center" mt={4}>
+      <Box display="flex" justifyContent="center" mt={4} className="no-print">
         <CircularProgress />
       </Box>
     );
@@ -331,7 +327,7 @@ export function InvoiceDetail({ invoiceId, repairOrderId, estimateId }: InvoiceD
   if (error && !isCreateMode && !invoice) {
     if (fromRepairOrder) {
       return (
-        <Box sx={{ mt: 2 }}>
+        <Box sx={{ mt: 2 }} className="no-print">
           <Typography color="text.secondary" sx={{ mb: 2 }}>
             No hay factura asociada a esta orden de trabajo.
           </Typography>
@@ -341,152 +337,225 @@ export function InvoiceDetail({ invoiceId, repairOrderId, estimateId }: InvoiceD
         </Box>
       );
     }
-    return <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>;
+    return <Alert severity="error" sx={{ mt: 2 }} className="no-print">{error}</Alert>;
   }
 
   return (
     <Box sx={{ mt: 2 }}>
-      {invoice?.status && (
-        <Box mb={2} display="flex" alignItems="center" gap={2}>
-          <Chip
-            label={invoice.status === "PAGADA" ? "Pagada" : "Pendiente"}
-            color={invoice.status === "PAGADA" ? "success" : "warning"}
-          />
-          {!isCreateMode && (
-            <Button startIcon={<DownloadIcon />} onClick={() => window.print()}>
-              Descargar factura
-            </Button>
-          )}
+      {/* Professional Print-only Header */}
+      <Box
+        sx={{
+          display: "none",
+          "@media print": {
+            display: "block",
+            mb: 4,
+            borderBottom: "2px solid #000",
+            pb: 2,
+          },
+        }}
+      >
+        <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+          <Box>
+            <Typography variant="h4" fontWeight="bold">AUTOTECH</Typography>
+            <Typography variant="body2">Servicio Mecánico Integral</Typography>
+            <Typography variant="body2">Dirección: Av. Colón 1234, Córdoba</Typography>
+            <Typography variant="body2">Teléfono: (351) 480-1234</Typography>
+          </Box>
+          <Box textAlign="right">
+            <Typography variant="h5" fontWeight="bold">FACTURA</Typography>
+            <Typography variant="body1">Nº: {invoice?.id?.toString().padStart(8, "0") || "PROVISORIA"}</Typography>
+            <Typography variant="body1">Fecha: {invoice?.createdAt ? new Date(invoice.createdAt).toLocaleDateString() : new Date().toLocaleDateString()}</Typography>
+          </Box>
         </Box>
-      )}
+      </Box>
 
-      {apiError && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setApiError(null)}>
-          {apiError}
-        </Alert>
-      )}
+      {/* Control UI - Hidden during print via .no-print */}
+      <Box className="no-print">
+        {invoice?.status && (
+          <Box mb={2} display="flex" alignItems="center" gap={2}>
+            <Chip
+              label={invoice.status === "PAGADA" ? "Pagada" : "Pendiente"}
+              color={invoice.status === "PAGADA" ? "success" : "warning"}
+            />
+            {!isCreateMode && (
+              <Button startIcon={<DownloadIcon />} onClick={() => window.print()}>
+                Descargar factura
+              </Button>
+            )}
+          </Box>
+        )}
 
-      {formError && (
-        <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setFormError(null)}>
-          {formError}
-        </Alert>
-      )}
+        {apiError && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setApiError(null)}>
+            {apiError}
+          </Alert>
+        )}
 
-      <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
-        <Tab label="Datos de la Factura" />
-        <Tab label="Pagos" disabled={isCreateMode} />
-      </Tabs>
+        {formError && (
+          <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setFormError(null)}>
+            {formError}
+          </Alert>
+        )}
 
+        <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
+          <Tab label="Datos de la Factura" />
+          <Tab label="Pagos" disabled={isCreateMode} />
+        </Tabs>
+      </Box>
+
+      {/* Main Content Area */}
       {activeTab === 0 && (
         <Box sx={{ mt: 2 }}>
-          <Paper sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
+          <Paper
+            sx={{
+              p: 3,
+              mb: 3,
+              "@media print": {
+                p: 0,
+                boxShadow: "none",
+                border: "none",
+              },
+            }}
+          >
+            <Typography variant="h6" sx={{ mb: 2, "@media print": { display: "none" } }}>
               Datos del cliente y vehículo
             </Typography>
-            <Box display="flex" gap={2} flexWrap="wrap">
-              <Autocomplete
-                options={clients}
-                getOptionLabel={(option) =>
-                  `${option.firstName} ${option.lastName}${option.dni ? ` (${option.dni})` : ""}`
-                }
-                value={selectedClient}
-                inputValue={clientInputValue}
-                onInputChange={(_, value) => {
-                  setClientInputValue(value);
-                  if (value.length >= 2) fetchClients(value);
-                }}
-                onChange={handleClientChange}
-                renderInput={(params) => (
-                  <TextField {...params} label="Cliente" size="small" />
-                )}
-                disabled={isReadonly || fromRepairOrder}
-                sx={{ minWidth: 300 }}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-              />
-              <Autocomplete
-                options={vehicles}
-                getOptionLabel={(option) =>
-                  `${option.plate}${option.model ? ` - ${option.model}` : ""}`
-                }
-                value={selectedVehicle}
-                inputValue={vehicleInputValue}
-                onInputChange={(_, value) => setVehicleInputValue(value)}
-                onChange={(_, value) => {
-                  setSelectedVehicle(value);
-                  setVehicleInputValue(
-                    value ? `${value.plate}${value.model ? ` - ${value.model}` : ""}` : "",
-                  );
-                }}
-                renderInput={(params) => (
-                  <TextField {...params} label="Vehículo" size="small" />
-                )}
-                disabled={isReadonly || fromRepairOrder || !selectedClient}
-                sx={{ minWidth: 300 }}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-              />
+            
+            {/* Print-only Client Info Layout */}
+            <Box sx={{ display: "none", "@media print": { display: "block", mb: 3 } }}>
+              <Box display="flex" justifyContent="space-between">
+                <Box>
+                  <Typography variant="subtitle2" color="textSecondary">CLIENTE</Typography>
+                  <Typography variant="body1" fontWeight="bold">
+                    {invoice?.clientFullName || `${selectedClient?.firstName} ${selectedClient?.lastName}`}
+                  </Typography>
+                  <Typography variant="body2">DNI: {invoice?.clientDni || selectedClient?.dni || "—"}</Typography>
+                </Box>
+                <Box textAlign="right">
+                  <Typography variant="subtitle2" color="textSecondary">VEHÍCULO</Typography>
+                  <Typography variant="body1" fontWeight="bold">
+                    {invoice?.vehiclePlate || selectedVehicle?.plate}
+                  </Typography>
+                  <Typography variant="body2">
+                    {invoice?.vehicleBrand || selectedVehicle?.brandName} {invoice?.vehicleModel || selectedVehicle?.model}
+                  </Typography>
+                </Box>
+              </Box>
             </Box>
-            {selectedClient && (
+
+            {/* Interactive Forms - Hidden during print */}
+            <Box className="no-print">
+              <Box display="flex" gap={2} flexWrap="wrap">
+                <Autocomplete
+                  options={clients}
+                  getOptionLabel={(option) =>
+                    `${option.firstName} ${option.lastName}${option.dni ? ` (${option.dni})` : ""}`
+                  }
+                  value={selectedClient}
+                  inputValue={clientInputValue}
+                  onInputChange={(_, value) => {
+                    setClientInputValue(value);
+                    if (value.length >= 2) fetchClients(value);
+                  }}
+                  onChange={handleClientChange}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Cliente" size="small" />
+                  )}
+                  disabled={isReadonly || fromRepairOrder}
+                  sx={{ minWidth: 300 }}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                />
+                <Autocomplete
+                  options={vehicles}
+                  getOptionLabel={(option) =>
+                    `${option.plate}${option.model ? ` - ${option.model}` : ""}`
+                  }
+                  value={selectedVehicle}
+                  inputValue={vehicleInputValue}
+                  onInputChange={(_, value) => setVehicleInputValue(value)}
+                  onChange={(_, value) => {
+                    setSelectedVehicle(value);
+                    setVehicleInputValue(
+                      value ? `${value.plate}${value.model ? ` - ${value.model}` : ""}` : "",
+                    );
+                  }}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Vehículo" size="small" />
+                  )}
+                  disabled={isReadonly || fromRepairOrder || !selectedClient}
+                  sx={{ minWidth: 300 }}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                />
+              </Box>
+
               <Box display="flex" gap={2} mt={2} flexWrap="wrap">
-                <TextField
-                  label="DNI"
-                  value={selectedClient.dni ?? "—"}
-                  size="small"
-                  slotProps={{ input: { readOnly: true } }}
-                />
-                {invoice?.clientPhone && (
-                  <TextField
-                    label="Teléfono"
-                    value={invoice.clientPhone}
-                    size="small"
-                    slotProps={{ input: { readOnly: true } }}
-                  />
-                )}
-                {invoice?.clientEmail && (
-                  <TextField
-                    label="Email"
-                    value={invoice.clientEmail}
-                    size="small"
-                    slotProps={{ input: { readOnly: true } }}
-                  />
-                )}
-                {(clientType || invoice?.clientType) && (
-                  <TextField
-                    label="Tipo de cliente"
-                    value={clientType ?? invoice?.clientType ?? ""}
-                    size="small"
-                    slotProps={{ input: { readOnly: true } }}
-                  />
+                {selectedClient && (
+                  <>
+                    <TextField
+                      label="DNI"
+                      value={selectedClient.dni ?? "—"}
+                      size="small"
+                      slotProps={{ input: { readOnly: true } }}
+                    />
+                    {invoice?.clientPhone && (
+                      <TextField
+                        label="Teléfono"
+                        value={invoice.clientPhone}
+                        size="small"
+                        slotProps={{ input: { readOnly: true } }}
+                      />
+                    )}
+                    {invoice?.clientEmail && (
+                      <TextField
+                        label="Email"
+                        value={invoice.clientEmail}
+                        size="small"
+                        slotProps={{ input: { readOnly: true } }}
+                      />
+                    )}
+                    {(clientType || invoice?.clientType) && (
+                      <TextField
+                        label="Tipo de cliente"
+                        value={clientType ?? invoice?.clientType ?? ""}
+                        size="small"
+                        slotProps={{ input: { readOnly: true } }}
+                      />
+                    )}
+                  </>
                 )}
               </Box>
-            )}
-            {selectedVehicle && (
+
               <Box display="flex" gap={2} mt={1} flexWrap="wrap">
-                <TextField
-                  label="Patente"
-                  value={selectedVehicle.plate}
-                  size="small"
-                  slotProps={{ input: { readOnly: true } }}
-                />
-                <TextField
-                  label="Marca"
-                  value={selectedVehicle.brandName ?? "—"}
-                  size="small"
-                  slotProps={{ input: { readOnly: true } }}
-                />
-                <TextField
-                  label="Modelo"
-                  value={selectedVehicle.model ?? "—"}
-                  size="small"
-                  slotProps={{ input: { readOnly: true } }}
-                />
-                <TextField
-                  label="Año"
-                  value={selectedVehicle.year ?? "—"}
-                  size="small"
-                  slotProps={{ input: { readOnly: true } }}
-                />
+                {selectedVehicle && (
+                  <>
+                    <TextField
+                      label="Patente"
+                      value={selectedVehicle.plate}
+                      size="small"
+                      slotProps={{ input: { readOnly: true } }}
+                    />
+                    <TextField
+                      label="Marca"
+                      value={selectedVehicle.brandName ?? "—"}
+                      size="small"
+                      slotProps={{ input: { readOnly: true } }}
+                    />
+                    <TextField
+                      label="Modelo"
+                      value={selectedVehicle.model ?? "—"}
+                      size="small"
+                      slotProps={{ input: { readOnly: true } }}
+                    />
+                    <TextField
+                      label="Año"
+                      value={selectedVehicle.year ?? "—"}
+                      size="small"
+                      slotProps={{ input: { readOnly: true } }}
+                    />
+                  </>
+                )}
               </Box>
-            )}
+            </Box>
           </Paper>
 
           {!isTemporalClient && (
@@ -497,7 +566,7 @@ export function InvoiceDetail({ invoiceId, repairOrderId, estimateId }: InvoiceD
                 readonly={isReadonly}
                 showErrors={showErrors}
               />
-              <Divider sx={{ my: 3 }} />
+              <Divider sx={{ my: 3, "@media print": { my: 2 } }} />
             </>
           )}
 
@@ -508,7 +577,7 @@ export function InvoiceDetail({ invoiceId, repairOrderId, estimateId }: InvoiceD
             showErrors={showErrors}
           />
 
-          <Divider sx={{ my: 3 }} />
+          <Divider sx={{ my: 3, "@media print": { my: 2 } }} />
 
           <InvoiceSummary
             servicesSubtotal={isTemporalClient ? 0 : servicesSubtotal}
@@ -521,7 +590,7 @@ export function InvoiceDetail({ invoiceId, repairOrderId, estimateId }: InvoiceD
           />
 
           {isCreateMode && (
-            <Box display="flex" gap={2} mt={3}>
+            <Box display="flex" gap={2} mt={3} className="no-print">
               <Button
                 variant="contained"
                 startIcon={<SaveIcon />}
@@ -536,13 +605,15 @@ export function InvoiceDetail({ invoiceId, repairOrderId, estimateId }: InvoiceD
       )}
 
       {activeTab === 1 && invoice?.id && (
-        <PaymentsTab
-          invoiceId={invoice.id}
-          clientFullName={invoice.clientFullName}
-        />
+        <Box className="no-print">
+          <PaymentsTab
+            invoiceId={invoice.id}
+            clientFullName={invoice.clientFullName}
+          />
+        </Box>
       )}
 
-      <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
+      <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)} className="no-print">
         <DialogTitle>Confirmar creación de factura</DialogTitle>
         <DialogContent>
           <DialogContentText>

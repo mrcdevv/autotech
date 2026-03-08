@@ -1,6 +1,7 @@
-import { Chip, IconButton, Tooltip } from "@mui/material";
+import { Chip, IconButton, Tooltip, Box, Typography } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import SearchOffIcon from "@mui/icons-material/SearchOff";
 import { DataGrid } from "@mui/x-data-grid";
 
 import type { GridColDef } from "@mui/x-data-grid";
@@ -16,6 +17,25 @@ interface InvoiceListProps {
   onPageSizeChange: (pageSize: number) => void;
   onRowClick: (row: InvoiceResponse) => void;
   onDelete: (id: number) => void;
+}
+
+function CustomNoRowsOverlay() {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+      }}
+    >
+      <SearchOffIcon sx={{ fontSize: 40, color: "text.secondary", mb: 1 }} />
+      <Typography variant="body1" color="text.secondary">
+        No se encuentra cargada una factura con esos datos
+      </Typography>
+    </Box>
+  );
 }
 
 export function InvoiceList({
@@ -130,6 +150,9 @@ export function InvoiceList({
       }}
       pageSizeOptions={[12, 24, 48]}
       onRowClick={(params) => onRowClick(params.row)}
+      slots={{
+        noRowsOverlay: CustomNoRowsOverlay,
+      }}
       sx={{ minHeight: 400 }}
     />
   );

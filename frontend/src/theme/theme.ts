@@ -157,6 +157,32 @@ const theme = createTheme({
         body: {
           backgroundColor: "#F8FAFC",
         },
+        "@media print": {
+          "@page": {
+            margin: "15mm",
+          },
+          ".no-print, header, footer, nav, aside, .MuiDrawer-root, .MuiAppBar-root, button, .MuiTabs-root": {
+            display: "none !important",
+          },
+          "main": {
+            margin: "0 !important",
+            padding: "0 !important",
+            width: "100% !important",
+            minWidth: "100% !important",
+            position: "static !important",
+          },
+          "#root": {
+            padding: "0 !important",
+          },
+          ".MuiPaper-root": {
+            boxShadow: "none !important",
+            border: "none !important",
+            padding: "0 !important",
+          },
+          "body": {
+            backgroundColor: "#fff !important",
+          },
+        },
       },
     },
     MuiButton: {
