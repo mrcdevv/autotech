@@ -96,30 +96,38 @@ export function ProductsGrid({ products, onChange, readonly = false, showErrors 
           <TextField
             type="number"
             label="Cantidad"
-            value={prod.quantity}
-            onChange={(e) => updateProduct(index, "quantity", Number(e.target.value))}
+            value={prod.quantity === 0 ? "" : prod.quantity}
+            onChange={(e) => {
+              const val = e.target.value;
+              updateProduct(index, "quantity", val === "" ? 0 : Number(val));
+            }}
             disabled={readonly}
             size="small"
             sx={{ flex: 1 }}
-            slotProps={{ htmlInput: { min: 1, step: 1 } }}
+            slotProps={{ htmlInput: { min: 0, step: 1 } }}
             error={showErrors && prod.quantity < 1}
             helperText={showErrors && prod.quantity < 1 ? "Debe ser al menos 1" : undefined}
           />
           <TextField
             type="number"
             label="Precio unitario"
-            value={prod.unitPrice}
-            onChange={(e) => updateProduct(index, "unitPrice", Number(e.target.value))}
+            value={prod.unitPrice === 0 ? "" : prod.unitPrice}
+            onChange={(e) => {
+              const val = e.target.value;
+              updateProduct(index, "unitPrice", val === "" ? 0 : Number(val));
+            }}
+            slotProps={{
+              htmlInput: { min: 0, step: "0.01", readOnly: true },
+            }}
             disabled={readonly}
             size="small"
             sx={{ flex: 1 }}
-            slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
             error={showErrors && prod.unitPrice < 0}
             helperText={showErrors && prod.unitPrice < 0 ? "No puede ser negativo" : undefined}
           />
           <TextField
             label="Precio total"
-            value={((Number(prod.quantity) || 0) * (Number(prod.unitPrice) || 0)).toFixed(2)}
+            value={((prod.quantity || 0) * (prod.unitPrice || 0)).toFixed(2)}
             size="small"
             sx={{ flex: 1 }}
             slotProps={{
