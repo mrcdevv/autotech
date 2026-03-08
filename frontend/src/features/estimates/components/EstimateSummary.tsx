@@ -37,9 +37,9 @@ export function EstimateSummary({
         <TextField
           type="number"
           label="Descuento (%)"
-          value={discountPercentage}
+          value={discountPercentage === 0 ? "" : discountPercentage}
           onChange={(e) => {
-            const val = Math.min(100, Math.max(0, Number(e.target.value)));
+            const val = e.target.value === "" ? 0 : Math.min(100, Math.max(0, Number(e.target.value)));
             onDiscountChange(val);
           }}
           slotProps={{
@@ -54,9 +54,9 @@ export function EstimateSummary({
         <TextField
           type="number"
           label="Impuesto (%)"
-          value={taxPercentage}
+          value={taxPercentage === 0 ? "" : taxPercentage}
           onChange={(e) => {
-            const val = Math.min(100, Math.max(0, Number(e.target.value)));
+            const val = e.target.value === "" ? 0 : Math.min(100, Math.max(0, Number(e.target.value)));
             onTaxChange(val);
           }}
           slotProps={{

@@ -26,7 +26,11 @@ interface FormErrors {
 }
 
 export function ServiceFormDialog({ open, onClose, onSave, initialData }: ServiceFormDialogProps) {
-  const [form, setForm] = useState<CatalogServiceRequest>({ name: "", description: null, price: null });
+  const [form, setForm] = useState<CatalogServiceRequest>({
+    name: "",
+    description: null,
+    price: null,
+  });
   const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
@@ -52,6 +56,9 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
     if (!form.name.trim()) newErrors.name = "El nombre del servicio es obligatorio";
+    if (form.price === null || form.price === undefined) {
+      newErrors.price = "El precio es obligatorio";
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -102,6 +109,9 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
                   const val = e.target.value;
                   handleChange("price", val === "" ? null : parseFloat(val));
                 }}
+                error={!!errors.price}
+                helperText={errors.price}
+                required
                 slotProps={{
                   htmlInput: { min: 0, step: "0.01" },
                   input: {

@@ -384,8 +384,13 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderClient, r
             value={selectedClient}
             inputValue={clientInputValue}
             onInputChange={(_, value) => {
-              setClientInputValue(value);
-              if (value.length >= 2) fetchClients(value);
+              // Only allow letters and spaces
+              const filteredValue = value.replace(/[^a-zA-Z\s\u00C0-\u017F]/g, "");
+              setClientInputValue(filteredValue);
+              if (filteredValue.length >= 2 || filteredValue.length === 0) fetchClients(filteredValue);
+            }}
+            onOpen={() => {
+              if (clientInputValue.length === 0) fetchClients("");
             }}
             onChange={(_, value) => {
               setSelectedClient(value);
@@ -393,7 +398,17 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderClient, r
               setVehicleInputValue("");
             }}
             renderInput={(params) => (
-              <TextField {...params} label="Cliente" size="small" />
+              <TextField 
+                {...params} 
+                label="Cliente" 
+                size="small" 
+                onBeforeInput={(e) => {
+                  const data = (e as unknown as { data: string }).data;
+                  if (data && /[0-9]/.test(data)) {
+                    e.preventDefault();
+                  }
+                }}
+              />
             )}
             disabled={isReadonly || fromRepairOrder}
             sx={{ minWidth: 300 }}

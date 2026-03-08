@@ -28,13 +28,13 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     @EntityGraph(attributePaths = {"client", "vehicle", "repairOrder", "estimate"})
     Page<Invoice> findAll(Pageable pageable);
 
+    @EntityGraph(attributePaths = {"client", "vehicle", "repairOrder", "estimate"})
     @Query("""
-            SELECT i FROM Invoice i
-            LEFT JOIN i.client c
-            LEFT JOIN i.vehicle v
-            WHERE (:clientName IS NULL OR LOWER(c.firstName) LIKE LOWER(CONCAT('%', :clientName, '%'))
-                   OR LOWER(c.lastName) LIKE LOWER(CONCAT('%', :clientName, '%')))
-            AND (:plate IS NULL OR LOWER(v.plate) LIKE LOWER(CONCAT('%', :plate, '%')))
+            SELECT DISTINCT i FROM Invoice i
+            JOIN i.client c
+            JOIN i.vehicle v
+            WHERE (:clientName IS NULL OR :clientName = '' OR LOWER(CONCAT(c.firstName, ' ', c.lastName)) LIKE LOWER(CONCAT('%', :clientName, '%')))
+            AND (:plate IS NULL OR :plate = '' OR REPLACE(LOWER(v.plate), ' ', '') LIKE LOWER(CONCAT('%', REPLACE(:plate, ' ', ''), '%')))
             AND (:status IS NULL OR i.status = :status)
             """)
     Page<Invoice> search(

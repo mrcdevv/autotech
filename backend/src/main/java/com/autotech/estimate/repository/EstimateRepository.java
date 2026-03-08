@@ -27,13 +27,21 @@ public interface EstimateRepository extends JpaRepository<Estimate, Long> {
     @EntityGraph(attributePaths = {"client", "vehicle", "repairOrder"})
     Page<Estimate> findAll(Pageable pageable);
 
-    @Query("""
+    @EntityGraph(attributePaths = {"client", "vehicle", "repairOrder"})
+    @Query(value = """
             SELECT e FROM Estimate e
             LEFT JOIN e.client c
             LEFT JOIN e.vehicle v
-            WHERE (:clientName IS NULL OR LOWER(c.firstName) LIKE LOWER(CONCAT('%', :clientName, '%'))
-                   OR LOWER(c.lastName) LIKE LOWER(CONCAT('%', :clientName, '%')))
-            AND (:plate IS NULL OR LOWER(v.plate) LIKE LOWER(CONCAT('%', :plate, '%')))
+            WHERE (:clientName IS NULL OR :clientName = '' OR LOWER(CONCAT(c.firstName, ' ', c.lastName)) LIKE LOWER(CONCAT('%', :clientName, '%')))
+            AND (:plate IS NULL OR :plate = '' OR LOWER(v.plate) LIKE LOWER(CONCAT('%', :plate, '%')))
+            AND (:status IS NULL OR e.status = :status)
+            """,
+            countQuery = """
+            SELECT COUNT(e) FROM Estimate e
+            LEFT JOIN e.client c
+            LEFT JOIN e.vehicle v
+            WHERE (:clientName IS NULL OR :clientName = '' OR LOWER(CONCAT(c.firstName, ' ', c.lastName)) LIKE LOWER(CONCAT('%', :clientName, '%')))
+            AND (:plate IS NULL OR :plate = '' OR LOWER(v.plate) LIKE LOWER(CONCAT('%', :plate, '%')))
             AND (:status IS NULL OR e.status = :status)
             """)
     Page<Estimate> search(

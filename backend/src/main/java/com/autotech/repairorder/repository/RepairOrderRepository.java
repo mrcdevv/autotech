@@ -29,6 +29,7 @@ public interface RepairOrderRepository extends JpaRepository<RepairOrder, Long> 
 
     boolean existsByVehicleIdAndStatusNot(Long vehicleId, RepairOrderStatus status);
 
+    @EntityGraph(attributePaths = {"client", "vehicle", "vehicle.brand", "employees", "tags"})
     @Query("""
             SELECT DISTINCT ro FROM RepairOrder ro
             LEFT JOIN ro.client c
