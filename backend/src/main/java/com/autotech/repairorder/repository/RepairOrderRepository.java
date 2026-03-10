@@ -51,13 +51,7 @@ public interface RepairOrderRepository extends JpaRepository<RepairOrder, Long> 
             JOIN ro.employees e
             WHERE e.id = :employeeId
             """)
-    List<RepairOrder> findByEmployeeId(@Param("employeeId") Long employeeId);
-
-    @Query("""
-            SELECT DISTINCT ro FROM RepairOrder ro
-            JOIN ro.employees e
-            WHERE e.id = :employeeId
-            """)
+    
     List<RepairOrder> findByEmployeeId(@Param("employeeId") Long employeeId);
 
     @Query("""
