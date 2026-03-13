@@ -30,5 +30,5 @@ export function useClients(initialPage = 0, initialSize = 12) {
 
     useEffect(() => { fetchClients(); }, [fetchClients]);
 
-    return { clients, totalElements, page, size, setPage, setSize, loading, error, refetch: fetchClients, setQuery };
+    return { clients, totalElements, page, size, setPage, setSize, loading, error, refetch: fetchClients, setQuery, query };
 }
