@@ -1,88 +1,93 @@
-import { useState } from "react";
-
-import { Divider, IconButton, Menu, MenuItem } from "@mui/material";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { Divider, Menu, MenuItem } from "@mui/material";
 
 import type { AppointmentResponse } from "@/types/appointment";
 
-interface AppointmentActionsProps {
-  appointment: AppointmentResponse;
-  onMarkClientArrived: (id: number, arrived: boolean) => void;
+interface AppointmentActionsMenuProps {
+  anchorEl: HTMLElement | null;
+  appointment: AppointmentResponse | null;
+  onClose: () => void;
   onMarkVehicleArrived: (id: number) => void;
   onEdit: (appointment: AppointmentResponse) => void;
+  onCancel: (id: number) => void;
   onDelete: (id: number) => void;
+  onCreateWorkOrder: (appointment: AppointmentResponse) => void;
 }
 
-export function AppointmentActions({
+export function AppointmentActionsMenu({
+  anchorEl,
   appointment,
-  onMarkClientArrived,
+  onClose,
   onMarkVehicleArrived,
   onEdit,
+  onCancel,
   onDelete,
-}: AppointmentActionsProps) {
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  onCreateWorkOrder,
+}: AppointmentActionsMenuProps) {
+  if (!appointment) return null;
+
+  const isCancelled = appointment.status === "CANCELLED";
 
   return (
-    <>
-      <IconButton
-        size="small"
-        onClick={(e) => {
-          e.stopPropagation();
-          setAnchorEl(e.currentTarget);
+    <Menu
+      anchorEl={anchorEl}
+      open={Boolean(anchorEl)}
+      onClose={onClose}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {!appointment.vehicleArrivedAt && !isCancelled && (
+        <MenuItem
+          onClick={() => {
+            onMarkVehicleArrived(appointment.id);
+            onClose();
+          }}
+        >
+          Marcar vehículo recibido
+        </MenuItem>
+      )}
+
+      <MenuItem
+        onClick={() => {
+          onEdit(appointment);
+          onClose();
         }}
       >
-        <MoreVertIcon fontSize="small" />
-      </IconButton>
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={() => setAnchorEl(null)}
+        Editar fecha y hora
+      </MenuItem>
+
+      {!isCancelled && (
+        <MenuItem
+          onClick={() => {
+            onCreateWorkOrder(appointment);
+            onClose();
+          }}
+        >
+          Crear orden de trabajo
+        </MenuItem>
+      )}
+
+      <Divider />
+
+      {!isCancelled && (
+        <MenuItem
+          onClick={() => {
+            onCancel(appointment.id);
+            onClose();
+          }}
+          sx={{ color: "warning.main" }}
+        >
+          Cancelar cita
+        </MenuItem>
+      )}
+
+      <MenuItem
+        onClick={() => {
+          onDelete(appointment.id);
+          onClose();
+        }}
+        sx={{ color: "error.main" }}
       >
-        <MenuItem
-          onClick={(e) => {
-            e.stopPropagation();
-            onMarkClientArrived(appointment.id, !appointment.clientArrived);
-            setAnchorEl(null);
-          }}
-        >
-          {appointment.clientArrived ? "Desmarcar cliente presente" : "Marcar cliente presente"}
-        </MenuItem>
-
-        {!appointment.vehicleArrivedAt && (
-          <MenuItem
-            onClick={(e) => {
-              e.stopPropagation();
-              onMarkVehicleArrived(appointment.id);
-              setAnchorEl(null);
-            }}
-          >
-            Marcar vehículo recibido
-          </MenuItem>
-        )}
-
-        <MenuItem
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit(appointment);
-            setAnchorEl(null);
-          }}
-        >
-          Editar fecha y hora
-        </MenuItem>
-
-        <Divider />
-
-        <MenuItem
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(appointment.id);
-            setAnchorEl(null);
-          }}
-          sx={{ color: "error.main" }}
-        >
-          Eliminar cita
-        </MenuItem>
-      </Menu>
-    </>
+        Eliminar cita
+      </MenuItem>
+    </Menu>
   );
 }

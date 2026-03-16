@@ -11,6 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
+import { useSearchParams } from "react-router";
 
 import { clientsApi } from "@/api/clients";
 import { vehiclesApi } from "@/api/vehicles";
@@ -28,9 +29,14 @@ interface CreateRepairOrderFormProps {
 }
 
 export function CreateRepairOrderForm({ onSuccess }: CreateRepairOrderFormProps) {
-  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
-  const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
-  const [reason, setReason] = useState("");
+  const [searchParams] = useSearchParams();
+  const prefillClientId = searchParams.get("clientId") ? Number(searchParams.get("clientId")) : null;
+  const prefillVehicleId = searchParams.get("vehicleId") ? Number(searchParams.get("vehicleId")) : null;
+  const prefillReason = searchParams.get("reason") ?? "";
+
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(prefillClientId);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(prefillVehicleId);
+  const [reason, setReason] = useState(prefillReason);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,13 +54,21 @@ export function CreateRepairOrderForm({ onSuccess }: CreateRepairOrderFormProps)
     vehicleTypesApi.getAll().then((res) => setVehicleTypes(res.data.data));
   }, []);
 
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
   useEffect(() => {
     if (selectedClientId) {
-      vehiclesApi.getByClient(selectedClientId).then((res) => setVehicles(res.data.data));
+      vehiclesApi.getByClient(selectedClientId).then((res) => {
+        setVehicles(res.data.data);
+        setIsInitialLoad(false);
+      });
     } else {
       setVehicles([]);
+      setIsInitialLoad(false);
     }
-    setSelectedVehicleId(null);
+    if (!isInitialLoad) {
+      setSelectedVehicleId(null);
+    }
   }, [selectedClientId]);
 
   const selectedClient = clients.find((c) => c.id === selectedClientId) ?? null;

@@ -65,6 +65,11 @@ public class Appointment extends BaseEntity {
     @Column(name = "vehicle_picked_up_at")
     private LocalDateTime vehiclePickedUpAt;
 
+    @Column(name = "status", nullable = false, length = 20)
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private AppointmentStatus status = AppointmentStatus.SCHEDULED;
+
     @Column(name = "client_arrived", nullable = false)
     @Builder.Default
     private Boolean clientArrived = false;

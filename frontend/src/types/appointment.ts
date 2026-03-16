@@ -1,5 +1,7 @@
 export type VehicleDeliveryMethod = "PROPIO" | "GRUA" | "TERCERO";
 
+export type AppointmentStatus = "SCHEDULED" | "CANCELLED" | "COMPLETED";
+
 export type CalendarViewMode = "day" | "week" | "month";
 
 export interface AppointmentResponse {
@@ -15,6 +17,7 @@ export interface AppointmentResponse {
   startTime: string;
   endTime: string;
   vehicleDeliveryMethod: VehicleDeliveryMethod | null;
+  status: AppointmentStatus;
   vehicleArrivedAt: string | null;
   vehiclePickedUpAt: string | null;
   clientArrived: boolean;

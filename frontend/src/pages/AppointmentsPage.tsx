@@ -17,6 +17,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import dayjs from "dayjs";
+import { useNavigate } from "react-router";
 
 import { employeesApi } from "@/api/employees";
 import { useAppointments } from "@/features/appointments/hooks/useAppointments";
@@ -24,6 +25,8 @@ import { useCalendarConfig } from "@/features/appointments/hooks/useCalendarConf
 import { CalendarView } from "@/features/appointments/components/CalendarView";
 import { AppointmentFormDialog } from "@/features/appointments/components/AppointmentFormDialog";
 import { AppointmentDetailDialog } from "@/features/appointments/components/AppointmentDetailDialog";
+import { AppointmentEditDialog } from "@/features/appointments/components/AppointmentEditDialog";
+import { AppointmentActionsMenu } from "@/features/appointments/components/AppointmentActions";
 
 import type { AppointmentResponse, CalendarViewMode } from "@/types/appointment";
 import type { EmployeeResponse } from "@/features/employees/types";
@@ -35,6 +38,7 @@ const VIEW_LABELS: Record<CalendarViewMode, string> = {
 };
 
 export default function AppointmentsPage() {
+  const navigate = useNavigate();
   const {
     appointments,
     loading,
@@ -46,15 +50,17 @@ export default function AppointmentsPage() {
     employeeFilter,
     setEmployeeFilter,
     createAppointment,
+    updateAppointment,
     deleteAppointment,
-    markClientArrived,
     markVehicleArrived,
+    cancelAppointment,
   } = useAppointments();
 
   const { config } = useCalendarConfig();
 
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentResponse | null>(null);
   const [employees, setEmployees] = useState<EmployeeResponse[]>([]);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
@@ -62,6 +68,9 @@ export default function AppointmentsPage() {
     message: "",
     severity: "success",
   });
+
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const [menuAppointment, setMenuAppointment] = useState<AppointmentResponse | null>(null);
 
   useEffect(() => {
     employeesApi.getAll(0, 100).then((res) => setEmployees(res.data.data.content)).catch(() => {});
@@ -122,17 +131,19 @@ export default function AppointmentsPage() {
     }
   };
 
-  const handleMarkClientArrived = async (id: number, arrived: boolean) => {
+  const handleCancel = async (id: number) => {
     try {
-      await markClientArrived(id, arrived);
+      await cancelAppointment(id);
+      showSnackbar("Cita cancelada", "success");
     } catch {
-      showSnackbar("Error al actualizar la cita", "error");
+      showSnackbar("Error al cancelar la cita", "error");
     }
   };
 
   const handleMarkVehicleArrived = async (id: number) => {
     try {
       await markVehicleArrived(id);
+      showSnackbar("Vehículo marcado como recibido", "success");
     } catch {
       showSnackbar("Error al actualizar la cita", "error");
     }
@@ -140,7 +151,29 @@ export default function AppointmentsPage() {
 
   const handleEdit = (appointment: AppointmentResponse) => {
     setSelectedAppointment(appointment);
-    setDetailOpen(true);
+    setEditOpen(true);
+  };
+
+  const handleUpdate = async (id: number, data: { startTime: string; endTime: string }) => {
+    try {
+      await updateAppointment(id, data);
+      showSnackbar("Cita actualizada", "success");
+    } catch {
+      showSnackbar("Error al actualizar la cita", "error");
+    }
+  };
+
+  const handleCreateWorkOrder = (appointment: AppointmentResponse) => {
+    const params = new URLSearchParams();
+    if (appointment.clientId) params.set("clientId", String(appointment.clientId));
+    if (appointment.vehicleId) params.set("vehicleId", String(appointment.vehicleId));
+    if (appointment.purpose) params.set("reason", appointment.purpose);
+    navigate(`/ordenes-trabajo/nueva?${params.toString()}`);
+  };
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, appointment: AppointmentResponse) => {
+    setMenuAnchor(event.currentTarget);
+    setMenuAppointment(appointment);
   };
 
   const businessStartHour = config?.startTime ? parseInt(config.startTime.split(":")[0] ?? "8", 10) : 8;
@@ -239,10 +272,21 @@ export default function AppointmentsPage() {
           setSelectedAppointment(apt);
           setDetailOpen(true);
         }}
-        onMarkClientArrived={handleMarkClientArrived}
+        onMenuOpen={handleMenuOpen}
+      />
+
+      <AppointmentActionsMenu
+        anchorEl={menuAnchor}
+        appointment={menuAppointment}
+        onClose={() => {
+          setMenuAnchor(null);
+          setMenuAppointment(null);
+        }}
         onMarkVehicleArrived={handleMarkVehicleArrived}
         onEdit={handleEdit}
+        onCancel={handleCancel}
         onDelete={handleDelete}
+        onCreateWorkOrder={handleCreateWorkOrder}
       />
 
       <AppointmentFormDialog
@@ -259,6 +303,17 @@ export default function AppointmentsPage() {
           setDetailOpen(false);
           setSelectedAppointment(null);
         }}
+        onEdit={handleEdit}
+      />
+
+      <AppointmentEditDialog
+        open={editOpen}
+        appointment={selectedAppointment}
+        onClose={() => {
+          setEditOpen(false);
+          setSelectedAppointment(null);
+        }}
+        onSave={handleUpdate}
       />
 
       <Snackbar

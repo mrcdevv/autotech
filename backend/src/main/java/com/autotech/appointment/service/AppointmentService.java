@@ -27,6 +27,8 @@ public interface AppointmentService {
 
     AppointmentResponse markVehiclePickedUp(Long id);
 
+    AppointmentResponse cancel(Long id);
+
     List<AppointmentResponse> getByDateRange(LocalDateTime rangeStart, LocalDateTime rangeEnd);
 
     List<AppointmentResponse> getByEmployeeAndDateRange(Long employeeId, LocalDateTime rangeStart, LocalDateTime rangeEnd);

@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { Box, Typography, Tabs, Tab } from "@mui/material";
+import { useSearchParams } from "react-router";
 
 import { BankAccountsTab } from "@/features/settings/components/BankAccountsTab";
 import { InspectionTemplatesTab } from "@/features/settings/components/InspectionTemplatesTab";
@@ -9,7 +10,9 @@ import { RepairOrderSettingsTab } from "@/features/settings/components/RepairOrd
 import { DashboardSettingsTab } from "@/features/settings/components/DashboardSettingsTab";
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState(0);
+  const [searchParams] = useSearchParams();
+  const initialTab = Number(searchParams.get("tab")) || 0;
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   return (
     <Box sx={{ px: 3, py: 2.5 }}>

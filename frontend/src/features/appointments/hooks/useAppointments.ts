@@ -70,6 +70,11 @@ export function useAppointments() {
     await fetchAppointments();
   };
 
+  const cancelAppointment = async (id: number) => {
+    await appointmentsApi.cancel(id);
+    await fetchAppointments();
+  };
+
   return {
     appointments,
     loading,
@@ -86,6 +91,7 @@ export function useAppointments() {
     markClientArrived,
     markVehicleArrived,
     markVehiclePickedUp,
+    cancelAppointment,
     refetch: fetchAppointments,
   };
 }
