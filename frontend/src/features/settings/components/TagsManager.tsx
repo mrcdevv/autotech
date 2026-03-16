@@ -9,12 +9,14 @@ import {
   DialogContent,
   DialogActions,
   IconButton,
+  InputAdornment,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
   Stack,
   TextField,
+  Tooltip,
   Typography,
   Alert,
   Snackbar,
@@ -22,6 +24,7 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import CheckIcon from "@mui/icons-material/Check";
 
 import { tagsApi } from "@/api/tags";
 import { useTags } from "@/features/settings/hooks/useTags";
@@ -129,20 +132,12 @@ export function TagsManager() {
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField label="Nombre" value={name} onChange={(e) => setName(e.target.value)} required fullWidth />
-            <TextField
-              label="Color (hex)"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              placeholder="#FF5733"
-              fullWidth
-              slotProps={{
-                input: {
-                  startAdornment: color ? (
-                    <Box sx={{ width: 20, height: 20, borderRadius: "50%", bgcolor: color, mr: 1, flexShrink: 0 }} />
-                  ) : null,
-                },
-              }}
-            />
+            <Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Color
+              </Typography>
+              <ColorPicker value={color} onChange={setColor} />
+            </Box>
           </Stack>
         </DialogContent>
         <DialogActions>
@@ -167,6 +162,89 @@ export function TagsManager() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+    </Box>
+  );
+}
+
+const PRESET_COLORS = [
+  "#1a73e8", "#4285f4", "#039be5", "#00897b", "#0097a7",
+  "#43a047", "#7cb342", "#c0ca33", "#f9a825", "#fb8c00",
+  "#f4511e", "#e53935", "#d81b60", "#8e24aa", "#5e35b1",
+  "#3949ab", "#546e7a", "#6d4c41", "#757575", "#000000",
+];
+
+interface ColorPickerProps {
+  value: string;
+  onChange: (color: string) => void;
+}
+
+function ColorPicker({ value, onChange }: ColorPickerProps) {
+  const [showCustom, setShowCustom] = useState(false);
+  const isPreset = PRESET_COLORS.includes(value);
+
+  return (
+    <Box>
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+        {PRESET_COLORS.map((c) => (
+          <Tooltip key={c} title={c} arrow>
+            <Box
+              onClick={() => {
+                onChange(c);
+                setShowCustom(false);
+              }}
+              sx={{
+                width: 32,
+                height: 32,
+                borderRadius: 1,
+                bgcolor: c,
+                cursor: "pointer",
+                border: 2,
+                borderColor: value === c ? "primary.main" : "transparent",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "border-color 0.15s, transform 0.15s",
+                "&:hover": { transform: "scale(1.1)" },
+              }}
+            >
+              {value === c && <CheckIcon sx={{ color: "#fff", fontSize: 18 }} />}
+            </Box>
+          </Tooltip>
+        ))}
+      </Box>
+      <Button
+        size="small"
+        sx={{ mt: 1.5, textTransform: "none" }}
+        onClick={() => setShowCustom(!showCustom)}
+      >
+        {showCustom ? "Ocultar personalizado" : "Color personalizado"}
+      </Button>
+      {showCustom && (
+        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 1 }}>
+          <input
+            type="color"
+            value={value || "#1a73e8"}
+            onChange={(e) => onChange(e.target.value)}
+            style={{ width: 40, height: 40, border: "none", cursor: "pointer", background: "none", padding: 0 }}
+          />
+          <TextField
+            size="small"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="#FF5733"
+            sx={{ width: 140 }}
+            slotProps={{
+              input: {
+                startAdornment: value && !isPreset ? (
+                  <InputAdornment position="start">
+                    <Box sx={{ width: 18, height: 18, borderRadius: "50%", bgcolor: value }} />
+                  </InputAdornment>
+                ) : null,
+              },
+            }}
+          />
+        </Stack>
+      )}
     </Box>
   );
 }

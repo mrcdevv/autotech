@@ -5,6 +5,7 @@ import com.autotech.appointment.dto.AppointmentRequest;
 import com.autotech.appointment.dto.AppointmentResponse;
 import com.autotech.appointment.dto.AppointmentUpdateRequest;
 import com.autotech.appointment.model.Appointment;
+import com.autotech.appointment.model.AppointmentStatus;
 import com.autotech.appointment.repository.AppointmentRepository;
 import com.autotech.client.model.Client;
 import com.autotech.client.repository.ClientRepository;
@@ -156,6 +157,20 @@ public class AppointmentServiceImpl implements AppointmentService {
         entity.setVehiclePickedUpAt(LocalDateTime.now());
         Appointment saved = appointmentRepository.save(entity);
         log.info("Marked vehicle picked up for appointment {}", id);
+        return appointmentMapper.toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public AppointmentResponse cancel(Long id) {
+        Appointment entity = appointmentRepository.findWithDetailsById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment", id));
+        if (entity.getStatus() == AppointmentStatus.CANCELLED) {
+            throw new BusinessException("La cita ya se encuentra cancelada");
+        }
+        entity.setStatus(AppointmentStatus.CANCELLED);
+        Appointment saved = appointmentRepository.save(entity);
+        log.info("Cancelled appointment with id {}", id);
         return appointmentMapper.toResponse(saved);
     }
 

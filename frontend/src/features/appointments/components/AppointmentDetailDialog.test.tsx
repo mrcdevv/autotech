@@ -18,6 +18,7 @@ const baseAppointment: AppointmentResponse = {
   startTime: "2025-03-15T10:00:00",
   endTime: "2025-03-15T11:00:00",
   vehicleDeliveryMethod: "PROPIO",
+  status: "SCHEDULED",
   vehicleArrivedAt: "2025-03-15T10:15:00",
   vehiclePickedUpAt: null,
   clientArrived: true,

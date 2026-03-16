@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 
 import {
   Autocomplete,
+  Box,
   Button,
   CircularProgress,
   Dialog,
@@ -14,12 +15,14 @@ import {
   Select,
   Stack,
   TextField,
+  Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+import { useNavigate } from "react-router";
 
 import { clientsApi } from "@/api/clients";
 import { vehiclesApi } from "@/api/vehicles";
@@ -45,6 +48,7 @@ export function AppointmentFormDialog({
   onSave,
   defaultDurationMinutes,
 }: AppointmentFormDialogProps) {
+  const navigate = useNavigate();
   const [startTime, setStartTime] = useState<Dayjs | null>(null);
   const [endTime, setEndTime] = useState<Dayjs | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -127,12 +131,25 @@ export function AppointmentFormDialog({
     setSelectedVehicle(null);
   };
 
+  const generatedTitle =
+    selectedClient && selectedVehicle
+      ? `Cita - ${selectedClient.firstName} ${selectedClient.lastName} - ${selectedVehicle.plate}`
+      : selectedClient
+        ? `Cita - ${selectedClient.firstName} ${selectedClient.lastName}`
+        : null;
+
+  const titlePlaceholder = generatedTitle ?? "Título de la cita";
+
+  const isTitleRequired = !selectedClient && !selectedVehicle;
+
   const handleSave = async () => {
     if (!startTime || !endTime) return;
+    if (isTitleRequired && !title.trim()) return;
     setSaving(true);
     try {
+      const resolvedTitle = title.trim() || generatedTitle || null;
       await onSave({
-        title: title || null,
+        title: resolvedTitle,
         clientId: selectedClient?.id ?? null,
         vehicleId: selectedVehicle?.id ?? null,
         purpose: purpose || null,
@@ -147,13 +164,6 @@ export function AppointmentFormDialog({
       setSaving(false);
     }
   };
-
-  const titlePlaceholder =
-    selectedClient && selectedVehicle
-      ? `Cita - ${selectedClient.firstName} ${selectedClient.lastName} - ${selectedVehicle.plate}`
-      : selectedClient
-        ? `Cita - ${selectedClient.firstName} ${selectedClient.lastName}`
-        : "Título de la cita";
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -297,18 +307,45 @@ export function AppointmentFormDialog({
               )}
 
               <Grid size={12}>
-                <Autocomplete
-                  multiple
-                  options={tags}
-                  getOptionLabel={(o) => o.name}
-                  value={selectedTags}
-                  onChange={(_e, v) => setSelectedTags(v)}
-                  readOnly={tags.length === 0}
-                  isOptionEqualToValue={(opt, val) => opt.id === val.id}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Etiquetas" />
-                  )}
-                />
+                {tags.length > 0 ? (
+                  <Autocomplete
+                    multiple
+                    options={tags}
+                    getOptionLabel={(o) => o.name}
+                    value={selectedTags}
+                    onChange={(_e, v) => setSelectedTags(v)}
+                    isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Etiquetas" />
+                    )}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      border: 1,
+                      borderColor: "grey.300",
+                      borderRadius: 1,
+                      p: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      No hay etiquetas creadas
+                    </Typography>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => {
+                        onClose();
+                        navigate("/configuracion?tab=2");
+                      }}
+                    >
+                      Crear etiquetas
+                    </Button>
+                  </Box>
+                )}
               </Grid>
 
               <Grid size={12}>
@@ -318,6 +355,13 @@ export function AppointmentFormDialog({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder={titlePlaceholder}
+                  required={isTitleRequired}
+                  error={isTitleRequired && title.trim() === "" && saving}
+                  helperText={
+                    !isTitleRequired && !title.trim()
+                      ? `Se usará: "${titlePlaceholder}"`
+                      : undefined
+                  }
                 />
               </Grid>
 
@@ -367,7 +411,11 @@ export function AppointmentFormDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={saving}>Cancelar</Button>
-        <Button variant="contained" onClick={handleSave} disabled={saving || !startTime || !endTime}>
+        <Button
+          variant="contained"
+          onClick={handleSave}
+          disabled={saving || !startTime || !endTime || (isTitleRequired && !title.trim())}
+        >
           {saving ? <CircularProgress size={24} /> : "Guardar"}
         </Button>
       </DialogActions>

@@ -30,6 +30,7 @@ public class AppointmentMapper {
                 entity.getStartTime(),
                 entity.getEndTime(),
                 entity.getVehicleDeliveryMethod(),
+                entity.getStatus(),
                 entity.getVehicleArrivedAt(),
                 entity.getVehiclePickedUpAt(),
                 entity.getClientArrived(),

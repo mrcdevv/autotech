@@ -24,7 +24,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     @Query("""
             SELECT a FROM Appointment a
-            WHERE a.startTime >= :rangeStart AND a.startTime < :rangeEnd
+            WHERE a.startTime < :rangeEnd AND a.endTime > :rangeStart
             ORDER BY a.startTime ASC
             """)
     @EntityGraph(attributePaths = {"client", "vehicle", "employees", "tags"})
@@ -37,8 +37,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             SELECT DISTINCT a FROM Appointment a
             JOIN a.employees e
             WHERE e.id = :employeeId
-              AND a.startTime >= :rangeStart
               AND a.startTime < :rangeEnd
+              AND a.endTime > :rangeStart
             ORDER BY a.startTime ASC
             """)
     @EntityGraph(attributePaths = {"client", "vehicle", "employees", "tags"})

@@ -19,6 +19,7 @@ const baseAppointment: AppointmentResponse = {
   startTime: "2025-03-15T10:00:00",
   endTime: "2025-03-15T11:00:00",
   vehicleDeliveryMethod: null,
+  status: "SCHEDULED",
   vehicleArrivedAt: null,
   vehiclePickedUpAt: null,
   clientArrived: false,
@@ -31,10 +32,7 @@ const baseAppointment: AppointmentResponse = {
 const defaultProps = {
   appointment: baseAppointment,
   onClick: vi.fn(),
-  onMarkClientArrived: vi.fn(),
-  onMarkVehicleArrived: vi.fn(),
-  onEdit: vi.fn(),
-  onDelete: vi.fn(),
+  onMenuOpen: vi.fn(),
 };
 
 describe("AppointmentCard", () => {
@@ -49,17 +47,6 @@ describe("AppointmentCard", () => {
     render(<AppointmentCard {...defaultProps} />);
 
     expect(screen.getByText(/ABC123/)).toBeInTheDocument();
-  });
-
-  it("given client arrived, when rendered, then shows arrived indicator", () => {
-    render(
-      <AppointmentCard
-        {...defaultProps}
-        appointment={{ ...baseAppointment, clientArrived: true }}
-      />,
-    );
-
-    expect(screen.getByText(/● Juan Perez/)).toBeInTheDocument();
   });
 
   it("given appointment, when clicking card, then calls onClick", async () => {

@@ -3,6 +3,7 @@ package com.autotech.appointment.controller;
 import com.autotech.appointment.dto.AppointmentRequest;
 import com.autotech.appointment.dto.AppointmentResponse;
 import com.autotech.appointment.dto.AppointmentUpdateRequest;
+import com.autotech.appointment.model.AppointmentStatus;
 import com.autotech.appointment.service.AppointmentService;
 import com.autotech.common.exception.GlobalExceptionHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -51,7 +52,7 @@ class AppointmentControllerTest {
 
     private final AppointmentResponse sampleResponse = new AppointmentResponse(
             1L, "Test", null, null, null, null, null, null,
-            "Purpose", startTime, endTime, null, null, null, false,
+            "Purpose", startTime, endTime, null, AppointmentStatus.SCHEDULED, null, null, false,
             List.of(), List.of(), null, null
     );
 

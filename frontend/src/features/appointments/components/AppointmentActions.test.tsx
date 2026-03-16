@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
-import { AppointmentActions } from "./AppointmentActions";
+import { AppointmentActionsMenu } from "./AppointmentActions";
 
 import type { AppointmentResponse } from "@/types/appointment";
 
@@ -19,6 +19,7 @@ const baseAppointment: AppointmentResponse = {
   startTime: "2025-03-15T10:00:00",
   endTime: "2025-03-15T11:00:00",
   vehicleDeliveryMethod: null,
+  status: "SCHEDULED",
   vehicleArrivedAt: null,
   vehiclePickedUpAt: null,
   clientArrived: false,
@@ -30,67 +31,37 @@ const baseAppointment: AppointmentResponse = {
 
 const defaultProps = {
   appointment: baseAppointment,
-  onMarkClientArrived: vi.fn(),
+  anchorEl: document.createElement("button"),
+  onClose: vi.fn(),
   onMarkVehicleArrived: vi.fn(),
   onEdit: vi.fn(),
+  onCancel: vi.fn(),
   onDelete: vi.fn(),
+  onCreateWorkOrder: vi.fn(),
 };
 
-describe("AppointmentActions", () => {
+describe("AppointmentActionsMenu", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("given actions button, when clicked, then opens menu", async () => {
-    const user = userEvent.setup();
-    render(<AppointmentActions {...defaultProps} />);
+  it("given menu open, when rendered, then shows all options", () => {
+    render(<AppointmentActionsMenu {...defaultProps} />);
 
-    await user.click(screen.getByRole("button"));
-
-    expect(screen.getByText("Marcar cliente presente")).toBeInTheDocument();
     expect(screen.getByText("Marcar vehículo recibido")).toBeInTheDocument();
     expect(screen.getByText("Editar fecha y hora")).toBeInTheDocument();
+    expect(screen.getByText("Crear orden de trabajo")).toBeInTheDocument();
+    expect(screen.getByText("Cancelar cita")).toBeInTheDocument();
     expect(screen.getByText("Eliminar cita")).toBeInTheDocument();
   });
 
-  it("given client not arrived, when clicking mark arrived, then calls handler", async () => {
-    const user = userEvent.setup();
-    const onMarkClientArrived = vi.fn();
-    render(<AppointmentActions {...defaultProps} onMarkClientArrived={onMarkClientArrived} />);
-
-    await user.click(screen.getByRole("button"));
-    await user.click(screen.getByText("Marcar cliente presente"));
-
-    expect(onMarkClientArrived).toHaveBeenCalledWith(1, true);
-  });
-
-  it("given client arrived, when clicking unmark, then calls handler with false", async () => {
-    const user = userEvent.setup();
-    const onMarkClientArrived = vi.fn();
+  it("given vehicle already arrived, when opened, then hides vehicle arrived option", () => {
     render(
-      <AppointmentActions
-        {...defaultProps}
-        appointment={{ ...baseAppointment, clientArrived: true }}
-        onMarkClientArrived={onMarkClientArrived}
-      />,
-    );
-
-    await user.click(screen.getByRole("button"));
-    await user.click(screen.getByText("Desmarcar cliente presente"));
-
-    expect(onMarkClientArrived).toHaveBeenCalledWith(1, false);
-  });
-
-  it("given vehicle already arrived, when opened, then hides vehicle arrived option", async () => {
-    const user = userEvent.setup();
-    render(
-      <AppointmentActions
+      <AppointmentActionsMenu
         {...defaultProps}
         appointment={{ ...baseAppointment, vehicleArrivedAt: "2025-03-15T10:30:00" }}
       />,
     );
-
-    await user.click(screen.getByRole("button"));
 
     expect(screen.queryByText("Marcar vehículo recibido")).not.toBeInTheDocument();
   });
@@ -98,9 +69,8 @@ describe("AppointmentActions", () => {
   it("given edit option, when clicked, then calls onEdit", async () => {
     const user = userEvent.setup();
     const onEdit = vi.fn();
-    render(<AppointmentActions {...defaultProps} onEdit={onEdit} />);
+    render(<AppointmentActionsMenu {...defaultProps} onEdit={onEdit} />);
 
-    await user.click(screen.getByRole("button"));
     await user.click(screen.getByText("Editar fecha y hora"));
 
     expect(onEdit).toHaveBeenCalledWith(baseAppointment);
@@ -109,11 +79,22 @@ describe("AppointmentActions", () => {
   it("given delete option, when clicked, then calls onDelete", async () => {
     const user = userEvent.setup();
     const onDelete = vi.fn();
-    render(<AppointmentActions {...defaultProps} onDelete={onDelete} />);
+    render(<AppointmentActionsMenu {...defaultProps} onDelete={onDelete} />);
 
-    await user.click(screen.getByRole("button"));
     await user.click(screen.getByText("Eliminar cita"));
 
     expect(onDelete).toHaveBeenCalledWith(1);
+  });
+
+  it("given cancelled appointment, when opened, then hides cancel and create order options", () => {
+    render(
+      <AppointmentActionsMenu
+        {...defaultProps}
+        appointment={{ ...baseAppointment, status: "CANCELLED" }}
+      />,
+    );
+
+    expect(screen.queryByText("Cancelar cita")).not.toBeInTheDocument();
+    expect(screen.queryByText("Crear orden de trabajo")).not.toBeInTheDocument();
   });
 });

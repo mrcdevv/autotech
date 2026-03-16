@@ -5,6 +5,7 @@ import com.autotech.appointment.dto.AppointmentRequest;
 import com.autotech.appointment.dto.AppointmentResponse;
 import com.autotech.appointment.dto.AppointmentUpdateRequest;
 import com.autotech.appointment.model.Appointment;
+import com.autotech.appointment.model.AppointmentStatus;
 import com.autotech.appointment.model.VehicleDeliveryMethod;
 import com.autotech.appointment.repository.AppointmentRepository;
 import com.autotech.client.model.Client;
@@ -466,7 +467,7 @@ class AppointmentServiceImplTest {
     private AppointmentResponse buildResponse(Long id) {
         return new AppointmentResponse(
                 id, "Test Appointment", null, null, null, null, null, null,
-                "Test purpose", startTime, endTime, null, null, null, false,
+                "Test purpose", startTime, endTime, null, AppointmentStatus.SCHEDULED, null, null, false,
                 List.of(), List.of(), null, null
         );
     }

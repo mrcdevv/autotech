@@ -18,6 +18,7 @@ const mockAppointment: AppointmentResponse = {
   startTime: "2025-03-15T10:00:00",
   endTime: "2025-03-15T11:00:00",
   vehicleDeliveryMethod: null,
+  status: "SCHEDULED",
   vehicleArrivedAt: null,
   vehiclePickedUpAt: null,
   clientArrived: false,
@@ -34,10 +35,7 @@ const defaultProps = {
   businessStartHour: 8,
   businessEndHour: 20,
   onAppointmentClick: vi.fn(),
-  onMarkClientArrived: vi.fn(),
-  onMarkVehicleArrived: vi.fn(),
-  onEdit: vi.fn(),
-  onDelete: vi.fn(),
+  onMenuOpen: vi.fn(),
 };
 
 describe("CalendarView", () => {
@@ -65,7 +63,7 @@ describe("CalendarView", () => {
 
     expect(screen.getByText("15")).toBeInTheDocument();
     expect(screen.getByText("LUN")).toBeInTheDocument();
-    expect(screen.getByText("Test Appointment")).toBeInTheDocument();
+    expect(screen.getByText(/Test Appointment/)).toBeInTheDocument();
   });
 
   it("given day view with appointment, when rendered, then shows appointment card", () => {

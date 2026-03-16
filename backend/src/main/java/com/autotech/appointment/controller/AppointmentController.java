@@ -86,6 +86,12 @@ public class AppointmentController {
                 appointmentService.markVehiclePickedUp(id)));
     }
 
+    @PatchMapping("/{id}/cancel")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> cancel(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success("Cita cancelada",
+                appointmentService.cancel(id)));
+    }
+
     @GetMapping("/range")
     public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getByDateRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,

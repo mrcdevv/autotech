@@ -1,5 +1,6 @@
 package com.autotech.appointment.dto;
 
+import com.autotech.appointment.model.AppointmentStatus;
 import com.autotech.appointment.model.VehicleDeliveryMethod;
 
 import java.time.LocalDateTime;
@@ -18,6 +19,7 @@ public record AppointmentResponse(
         LocalDateTime startTime,
         LocalDateTime endTime,
         VehicleDeliveryMethod vehicleDeliveryMethod,
+        AppointmentStatus status,
         LocalDateTime vehicleArrivedAt,
         LocalDateTime vehiclePickedUpAt,
         Boolean clientArrived,

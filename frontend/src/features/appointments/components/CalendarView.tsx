@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import dayjs from "dayjs";
 
 import { AppointmentCard, MultiDayBar } from "./AppointmentCard";
+import { OverlappingAppointmentsMenu } from "./OverlappingAppointmentsMenu";
 
 import type { Dayjs } from "dayjs";
 import type { AppointmentResponse, CalendarViewMode } from "@/types/appointment";
@@ -14,10 +16,7 @@ interface CalendarViewProps {
   businessStartHour: number;
   businessEndHour: number;
   onAppointmentClick: (appointment: AppointmentResponse) => void;
-  onMarkClientArrived: (id: number, arrived: boolean) => void;
-  onMarkVehicleArrived: (id: number) => void;
-  onEdit: (appointment: AppointmentResponse) => void;
-  onDelete: (id: number) => void;
+  onMenuOpen: (event: React.MouseEvent<HTMLElement>, appointment: AppointmentResponse) => void;
 }
 
 export function CalendarView({
@@ -28,10 +27,7 @@ export function CalendarView({
   businessStartHour,
   businessEndHour,
   onAppointmentClick,
-  onMarkClientArrived,
-  onMarkVehicleArrived,
-  onEdit,
-  onDelete,
+  onMenuOpen,
 }: CalendarViewProps) {
   if (loading) {
     return (
@@ -40,8 +36,6 @@ export function CalendarView({
       </Box>
     );
   }
-
-  const cardProps = { onMarkClientArrived, onMarkVehicleArrived, onEdit, onDelete };
 
   switch (viewMode) {
     case "day":
@@ -52,7 +46,7 @@ export function CalendarView({
           startHour={businessStartHour}
           endHour={businessEndHour}
           onAppointmentClick={onAppointmentClick}
-          {...cardProps}
+          onMenuOpen={onMenuOpen}
         />
       );
     case "week":
@@ -63,7 +57,7 @@ export function CalendarView({
           startHour={businessStartHour}
           endHour={businessEndHour}
           onAppointmentClick={onAppointmentClick}
-          {...cardProps}
+          onMenuOpen={onMenuOpen}
         />
       );
     case "month":
@@ -72,7 +66,7 @@ export function CalendarView({
           appointments={appointments}
           date={currentDate}
           onAppointmentClick={onAppointmentClick}
-          {...cardProps}
+          onMenuOpen={onMenuOpen}
         />
       );
   }
@@ -80,10 +74,10 @@ export function CalendarView({
 
 // ---- Shared ----
 
-const HOUR_HEIGHT = 48;
+const HOUR_HEIGHT = 56;
 const TIME_GUTTER = 56;
 const DAY_NAMES = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"];
-const ALL_DAY_ROW_H = 24;
+const ALL_DAY_ROW_H = 28;
 
 function isMultiDay(apt: AppointmentResponse): boolean {
   return !dayjs(apt.startTime).isSame(dayjs(apt.endTime), "day");
@@ -102,14 +96,48 @@ function getTopAndHeight(apt: AppointmentResponse, dateStr: string, startH: numb
   const e = dayjs(apt.endTime).isAfter(de) ? de : dayjs(apt.endTime);
   const topMin = s.hour() * 60 + s.minute() - startH * 60;
   const durMin = e.diff(s, "minute");
-  return { top: (topMin / 60) * HOUR_HEIGHT, height: Math.max((durMin / 60) * HOUR_HEIGHT, 22) };
+  return { top: (topMin / 60) * HOUR_HEIGHT, height: Math.max((durMin / 60) * HOUR_HEIGHT, 28) };
 }
 
-interface CardActions {
-  onMarkClientArrived: (id: number, arrived: boolean) => void;
-  onMarkVehicleArrived: (id: number) => void;
-  onEdit: (appointment: AppointmentResponse) => void;
-  onDelete: (id: number) => void;
+function appointmentsOverlap(apt1: AppointmentResponse, apt2: AppointmentResponse): boolean {
+  const start1 = dayjs(apt1.startTime);
+  const end1 = dayjs(apt1.endTime);
+  const start2 = dayjs(apt2.startTime);
+  const end2 = dayjs(apt2.endTime);
+  return start1.isBefore(end2) && start2.isBefore(end1);
+}
+
+function getOverlappingGroups(appointments: AppointmentResponse[]): AppointmentResponse[][] {
+  if (appointments.length === 0) return [];
+  
+  const sorted = [...appointments].sort((a, b) => 
+    dayjs(a.startTime).valueOf() - dayjs(b.startTime).valueOf()
+  );
+  
+  const groups: AppointmentResponse[][] = [];
+  
+  for (const apt of sorted) {
+    let addedToGroup = false;
+    
+    for (const group of groups) {
+      if (group.some(existing => appointmentsOverlap(apt, existing))) {
+        group.push(apt);
+        addedToGroup = true;
+        break;
+      }
+    }
+    
+    if (!addedToGroup) {
+      groups.push([apt]);
+    }
+  }
+  
+  return groups;
+}
+
+interface SharedProps {
+  onAppointmentClick: (appointment: AppointmentResponse) => void;
+  onMenuOpen: (event: React.MouseEvent<HTMLElement>, appointment: AppointmentResponse) => void;
 }
 
 function TimeGutter({ hours }: { hours: number[] }) {
@@ -165,29 +193,31 @@ function DayHeader({ d, showDate = true }: { d: Dayjs; showDate?: boolean }) {
 
 // ---- Day View ----
 
-interface DayViewProps extends CardActions {
+interface DayViewProps extends SharedProps {
   appointments: AppointmentResponse[];
   date: Date;
   startHour: number;
   endHour: number;
-  onAppointmentClick: (appointment: AppointmentResponse) => void;
 }
 
-function DayView({ appointments, date, startHour, endHour, onAppointmentClick, ...cardProps }: DayViewProps) {
+function DayView({ appointments, date, startHour, endHour, onAppointmentClick, onMenuOpen }: DayViewProps) {
+  const [overlapMenuAnchor, setOverlapMenuAnchor] = useState<HTMLElement | null>(null);
+  const [overlapMenuAppts, setOverlapMenuAppts] = useState<AppointmentResponse[]>([]);
+  
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
   const dateStr = dayjs(date).format("YYYY-MM-DD");
   const allDay = appointments.filter((a) => isMultiDay(a) && overlapsDay(a, dateStr));
   const timed = appointments.filter((a) => !isMultiDay(a) && overlapsDay(a, dateStr));
+  
+  const overlappingGroups = getOverlappingGroups(timed);
 
   return (
     <Box sx={{ bgcolor: "background.paper", overflow: "auto", border: "1px solid", borderColor: "grey.200", borderRadius: 3 }}>
-      {/* Header */}
       <Box sx={{ display: "flex", borderBottom: 1, borderColor: "grey.200" }}>
         <Box sx={{ width: TIME_GUTTER, flexShrink: 0 }} />
         <DayHeader d={dayjs(date)} />
       </Box>
 
-      {/* All-day */}
       {allDay.length > 0 && (
         <Box sx={{ display: "flex", borderBottom: 1, borderColor: "grey.200" }}>
           <Box sx={{ width: TIME_GUTTER, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", pr: 1 }}>
@@ -195,44 +225,67 @@ function DayView({ appointments, date, startHour, endHour, onAppointmentClick, .
           </Box>
           <Box sx={{ flex: 1, py: 0.5, px: 0.5, display: "flex", flexDirection: "column", gap: 0.5 }}>
             {allDay.map((apt) => (
-              <MultiDayBar key={apt.id} appointment={apt} onClick={onAppointmentClick} />
+              <MultiDayBar key={apt.id} appointment={apt} onClick={onAppointmentClick} onMenuOpen={onMenuOpen} />
             ))}
           </Box>
         </Box>
       )}
 
-      {/* Time grid */}
       <Box sx={{ display: "flex" }}>
         <TimeGutter hours={hours} />
         <Box sx={{ flex: 1, position: "relative", minHeight: hours.length * HOUR_HEIGHT, borderLeft: 1, borderColor: "grey.200" }}>
           {hours.map((h) => (
             <Box key={h} sx={{ height: HOUR_HEIGHT, borderBottom: 1, borderColor: "grey.200" }} />
           ))}
-          {timed.map((apt) => {
-            const { top, height } = getTopAndHeight(apt, dateStr, startHour, endHour);
+          {overlappingGroups.map((group, groupIdx) => {
+            const firstApt = group[0];
+            if (!firstApt) return null;
+            const { top, height } = getTopAndHeight(firstApt, dateStr, startHour, endHour);
             return (
-              <Box key={apt.id} sx={{ position: "absolute", top, left: 4, right: 12, height, zIndex: 1 }}>
-                <AppointmentCard appointment={apt} onClick={onAppointmentClick} {...cardProps} />
+              <Box key={`group-${groupIdx}-${firstApt.id}`} sx={{ position: "absolute", top, left: 4, right: 12, height, zIndex: 1 }}>
+                <AppointmentCard 
+                  appointment={firstApt}
+                  showFullTags={true}
+                  overlappingCount={group.length - 1}
+                  onOverlapClick={group.length > 1 ? (e) => {
+                    setOverlapMenuAnchor(e.currentTarget);
+                    setOverlapMenuAppts(group);
+                  } : undefined}
+                  onClick={onAppointmentClick}
+                  onMenuOpen={onMenuOpen}
+                />
               </Box>
             );
           })}
         </Box>
       </Box>
+      
+      <OverlappingAppointmentsMenu
+        anchorEl={overlapMenuAnchor}
+        appointments={overlapMenuAppts}
+        onClose={() => {
+          setOverlapMenuAnchor(null);
+          setOverlapMenuAppts([]);
+        }}
+        onSelect={onAppointmentClick}
+      />
     </Box>
   );
 }
 
 // ---- Week View ----
 
-interface WeekViewProps extends CardActions {
+interface WeekViewProps extends SharedProps {
   appointments: AppointmentResponse[];
   date: Date;
   startHour: number;
   endHour: number;
-  onAppointmentClick: (appointment: AppointmentResponse) => void;
 }
 
-function WeekView({ appointments, date, startHour, endHour, onAppointmentClick, ...cardProps }: WeekViewProps) {
+function WeekView({ appointments, date, startHour, endHour, onAppointmentClick, onMenuOpen }: WeekViewProps) {
+  const [overlapMenuAnchor, setOverlapMenuAnchor] = useState<HTMLElement | null>(null);
+  const [overlapMenuAppts, setOverlapMenuAppts] = useState<AppointmentResponse[]>([]);
+  
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
   const weekStart = dayjs(date).startOf("week");
   const days = Array.from({ length: 7 }, (_, i) => weekStart.add(i, "day"));
@@ -241,7 +294,6 @@ function WeekView({ appointments, date, startHour, endHour, onAppointmentClick, 
 
   return (
     <Box sx={{ bgcolor: "background.paper", overflow: "auto", border: "1px solid", borderColor: "grey.200", borderRadius: 3 }}>
-      {/* Header row */}
       <Box sx={{ display: "flex", borderBottom: 1, borderColor: "grey.200" }}>
         <Box sx={{ width: TIME_GUTTER, flexShrink: 0 }} />
         {days.map((d, i) => (
@@ -249,7 +301,6 @@ function WeekView({ appointments, date, startHour, endHour, onAppointmentClick, 
         ))}
       </Box>
 
-      {/* All-day section */}
       {allDayRows.length > 0 && (
         <Box sx={{ display: "flex", borderBottom: 1, borderColor: "grey.200" }}>
           <Box sx={{ width: TIME_GUTTER, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", pr: 1 }}>
@@ -268,7 +319,7 @@ function WeekView({ appointments, date, startHour, endHour, onAppointmentClick, 
                     height: ALL_DAY_ROW_H,
                   }}
                 >
-                  <MultiDayBar appointment={item.apt} onClick={onAppointmentClick} />
+                  <MultiDayBar appointment={item.apt} onClick={onAppointmentClick} onMenuOpen={onMenuOpen} />
                 </Box>
               ))
             )}
@@ -276,12 +327,12 @@ function WeekView({ appointments, date, startHour, endHour, onAppointmentClick, 
         </Box>
       )}
 
-      {/* Time grid */}
       <Box sx={{ display: "flex" }}>
         <TimeGutter hours={hours} />
         {days.map((d, i) => {
           const dateStr = d.format("YYYY-MM-DD");
           const dayAppts = appointments.filter((a) => !isMultiDay(a) && overlapsDay(a, dateStr));
+          const overlappingGroups = getOverlappingGroups(dayAppts);
           const isToday = d.isSame(dayjs(), "day");
           return (
             <Box
@@ -298,11 +349,23 @@ function WeekView({ appointments, date, startHour, endHour, onAppointmentClick, 
               {hours.map((h) => (
                 <Box key={h} sx={{ height: HOUR_HEIGHT, borderBottom: 1, borderColor: "grey.200" }} />
               ))}
-              {dayAppts.map((apt) => {
-                const { top, height } = getTopAndHeight(apt, dateStr, startHour, endHour);
+              {overlappingGroups.map((group, groupIdx) => {
+                const firstApt = group[0];
+                if (!firstApt) return null;
+                const { top, height } = getTopAndHeight(firstApt, dateStr, startHour, endHour);
                 return (
-                  <Box key={apt.id} sx={{ position: "absolute", top, left: 2, right: 4, height, zIndex: 1 }}>
-                    <AppointmentCard appointment={apt} onClick={onAppointmentClick} {...cardProps} />
+                  <Box key={`group-${dateStr}-${groupIdx}-${firstApt.id}`} sx={{ position: "absolute", top, left: 3, right: 6, height, zIndex: 1 }}>
+                    <AppointmentCard 
+                      appointment={firstApt}
+                      showFullTags={false}
+                      overlappingCount={group.length - 1}
+                      onOverlapClick={group.length > 1 ? (e) => {
+                        setOverlapMenuAnchor(e.currentTarget);
+                        setOverlapMenuAppts(group);
+                      } : undefined}
+                      onClick={onAppointmentClick}
+                      onMenuOpen={onMenuOpen}
+                    />
                   </Box>
                 );
               })}
@@ -310,6 +373,16 @@ function WeekView({ appointments, date, startHour, endHour, onAppointmentClick, 
           );
         })}
       </Box>
+      
+      <OverlappingAppointmentsMenu
+        anchorEl={overlapMenuAnchor}
+        appointments={overlapMenuAppts}
+        onClose={() => {
+          setOverlapMenuAnchor(null);
+          setOverlapMenuAppts([]);
+        }}
+        onSelect={onAppointmentClick}
+      />
     </Box>
   );
 }
@@ -353,13 +426,12 @@ function layoutMultiDayRows(multiDay: AppointmentResponse[], days: Dayjs[]): Mul
 
 // ---- Month View ----
 
-interface MonthViewProps extends CardActions {
+interface MonthViewProps extends SharedProps {
   appointments: AppointmentResponse[];
   date: Date;
-  onAppointmentClick: (appointment: AppointmentResponse) => void;
 }
 
-function MonthView({ appointments, date, onAppointmentClick, ...cardProps }: MonthViewProps) {
+function MonthView({ appointments, date, onAppointmentClick, onMenuOpen }: MonthViewProps) {
   const monthStart = dayjs(date).startOf("month");
   const calendarStart = monthStart.startOf("week");
   const monthEnd = dayjs(date).endOf("month");
@@ -375,7 +447,6 @@ function MonthView({ appointments, date, onAppointmentClick, ...cardProps }: Mon
 
   return (
     <Box sx={{ bgcolor: "background.paper", border: "1px solid", borderColor: "grey.200", borderRadius: 3 }}>
-      {/* Day headers */}
       <Box sx={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", borderBottom: 1, borderColor: "grey.200" }}>
         {DAY_NAMES.map((name) => (
           <Box key={name} sx={{ textAlign: "center", py: 1 }}>
@@ -386,7 +457,6 @@ function MonthView({ appointments, date, onAppointmentClick, ...cardProps }: Mon
         ))}
       </Box>
 
-      {/* Week rows */}
       {weekRows.map((weekDays, weekIdx) => {
         const weekMulti = layoutMultiDayRows(
           multiDay.filter((apt) => weekDays.some((d) => overlapsDay(apt, d.format("YYYY-MM-DD")))),
@@ -405,7 +475,6 @@ function MonthView({ appointments, date, onAppointmentClick, ...cardProps }: Mon
               position: "relative",
             }}
           >
-            {/* Multi-day bars rendered once per row at grid level */}
             {weekMulti.map((row, rowIdx) =>
               row.map((item) => (
                 <Box
@@ -419,7 +488,7 @@ function MonthView({ appointments, date, onAppointmentClick, ...cardProps }: Mon
                     zIndex: 2,
                   }}
                 >
-                  <MultiDayBar appointment={item.apt} onClick={onAppointmentClick} />
+                  <MultiDayBar appointment={item.apt} onClick={onAppointmentClick} onMenuOpen={onMenuOpen} />
                 </Box>
               ))
             )}
@@ -459,18 +528,17 @@ function MonthView({ appointments, date, onAppointmentClick, ...cardProps }: Mon
                     {d.date()}
                   </Typography>
 
-                  {/* Spacer for multi-day bars */}
                   {multiH > 0 && <Box sx={{ height: multiH + 4 }} />}
 
-                  {/* Single-day events */}
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25 }}>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
                     {daySingle.slice(0, 3).map((apt) => (
                       <AppointmentCard
                         key={apt.id}
                         appointment={apt}
-                        variant="chip"
+                        variant="month"
+                        showFullTags={false}
                         onClick={onAppointmentClick}
-                        {...cardProps}
+                        onMenuOpen={onMenuOpen}
                       />
                     ))}
                     {daySingle.length > 3 && (
