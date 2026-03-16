@@ -10,7 +10,7 @@ import ClientFilters from "./ClientFilters";
 import type { Client } from "@/features/clients/types/client";
 
 export default function ClientList() {
-    const { clients, totalElements, page, size, setPage, setSize, loading, error: fetchError, refetch, setQuery } = useClients();
+    const { clients, totalElements, page, size, setPage, setSize, loading, error: fetchError, refetch, setQuery, query } = useClients();
     const [selectedIds, setSelectedIds] = useState<GridRowSelectionModel>([]);
     const [deleteDialogOpen, setDeleteDialogOpen] =useState(false);
     const [formOpen, setFormOpen] = useState(false);
@@ -136,7 +136,7 @@ export default function ClientList() {
 
             {fetchError && <Alert severity="error" sx={{ mb: 2 }}>{fetchError}</Alert>}
             {actionError && <Alert severity="error" sx={{ mb: 2 }}>{actionError}</Alert>}
-            {setQuery && !loading && totalElements === 0 && (
+            {query && !loading && totalElements === 0 && (
                 <Alert severity="error" sx={{ mb: 2 }}>No se encuentra ningún cliente registrado con esos datos.</Alert>
             )}
 
