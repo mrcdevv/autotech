@@ -3,6 +3,8 @@ package com.autotech.vehicle.service;
 import com.autotech.client.model.Client;
 import com.autotech.client.service.ClientService;
 import com.autotech.common.exception.ResourceNotFoundException;
+import com.autotech.repairorder.model.RepairOrderStatus;
+import com.autotech.repairorder.repository.RepairOrderRepository;
 import com.autotech.vehicle.dto.VehicleMapper;
 import com.autotech.vehicle.dto.VehicleRequest;
 import com.autotech.vehicle.dto.VehicleResponse;
@@ -31,11 +33,12 @@ public class VehicleServiceImpl implements VehicleService {
     private final ClientService clientService;
     private final BrandRepository brandRepository;
     private final VehicleTypeRepository vehicleTypeRepository;
+    private final RepairOrderRepository repairOrderRepository;
 
     @Override
     @Transactional(readOnly = true)
     public Page<VehicleResponse> getAll(Pageable pageable) {
-        return vehicleRepository.findAll(pageable).map(vehicleMapper::toResponse);
+        return vehicleRepository.findAll(pageable).map(this::toResponseWithRepairStatus);
     }
 
     @Override
@@ -43,7 +46,7 @@ public class VehicleServiceImpl implements VehicleService {
     public VehicleResponse getById(Long id) {
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle", id));
-        return vehicleMapper.toResponse(vehicle);
+        return toResponseWithRepairStatus(vehicle);
     }
 
     @Override
@@ -64,7 +67,7 @@ public class VehicleServiceImpl implements VehicleService {
 
         Vehicle saved = vehicleRepository.save(vehicle);
         log.info("Created vehicle with id {} and plate {}", saved.getId(), saved.getPlate());
-        return vehicleMapper.toResponse(saved);
+        return toResponseWithRepairStatus(saved);
     }
 
     @Override
@@ -93,7 +96,7 @@ public class VehicleServiceImpl implements VehicleService {
 
         Vehicle saved = vehicleRepository.save(existing);
         log.info("Updated vehicle with id {}", saved.getId());
-        return vehicleMapper.toResponse(saved);
+        return toResponseWithRepairStatus(saved);
     }
 
     @Override
@@ -109,14 +112,14 @@ public class VehicleServiceImpl implements VehicleService {
     @Transactional(readOnly = true)
     public Page<VehicleResponse> searchByPlate(String plate, Pageable pageable) {
         return vehicleRepository.findByPlateContainingIgnoreCase(plate, pageable)
-                .map(vehicleMapper::toResponse);
+                .map(this::toResponseWithRepairStatus);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<VehicleResponse> getByClientId(Long clientId) {
         return vehicleRepository.findByClientId(clientId).stream()
-                .map(vehicleMapper::toResponse)
+                .map(this::toResponseWithRepairStatus)
                 .toList();
     }
 
@@ -124,21 +127,27 @@ public class VehicleServiceImpl implements VehicleService {
     @Transactional(readOnly = true)
     public Page<VehicleResponse> filterByBrand(Long brandId, Pageable pageable) {
         return vehicleRepository.findByBrandId(brandId, pageable)
-                .map(vehicleMapper::toResponse);
+                .map(this::toResponseWithRepairStatus);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<VehicleResponse> filterByYear(Integer year, Pageable pageable) {
         return vehicleRepository.findByYear(year, pageable)
-                .map(vehicleMapper::toResponse);
+                .map(this::toResponseWithRepairStatus);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<VehicleResponse> filterByModel(String model, Pageable pageable) {
         return vehicleRepository.findByModelContainingIgnoreCase(model, pageable)
-                .map(vehicleMapper::toResponse);
+                .map(this::toResponseWithRepairStatus);
+    }
+
+    private VehicleResponse toResponseWithRepairStatus(Vehicle vehicle) {
+        boolean inRepair = repairOrderRepository.existsByVehicleIdAndStatusNot(
+                vehicle.getId(), RepairOrderStatus.ENTREGADO);
+        return vehicleMapper.toResponse(vehicle, inRepair);
     }
 
     private Client resolveClient(Long clientId) {

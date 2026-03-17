@@ -82,6 +82,7 @@ describe("VehicleForm", () => {
       vehicleTypeId: 1,
       vehicleTypeName: "AUTO",
       observations: null,
+      inRepair: false,
       createdAt: "",
     };
 

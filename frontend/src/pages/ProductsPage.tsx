@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { Box, Typography, Button, TextField, Alert, Snackbar } from "@mui/material";
+import { Box, Typography, Button, TextField, Alert, Snackbar, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 
 import { useProducts } from "@/features/catalog/hooks/useProducts";
@@ -33,6 +33,8 @@ export default function ProductsPage() {
     message: "",
     severity: "success",
   });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<number | null>(null);
 
   const showSnackbar = (message: string, severity: "success" | "error") => {
     setSnackbar({ open: true, message, severity });
@@ -66,18 +68,27 @@ export default function ProductsPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const confirmDelete = (id: number) => {
+    setProductToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (productToDelete === null) return;
     try {
-      await deleteProduct(id);
+      await deleteProduct(productToDelete);
       showSnackbar("Producto eliminado", "success");
     } catch {
       showSnackbar("Error al eliminar el producto", "error");
+    } finally {
+      setDeleteDialogOpen(false);
+      setProductToDelete(null);
     }
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
+    <Box sx={{ px: 3, py: 2.5 }}>
+      <Typography variant="h3" sx={{ mb: 2 }}>
         Productos
       </Typography>
 
@@ -112,7 +123,7 @@ export default function ProductsPage() {
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
         onEditRow={handleEdit}
-        onDeleteRow={handleDelete}
+        onDeleteRow={confirmDelete}
       />
 
       <ProductFormDialog
@@ -121,6 +132,21 @@ export default function ProductsPage() {
         onSave={handleSave}
         initialData={editingProduct}
       />
+
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Confirmar eliminación</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+          <Button onClick={handleDelete} color="error" variant="contained">
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar
         open={snackbar.open}

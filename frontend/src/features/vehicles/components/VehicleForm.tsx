@@ -70,6 +70,7 @@ export function VehicleForm({
     observations: null,
   });
   const [errors, setErrors] = useState<FormErrors>({});
+  const [isDirty, setIsDirty] = useState(false);
 
   const [clients, setClients] = useState<ClientAutocompleteResponse[]>([]);
   const [clientsLoading, setClientsLoading] = useState(false);
@@ -138,28 +139,59 @@ export function VehicleForm({
         setSelectedVehicleType(null);
       }
       setErrors({});
+      setIsDirty(false);
     }
   }, [open, initialData, brands, vehicleTypes, fetchClients]);
 
   useEffect(() => {
     if (!open) return;
     const timer = setTimeout(() => {
-      if (clientInputValue) {
-        fetchClients(clientInputValue);
-      }
+      fetchClients(clientInputValue);
     }, 300);
     return () => clearTimeout(timer);
   }, [clientInputValue, open, fetchClients]);
 
   const handleChange = (field: keyof VehicleRequest, value: unknown) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+    setIsDirty(true);
     setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
-    if (!form.clientId || form.clientId === 0) newErrors.clientId = "El cliente es obligatorio";
-    if (!form.plate.trim()) newErrors.plate = "La patente es obligatoria";
+    if (!form.clientId || form.clientId === 0) {
+      newErrors.clientId = "El cliente es obligatorio";
+    }
+    if (!form.plate.trim()) {
+      newErrors.plate = "La patente es obligatoria (ej. AB123CD)";
+    } else if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9]+$/.test(form.plate.trim())) {
+      newErrors.plate = "La patente debe contener obligatoriamente letras y números, sin espacios (ej. AD123CF o AA111AA)";
+    }
+    if (!form.brandId) {
+      newErrors.brandId = "La marca es obligatoria";
+    }
+    if (!form.model || !form.model.trim()) {
+      newErrors.model = "El modelo es obligatorio";
+    }
+    if (!form.vehicleTypeId) {
+      newErrors.vehicleTypeId = "El tipo de vehículo es obligatorio";
+    }
+
+    if (form.year === null || form.year === undefined || form.year.toString() === "") {
+      newErrors.year = "El año es obligatorio";
+    } else {
+      const currentYear = new Date().getFullYear();
+      if (form.year < 1950 || form.year > currentYear) {
+        newErrors.year = `El año debe ser entre 1950 y ${currentYear} (ej. 2018)`;
+      }
+    }
+
+    if (form.chassisNumber && !/^[A-Za-z0-9]+$/.test(form.chassisNumber)) {
+      newErrors.chassisNumber = "El chasis solo debe contener letras y números (ej. 8C3V...)";
+    }
+    if (form.engineNumber && !/^[A-Za-z0-9]+$/.test(form.engineNumber)) {
+      newErrors.engineNumber = "El motor solo debe contener letras y números (ej. M20B...)";
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -264,6 +296,7 @@ export function VehicleForm({
               <TextField
                 fullWidth
                 label="Patente"
+                placeholder="Ej. AB123CD o AD123CF"
                 value={form.plate}
                 onChange={(e) => handleChange("plate", e.target.value)}
                 error={!!errors.plate}
@@ -275,16 +308,22 @@ export function VehicleForm({
               <TextField
                 fullWidth
                 label="N° Chasis"
+                placeholder="Ej. 8C3V..."
                 value={form.chassisNumber ?? ""}
                 onChange={(e) => handleChange("chassisNumber", e.target.value || null)}
+                error={!!errors.chassisNumber}
+                helperText={errors.chassisNumber}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="N° Motor"
+                placeholder="Ej. M20B..."
                 value={form.engineNumber ?? ""}
                 onChange={(e) => handleChange("engineNumber", e.target.value || null)}
+                error={!!errors.engineNumber}
+                helperText={errors.engineNumber}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -312,15 +351,27 @@ export function VehicleForm({
                   }
                   return filtered;
                 }}
-                renderInput={(params) => <TextField {...params} label="Marca" />}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Marca"
+                    required
+                    error={!!errors.brandId}
+                    helperText={errors.brandId}
+                  />
+                )}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="Modelo"
+                placeholder="Ej. Hilux, Focus"
                 value={form.model ?? ""}
                 onChange={(e) => handleChange("model", e.target.value || null)}
+                required
+                error={!!errors.model}
+                helperText={errors.model}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -328,11 +379,15 @@ export function VehicleForm({
                 fullWidth
                 label="Año"
                 type="number"
+                placeholder="Ej. 2018"
                 value={form.year ?? ""}
                 onChange={(e) => {
                   const val = e.target.value;
                   handleChange("year", val === "" ? null : parseInt(val, 10));
                 }}
+                required
+                error={!!errors.year}
+                helperText={errors.year}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -345,7 +400,15 @@ export function VehicleForm({
                   handleChange("vehicleTypeId", value?.id ?? null);
                 }}
                 isOptionEqualToValue={(option, val) => option.id === val.id}
-                renderInput={(params) => <TextField {...params} label="Tipo de vehículo" />}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Tipo de vehículo"
+                    required
+                    error={!!errors.vehicleTypeId}
+                    helperText={errors.vehicleTypeId}
+                  />
+                )}
               />
             </Grid>
             <Grid size={{ xs: 12 }}>
@@ -363,7 +426,7 @@ export function VehicleForm({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>
-        <Button variant="contained" onClick={handleSubmit}>
+        <Button variant="contained" onClick={handleSubmit} disabled={!isDirty}>
           Guardar
         </Button>
       </DialogActions>

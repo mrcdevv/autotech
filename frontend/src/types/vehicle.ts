@@ -14,6 +14,7 @@ export interface VehicleResponse {
   vehicleTypeId: number | null;
   vehicleTypeName: string | null;
   observations: string | null;
+  inRepair: boolean;
   createdAt: string;
 }
 

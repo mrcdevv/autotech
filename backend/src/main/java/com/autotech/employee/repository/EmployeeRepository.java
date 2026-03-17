@@ -26,7 +26,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     Page<Employee> findByStatus(EmployeeStatus status, Pageable pageable);
 
-    @Query("SELECT e FROM Employee e WHERE LOWER(e.dni) LIKE LOWER(CONCAT('%', :dni, '%'))")
+    @Query("SELECT e FROM Employee e WHERE LOWER(e.dni) LIKE LOWER(CONCAT(:dni, '%'))")
     Page<Employee> searchByDni(@Param("dni") String dni, Pageable pageable);
 
     @Query("""

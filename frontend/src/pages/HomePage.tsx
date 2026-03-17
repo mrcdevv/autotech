@@ -24,8 +24,8 @@ const stats = [
 
 export default function HomePage() {
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
+    <Box sx={{ px: 3, py: 2.5 }}>
+      <Typography variant="h3" sx={{ mb: 1 }}>
         Bienvenido a Autotech
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>

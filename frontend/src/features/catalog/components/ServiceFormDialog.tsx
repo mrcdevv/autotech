@@ -8,6 +8,7 @@ import {
   Button,
   TextField,
   Stack,
+  InputAdornment,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 
@@ -25,7 +26,11 @@ interface FormErrors {
 }
 
 export function ServiceFormDialog({ open, onClose, onSave, initialData }: ServiceFormDialogProps) {
-  const [form, setForm] = useState<CatalogServiceRequest>({ name: "", description: null, price: null });
+  const [form, setForm] = useState<Omit<CatalogServiceRequest, "price"> & { price: number | string | null }>({
+    name: "",
+    description: null,
+    price: null,
+  });
   const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
@@ -37,7 +42,7 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
           price: initialData.price,
         });
       } else {
-        setForm({ name: "", description: null, price: null });
+        setForm({ name: "", description: null, price: "" });
       }
       setErrors({});
     }
@@ -51,13 +56,19 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
     if (!form.name.trim()) newErrors.name = "El nombre del servicio es obligatorio";
+    if (form.price === "" || form.price === null || form.price === undefined) {
+      newErrors.price = "El precio es obligatorio";
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
     if (validate()) {
-      await onSave(form);
+      await onSave({
+        ...form,
+        price: Number(form.price),
+      } as CatalogServiceRequest);
     }
   };
 
@@ -71,6 +82,7 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
               <TextField
                 fullWidth
                 label="Nombre"
+                placeholder="Ej: Cambio de aceite"
                 value={form.name}
                 onChange={(e) => handleChange("name", e.target.value)}
                 error={!!errors.name}
@@ -82,6 +94,7 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
               <TextField
                 fullWidth
                 label="Descripción"
+                placeholder="Ej: Cambio de aceite sintético 10W-40 y filtro de aceite"
                 value={form.description ?? ""}
                 onChange={(e) => handleChange("description", e.target.value || null)}
                 multiline
@@ -92,13 +105,22 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
               <TextField
                 fullWidth
                 label="Precio"
+                placeholder="Ej: 5000.00"
                 type="number"
                 value={form.price ?? ""}
                 onChange={(e) => {
                   const val = e.target.value;
-                  handleChange("price", val === "" ? null : parseFloat(val));
+                  handleChange("price", val === "" ? "" : parseFloat(val));
                 }}
-                slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
+                error={!!errors.price}
+                helperText={errors.price}
+                required
+                slotProps={{
+                  htmlInput: { min: 0, step: "0.01" },
+                  input: {
+                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                  },
+                }}
               />
             </Grid>
           </Grid>

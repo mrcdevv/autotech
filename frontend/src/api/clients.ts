@@ -20,6 +20,9 @@ export const clientsApi = {
     delete: (id: number) =>
         apiClient.delete<ApiResponse<void>>(`/clients/${id}`),
 
+    findByDni: (dni: string) =>
+        apiClient.get<ApiResponse<Client>>(`/clients/dni/${dni}`),
+
     search: (query: string, page = 0, size = 12) =>
         apiClient.get<ApiResponse<PageResponse<Client>>>("/clients/search", {
             params: { query, page, size },

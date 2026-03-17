@@ -4,6 +4,8 @@ import com.autotech.client.model.Client;
 import com.autotech.client.model.ClientType;
 import com.autotech.client.service.ClientService;
 import com.autotech.common.exception.ResourceNotFoundException;
+import com.autotech.repairorder.model.RepairOrderStatus;
+import com.autotech.repairorder.repository.RepairOrderRepository;
 import com.autotech.vehicle.dto.VehicleMapper;
 import com.autotech.vehicle.dto.VehicleRequest;
 import com.autotech.vehicle.dto.VehicleResponse;
@@ -30,6 +32,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -52,6 +56,9 @@ class VehicleServiceImplTest {
     @Mock
     private VehicleTypeRepository vehicleTypeRepository;
 
+    @Mock
+    private RepairOrderRepository repairOrderRepository;
+
     @InjectMocks
     private VehicleServiceImpl vehicleService;
 
@@ -63,7 +70,8 @@ class VehicleServiceImplTest {
         Vehicle entity = buildVehicle(1L);
         VehicleResponse response = buildResponse(1L);
         when(vehicleRepository.findById(1L)).thenReturn(Optional.of(entity));
-        when(vehicleMapper.toResponse(entity)).thenReturn(response);
+        when(repairOrderRepository.existsByVehicleIdAndStatusNot(anyLong(), any(RepairOrderStatus.class))).thenReturn(false);
+        when(vehicleMapper.toResponse(entity, false)).thenReturn(response);
 
         // Act
         VehicleResponse result = vehicleService.getById(1L);
@@ -101,7 +109,8 @@ class VehicleServiceImplTest {
         when(vehicleTypeRepository.findById(1L)).thenReturn(Optional.of(vehicleType));
         when(vehicleMapper.toEntity(request)).thenReturn(entity);
         when(vehicleRepository.save(entity)).thenReturn(saved);
-        when(vehicleMapper.toResponse(saved)).thenReturn(response);
+        when(repairOrderRepository.existsByVehicleIdAndStatusNot(anyLong(), any(RepairOrderStatus.class))).thenReturn(false);
+        when(vehicleMapper.toResponse(saved, false)).thenReturn(response);
 
         // Act
         VehicleResponse result = vehicleService.create(request);
@@ -153,7 +162,8 @@ class VehicleServiceImplTest {
         when(brandRepository.findById(1L)).thenReturn(Optional.of(brand));
         when(vehicleTypeRepository.findById(1L)).thenReturn(Optional.of(vehicleType));
         when(vehicleRepository.save(existing)).thenReturn(saved);
-        when(vehicleMapper.toResponse(saved)).thenReturn(response);
+        when(repairOrderRepository.existsByVehicleIdAndStatusNot(anyLong(), any(RepairOrderStatus.class))).thenReturn(false);
+        when(vehicleMapper.toResponse(saved, false)).thenReturn(response);
 
         // Act
         VehicleResponse result = vehicleService.update(1L, request);
@@ -207,7 +217,8 @@ class VehicleServiceImplTest {
         Page<Vehicle> entityPage = new PageImpl<>(List.of(entity));
 
         when(vehicleRepository.findByPlateContainingIgnoreCase("ABC", pageable)).thenReturn(entityPage);
-        when(vehicleMapper.toResponse(entity)).thenReturn(response);
+        when(repairOrderRepository.existsByVehicleIdAndStatusNot(anyLong(), any(RepairOrderStatus.class))).thenReturn(false);
+        when(vehicleMapper.toResponse(entity, false)).thenReturn(response);
 
         // Act
         Page<VehicleResponse> result = vehicleService.searchByPlate("ABC", pageable);
@@ -224,7 +235,8 @@ class VehicleServiceImplTest {
         VehicleResponse response = buildResponse(1L);
 
         when(vehicleRepository.findByClientId(1L)).thenReturn(List.of(entity));
-        when(vehicleMapper.toResponse(entity)).thenReturn(response);
+        when(repairOrderRepository.existsByVehicleIdAndStatusNot(anyLong(), any(RepairOrderStatus.class))).thenReturn(false);
+        when(vehicleMapper.toResponse(entity, false)).thenReturn(response);
 
         // Act
         List<VehicleResponse> result = vehicleService.getByClientId(1L);
@@ -281,6 +293,6 @@ class VehicleServiceImplTest {
     private VehicleResponse buildResponse(Long id) {
         return new VehicleResponse(id, 1L, "Juan", "Perez", "12345678", "ABC123",
                 "CHASSIS001", "ENGINE001", 1L, "Toyota", "Corolla", 2020, 1L, "AUTO",
-                null, LocalDateTime.now());
+                null, false, LocalDateTime.now());
     }
 }

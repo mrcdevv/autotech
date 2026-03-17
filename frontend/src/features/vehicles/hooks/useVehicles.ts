@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect } from "react";
 
+import { useDebounce } from "@/hooks/useDebounce";
 import { vehiclesApi } from "@/api/vehicles";
 
 import type { VehicleResponse, VehicleRequest } from "@/types/vehicle";
 
-type FilterType = "brand" | "year" | "model";
+type FilterType = "brand" | "year" | "model" | "inRepair";
 
 export function useVehicles() {
   const [vehicles, setVehicles] = useState<VehicleResponse[]>([]);
@@ -14,15 +15,16 @@ export function useVehicles() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(12);
   const [searchPlate, setSearchPlate] = useState("");
-  const [activeFilter, setActiveFilter] = useState<{ type: FilterType; value: string | number } | null>(null);
+  const debouncedSearchPlate = useDebounce(searchPlate, 500);
+  const [activeFilter, setActiveFilter] = useState<{ type: FilterType; value: string | number | boolean } | null>(null);
 
   const fetchVehicles = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       let res;
-      if (searchPlate) {
-        res = await vehiclesApi.searchByPlate(searchPlate, page, pageSize);
+      if (debouncedSearchPlate) {
+        res = await vehiclesApi.searchByPlate(debouncedSearchPlate, page, pageSize);
       } else if (activeFilter) {
         switch (activeFilter.type) {
           case "brand":
@@ -33,6 +35,9 @@ export function useVehicles() {
             break;
           case "model":
             res = await vehiclesApi.filterByModel(activeFilter.value as string, page, pageSize);
+            break;
+          case "inRepair":
+            res = await vehiclesApi.filterByInRepair(activeFilter.value as boolean, page, pageSize);
             break;
         }
       } else {
@@ -47,7 +52,7 @@ export function useVehicles() {
     } finally {
       setLoading(false);
     }
-  }, [searchPlate, activeFilter, page, pageSize]);
+  }, [debouncedSearchPlate, activeFilter, page, pageSize]);
 
   useEffect(() => {
     fetchVehicles();
@@ -70,7 +75,7 @@ export function useVehicles() {
     await fetchVehicles();
   };
 
-  const applyFilter = (type: FilterType, value: string | number) => {
+  const applyFilter = (type: FilterType, value: string | number | boolean) => {
     setSearchPlate("");
     setActiveFilter({ type, value });
     setPage(0);

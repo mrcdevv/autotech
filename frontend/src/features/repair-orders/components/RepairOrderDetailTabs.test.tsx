@@ -1,0 +1,98 @@
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { vi, describe, it, expect } from "vitest";
+
+import { RepairOrderDetailTabs } from "./RepairOrderDetailTabs";
+
+import type { RepairOrderDetailResponse } from "../types";
+
+vi.mock("@mui/x-data-grid", () => ({
+  DataGrid: () => <div data-testid="mock-datagrid" />,
+}));
+
+vi.mock("@/features/inspections/InspectionsTab", () => ({
+  InspectionsTab: () => <div data-testid="inspections-tab">InspectionsTab</div>,
+}));
+
+vi.mock("@/features/estimates/components/EstimateTab", () => ({
+  EstimateTab: () => <div data-testid="estimate-tab">EstimateTab</div>,
+}));
+
+vi.mock("@/features/invoices/components/InvoiceTab", () => ({
+  InvoiceTab: () => <div data-testid="invoice-tab">InvoiceTab</div>,
+}));
+
+const mockRefetch = vi.fn();
+
+const sampleOrder: RepairOrderDetailResponse = {
+  id: 1,
+  title: "OT-1 Perez - ABC123",
+  status: "INGRESO_VEHICULO",
+  reason: "Engine noise",
+  clientSource: null,
+  mechanicNotes: null,
+  appointmentId: null,
+  clientId: 1,
+  clientFirstName: "Juan",
+  clientLastName: "Perez",
+  clientDni: "12345678",
+  clientPhone: "1234567890",
+  clientEmail: "juan@test.com",
+  vehicleId: 1,
+  vehiclePlate: "ABC123",
+  vehicleBrandName: "Toyota",
+  vehicleModel: "Corolla",
+  vehicleYear: 2020,
+  vehicleChassisNumber: "CHASSIS001",
+  employees: [],
+  tags: [],
+  workHistory: [],
+  createdAt: "2025-01-15T10:00:00",
+  updatedAt: "2025-01-15T10:00:00",
+};
+
+describe("RepairOrderDetailTabs", () => {
+  it("given order, when rendered, then shows 5 tab labels", () => {
+    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />);
+
+    expect(screen.getByText("Información General")).toBeInTheDocument();
+    expect(screen.getByText("Inspecciones")).toBeInTheDocument();
+    expect(screen.getByText("Presupuesto")).toBeInTheDocument();
+    expect(screen.getByText("Trabajos")).toBeInTheDocument();
+    expect(screen.getByText("Factura")).toBeInTheDocument();
+  });
+
+  it("given order, when first tab active, then shows GeneralInfoTab content", () => {
+    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />);
+
+    expect(screen.getByText("Datos del Cliente")).toBeInTheDocument();
+    expect(screen.getByText("Datos del Vehículo")).toBeInTheDocument();
+  });
+
+  it("given order, when clicking Inspecciones tab, then shows InspectionsTab", async () => {
+    const user = userEvent.setup();
+    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />);
+
+    await user.click(screen.getByText("Inspecciones"));
+
+    expect(screen.getByTestId("inspections-tab")).toBeInTheDocument();
+  });
+
+  it("given order, when clicking Presupuesto tab, then shows EstimateTab", async () => {
+    const user = userEvent.setup();
+    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />);
+
+    await user.click(screen.getByText("Presupuesto"));
+
+    expect(screen.getByTestId("estimate-tab")).toBeInTheDocument();
+  });
+
+  it("given order, when clicking Factura tab, then shows InvoiceTab", async () => {
+    const user = userEvent.setup();
+    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />);
+
+    await user.click(screen.getByText("Factura"));
+
+    expect(screen.getByTestId("invoice-tab")).toBeInTheDocument();
+  });
+});

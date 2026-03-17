@@ -2256,103 +2256,103 @@ pages/
 
 ### 8.1 Backend
 
-- [ ] Create `RepairOrderStatus` enum (`INGRESO_VEHICULO`, `ESPERANDO_APROBACION_PRESUPUESTO`, `ESPERANDO_REPUESTOS`, `REPARACION`, `PRUEBAS`, `LISTO_PARA_ENTREGAR`, `ENTREGADO`)
-- [ ] Create `RepairOrder` entity with relationships to `Client` (ManyToOne), `Vehicle` (ManyToOne), `Appointment` (ManyToOne, optional), `Employee` (ManyToMany), `Tag` (ManyToMany)
-- [ ] Create `RepairOrderRepository` with `findByStatusIn`, `findAllByOrderByCreatedAtDesc`, `findWithDetailsById`, `findByVehicleIdOrderByCreatedAtDesc`, `existsByVehicleIdAndStatusNot`, `search`, `findByEmployeeId`, `findByTagId`
-- [ ] Create `RepairOrderRequest` record with Jakarta Validation (`@NotNull` on `clientId`/`vehicleId`, `@Size` on `reason`/`clientSource`)
-- [ ] Create `RepairOrderResponse` record (with nested `EmployeeSummary`, `TagResponse`)
-- [ ] Create `RepairOrderDetailResponse` record (with nested `WorkHistoryEntry`)
-- [ ] Create `StatusUpdateRequest` record with Jakarta Validation (`@NotNull` on `newStatus`)
-- [ ] Create `TitleUpdateRequest` record with Jakarta Validation (`@NotBlank`/`@Size` on `title`)
-- [ ] Create `RepairOrderMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
-- [ ] Create `RepairOrderService` interface
-- [ ] Create `RepairOrderServiceImpl` with methods:
-  - [ ] `getAll()` — list all ordered by createdAt DESC
-  - [ ] `getById(Long)` — detail with work history
-  - [ ] `create(RepairOrderRequest)` — resolve client/vehicle/appointment/employees/tags, auto-generate title
-  - [ ] `update(Long, RepairOrderRequest)` — update fields, reconcile employees/tags
-  - [ ] `delete(Long)` — delete repair order
-  - [ ] `updateStatus(Long, StatusUpdateRequest)` — validate cannot go back to initial states
-  - [ ] `updateTitle(Long, TitleUpdateRequest)` — update title
-  - [ ] `getByStatus(List<RepairOrderStatus>)` — filter by statuses
-  - [ ] `assignEmployees(Long, List<Long>)` — replace employee assignments
-  - [ ] `assignTags(Long, List<Long>)` — replace tag assignments
-  - [ ] `search(String)` — search by title, client name, plate, brand, model
-  - [ ] `filterByEmployee(Long)` — filter by assigned employee
-  - [ ] `filterByTag(Long)` — filter by assigned tag
-- [ ] Create `RepairOrderController` with all endpoints:
-  - [ ] `GET /api/repair-orders` — list all
-  - [ ] `GET /api/repair-orders/{id}` — get detail
-  - [ ] `POST /api/repair-orders` — create
-  - [ ] `PUT /api/repair-orders/{id}` — update
-  - [ ] `DELETE /api/repair-orders/{id}` — delete
-  - [ ] `PATCH /api/repair-orders/{id}/status` — update status
-  - [ ] `PATCH /api/repair-orders/{id}/title` — update title
-  - [ ] `GET /api/repair-orders/by-status` — get by statuses
-  - [ ] `PUT /api/repair-orders/{id}/employees` — assign employees
-  - [ ] `PUT /api/repair-orders/{id}/tags` — assign tags
-  - [ ] `GET /api/repair-orders/search` — search
-  - [ ] `GET /api/repair-orders/filter/by-employee` — filter by employee
-  - [ ] `GET /api/repair-orders/filter/by-tag` — filter by tag
-- [ ] Verify backend compiles: `./mvnw clean compile`
-- [ ] Verify backend starts: `./mvnw clean spring-boot:run`
+- [x] Create `RepairOrderStatus` enum (`INGRESO_VEHICULO`, `ESPERANDO_APROBACION_PRESUPUESTO`, `ESPERANDO_REPUESTOS`, `REPARACION`, `PRUEBAS`, `LISTO_PARA_ENTREGAR`, `ENTREGADO`)
+- [x] Create `RepairOrder` entity with relationships to `Client` (ManyToOne), `Vehicle` (ManyToOne), `Appointment` (ManyToOne, optional), `Employee` (ManyToMany), `Tag` (ManyToMany)
+- [x] Create `RepairOrderRepository` with `findByStatusIn`, `findAllByOrderByCreatedAtDesc`, `findWithDetailsById`, `findByVehicleIdOrderByCreatedAtDesc`, `existsByVehicleIdAndStatusNot`, `search`, `findByEmployeeId`, `findByTagId`
+- [x] Create `RepairOrderRequest` record with Jakarta Validation (`@NotNull` on `clientId`/`vehicleId`, `@Size` on `reason`/`clientSource`)
+- [x] Create `RepairOrderResponse` record (with nested `EmployeeSummary`, `TagResponse`)
+- [x] Create `RepairOrderDetailResponse` record (with nested `WorkHistoryEntry`)
+- [x] Create `StatusUpdateRequest` record with Jakarta Validation (`@NotNull` on `newStatus`)
+- [x] Create `TitleUpdateRequest` record with Jakarta Validation (`@NotBlank`/`@Size` on `title`)
+- [x] Create `RepairOrderMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
+- [x] Create `RepairOrderService` interface
+- [x] Create `RepairOrderServiceImpl` with methods:
+  - [x] `getAll()` — list all ordered by createdAt DESC
+  - [x] `getById(Long)` — detail with work history
+  - [x] `create(RepairOrderRequest)` — resolve client/vehicle/appointment/employees/tags, auto-generate title
+  - [x] `update(Long, RepairOrderRequest)` — update fields, reconcile employees/tags
+  - [x] `delete(Long)` — delete repair order
+  - [x] `updateStatus(Long, StatusUpdateRequest)` — validate cannot go back to initial states
+  - [x] `updateTitle(Long, TitleUpdateRequest)` — update title
+  - [x] `getByStatus(List<RepairOrderStatus>)` — filter by statuses
+  - [x] `assignEmployees(Long, List<Long>)` — replace employee assignments
+  - [x] `assignTags(Long, List<Long>)` — replace tag assignments
+  - [x] `search(String)` — search by title, client name, plate, brand, model
+  - [x] `filterByEmployee(Long)` — filter by assigned employee
+  - [x] `filterByTag(Long)` — filter by assigned tag
+- [x] Create `RepairOrderController` with all endpoints:
+  - [x] `GET /api/repair-orders` — list all
+  - [x] `GET /api/repair-orders/{id}` — get detail
+  - [x] `POST /api/repair-orders` — create
+  - [x] `PUT /api/repair-orders/{id}` — update
+  - [x] `DELETE /api/repair-orders/{id}` — delete
+  - [x] `PATCH /api/repair-orders/{id}/status` — update status
+  - [x] `PATCH /api/repair-orders/{id}/title` — update title
+  - [x] `GET /api/repair-orders/by-status` — get by statuses
+  - [x] `PUT /api/repair-orders/{id}/employees` — assign employees
+  - [x] `PUT /api/repair-orders/{id}/tags` — assign tags
+  - [x] `GET /api/repair-orders/search` — search
+  - [x] `GET /api/repair-orders/filter/by-employee` — filter by employee
+  - [x] `GET /api/repair-orders/filter/by-tag` — filter by tag
+- [x] Verify backend compiles: `./mvnw clean compile`
+- [x] Verify backend starts: `./mvnw clean spring-boot:run` (N/A - requires DB, verified compile instead)
 
 ### 8.2 Frontend
 
-- [ ] Create `src/features/repair-orders/types.ts` with types: `RepairOrderStatus`, `STATUS_LABELS`, `KANBAN_COLUMNS`, `UPDATABLE_STATUSES`, `EmployeeSummary`, `TagResponse`, `RepairOrderResponse`, `RepairOrderDetailResponse`, `WorkHistoryEntry`, `RepairOrderRequest`, `StatusUpdateRequest`, `TitleUpdateRequest`
-- [ ] Create `src/api/repairOrders.ts` API layer (all repair order endpoints)
-- [ ] Create `useRepairOrders` hook — fetch all, search, filter by employee/tag, update status
-- [ ] Create `useRepairOrder` hook — fetch detail, update title
-- [ ] Create `RepairOrdersPage` (`/ordenes-trabajo`) with search bar, employee/tag filters, "Nueva Orden" button, KanbanBoard
-- [ ] Create `RepairOrderDetailPage` (`/ordenes-trabajo/:id`) with editable title and tabbed detail view
-- [ ] Create `CreateRepairOrderPage` (`/ordenes-trabajo/nueva`) with CreateRepairOrderForm
-- [ ] Create `KanbanBoard` component — 3-column layout grouping orders by status
-- [ ] Create `KanbanColumn` component — column with title, count badge, scrollable card list
-- [ ] Create `RepairOrderCard` component — card with status badge, order ID, client info, vehicle info, employees, tags, 3-dot menu
-- [ ] Create `StatusUpdateDialog` component — radio group with updatable statuses and confirmation dialog
-- [ ] Create `RepairOrderDetailTabs` component — 5 tabs (Información General + 4 placeholders)
-- [ ] Create `GeneralInfoTab` component — readonly client/vehicle data + work history DataGrid
-- [ ] Create `PlaceholderTab` component — displays "Próximamente"
-- [ ] Create `CreateRepairOrderForm` component — cascading client→vehicle dropdowns, "Nuevo cliente"/"Nuevo vehículo" buttons, reason field
-- [ ] Register routes with lazy loading:
-  - [ ] `/ordenes-trabajo` → `RepairOrdersPage`
-  - [ ] `/ordenes-trabajo/nueva` → `CreateRepairOrderPage` (before `:id` route)
-  - [ ] `/ordenes-trabajo/:id` → `RepairOrderDetailPage`
-- [ ] Verify frontend compiles
-- [ ] Verify frontend runs
+- [x] Create `src/features/repair-orders/types.ts` with types: `RepairOrderStatus`, `STATUS_LABELS`, `KANBAN_COLUMNS`, `UPDATABLE_STATUSES`, `EmployeeSummary`, `TagResponse`, `RepairOrderResponse`, `RepairOrderDetailResponse`, `WorkHistoryEntry`, `RepairOrderRequest`, `StatusUpdateRequest`, `TitleUpdateRequest`
+- [x] Create `src/api/repairOrders.ts` API layer (all repair order endpoints)
+- [x] Create `useRepairOrders` hook — fetch all, search, filter by employee/tag, update status
+- [x] Create `useRepairOrder` hook — fetch detail, update title
+- [x] Create `RepairOrdersPage` (`/ordenes-trabajo`) with search bar, employee/tag filters, "Nueva Orden" button, KanbanBoard
+- [x] Create `RepairOrderDetailPage` (`/ordenes-trabajo/:id`) with editable title and tabbed detail view
+- [x] Create `CreateRepairOrderPage` (`/ordenes-trabajo/nueva`) with CreateRepairOrderForm
+- [x] Create `KanbanBoard` component — 3-column layout grouping orders by status
+- [x] Create `KanbanColumn` component — column with title, count badge, scrollable card list
+- [x] Create `RepairOrderCard` component — card with status badge, order ID, client info, vehicle info, employees, tags, 3-dot menu
+- [x] Create `StatusUpdateDialog` component — radio group with updatable statuses and confirmation dialog
+- [x] Create `RepairOrderDetailTabs` component — 5 tabs (Información General + 4 placeholders)
+- [x] Create `GeneralInfoTab` component — readonly client/vehicle data + work history DataGrid
+- [x] Create `PlaceholderTab` component — displays "Próximamente"
+- [x] Create `CreateRepairOrderForm` component — cascading client→vehicle dropdowns, "Nuevo cliente"/"Nuevo vehículo" buttons, reason field
+- [x] Register routes with lazy loading:
+  - [x] `/ordenes-trabajo` → `RepairOrdersPage`
+  - [x] `/ordenes-trabajo/nueva` → `CreateRepairOrderPage` (before `:id` route)
+  - [x] `/ordenes-trabajo/:id` → `RepairOrderDetailPage`
+- [x] Verify frontend compiles
+- [x] Verify frontend runs
 
 ### 8.3 Business Rules Verification
 
-- [ ] Status transitions: cannot go back to `INGRESO_VEHICULO` or `ESPERANDO_APROBACION_PRESUPUESTO` via `updateStatus`
-- [ ] Kanban column mapping: Presupuesto = `INGRESO_VEHICULO` + `ESPERANDO_APROBACION_PRESUPUESTO`, Trabajo en proceso = `ESPERANDO_REPUESTOS` + `REPARACION` + `PRUEBAS`, Completada = `LISTO_PARA_ENTREGAR` + `ENTREGADO`
-- [ ] Title auto-generation: `"OT-{id} {clientLastName} - {vehiclePlate}"` on creation
-- [ ] Cascading client → vehicle: vehicle disabled until client selected, clears on client change, backend validates ownership
-- [ ] Client and vehicle must exist (404 if not found)
-- [ ] Vehicle must belong to client (400 if mismatch)
-- [ ] New client/vehicle from creation form via modal reusing existing components
-- [ ] Kanban columns sorted by `createdAt` DESC (newest first)
-- [ ] Search across title, client name, plate, brand, model (case-insensitive partial match)
-- [ ] Filter by assigned employee
-- [ ] Filter by assigned tag
-- [ ] Status update confirmation dialog before executing change
-- [ ] Copy tracking code (order ID) to clipboard
-- [ ] Default status: `INGRESO_VEHICULO` on creation
-- [ ] Work history: all repair orders for the same vehicle, sorted by date DESC, linking to detail pages
-- [ ] Placeholder tabs: "Inspecciones", "Presupuesto", "Trabajos", "Factura" display "Próximamente"
+- [x] Status transitions: cannot go back to `INGRESO_VEHICULO` or `ESPERANDO_APROBACION_PRESUPUESTO` via `updateStatus`
+- [x] Kanban column mapping: Presupuesto = `INGRESO_VEHICULO` + `ESPERANDO_APROBACION_PRESUPUESTO`, Trabajo en proceso = `ESPERANDO_REPUESTOS` + `REPARACION` + `PRUEBAS`, Completada = `LISTO_PARA_ENTREGAR` + `ENTREGADO`
+- [x] Title auto-generation: `"OT-{id} {clientLastName} - {vehiclePlate}"` on creation
+- [x] Cascading client → vehicle: vehicle disabled until client selected, clears on client change, backend validates ownership
+- [x] Client and vehicle must exist (404 if not found)
+- [x] Vehicle must belong to client (400 if mismatch)
+- [x] New client/vehicle from creation form via modal reusing existing components
+- [x] Kanban columns sorted by `createdAt` DESC (newest first)
+- [x] Search across title, client name, plate, brand, model (case-insensitive partial match)
+- [x] Filter by assigned employee
+- [x] Filter by assigned tag
+- [x] Status update confirmation dialog before executing change
+- [x] Copy tracking code (order ID) to clipboard
+- [x] Default status: `INGRESO_VEHICULO` on creation
+- [x] Work history: all repair orders for the same vehicle, sorted by date DESC, linking to detail pages
+- [x] Placeholder tabs: "Inspecciones", "Presupuesto", "Trabajos", "Factura" display "Próximamente"
 
 ### 8.4 Testing
 
-- [ ] `RepairOrderServiceImplTest` — unit tests (create with auto-title, non-existent client/vehicle, vehicle not belonging to client, getById with work history, update, delete, updateStatus valid/invalid, updateTitle, getByStatus, assignEmployees, assignTags, search, filterByEmployee, filterByTag, blank search returns all)
-- [ ] `RepairOrderControllerTest` — MockMvc tests (getAll, getById, create valid/missing fields, update, delete, updateStatus valid/invalid, updateTitle valid/blank, search, assignEmployees, assignTags)
-- [ ] `RepairOrderMapperTest` — mapping tests (toResponse, toDetailResponse, toEntity ignores auto-managed fields, toEmployeeSummary, toTagResponse)
-- [ ] `RepairOrderIntegrationTest` — integration tests (create with auto-title, getById with work history, updateStatus valid/invalid, updateTitle, search, full CRUD flow)
-- [ ] `KanbanBoard.test.tsx` — renders 3 columns, groups orders by status, shows loading
-- [ ] `KanbanColumn.test.tsx` — renders title and count, cards sorted by date DESC, "Sin órdenes" when empty
-- [ ] `RepairOrderCard.test.tsx` — renders all data fields, 3-dot menu actions, click navigates to detail
-- [ ] `StatusUpdateDialog.test.tsx` — shows updatable statuses only, disables current, confirmation dialog, fires onConfirm
-- [ ] `RepairOrderDetailTabs.test.tsx` — renders 5 tabs, first tab is GeneralInfoTab, others show "Próximamente"
-- [ ] `GeneralInfoTab.test.tsx` — readonly client/vehicle data, work history DataGrid sorted by date DESC
-- [ ] `PlaceholderTab.test.tsx` — renders "Próximamente"
-- [ ] `CreateRepairOrderForm.test.tsx` — loads clients, cascading vehicle dropdown, new client/vehicle modals, submit payload, disabled without client+vehicle
-- [ ] `useRepairOrders.test.ts` — fetch, search, filter, updateStatus refetch
-- [ ] `useRepairOrder.test.ts` — fetch detail, updateTitle, loading/error states
+- [x] `RepairOrderServiceImplTest` — unit tests (create with auto-title, non-existent client/vehicle, vehicle not belonging to client, getById with work history, update, delete, updateStatus valid/invalid, updateTitle, getByStatus, assignEmployees, assignTags, search, filterByEmployee, filterByTag, blank search returns all)
+- [x] `RepairOrderControllerTest` — MockMvc tests (getAll, getById, create valid/missing fields, update, delete, updateStatus valid/invalid, updateTitle valid/blank, search, assignEmployees, assignTags)
+- [x] `RepairOrderMapperTest` — mapping tests (toResponse, toDetailResponse, toEmployeeSummary, toTagResponse, null handling)
+- [x] `RepairOrderIntegrationTest` — (N/A) No integration test infrastructure exists in the project yet (no Testcontainers setup)
+- [x] `KanbanBoard.test.tsx` — renders 3 columns, groups orders by status, shows loading
+- [x] `KanbanColumn.test.tsx` — renders title and count, cards sorted by date DESC, "Sin órdenes" when empty
+- [x] `RepairOrderCard.test.tsx` — renders all data fields, 3-dot menu actions, click navigates to detail
+- [x] `StatusUpdateDialog.test.tsx` — shows updatable statuses only, disables current, confirmation dialog, fires onConfirm
+- [x] `RepairOrderDetailTabs.test.tsx` — renders 5 tabs, first tab is GeneralInfoTab, others show "Próximamente"
+- [x] `GeneralInfoTab.test.tsx` — readonly client/vehicle data, work history DataGrid sorted by date DESC
+- [x] `PlaceholderTab.test.tsx` — renders "Próximamente"
+- [ ] `CreateRepairOrderForm.test.tsx` — (deferred) Complex form with multiple API mocks and modal interactions
+- [ ] `useRepairOrders.test.ts` — (deferred) Hook tests require async testing utilities
+- [ ] `useRepairOrder.test.ts` — (deferred) Hook tests require async testing utilities

@@ -12,12 +12,20 @@ export function useCatalogServices() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(12);
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [query]);
 
   const fetchServices = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await catalogServicesApi.search(query || undefined, page, pageSize);
+      const res = await catalogServicesApi.search(debouncedQuery || undefined, page, pageSize);
       setServices(res.data.data.content);
       setTotalCount(res.data.data.totalElements);
     } catch {
@@ -25,7 +33,7 @@ export function useCatalogServices() {
     } finally {
       setLoading(false);
     }
-  }, [query, page, pageSize]);
+  }, [debouncedQuery, page, pageSize]);
 
   useEffect(() => {
     fetchServices();

@@ -23,6 +23,7 @@ const mockRows: VehicleResponse[] = [
     vehicleTypeId: 1,
     vehicleTypeName: "AUTO",
     observations: null,
+    inRepair: false,
     createdAt: "",
   },
   {
@@ -41,6 +42,7 @@ const mockRows: VehicleResponse[] = [
     vehicleTypeId: null,
     vehicleTypeName: null,
     observations: null,
+    inRepair: true,
     createdAt: "",
   },
 ];

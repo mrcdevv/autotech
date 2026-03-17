@@ -7,6 +7,10 @@ import {
   TextField,
   Autocomplete,
   Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 
@@ -14,7 +18,7 @@ import type { BrandResponse } from "@/types/vehicle";
 
 interface VehicleFiltersProps {
   brands: BrandResponse[];
-  onApplyFilter: (type: "brand" | "year" | "model", value: string | number) => void;
+  onApplyFilter: (type: "brand" | "year" | "model" | "inRepair", value: string | number | boolean) => void;
   onClearFilters: () => void;
 }
 
@@ -23,11 +27,14 @@ export function VehicleFilters({ brands, onApplyFilter, onClearFilters }: Vehicl
   const [selectedBrand, setSelectedBrand] = useState<BrandResponse | null>(null);
   const [yearValue, setYearValue] = useState("");
   const [modelValue, setModelValue] = useState("");
+  const [inRepairValue, setInRepairValue] = useState<string>("all");
 
   const open = Boolean(anchorEl);
 
   const handleApply = () => {
-    if (selectedBrand) {
+    if (inRepairValue !== "all") {
+      onApplyFilter("inRepair", inRepairValue === "true");
+    } else if (selectedBrand) {
       onApplyFilter("brand", selectedBrand.id);
     } else if (yearValue) {
       onApplyFilter("year", parseInt(yearValue, 10));
@@ -41,6 +48,7 @@ export function VehicleFilters({ brands, onApplyFilter, onClearFilters }: Vehicl
     setSelectedBrand(null);
     setYearValue("");
     setModelValue("");
+    setInRepairValue("all");
     onClearFilters();
     setAnchorEl(null);
   };
@@ -51,6 +59,18 @@ export function VehicleFilters({ brands, onApplyFilter, onClearFilters }: Vehicl
         variant="outlined"
         startIcon={<FilterListIcon />}
         onClick={(e) => setAnchorEl(e.currentTarget)}
+        sx={{
+          borderRadius: "8px",
+          textTransform: "none",
+          fontWeight: 500,
+          color: "#475569",
+          borderColor: "#e2e8f0",
+          backgroundColor: "#fff",
+          "&:hover": {
+            backgroundColor: "#f8fafc",
+            borderColor: "#cbd5e1",
+          },
+        }}
       >
         Filtros
       </Button>
@@ -93,8 +113,26 @@ export function VehicleFilters({ brands, onApplyFilter, onClearFilters }: Vehicl
               setModelValue(e.target.value);
               setSelectedBrand(null);
               setYearValue("");
+              setInRepairValue("all");
             }}
           />
+          <FormControl size="small">
+            <InputLabel>En reparación</InputLabel>
+            <Select
+              value={inRepairValue}
+              label="En reparación"
+              onChange={(e) => {
+                setInRepairValue(e.target.value as string);
+                setSelectedBrand(null);
+                setYearValue("");
+                setModelValue("");
+              }}
+            >
+              <MenuItem value="all">Todos</MenuItem>
+              <MenuItem value="true">Sí</MenuItem>
+              <MenuItem value="false">No</MenuItem>
+            </Select>
+          </FormControl>
           <Stack direction="row" spacing={1} justifyContent="flex-end">
             <Button size="small" onClick={handleClear}>
               Limpiar

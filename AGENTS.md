@@ -51,6 +51,12 @@ The backend **requires Java 21 LTS**. Lombok's annotation processor is incompati
 
 VS Code's JDT (Java Language Server) runs its own Eclipse compiler in the background and can overwrite Maven-compiled `.class` files in `target/` with broken versions. This is especially problematic for Lombok-generated methods inherited from `BaseEntity` (getId, getCreatedAt, etc.). **Always use `./mvnw clean` before `spring-boot:run` or `package`**.
 
+### JPA Collections (Backend)
+
+`@OneToMany` collections **must use `Set<T>` (with `HashSet`)**, never `List<T>` (with `ArrayList`). Hibernate throws `MultipleBagFetchException` when a `@EntityGraph` tries to fetch two or more `List`-typed collections simultaneously. Using `Set` avoids this entirely. See `backend/.agentic-rules/entity-rules.md` for details.
+
+> **Spec files note**: Some specs in `docs/specs/` may still show `List<T>` in entity code examples. **Always use `Set<T>`**. The `.agentic-rules/` conventions take precedence over spec code examples.
+
 ### Mappers (Backend)
 
 Use **manual `@Component` mapper classes**, not MapStruct interfaces. MapStruct's generated code gets corrupted by the IDE's background compiler. See `backend/.agentic-rules/dto-rules.md` for the full pattern.
