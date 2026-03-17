@@ -18,7 +18,8 @@ interface AppointmentCardProps {
 }
 
 function getEventColor(_appointment: AppointmentResponse): string {
-  return "#1a73e8";
+  // Vibrant blue for better contrast with white text
+  return "#2563eb"; // Tailwind blue-600
 }
 
 function getDisplayTitle(appointment: AppointmentResponse): string {
@@ -58,21 +59,41 @@ export function AppointmentCard({
           justifyContent: "space-between",
           gap: 0.5,
           minHeight: 24,
-          opacity: isCancelled ? 0.5 : 1,
+          opacity: isCancelled ? 0.6 : 1,
           transition: "filter 0.15s",
           "&:hover": { filter: "brightness(0.9)" },
           "&:hover .month-actions": { opacity: 1 },
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flex: 1, minWidth: 0 }}>
+          {appointment.tags.length > 0 && (
+            <Box sx={{ display: "flex", gap: 0.25, alignItems: "center", flexShrink: 0 }}>
+              {appointment.tags.slice(0, 3).map((tag) => (
+                <Tooltip key={tag.id} title={tag.name} arrow placement="top">
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      bgcolor: tag.color || "#1a73e8",
+                      flexShrink: 0,
+                      border: "1px solid rgba(255,255,255,0.8)",
+                    }}
+                  />
+                </Tooltip>
+              ))}
+            </Box>
+          )}
           <Typography
+            color="inherit"
             sx={{
-              fontSize: "0.7rem",
-              fontWeight: 500,
+              fontSize: "0.75rem",
+              fontWeight: 600,
               lineHeight: 1.3,
               textDecoration: isCancelled ? "line-through" : "none",
               flex: 1,
               minWidth: 0,
+              letterSpacing: "0.01em",
             }}
             noWrap
           >
@@ -80,31 +101,13 @@ export function AppointmentCard({
           </Typography>
           {isCompleted && (
             <Tooltip title="Completada" arrow>
-              <CheckCircleIcon sx={{ fontSize: 12, color: "success.light", flexShrink: 0 }} />
+              <CheckCircleIcon sx={{ fontSize: 12, color: "#fff", flexShrink: 0 }} />
             </Tooltip>
           )}
           {isInProgress && (
             <Tooltip title="En progreso" arrow>
-              <DirectionsCarIcon sx={{ fontSize: 12, color: "info.light", flexShrink: 0 }} />
+              <DirectionsCarIcon sx={{ fontSize: 12, color: "rgba(255, 255, 255, 0.9)", flexShrink: 0 }} />
             </Tooltip>
-          )}
-          {appointment.tags.length > 0 && (
-            <Box sx={{ display: "flex", gap: 0.5, alignItems: "center", flexShrink: 0 }}>
-              {appointment.tags.slice(0, 3).map((tag) => (
-                <Tooltip key={tag.id} title={tag.name} arrow placement="top">
-                  <Box
-                    sx={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: "50%",
-                      bgcolor: tag.color || "#1a73e8",
-                      flexShrink: 0,
-                      border: "1px solid rgba(255,255,255,0.3)",
-                    }}
-                  />
-                </Tooltip>
-              ))}
-            </Box>
           )}
         </Box>
         <Box
@@ -139,9 +142,10 @@ export function AppointmentCard({
       sx={{
         bgcolor: color,
         color: "#fff",
-        borderRadius: 1,
-        px: 1.25,
-        py: 0.75,
+        borderRadius: 1.5,
+        boxShadow: `inset 5px 0 0 0 #1e40af, 0 1px 3px 0 ${alpha("#000", 0.15)}`, // Using a darker blue exact color for the contour
+        p: 1.5,
+        pr: 1, // slightly less padding on the right to make room for the menu
         cursor: "pointer",
         position: "relative",
         height: "100%",
@@ -159,30 +163,51 @@ export function AppointmentCard({
       <Box>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 0.5, mb: 0.5 }}>
           <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Typography
-              sx={{
-                fontSize: "0.8rem",
-                fontWeight: 600,
-                lineHeight: 1.3,
-                textDecoration: isCancelled ? "line-through" : "none",
-              }}
-              noWrap
-            >
-              {title}
-            </Typography>
-            <Typography sx={{ fontSize: "0.72rem", lineHeight: 1.2, opacity: 0.9, mt: 0.25 }} noWrap>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.25 }}>
+              {!showFullTags && appointment.tags.length > 0 && (
+                <Box sx={{ display: "flex", gap: 0.25, flexShrink: 0 }}>
+                  {appointment.tags.slice(0, 3).map((tag) => (
+                    <Tooltip key={tag.id} title={tag.name} arrow placement="top">
+                      <Box
+                        sx={{
+                          width: 12,
+                          height: 12,
+                          borderRadius: "50%",
+                          bgcolor: tag.color || "#1a73e8",
+                          border: "2px solid rgba(255,255,255,0.8)",
+                        }}
+                      />
+                    </Tooltip>
+                  ))}
+                </Box>
+              )}
+              <Typography
+                color="inherit"
+                sx={{
+                  fontSize: "0.95rem",
+                  fontWeight: 700,
+                  lineHeight: 1.2,
+                  textDecoration: isCancelled ? "line-through" : "none",
+                  letterSpacing: "0.01em",
+                }}
+                noWrap
+              >
+                {title}
+              </Typography>
+            </Box>
+            <Typography color="inherit" sx={{ fontSize: "0.85rem", lineHeight: 1.2, opacity: 0.9, mb: 0.5 }} noWrap>
               {timeLabel}
             </Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}>
             {isCompleted && (
               <Tooltip title="Completada" arrow>
-                <CheckCircleIcon sx={{ fontSize: 16, color: "success.light" }} />
+                <CheckCircleIcon sx={{ fontSize: 16, color: "#fff" }} />
               </Tooltip>
             )}
             {isInProgress && (
               <Tooltip title="En progreso" arrow>
-                <DirectionsCarIcon sx={{ fontSize: 16, color: "info.light" }} />
+                <DirectionsCarIcon sx={{ fontSize: 16, color: "rgba(255, 255, 255, 0.9)" }} />
               </Tooltip>
             )}
             <Box
@@ -211,7 +236,7 @@ export function AppointmentCard({
           </Box>
         </Box>
         {appointment.clientFullName && (
-          <Typography sx={{ fontSize: "0.72rem", opacity: 0.9 }} noWrap>
+          <Typography color="inherit" sx={{ fontSize: "0.85rem", opacity: 0.9, mt: 0.25 }} noWrap>
             {appointment.clientFullName}
             {appointment.vehiclePlate && ` — ${appointment.vehiclePlate}`}
           </Typography>
@@ -239,49 +264,27 @@ export function AppointmentCard({
           </Box>
         )}
         
-        {(!showFullTags && appointment.tags.length > 0) || overlappingCount > 0 ? (
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.5 }}>
-            {!showFullTags && appointment.tags.length > 0 ? (
-              <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
-                {appointment.tags.map((tag) => (
-                  <Tooltip key={tag.id} title={tag.name} arrow placement="top">
-                    <Box
-                      sx={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        bgcolor: tag.color || "#1a73e8",
-                        flexShrink: 0,
-                        border: "1px solid rgba(255,255,255,0.3)",
-                      }}
-                    />
-                  </Tooltip>
-                ))}
-              </Box>
-            ) : (
-              <Box />
-            )}
-            {overlappingCount > 0 && onOverlapClick && (
-              <Chip
-                label={`+${overlappingCount}`}
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOverlapClick(e);
-                }}
-                sx={{
-                  height: 18,
-                  fontSize: "0.65rem",
-                  bgcolor: alpha("#fff", 0.25),
-                  color: "#fff",
-                  fontWeight: 600,
-                  "&:hover": {
-                    bgcolor: alpha("#fff", 0.35),
-                  },
-                  "& .MuiChip-label": { px: 0.75 },
-                }}
-              />
-            )}
+        {overlappingCount > 0 && onOverlapClick ? (
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 0.5 }}>
+            <Chip
+              label={`+${overlappingCount}`}
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOverlapClick(e);
+              }}
+              sx={{
+                height: 18,
+                fontSize: "0.65rem",
+                bgcolor: alpha("#fff", 0.25),
+                color: "#fff",
+                fontWeight: 600,
+                "&:hover": {
+                  bgcolor: alpha("#fff", 0.35),
+                },
+                "& .MuiChip-label": { px: 0.75 },
+              }}
+            />
           </Box>
         ) : null}
       </Box>
@@ -303,12 +306,12 @@ export function MultiDayBar({ appointment, onClick, onMenuOpen }: MultiDayBarPro
       onClick={() => onClick(appointment)}
       sx={{
         px: 1,
-        borderRadius: 0.75,
+        borderRadius: 1,
         bgcolor: color,
         color: "#fff",
         cursor: "pointer",
-        fontSize: "0.68rem",
-        fontWeight: 500,
+        fontSize: "0.8rem",
+        fontWeight: 600,
         height: "100%",
         display: "flex",
         alignItems: "center",
@@ -328,12 +331,12 @@ export function MultiDayBar({ appointment, onClick, onMenuOpen }: MultiDayBarPro
             <Tooltip key={tag.id} title={tag.name} arrow placement="top">
               <Box
                 sx={{
-                  width: 6,
-                  height: 6,
+                  width: 8,
+                  height: 8,
                   borderRadius: "50%",
                   bgcolor: tag.color || "#fff",
                   flexShrink: 0,
-                  border: "1px solid rgba(255,255,255,0.3)",
+                  border: "1px solid rgba(255,255,255,0.8)",
                 }}
               />
             </Tooltip>

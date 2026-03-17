@@ -6,6 +6,11 @@ import {
   Box,
   Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   IconButton,
   MenuItem,
   Select,
@@ -122,22 +127,44 @@ export default function AppointmentsPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [appointmentToDelete, setAppointmentToDelete] = useState<number | null>(null);
+
+  const handleDelete = async () => {
+    if (appointmentToDelete === null) return;
     try {
-      await deleteAppointment(id);
+      await deleteAppointment(appointmentToDelete);
       showSnackbar("Cita eliminada", "success");
+      setDeleteConfirmOpen(false);
+      setAppointmentToDelete(null);
     } catch {
       showSnackbar("Error al eliminar la cita", "error");
     }
   };
 
-  const handleCancel = async (id: number) => {
+  const requestDelete = (id: number) => {
+    setAppointmentToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [appointmentToCancel, setAppointmentToCancel] = useState<number | null>(null);
+
+  const handleCancel = async () => {
+    if (appointmentToCancel === null) return;
     try {
-      await cancelAppointment(id);
+      await cancelAppointment(appointmentToCancel);
       showSnackbar("Cita cancelada", "success");
+      setCancelConfirmOpen(false);
+      setAppointmentToCancel(null);
     } catch {
       showSnackbar("Error al cancelar la cita", "error");
     }
+  };
+
+  const requestCancel = (id: number) => {
+    setAppointmentToCancel(id);
+    setCancelConfirmOpen(true);
   };
 
   const handleMarkVehicleArrived = async (id: number) => {
@@ -176,8 +203,8 @@ export default function AppointmentsPage() {
     setMenuAppointment(appointment);
   };
 
-  const businessStartHour = config?.startTime ? parseInt(config.startTime.split(":")[0] ?? "8", 10) : 8;
-  const businessEndHour = config?.endTime ? parseInt(config.endTime.split(":")[0] ?? "20", 10) : 20;
+  const businessStartHour = 0; //config?.startTime ? parseInt(config.startTime.split(":")[0] ?? "8", 10) : 8;
+  const businessEndHour = 24; //config?.endTime ? parseInt(config.endTime.split(":")[0] ?? "20", 10) : 20;
 
   const todayLabel = dayjs().format("dddd, DD MMM, YYYY");
 
@@ -273,6 +300,10 @@ export default function AppointmentsPage() {
           setDetailOpen(true);
         }}
         onMenuOpen={handleMenuOpen}
+        onDateClick={(date) => {
+          setCurrentDate(date);
+          setViewMode("day");
+        }}
       />
 
       <AppointmentActionsMenu
@@ -284,8 +315,8 @@ export default function AppointmentsPage() {
         }}
         onMarkVehicleArrived={handleMarkVehicleArrived}
         onEdit={handleEdit}
-        onCancel={handleCancel}
-        onDelete={handleDelete}
+        onCancel={requestCancel}
+        onDelete={requestDelete}
         onCreateWorkOrder={handleCreateWorkOrder}
       />
 
@@ -315,6 +346,42 @@ export default function AppointmentsPage() {
         }}
         onSave={handleUpdate}
       />
+
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+      >
+        <DialogTitle>Eliminar cita</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Estás seguro de que deseas eliminar esta cita? Esta acción no se puede deshacer.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancelar</Button>
+          <Button onClick={handleDelete} color="error" variant="contained">
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={cancelConfirmOpen}
+        onClose={() => setCancelConfirmOpen(false)}
+      >
+        <DialogTitle>Cancelar cita</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Estás seguro de que deseas cancelar esta cita? Pese a la cancelación, quedará registrada en el sistema.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCancelConfirmOpen(false)}>Volver</Button>
+          <Button onClick={handleCancel} color="warning" variant="contained">
+            Confirmar cancelación
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar
         open={snackbar.open}
