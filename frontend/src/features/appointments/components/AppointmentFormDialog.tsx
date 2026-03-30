@@ -141,10 +141,13 @@ export function AppointmentFormDialog({
   const titlePlaceholder = generatedTitle ?? "Título de la cita";
 
   const isTitleRequired = !selectedClient && !selectedVehicle;
+  const isVehicleMissing = selectedClient !== null && selectedVehicle === null;
 
   const handleSave = async () => {
     if (!startTime || !endTime) return;
     if (isTitleRequired && !title.trim()) return;
+    if (isVehicleMissing) return;
+
     setSaving(true);
     try {
       const resolvedTitle = title.trim() || generatedTitle || null;
@@ -285,6 +288,8 @@ export function AppointmentFormDialog({
                       label="Patente"
                       value={selectedVehicle.plate}
                       slotProps={{ input: { readOnly: true } }}
+                      sx={{ bgcolor: "action.hover" }}
+                      helperText="Autocompletado"
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 4 }}>
@@ -293,6 +298,8 @@ export function AppointmentFormDialog({
                       label="Marca"
                       value={selectedVehicle.brandName ?? ""}
                       slotProps={{ input: { readOnly: true } }}
+                      sx={{ bgcolor: "action.hover" }}
+                      helperText="Autocompletado"
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 4 }}>
@@ -301,6 +308,8 @@ export function AppointmentFormDialog({
                       label="Modelo"
                       value={selectedVehicle.model ?? ""}
                       slotProps={{ input: { readOnly: true } }}
+                      sx={{ bgcolor: "action.hover" }}
+                      helperText="Autocompletado"
                     />
                   </Grid>
                 </>
@@ -414,7 +423,7 @@ export function AppointmentFormDialog({
         <Button
           variant="contained"
           onClick={handleSave}
-          disabled={saving || !startTime || !endTime || (isTitleRequired && !title.trim())}
+          disabled={saving || !startTime || !endTime || (isTitleRequired && !title.trim()) || isVehicleMissing}
         >
           {saving ? <CircularProgress size={24} /> : "Guardar"}
         </Button>
