@@ -4,9 +4,6 @@ import {
   Box,
   Typography,
   Button,
-  Card,
-  CardContent,
-  CardActions,
   IconButton,
   CircularProgress,
   Alert,
@@ -16,6 +13,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Stack,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -105,32 +103,54 @@ export default function InspectionTemplateListPage() {
       )}
 
       {templates.map((template) => (
-        <Card key={template.id} sx={{ mb: 2 }}>
-          <CardContent>
-            <Typography variant="h6">{template.title}</Typography>
-            <Typography variant="body2" color="text.secondary">
-              {template.groups.length} grupo(s)
+        <Box
+          key={template.id}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            p: 2,
+            mb: 1.5,
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 2,
+            bgcolor: "background.paper",
+            transition: "all 0.2s",
+            "&:hover": {
+              borderColor: "primary.main",
+              bgcolor: "action.hover",
+            },
+          }}
+        >
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 0.5 }}>
+              {template.title}
             </Typography>
-          </CardContent>
-          <CardActions>
+            <Typography variant="body2" color="text.secondary">
+              {template.groups.length} categoría{template.groups.length !== 1 ? "s" : ""}
+            </Typography>
+          </Box>
+          <Stack direction="row" spacing={0.5}>
             <IconButton
               onClick={() => navigate(`/configuracion/plantillas-inspeccion/${template.id}/editar`)}
               title="Editar"
+              size="small"
             >
-              <EditIcon />
+              <EditIcon fontSize="small" />
             </IconButton>
-            <IconButton onClick={() => handleDuplicate(template.id)} title="Duplicar">
-              <ContentCopyIcon />
+            <IconButton onClick={() => handleDuplicate(template.id)} title="Duplicar" size="small">
+              <ContentCopyIcon fontSize="small" />
             </IconButton>
             <IconButton
               onClick={() => handleDeleteClick(template.id)}
               color="error"
               title="Eliminar"
+              size="small"
             >
-              <DeleteIcon />
+              <DeleteIcon fontSize="small" />
             </IconButton>
-          </CardActions>
-        </Card>
+          </Stack>
+        </Box>
       ))}
 
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>

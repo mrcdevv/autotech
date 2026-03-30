@@ -42,6 +42,13 @@ export function RepairOrderDetailTabs({ order, loading, onRefetch }: RepairOrder
           reason={order.reason}
           mechanicNotes={order.mechanicNotes}
           onRepairOrderUpdated={onRefetch}
+          clientFirstName={order.clientFirstName}
+          clientLastName={order.clientLastName}
+          clientDni={order.clientDni}
+          vehiclePlate={order.vehiclePlate}
+          vehicleBrandName={order.vehicleBrandName}
+          vehicleModel={order.vehicleModel}
+          vehicleYear={order.vehicleYear}
         />
       )}
       {activeTab === 2 && order && (
@@ -56,10 +63,14 @@ export function RepairOrderDetailTabs({ order, loading, onRefetch }: RepairOrder
           vehicleBrandName={order.vehicleBrandName}
           vehicleModel={order.vehicleModel}
           vehicleYear={order.vehicleYear}
+          reason={order.reason}
+          mechanicNotes={order.mechanicNotes}
         />
       )}
       {activeTab === 3 && <PlaceholderTab />}
-      {activeTab === 4 && order && <InvoiceTab repairOrderId={order.id} />}
+      {activeTab === 4 && order && (
+        <InvoiceTab repairOrderId={order.id} />
+      )}
     </Box>
   );
 }

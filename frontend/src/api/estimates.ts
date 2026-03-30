@@ -37,6 +37,11 @@ export const estimatesApi = {
       `/repair-orders/${repairOrderId}/estimate`,
     ),
 
+  getAllByRepairOrderId: (repairOrderId: number) =>
+    apiClient.get<ApiResponse<EstimateResponse[]>>(
+      `/repair-orders/${repairOrderId}/estimates`,
+    ),
+
   create: (data: EstimateRequest) =>
     apiClient.post<ApiResponse<EstimateDetailResponse>>("/estimates", data),
 

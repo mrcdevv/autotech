@@ -111,6 +111,9 @@ export function VehicleForm({
           firstName: initialData.clientFirstName,
           lastName: initialData.clientLastName,
           dni: initialData.clientDni,
+          phone: null,
+          email: null,
+          clientType: null,
         });
         setSelectedBrand(
           initialData.brandId

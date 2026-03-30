@@ -108,167 +108,220 @@ export function CreateRepairOrderForm({ onSuccess }: CreateRepairOrderFormProps)
   };
 
   return (
-    <Box sx={{ maxWidth: 600, mt: 2 }}>
+    <Box sx={{ maxWidth: 700, mx: "auto", py: 3 }}>
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
       )}
 
-      <Box display="flex" alignItems="center" gap={1} mb={2}>
-        <Autocomplete
-          options={clients}
-          getOptionLabel={(c) => `${c.firstName} ${c.lastName} — ${c.dni || "Sin DNI"}`}
-          onChange={(_, value) => setSelectedClientId(value?.id ?? null)}
-          renderInput={(params) => <TextField {...params} label="Cliente" required />}
-          fullWidth
-        />
-        <Button variant="outlined" onClick={() => setClientModalOpen(true)}>
-          Nuevo cliente
-        </Button>
-      </Box>
-
-      <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-          Datos del cliente
+      <Paper elevation={0} sx={{ p: 3, mb: 3, border: 1, borderColor: "divider" }}>
+        <Typography variant="h6" sx={{ mb: 2.5, fontWeight: 600 }}>
+          Seleccionar Cliente
         </Typography>
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="Nombre completo"
-              value={selectedClient ? `${selectedClient.firstName} ${selectedClient.lastName}` : "—"}
-              slotProps={{ input: { readOnly: true } }}
-              fullWidth
-              size="small"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="DNI"
-              value={selectedClient?.dni || "—"}
-              slotProps={{ input: { readOnly: true } }}
-              fullWidth
-              size="small"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="Teléfono"
-              value={selectedClient?.phone || "—"}
-              slotProps={{ input: { readOnly: true } }}
-              fullWidth
-              size="small"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="Email"
-              value={selectedClient?.email || "—"}
-              slotProps={{ input: { readOnly: true } }}
-              fullWidth
-              size="small"
-            />
-          </Grid>
-        </Grid>
+        <Box display="flex" alignItems="flex-start" gap={1.5}>
+          <Autocomplete
+            options={clients}
+            getOptionLabel={(c) => `${c.firstName} ${c.lastName} — ${c.dni || "Sin DNI"}`}
+            onChange={(_, value) => setSelectedClientId(value?.id ?? null)}
+            renderInput={(params) => <TextField {...params} label="Cliente" required />}
+            fullWidth
+          />
+          <Button
+            variant="outlined"
+            onClick={() => setClientModalOpen(true)}
+            sx={{ minWidth: 120, height: 56 }}
+          >
+            Nuevo
+          </Button>
+        </Box>
+
+        {selectedClient && (
+          <Box
+            sx={{
+              mt: 3,
+              p: 2.5,
+              bgcolor: "grey.50",
+              borderRadius: 1.5,
+              border: 1,
+              borderColor: "divider",
+            }}
+          >
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+              Datos del cliente
+            </Typography>
+            <Grid container spacing={2.5}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Nombre completo
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 0.5 }}>
+                    {`${selectedClient.firstName} ${selectedClient.lastName}`}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    DNI
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 0.5 }}>
+                    {selectedClient.dni || "—"}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Teléfono
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 0.5 }}>
+                    {selectedClient.phone || "—"}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Email
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 0.5 }}>
+                    {selectedClient.email || "—"}
+                  </Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          </Box>
+        )}
       </Paper>
 
-      <Box display="flex" alignItems="center" gap={1} mb={2}>
-        <Autocomplete
-          options={vehicles}
-          getOptionLabel={(v) =>
-            `${[v.year, v.brandName, v.model].filter(Boolean).join(" ")} — ${v.plate}`
-          }
-          onChange={(_, value) => setSelectedVehicleId(value?.id ?? null)}
-          value={vehicles.find((v) => v.id === selectedVehicleId) || null}
-          disabled={!selectedClientId}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="Vehículo"
-              required
-              helperText={!selectedClientId ? "Seleccione un cliente primero" : ""}
-            />
-          )}
-          fullWidth
-        />
-        <Button
-          variant="outlined"
-          disabled={!selectedClientId}
-          onClick={() => setVehicleModalOpen(true)}
-        >
-          Nuevo vehículo
-        </Button>
-      </Box>
-
-      <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-          Datos del vehículo
+      <Paper elevation={0} sx={{ p: 3, mb: 3, border: 1, borderColor: "divider" }}>
+        <Typography variant="h6" sx={{ mb: 2.5, fontWeight: 600 }}>
+          Seleccionar Vehículo
         </Typography>
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="Patente"
-              value={selectedVehicle?.plate || "—"}
-              slotProps={{ input: { readOnly: true } }}
-              fullWidth
-              size="small"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="Marca"
-              value={selectedVehicle?.brandName || "—"}
-              slotProps={{ input: { readOnly: true } }}
-              fullWidth
-              size="small"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="Modelo"
-              value={selectedVehicle?.model || "—"}
-              slotProps={{ input: { readOnly: true } }}
-              fullWidth
-              size="small"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="Año"
-              value={selectedVehicle?.year ?? "—"}
-              slotProps={{ input: { readOnly: true } }}
-              fullWidth
-              size="small"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="Número de chasis"
-              value={selectedVehicle?.chassisNumber || "—"}
-              slotProps={{ input: { readOnly: true } }}
-              fullWidth
-              size="small"
-            />
-          </Grid>
-        </Grid>
+        <Box display="flex" alignItems="flex-start" gap={1.5}>
+          <Autocomplete
+            options={vehicles}
+            getOptionLabel={(v) =>
+              `${[v.year, v.brandName, v.model].filter(Boolean).join(" ")} — ${v.plate}`
+            }
+            onChange={(_, value) => setSelectedVehicleId(value?.id ?? null)}
+            value={vehicles.find((v) => v.id === selectedVehicleId) || null}
+            disabled={!selectedClientId}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Vehículo"
+                required
+                helperText={!selectedClientId ? "Seleccione un cliente primero" : ""}
+              />
+            )}
+            fullWidth
+          />
+          <Button
+            variant="outlined"
+            disabled={!selectedClientId}
+            onClick={() => setVehicleModalOpen(true)}
+            sx={{ minWidth: 120, height: 56 }}
+          >
+            Nuevo
+          </Button>
+        </Box>
+
+        {selectedVehicle && (
+          <Box
+            sx={{
+              mt: 3,
+              p: 2.5,
+              bgcolor: "grey.50",
+              borderRadius: 1.5,
+              border: 1,
+              borderColor: "divider",
+            }}
+          >
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+              Datos del vehículo
+            </Typography>
+            <Grid container spacing={2.5}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Patente
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 0.5 }}>
+                    {selectedVehicle.plate}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Marca
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 0.5 }}>
+                    {selectedVehicle.brandName || "—"}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Modelo
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 0.5 }}>
+                    {selectedVehicle.model || "—"}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Año
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 0.5 }}>
+                    {selectedVehicle.year ?? "—"}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Número de chasis
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 0.5 }}>
+                    {selectedVehicle.chassisNumber || "—"}
+                  </Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          </Box>
+        )}
       </Paper>
 
-      <TextField
-        label="Motivo"
-        value={reason}
-        onChange={(e) => setReason(e.target.value)}
-        multiline
-        rows={4}
-        fullWidth
-        sx={{ mb: 2 }}
-        inputProps={{ maxLength: 5000 }}
-      />
+      <Paper elevation={0} sx={{ p: 3, mb: 3, border: 1, borderColor: "divider" }}>
+        <Typography variant="h6" sx={{ mb: 2.5, fontWeight: 600 }}>
+          Motivo de la visita
+        </Typography>
+        <TextField
+          label="Describa el motivo de la visita o el servicio requerido"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          multiline
+          rows={4}
+          fullWidth
+          inputProps={{ maxLength: 5000 }}
+          placeholder="Ej: Cambio de aceite, revisión general, ruido en el motor, etc."
+        />
+      </Paper>
 
       <Button
         variant="contained"
         onClick={handleSubmit}
         disabled={!selectedClientId || !selectedVehicleId || submitting}
         fullWidth
+        size="large"
+        sx={{ py: 1.5 }}
       >
         {submitting ? <CircularProgress size={24} /> : "Crear orden de trabajo"}
       </Button>

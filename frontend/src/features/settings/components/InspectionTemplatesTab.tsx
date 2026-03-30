@@ -4,9 +4,6 @@ import {
   Alert,
   Box,
   Button,
-  Card,
-  CardActions,
-  CardContent,
   CircularProgress,
   IconButton,
   Snackbar,
@@ -71,25 +68,48 @@ export function InspectionTemplatesTab() {
       {loading && <CircularProgress />}
 
       {templates.map((template) => (
-        <Card key={template.id} sx={{ mb: 1 }}>
-          <CardContent>
-            <Typography variant="subtitle1">{template.title}</Typography>
-            <Typography variant="body2" color="text.secondary">
-              {template.groups.length} grupo(s)
+        <Box
+          key={template.id}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            p: 2,
+            mb: 1.5,
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 2,
+            bgcolor: "background.paper",
+            transition: "all 0.2s",
+            "&:hover": {
+              borderColor: "primary.main",
+              bgcolor: "action.hover",
+            },
+          }}
+        >
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 0.5 }}>
+              {template.title}
             </Typography>
-          </CardContent>
-          <CardActions>
-            <IconButton onClick={() => navigate(`/configuracion/plantillas-inspeccion/${template.id}/editar`)}>
-              <EditIcon />
+            <Typography variant="body2" color="text.secondary">
+              {template.groups.length} categoría{template.groups.length !== 1 ? "s" : ""}
+            </Typography>
+          </Box>
+          <Stack direction="row" spacing={0.5}>
+            <IconButton
+              onClick={() => navigate(`/configuracion/plantillas-inspeccion/${template.id}/editar`)}
+              size="small"
+            >
+              <EditIcon fontSize="small" />
             </IconButton>
-            <IconButton onClick={() => handleDuplicate(template.id)}>
-              <ContentCopyIcon />
+            <IconButton onClick={() => handleDuplicate(template.id)} size="small">
+              <ContentCopyIcon fontSize="small" />
             </IconButton>
-            <IconButton onClick={() => handleDelete(template.id)} color="error">
-              <DeleteIcon />
+            <IconButton onClick={() => handleDelete(template.id)} color="error" size="small">
+              <DeleteIcon fontSize="small" />
             </IconButton>
-          </CardActions>
-        </Card>
+          </Stack>
+        </Box>
       ))}
 
       {!loading && templates.length === 0 && (

@@ -24,6 +24,8 @@ public interface EstimateService {
 
     EstimateDetailResponse getByRepairOrderId(Long repairOrderId);
 
+    List<EstimateResponse> getAllByRepairOrderId(Long repairOrderId);
+
     EstimateDetailResponse create(EstimateRequest request);
 
     EstimateDetailResponse update(Long id, EstimateRequest request);

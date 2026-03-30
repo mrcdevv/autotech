@@ -4,5 +4,8 @@ public record ClientAutocompleteResponse(
         Long id,
         String firstName,
         String lastName,
-        String dni
+        String dni,
+        String phone,
+        String email,
+        String clientType
 ) {}

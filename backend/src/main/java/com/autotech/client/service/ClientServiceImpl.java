@@ -65,7 +65,15 @@ public class ClientServiceImpl implements ClientService {
             results = clientRepository.findAll(PageRequest.of(0, 20));
         }
         return results.getContent().stream()
-                .map(c -> new ClientAutocompleteResponse(c.getId(), c.getFirstName(), c.getLastName(), c.getDni()))
+                .map(c -> new ClientAutocompleteResponse(
+                        c.getId(),
+                        c.getFirstName(),
+                        c.getLastName(),
+                        c.getDni(),
+                        c.getPhone(),
+                        c.getEmail(),
+                        c.getClientType() != null ? c.getClientType().name() : null
+                ))
                 .toList();
     }
 

@@ -43,7 +43,7 @@ export function AddInspectionDialog({ open, onClose, onSelect }: AddInspectionDi
               <ListItemButton key={template.id} onClick={() => onSelect(template.id)}>
                 <ListItemText
                   primary={template.title}
-                  secondary={`${template.groups.length} grupo(s)`}
+                  secondary={`${template.groups.length} categoría${template.groups.length !== 1 ? "s" : ""}`}
                 />
               </ListItemButton>
             ))}

@@ -5,19 +5,37 @@ import {
   Typography,
   TextField,
   Button,
-  Card,
-  CardContent,
   IconButton,
   Stack,
   Alert,
   Snackbar,
   CircularProgress,
+  Tooltip,
+  Paper,
+  Divider,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { useNavigate, useParams } from "react-router";
+
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 import { inspectionTemplatesApi } from "@/api/inspections";
 
@@ -28,13 +46,213 @@ import type {
 
 interface GroupState {
   id: number | null;
+  tempId: string;
   title: string;
   items: ItemState[];
 }
 
 interface ItemState {
   id: number | null;
+  tempId: string;
   name: string;
+}
+
+interface SortableItemProps {
+  item: ItemState;
+  groupIndex: number;
+  itemIndex: number;
+  totalItems: number;
+  onUpdate: (name: string) => void;
+  onRemove: () => void;
+}
+
+interface SortableGroupProps {
+  group: GroupState;
+  groupIndex: number;
+  totalGroups: number;
+  onUpdateTitle: (title: string) => void;
+  onRemove: () => void;
+  onAddItem: () => void;
+  onUpdateItem: (itemIndex: number, name: string) => void;
+  onRemoveItem: (itemIndex: number) => void;
+  onReorderItems: (oldIndex: number, newIndex: number) => void;
+}
+
+function SortableItem({ item, onUpdate, onRemove, totalItems }: SortableItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.tempId,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <Box
+      ref={setNodeRef}
+      style={style}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1,
+        py: 1,
+        px: 2,
+        borderRadius: 1,
+        bgcolor: "background.paper",
+        border: "1px solid",
+        borderColor: "divider",
+        "&:hover": {
+          borderColor: "primary.main",
+          bgcolor: "action.hover",
+        },
+      }}
+    >
+      <Box
+        {...attributes}
+        {...listeners}
+        sx={{
+          cursor: isDragging ? "grabbing" : "grab",
+          display: "flex",
+          alignItems: "center",
+          color: "text.secondary",
+          "&:hover": { color: "primary.main" },
+        }}
+      >
+        <DragIndicatorIcon fontSize="small" />
+      </Box>
+      <TextField
+        value={item.name}
+        onChange={(e) => onUpdate(e.target.value)}
+        placeholder="Nombre del elemento"
+        size="small"
+        sx={{ flex: 1 }}
+        inputProps={{ maxLength: 255 }}
+      />
+      <IconButton size="small" onClick={onRemove} disabled={totalItems <= 1} color="error">
+        <DeleteIcon fontSize="small" />
+      </IconButton>
+    </Box>
+  );
+}
+
+function SortableGroup({
+  group,
+  onUpdateTitle,
+  onRemove,
+  onAddItem,
+  onUpdateItem,
+  onRemoveItem,
+  onReorderItems,
+}: SortableGroupProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: group.tempId,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = group.items.findIndex((item) => item.tempId === active.id);
+      const newIndex = group.items.findIndex((item) => item.tempId === over.id);
+      onReorderItems(oldIndex, newIndex);
+    }
+  };
+
+  return (
+    <Paper
+      ref={setNodeRef}
+      style={style}
+      elevation={0}
+      sx={{
+        border: "1px solid",
+        borderColor: "divider",
+        borderRadius: 2,
+        overflow: "hidden",
+        "&:hover": {
+          borderColor: "primary.main",
+        },
+      }}
+    >
+      <Box sx={{ bgcolor: "grey.50", px: 2, py: 1.5 }}>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Box
+            {...attributes}
+            {...listeners}
+            sx={{
+              cursor: isDragging ? "grabbing" : "grab",
+              display: "flex",
+              alignItems: "center",
+              color: "text.secondary",
+              "&:hover": { color: "primary.main" },
+            }}
+          >
+            <DragIndicatorIcon />
+          </Box>
+          <TextField
+            value={group.title}
+            onChange={(e) => onUpdateTitle(e.target.value)}
+            placeholder="Nombre de la categoría"
+            size="small"
+            sx={{ flex: 1 }}
+            inputProps={{ maxLength: 255 }}
+          />
+          <IconButton onClick={onRemove} color="error" size="small">
+            <DeleteIcon />
+          </IconButton>
+        </Stack>
+      </Box>
+
+      <Divider />
+
+      <Box sx={{ p: 2 }}>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={group.items.map((item) => item.tempId)} strategy={verticalListSortingStrategy}>
+            <Stack spacing={1}>
+              {group.items.map((item, itemIndex) => (
+                <SortableItem
+                  key={item.tempId}
+                  item={item}
+                  groupIndex={0}
+                  itemIndex={itemIndex}
+                  totalItems={group.items.length}
+                  onUpdate={(name) => onUpdateItem(itemIndex, name)}
+                  onRemove={() => onRemoveItem(itemIndex)}
+                />
+              ))}
+            </Stack>
+          </SortableContext>
+        </DndContext>
+
+        <Button
+          startIcon={<AddIcon />}
+          onClick={onAddItem}
+          variant="text"
+          size="small"
+          sx={{ mt: 2 }}
+        >
+          Agregar elemento
+        </Button>
+      </Box>
+    </Paper>
+  );
 }
 
 export default function InspectionTemplateBuilder() {
@@ -63,8 +281,13 @@ export default function InspectionTemplateBuilder() {
           setGroups(
             template.groups.map((g) => ({
               id: g.id,
+              tempId: `group-${g.id}-${Date.now()}`,
               title: g.title,
-              items: g.items.map((i) => ({ id: i.id, name: i.name })),
+              items: g.items.map((i) => ({
+                id: i.id,
+                tempId: `item-${i.id}-${Date.now()}-${Math.random()}`,
+                name: i.name,
+              })),
             }))
           );
         })
@@ -76,7 +299,13 @@ export default function InspectionTemplateBuilder() {
   }, [id, isEditing]);
 
   const addGroup = () => {
-    setGroups((prev) => [...prev, { id: null, title: "", items: [{ id: null, name: "" }] }]);
+    const newGroup: GroupState = {
+      id: null,
+      tempId: `group-new-${Date.now()}`,
+      title: "",
+      items: [{ id: null, tempId: `item-new-${Date.now()}`, name: "" }],
+    };
+    setGroups((prev) => [...prev, newGroup]);
   };
 
   const removeGroup = (groupIndex: number) => {
@@ -89,22 +318,22 @@ export default function InspectionTemplateBuilder() {
     );
   };
 
-  const moveGroup = (groupIndex: number, direction: "up" | "down") => {
-    setGroups((prev) => {
-      const newGroups = [...prev];
-      const targetIndex = direction === "up" ? groupIndex - 1 : groupIndex + 1;
-      if (targetIndex < 0 || targetIndex >= newGroups.length) return prev;
-      const temp = newGroups[groupIndex]!;
-      newGroups[groupIndex] = newGroups[targetIndex]!;
-      newGroups[targetIndex] = temp;
-      return newGroups;
-    });
+  const reorderGroups = (oldIndex: number, newIndex: number) => {
+    setGroups((prev) => arrayMove(prev, oldIndex, newIndex));
   };
 
   const addItem = (groupIndex: number) => {
     setGroups((prev) =>
       prev.map((g, i) =>
-        i === groupIndex ? { ...g, items: [...g.items, { id: null, name: "" }] } : g
+        i === groupIndex
+          ? {
+              ...g,
+              items: [
+                ...g.items,
+                { id: null, tempId: `item-new-${Date.now()}-${Math.random()}`, name: "" },
+              ],
+            }
+          : g
       )
     );
   };
@@ -132,18 +361,11 @@ export default function InspectionTemplateBuilder() {
     );
   };
 
-  const moveItem = (groupIndex: number, itemIndex: number, direction: "up" | "down") => {
+  const reorderItems = (groupIndex: number, oldIndex: number, newIndex: number) => {
     setGroups((prev) =>
-      prev.map((g, gi) => {
-        if (gi !== groupIndex) return g;
-        const newItems = [...g.items];
-        const targetIndex = direction === "up" ? itemIndex - 1 : itemIndex + 1;
-        if (targetIndex < 0 || targetIndex >= newItems.length) return g;
-        const temp = newItems[itemIndex]!;
-        newItems[itemIndex] = newItems[targetIndex]!;
-        newItems[targetIndex] = temp;
-        return { ...g, items: newItems };
-      })
+      prev.map((g, gi) =>
+        gi === groupIndex ? { ...g, items: arrayMove(g.items, oldIndex, newIndex) } : g
+      )
     );
   };
 
@@ -153,6 +375,26 @@ export default function InspectionTemplateBuilder() {
     return groups.every(
       (g) => g.title.trim() && g.items.length > 0 && g.items.every((i) => i.name.trim())
     );
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = groups.findIndex((group) => group.tempId === active.id);
+      const newIndex = groups.findIndex((group) => group.tempId === over.id);
+      reorderGroups(oldIndex, newIndex);
+    }
   };
 
   const handleSave = async () => {
@@ -199,9 +441,9 @@ export default function InspectionTemplateBuilder() {
   }
 
   return (
-    <Box sx={{ px: 3, py: 2.5 }}>
-      <Typography variant="h3" sx={{ mb: 2 }}>
-        {isEditing ? "Editar plantilla de inspeccion" : "Nueva plantilla de inspeccion"}
+    <Box sx={{ px: 3, py: 2.5, maxWidth: 900, mx: "auto" }}>
+      <Typography variant="h3" sx={{ mb: 3, fontWeight: 600 }}>
+        {isEditing ? "Editar plantilla de inspección" : "Nueva plantilla de inspección"}
       </Typography>
 
       <TextField
@@ -209,98 +451,45 @@ export default function InspectionTemplateBuilder() {
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         fullWidth
-        sx={{ mb: 3 }}
+        sx={{ mb: 4 }}
         inputProps={{ maxLength: 255 }}
       />
 
-      {groups.map((group, groupIndex) => (
-        <Card key={groupIndex} sx={{ mb: 2 }}>
-          <CardContent>
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
-              <IconButton
-                size="small"
-                onClick={() => moveGroup(groupIndex, "up")}
-                disabled={groupIndex === 0}
-              >
-                <ArrowUpwardIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                size="small"
-                onClick={() => moveGroup(groupIndex, "down")}
-                disabled={groupIndex === groups.length - 1}
-              >
-                <ArrowDownwardIcon fontSize="small" />
-              </IconButton>
-              <TextField
-                label="Título del grupo"
-                value={group.title}
-                onChange={(e) => updateGroupTitle(groupIndex, e.target.value)}
-                size="small"
-                sx={{ flex: 1 }}
-                inputProps={{ maxLength: 255 }}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={groups.map((g) => g.tempId)} strategy={verticalListSortingStrategy}>
+          <Stack spacing={2.5}>
+            {groups.map((group, groupIndex) => (
+              <SortableGroup
+                key={group.tempId}
+                group={group}
+                groupIndex={groupIndex}
+                totalGroups={groups.length}
+                onUpdateTitle={(title) => updateGroupTitle(groupIndex, title)}
+                onRemove={() => removeGroup(groupIndex)}
+                onAddItem={() => addItem(groupIndex)}
+                onUpdateItem={(itemIndex, name) => updateItemName(groupIndex, itemIndex, name)}
+                onRemoveItem={(itemIndex) => removeItem(groupIndex, itemIndex)}
+                onReorderItems={(oldIndex, newIndex) => reorderItems(groupIndex, oldIndex, newIndex)}
               />
-              <IconButton onClick={() => removeGroup(groupIndex)} color="error">
-                <DeleteIcon />
-              </IconButton>
-            </Stack>
-
-            {group.items.map((item, itemIndex) => (
-              <Stack
-                key={itemIndex}
-                direction="row"
-                alignItems="center"
-                spacing={1}
-                sx={{ ml: 4, mb: 1 }}
-              >
-                <IconButton
-                  size="small"
-                  onClick={() => moveItem(groupIndex, itemIndex, "up")}
-                  disabled={itemIndex === 0}
-                >
-                  <ArrowUpwardIcon fontSize="small" />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  onClick={() => moveItem(groupIndex, itemIndex, "down")}
-                  disabled={itemIndex === group.items.length - 1}
-                >
-                  <ArrowDownwardIcon fontSize="small" />
-                </IconButton>
-                <TextField
-                  label="Nombre del ítem"
-                  value={item.name}
-                  onChange={(e) => updateItemName(groupIndex, itemIndex, e.target.value)}
-                  size="small"
-                  sx={{ flex: 1 }}
-                  inputProps={{ maxLength: 255 }}
-                />
-                <IconButton
-                  onClick={() => removeItem(groupIndex, itemIndex)}
-                  color="error"
-                  disabled={group.items.length <= 1}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Stack>
             ))}
+          </Stack>
+        </SortableContext>
+      </DndContext>
 
-            <Button
-              startIcon={<AddIcon />}
-              onClick={() => addItem(groupIndex)}
-              size="small"
-              sx={{ ml: 4, mt: 1 }}
-            >
-              Agregar ítem
-            </Button>
-          </CardContent>
-        </Card>
-      ))}
+      <Tooltip title="Agrupa elementos de inspección relacionados (ej. Chapa, Luces, Motor)">
+        <Button
+          startIcon={<AddIcon />}
+          onClick={addGroup}
+          variant="contained"
+          sx={{ mt: 3, mb: 4 }}
+        >
+          Agregar categoría
+        </Button>
+      </Tooltip>
 
-      <Button startIcon={<AddIcon />} onClick={addGroup} sx={{ mb: 3 }}>
-        Agregar grupo
-      </Button>
+      <Divider sx={{ my: 3 }} />
 
-      <Stack direction="row" spacing={2}>
+      <Stack direction="row" spacing={2} justifyContent="flex-end">
         <Button variant="outlined" onClick={() => navigate("/configuracion/plantillas-inspeccion")}>
           Cancelar
         </Button>

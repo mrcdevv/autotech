@@ -82,12 +82,29 @@ public class EstimateServiceImpl implements EstimateService {
     @Override
     @Transactional(readOnly = true)
     public EstimateDetailResponse getByRepairOrderId(Long repairOrderId) {
-        log.debug("Fetching estimate for repair order {}", repairOrderId);
-        Estimate entity = estimateRepository.findByRepairOrderId(repairOrderId)
+        log.debug("Fetching active estimate for repair order {}", repairOrderId);
+        List<Estimate> estimates = estimateRepository.findAllByRepairOrderId(repairOrderId);
+
+        Estimate active = estimates.stream()
+                .filter(e -> e.getStatus() == EstimateStatus.ACEPTADO)
+                .findFirst()
+                .or(() -> estimates.stream()
+                        .filter(e -> e.getStatus() == EstimateStatus.PENDIENTE)
+                        .findFirst())
                 .orElseThrow(() -> new ResourceNotFoundException("Estimate for RepairOrder", repairOrderId));
-        EstimateDetailResponse response = estimateMapper.toDetailResponse(entity);
+
+        EstimateDetailResponse response = estimateMapper.toDetailResponse(active);
         List<InspectionIssueResponse> issues = getInspectionIssues(repairOrderId);
         return buildDetailResponseWithIssues(response, issues);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EstimateResponse> getAllByRepairOrderId(Long repairOrderId) {
+        log.debug("Fetching all estimates for repair order {}", repairOrderId);
+        return estimateRepository.findAllByRepairOrderId(repairOrderId).stream()
+                .map(estimateMapper::toResponse)
+                .toList();
     }
 
     @Override
@@ -102,6 +119,12 @@ public class EstimateServiceImpl implements EstimateService {
         if (request.repairOrderId() != null) {
             repairOrder = repairOrderRepository.findById(request.repairOrderId())
                     .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", request.repairOrderId()));
+
+            boolean hasActiveEstimate = estimateRepository.findAllByRepairOrderId(request.repairOrderId()).stream()
+                    .anyMatch(e -> e.getStatus() == EstimateStatus.PENDIENTE || e.getStatus() == EstimateStatus.ACEPTADO);
+            if (hasActiveEstimate) {
+                throw new BusinessException("Ya existe un presupuesto pendiente o aceptado para esta orden de trabajo");
+            }
         }
 
         Estimate entity = estimateMapper.toEntity(request);

@@ -2,12 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 
 import { estimatesApi } from "@/api/estimates";
 
-import type { EstimateDetailResponse, EstimateRequest } from "@/types/estimate";
+import type { EstimateDetailResponse, EstimateRequest, EstimateResponse } from "@/types/estimate";
 
 export function useEstimate(id?: number, repairOrderId?: number) {
   const [estimate, setEstimate] = useState<EstimateDetailResponse | null>(null);
+  const [allEstimates, setAllEstimates] = useState<EstimateResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [noActiveEstimate, setNoActiveEstimate] = useState(false);
 
   const fetchEstimate = useCallback(async () => {
     if (!id && !repairOrderId) {
@@ -16,13 +18,27 @@ export function useEstimate(id?: number, repairOrderId?: number) {
     }
     setLoading(true);
     setError(null);
+    setNoActiveEstimate(false);
     try {
       if (id) {
         const res = await estimatesApi.getById(id);
         setEstimate(res.data.data);
       } else if (repairOrderId) {
-        const res = await estimatesApi.getByRepairOrderId(repairOrderId);
-        setEstimate(res.data.data);
+        const [activeRes, allRes] = await Promise.allSettled([
+          estimatesApi.getByRepairOrderId(repairOrderId),
+          estimatesApi.getAllByRepairOrderId(repairOrderId),
+        ]);
+
+        if (allRes.status === "fulfilled") {
+          setAllEstimates(allRes.value.data.data);
+        }
+
+        if (activeRes.status === "fulfilled") {
+          setEstimate(activeRes.value.data.data);
+        } else {
+          setEstimate(null);
+          setNoActiveEstimate(true);
+        }
       }
     } catch {
       setError("Error al cargar el presupuesto");
@@ -39,6 +55,7 @@ export function useEstimate(id?: number, repairOrderId?: number) {
   const createEstimate = async (data: EstimateRequest) => {
     const res = await estimatesApi.create(data);
     setEstimate(res.data.data);
+    setNoActiveEstimate(false);
     return res.data.data;
   };
 
@@ -57,6 +74,7 @@ export function useEstimate(id?: number, repairOrderId?: number) {
   const rejectEstimate = async (estimateId: number) => {
     const res = await estimatesApi.reject(estimateId);
     setEstimate(res.data.data);
+    await fetchEstimate();
     return res.data.data;
   };
 
@@ -64,6 +82,8 @@ export function useEstimate(id?: number, repairOrderId?: number) {
 
   return {
     estimate,
+    allEstimates,
+    noActiveEstimate,
     loading,
     error,
     clearError,
