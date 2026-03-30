@@ -56,7 +56,7 @@ describe("InspectionTemplatesTab", () => {
     render(<InspectionTemplatesTab />);
 
     expect(screen.getByText("Inspección General")).toBeInTheDocument();
-    expect(screen.getByText("1 grupo(s)")).toBeInTheDocument();
+    expect(screen.getByText("1 categoría")).toBeInTheDocument();
   });
 
   it("given new button, when clicked, then navigates to template builder", async () => {

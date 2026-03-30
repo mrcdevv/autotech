@@ -23,6 +23,8 @@ describe("EstimateTab", () => {
         vehicleBrandName="Ford"
         vehicleModel="Focus"
         vehicleYear={2020}
+        reason={null}
+        mechanicNotes={null}
       />,
     );
 

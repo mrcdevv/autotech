@@ -50,4 +50,7 @@ export interface ClientAutocompleteResponse {
   firstName: string;
   lastName: string;
   dni: string | null;
+  phone: string | null;
+  email: string | null;
+  clientType: string | null;
 }

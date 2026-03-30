@@ -13,6 +13,8 @@ interface EstimateTabProps {
   vehicleBrandName: string | null;
   vehicleModel: string | null;
   vehicleYear: number | null;
+  reason: string | null;
+  mechanicNotes: string | null;
 }
 
 export function EstimateTab({
@@ -26,11 +28,15 @@ export function EstimateTab({
   vehicleBrandName,
   vehicleModel,
   vehicleYear,
+  reason,
+  mechanicNotes,
 }: EstimateTabProps) {
   return (
     <Box>
       <EstimateDetail
         repairOrderId={repairOrderId}
+        reason={reason}
+        mechanicNotes={mechanicNotes}
         repairOrderClient={{
           id: clientId,
           firstName: clientFirstName,
