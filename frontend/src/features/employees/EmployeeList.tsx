@@ -3,6 +3,7 @@ import { Chip } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import LockResetIcon from "@mui/icons-material/LockReset";
 
 import type { GridColDef, GridPaginationModel } from "@mui/x-data-grid";
 import type { EmployeeResponse } from "@/features/employees/types";
@@ -16,6 +17,7 @@ interface EmployeeListProps {
   onView: (employee: EmployeeResponse) => void;
   onEdit: (employee: EmployeeResponse) => void;
   onDelete: (id: number) => void;
+  onResetPassword: (employee: EmployeeResponse) => void;
 }
 
 export function EmployeeList({
@@ -26,6 +28,7 @@ export function EmployeeList({
   onView,
   onEdit,
   onDelete,
+  onResetPassword,
 }: EmployeeListProps) {
   const columns: GridColDef[] = [
     { field: "dni", headerName: "Documento", flex: 1 },
@@ -68,10 +71,18 @@ export function EmployeeList({
           onClick={() => onEdit(params.row as EmployeeResponse)}
         />,
         <GridActionsCellItem
+          key="reset-password"
+          icon={<LockResetIcon />}
+          label="Resetear contraseña"
+          onClick={() => onResetPassword(params.row as EmployeeResponse)}
+          showInMenu
+        />,
+        <GridActionsCellItem
           key="delete"
           icon={<DeleteIcon />}
           label="Eliminar"
           onClick={() => onDelete((params.row as EmployeeResponse).id)}
+          showInMenu
         />,
       ],
     },

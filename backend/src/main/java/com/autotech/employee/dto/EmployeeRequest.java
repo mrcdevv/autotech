@@ -58,5 +58,8 @@ public record EmployeeRequest(
     EmployeeStatus status,
 
     @NotEmpty(message = "Debe asignar al menos un rol")
-    List<Long> roleIds
+    List<Long> roleIds,
+
+    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
+    String password
 ) {}

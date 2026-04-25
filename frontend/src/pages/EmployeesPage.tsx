@@ -1,8 +1,22 @@
 import { useState, useCallback, useEffect } from "react";
 
-import { Box, Typography, Button, Alert, Snackbar } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Button,
+  Alert,
+  Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  InputAdornment,
+  IconButton,
+} from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 
 import { employeesApi } from "@/api/employees";
 import { EmployeeList } from "@/features/employees/EmployeeList";
@@ -34,6 +48,11 @@ export default function EmployeesPage() {
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState<number | null>(null);
+  const [tempPasswordDialog, setTempPasswordDialog] = useState<{
+    open: boolean;
+    employeeName: string;
+    tempPassword: string;
+  }>({ open: false, employeeName: "", tempPassword: "" });
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -129,6 +148,19 @@ export default function EmployeesPage() {
     }
   };
 
+  const handleResetPassword = async (employee: EmployeeResponse) => {
+    try {
+      const res = await employeesApi.resetPassword(employee.id);
+      setTempPasswordDialog({
+        open: true,
+        employeeName: `${employee.firstName} ${employee.lastName}`,
+        tempPassword: res.data.data ?? "",
+      });
+    } catch {
+      showSnackbar("Error al restablecer la contraseña", "error");
+    }
+  };
+
   const handleExport = async () => {
     try {
       const res = await employeesApi.exportToExcel();
@@ -184,6 +216,7 @@ export default function EmployeesPage() {
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onResetPassword={handleResetPassword}
       />
 
       <EmployeeForm
@@ -229,6 +262,53 @@ export default function EmployeesPage() {
         title="Confirmar Eliminación"
         message="¿Está seguro de que desea eliminar este empleado? Esta acción no se puede deshacer."
       />
+
+      <Dialog
+        open={tempPasswordDialog.open}
+        onClose={() => setTempPasswordDialog((prev) => ({ ...prev, open: false }))}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Contraseña restablecida</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Se generó una contraseña temporal para{" "}
+            <strong>{tempPasswordDialog.employeeName}</strong>. Compartísela de
+            forma segura. Al iniciar sesión, el sistema le pedirá que la cambie.
+          </Typography>
+          <TextField
+            fullWidth
+            label="Contraseña temporal"
+            value={tempPasswordDialog.tempPassword}
+            slotProps={{
+              input: {
+                readOnly: true,
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => {
+                        navigator.clipboard.writeText(tempPasswordDialog.tempPassword);
+                        showSnackbar("Contraseña copiada al portapapeles", "success");
+                      }}
+                      edge="end"
+                    >
+                      <ContentCopyIcon />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="contained"
+            onClick={() => setTempPasswordDialog((prev) => ({ ...prev, open: false }))}
+          >
+            Entendido
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

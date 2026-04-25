@@ -28,5 +28,7 @@ public interface EmployeeService {
 
     EmployeeResponse assignRoles(Long employeeId, List<Long> roleIds);
 
+    String resetPassword(Long id);
+
     byte[] exportToExcel();
 }

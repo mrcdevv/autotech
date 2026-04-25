@@ -39,6 +39,9 @@ export const employeesApi = {
   assignRoles: (id: number, roleIds: number[]) =>
     apiClient.put<ApiResponse<EmployeeResponse>>(`/employees/${id}/roles`, roleIds),
 
+  resetPassword: (id: number) =>
+    apiClient.put<ApiResponse<string>>(`/employees/${id}/reset-password`),
+
   exportToExcel: () =>
     apiClient.get<Blob>("/employees/export/excel", {
       responseType: "blob",
