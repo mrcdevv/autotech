@@ -1,6 +1,8 @@
-import { DataGrid, GridActionsCellItem } from "@mui/x-data-grid";
+import { GridActionsCellItem } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+
+import { AppDataGrid } from "@/components/AppDataGrid";
 
 import type { GridColDef } from "@mui/x-data-grid";
 import type { CatalogServiceResponse } from "@/types/catalog";
@@ -62,7 +64,7 @@ export function ServicesDataGrid({
   ];
 
   return (
-    <DataGrid
+    <AppDataGrid
       rows={rows}
       columns={columns}
       loading={loading}
@@ -75,7 +77,7 @@ export function ServicesDataGrid({
       }}
       pageSizeOptions={[12, 24, 48]}
       disableRowSelectionOnClick
-      sx={{ minHeight: 400 }}
+      emptyMessage="No hay servicios para mostrar."
     />
   );
 }

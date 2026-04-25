@@ -331,8 +331,8 @@ export function CreateRepairOrderForm({ onSuccess }: CreateRepairOrderFormProps)
           open={clientModalOpen}
           onClose={() => setClientModalOpen(false)}
           client={null}
-          onSuccess={() => setClientModalOpen(false)}
-          onClientCreated={(newClient) => {
+          onSuccess={(newClient) => {
+            setClientModalOpen(false);
             setClients((prev) => [...prev, newClient]);
             setSelectedClientId(newClient.id);
           }}

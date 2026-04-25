@@ -1,9 +1,8 @@
 import { useState, useRef, useCallback } from "react";
+import { useNavigate } from "react-router";
 
 import {
-  Box,
-  Typography,
-  TextField,
+  Alert,
   Button,
   Select,
   MenuItem,
@@ -16,8 +15,10 @@ import {
   DialogActions,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import { useNavigate } from "react-router";
 
+import { AppSearchField } from "@/components/AppSearchField";
+import { PageShell } from "@/components/PageShell";
+import { PageToolbar } from "@/components/PageToolbar";
 import { EstimateList } from "@/features/estimates/components/EstimateList";
 import { useEstimates } from "@/features/estimates/hooks/useEstimates";
 
@@ -86,44 +87,43 @@ export default function EstimatesPage() {
   };
 
   return (
-    <Box sx={{ px: 3, py: 2.5 }}>
-      <Typography variant="h3" sx={{ mb: 2 }}>
-        Presupuestos
-      </Typography>
-
-      <Box display="flex" gap={2} mb={2.5} flexWrap="wrap" alignItems="center">
-        <TextField
-          placeholder="Buscar por nombre de cliente..."
-          value={clientNameInput}
-          onChange={(e) => handleClientNameChange(e.target.value)}
-          size="small"
-          sx={{ minWidth: 250 }}
-        />
-        <TextField
-          placeholder="Buscar por patente..."
-          value={plateInput}
-          onChange={(e) => handlePlateChange(e.target.value)}
-          size="small"
-          sx={{ minWidth: 200 }}
-        />
-        <FormControl size="small" sx={{ minWidth: 180 }}>
-          <InputLabel>Estado</InputLabel>
-          <Select value={statusInput} onChange={handleStatusChange} label="Estado">
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="PENDIENTE">Pendiente</MenuItem>
-            <MenuItem value="ACEPTADO">Aceptado</MenuItem>
-            <MenuItem value="RECHAZADO">Rechazado</MenuItem>
-          </Select>
-        </FormControl>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-          Crear nuevo presupuesto
-        </Button>
-      </Box>
+    <PageShell title="Presupuestos">
+      <PageToolbar
+        filters={
+          <>
+            <AppSearchField
+              placeholder="Buscar por nombre de cliente..."
+              value={clientNameInput}
+              onChange={(e) => handleClientNameChange(e.target.value)}
+            />
+            <AppSearchField
+              placeholder="Buscar por patente..."
+              value={plateInput}
+              onChange={(e) => handlePlateChange(e.target.value)}
+              sx={{ width: { xs: "100%", md: 240 }, minWidth: 220 }}
+            />
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <InputLabel>Estado</InputLabel>
+              <Select value={statusInput} onChange={handleStatusChange} label="Estado">
+                <MenuItem value="">Todos</MenuItem>
+                <MenuItem value="PENDIENTE">Pendiente</MenuItem>
+                <MenuItem value="ACEPTADO">Aceptado</MenuItem>
+                <MenuItem value="RECHAZADO">Rechazado</MenuItem>
+              </Select>
+            </FormControl>
+          </>
+        }
+        actions={
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+            Crear nuevo presupuesto
+          </Button>
+        }
+      />
 
       {error && (
-        <Typography color="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
           {error}
-        </Typography>
+        </Alert>
       )}
 
       <EstimateList
@@ -153,6 +153,6 @@ export default function EstimatesPage() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageShell>
   );
 }

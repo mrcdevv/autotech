@@ -1,4 +1,4 @@
-import { Box, Typography, CircularProgress, Alert, Button } from "@mui/material";
+import { Box, CircularProgress, Alert, Button } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -6,6 +6,8 @@ import EventIcon from "@mui/icons-material/Event";
 import DescriptionIcon from "@mui/icons-material/Description";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import { useNavigate } from "react-router";
+
+import { PageShell } from "@/components/PageShell";
 import { useDashboard } from "@/features/dashboard/hooks/useDashboard";
 import { KpiCard } from "@/features/dashboard/components/KpiCard";
 import { StatusBreakdownCard } from "@/features/dashboard/components/StatusBreakdownCard";
@@ -29,9 +31,9 @@ export default function DashboardPage() {
   if (!summary) return null;
 
   return (
-    <Box sx={{ px: 3, py: 2.5 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2.5 }}>
-        <Typography variant="h3">Inicio</Typography>
+    <PageShell
+      title="Inicio"
+      actions={
         <Button
           variant="outlined"
           size="small"
@@ -40,7 +42,8 @@ export default function DashboardPage() {
         >
           Ver reportes
         </Button>
-      </Box>
+      }
+    >
 
       <Grid container spacing={2} sx={{ mb: 2.5 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -77,6 +80,6 @@ export default function DashboardPage() {
           <PendingEstimateAlerts alerts={summary.pendingEstimateAlerts} thresholdDays={summary.staleThresholdDays} />
         </Grid>
       </Grid>
-    </Box>
+    </PageShell>
   );
 }

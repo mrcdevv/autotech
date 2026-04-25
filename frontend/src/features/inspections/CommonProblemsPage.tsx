@@ -2,7 +2,6 @@ import { useState } from "react";
 
 import {
   Box,
-  Typography,
   Button,
   List,
   ListItem,
@@ -22,6 +21,8 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 
+import { PageShell } from "@/components/PageShell";
+import { PageToolbar } from "@/components/PageToolbar";
 import { useCommonProblems } from "@/features/inspections/useCommonProblems";
 import { commonProblemsApi } from "@/api/inspections";
 
@@ -99,22 +100,20 @@ export default function CommonProblemsPage() {
   };
 
   return (
-    <Box sx={{ px: 3, py: 2.5 }}>
-      <Typography variant="h3" sx={{ mb: 2 }}>
-        Problemas comunes
-      </Typography>
-
+    <PageShell title="Problemas comunes">
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
 
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateDialog}>
-          Nuevo Problema
-        </Button>
-      </Box>
+      <PageToolbar
+        actions={
+          <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateDialog}>
+            Nuevo problema
+          </Button>
+        }
+      />
 
       {loading && (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
@@ -123,9 +122,9 @@ export default function CommonProblemsPage() {
       )}
 
       {!loading && problems.length === 0 && (
-        <Typography color="text.secondary" sx={{ mt: 4, textAlign: "center" }}>
+        <Box sx={{ mt: 4, textAlign: "center", color: "text.secondary" }}>
           No hay problemas comunes registrados.
-        </Typography>
+        </Box>
       )}
 
       <List>
@@ -149,7 +148,7 @@ export default function CommonProblemsPage() {
       </List>
 
       <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>{selectedProblem ? "Editar Problema" : "Nuevo Problema"}</DialogTitle>
+        <DialogTitle>{selectedProblem ? "Editar problema" : "Nuevo problema"}</DialogTitle>
         <DialogContent>
           <TextField
             label="Descripción"
@@ -198,6 +197,6 @@ export default function CommonProblemsPage() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </PageShell>
   );
 }

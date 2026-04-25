@@ -1,9 +1,11 @@
-import { DataGrid, GridActionsCellItem } from "@mui/x-data-grid";
+import { GridActionsCellItem } from "@mui/x-data-grid";
 import { Chip } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import LockResetIcon from "@mui/icons-material/LockReset";
+
+import { AppDataGrid } from "@/components/AppDataGrid";
 
 import type { GridColDef, GridPaginationModel } from "@mui/x-data-grid";
 import type { EmployeeResponse } from "@/features/employees/types";
@@ -89,7 +91,7 @@ export function EmployeeList({
   ];
 
   return (
-    <DataGrid
+    <AppDataGrid
       rows={data?.content ?? []}
       columns={columns}
       rowCount={data?.totalElements ?? 0}
@@ -99,7 +101,7 @@ export function EmployeeList({
       paginationMode="server"
       onPaginationModelChange={onPaginationChange}
       disableRowSelectionOnClick
-      sx={{ minHeight: 400 }}
+      emptyMessage="No hay empleados para mostrar."
     />
   );
 }

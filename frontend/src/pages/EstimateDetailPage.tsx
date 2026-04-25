@@ -1,7 +1,8 @@
-import { Box, Typography, Button } from "@mui/material";
+import { Button } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useParams, useNavigate } from "react-router";
 
+import { PageShell } from "@/components/PageShell";
 import { EstimateDetail } from "@/features/estimates/components/EstimateDetail";
 
 export default function EstimateDetailPage() {
@@ -11,16 +12,20 @@ export default function EstimateDetailPage() {
   const estimateId = isNew ? undefined : Number(id);
 
   return (
-    <Box sx={{ px: 3, py: 2.5 }}>
-      <Box display="flex" alignItems="center" gap={2} mb={2}>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate("/presupuestos")} size="small">
+    <PageShell
+      title={isNew ? "Nuevo presupuesto" : `Presupuesto #${id}`}
+      actions={
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate("/presupuestos")}
+          size="small"
+        >
           Volver
         </Button>
-        <Typography variant="h3">
-          {isNew ? "Nuevo presupuesto" : `Presupuesto #${id}`}
-        </Typography>
-      </Box>
+      }
+    >
       <EstimateDetail estimateId={estimateId} />
-    </Box>
+    </PageShell>
   );
 }

@@ -20,7 +20,15 @@ export function KanbanBoard({ orders, loading, onUpdateStatus }: KanbanBoardProp
   }));
 
   return (
-    <Box display="flex" gap={2} sx={{ overflowX: "auto", minHeight: "70vh" }}>
+    <Box
+      display="flex"
+      gap={2}
+      sx={{
+        overflowX: "auto",
+        minHeight: "calc(100vh - 220px)",
+        pb: 1,
+      }}
+    >
       {groupedOrders.map((col) => (
         <KanbanColumn
           key={col.title}

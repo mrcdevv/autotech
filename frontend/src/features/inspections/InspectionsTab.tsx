@@ -29,7 +29,7 @@ interface InspectionsTabProps {
   clientLastName: string;
   clientDni: string | null;
   vehiclePlate: string;
-  vehicleBrandName: string;
+  vehicleBrandName: string | null;
   vehicleModel: string | null;
   vehicleYear: number | null;
 }
@@ -148,7 +148,7 @@ export function InspectionsTab({
               VEHÍCULO
             </Typography>
             <Typography variant="body1" fontWeight="600">
-              {vehicleBrandName} {vehicleModel || ""}
+              {[vehicleBrandName, vehicleModel].filter(Boolean).join(" ") || "—"}
             </Typography>
             <Typography variant="body2">Patente: {vehiclePlate}</Typography>
             {vehicleYear && <Typography variant="body2">Año: {vehicleYear}</Typography>}

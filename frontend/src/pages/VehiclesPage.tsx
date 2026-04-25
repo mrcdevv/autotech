@@ -1,10 +1,7 @@
 import { useState } from "react";
 
 import {
-  Box,
-  Typography,
   Button,
-  TextField,
   Alert,
   Snackbar,
   Dialog,
@@ -15,6 +12,9 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 
+import { AppSearchField } from "@/components/AppSearchField";
+import { PageShell } from "@/components/PageShell";
+import { PageToolbar } from "@/components/PageToolbar";
 import { useVehicles } from "@/features/vehicles/hooks/useVehicles";
 import { useBrands } from "@/features/vehicles/hooks/useBrands";
 import { useVehicleTypes } from "@/features/vehicles/hooks/useVehicleTypes";
@@ -112,63 +112,38 @@ export default function VehiclesPage() {
   };
 
   return (
-    <Box sx={{ px: 3, py: 2.5 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, color: "#111827" }}>
-          Vehículos
-        </Typography>
-
-        <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
-          <TextField
-            placeholder="Buscar por patente..."
-            value={searchPlate}
-            onChange={(e) => {
-              setSearchPlate(e.target.value);
-              setPage(0);
-            }}
-            size="small"
-            sx={{
-              minWidth: 260,
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "8px",
-                backgroundColor: "#fff",
-                "& fieldset": { borderColor: "#e2e8f0" },
-                "&:hover fieldset": { borderColor: "#cbd5e1" },
-              },
-              "& .MuiInputBase-input": {
-                padding: "8px 14px",
-                fontSize: "0.875rem",
-              },
-            }}
-          />
-          <VehicleFilters
-            brands={brands}
-            onApplyFilter={applyFilter}
-            onClearFilters={clearFilters}
-          />
+    <PageShell title="Vehículos">
+      <PageToolbar
+        filters={
+          <>
+            <AppSearchField
+              placeholder="Buscar por patente..."
+              value={searchPlate}
+              onChange={(e) => {
+                setSearchPlate(e.target.value);
+                setPage(0);
+              }}
+            />
+            <VehicleFilters
+              brands={brands}
+              onApplyFilter={applyFilter}
+              onClearFilters={clearFilters}
+            />
+          </>
+        }
+        actions={
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={handleCreate}
-            sx={{
-              borderRadius: "8px",
-              textTransform: "none",
-              fontWeight: 600,
-              boxShadow: "none",
-              backgroundColor: "#0ea5e9", // A nice soft blue similar to the image
-              "&:hover": {
-                backgroundColor: "#0284c7",
-                boxShadow: "none",
-              },
-            }}
           >
             Nuevo vehículo
           </Button>
-        </Box>
-      </Box>
+        }
+      />
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3, borderRadius: "8px" }}>
+        <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
       )}
@@ -225,6 +200,6 @@ export default function VehiclesPage() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </PageShell>
   );
 }

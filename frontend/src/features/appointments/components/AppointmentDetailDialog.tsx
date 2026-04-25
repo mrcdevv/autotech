@@ -1,7 +1,7 @@
 import { Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from "@mui/material";
 import dayjs from "dayjs";
 
-import type { AppointmentResponse, AppointmentStatus } from "@/types/appointment";
+import type { AppointmentResponse } from "@/types/appointment";
 
 interface AppointmentDetailDialogProps {
   open: boolean;
@@ -14,12 +14,6 @@ const DELIVERY_LABELS: Record<string, string> = {
   PROPIO: "Propio",
   GRUA: "Grúa",
   TERCERO: "Tercero",
-};
-
-const STATUS_LABELS: Record<AppointmentStatus, { label: string; color: string }> = {
-  SCHEDULED: { label: "Programada", color: "primary" },
-  CANCELLED: { label: "Cancelada", color: "error" },
-  COMPLETED: { label: "Completada", color: "success" },
 };
 
 function formatDateTime(iso: string | null): string {

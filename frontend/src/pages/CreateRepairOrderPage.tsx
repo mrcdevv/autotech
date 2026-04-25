@@ -1,6 +1,6 @@
-import { Box, Typography } from "@mui/material";
 import { useNavigate } from "react-router";
 
+import { PageShell } from "@/components/PageShell";
 import { CreateRepairOrderForm } from "@/features/repair-orders/components/CreateRepairOrderForm";
 
 export default function CreateRepairOrderPage() {
@@ -11,11 +11,8 @@ export default function CreateRepairOrderPage() {
   };
 
   return (
-    <Box sx={{ px: 3, py: 2.5 }}>
-      <Typography variant="h3" sx={{ mb: 2 }}>
-        Nueva orden de trabajo
-      </Typography>
+    <PageShell title="Nueva orden de trabajo">
       <CreateRepairOrderForm onSuccess={handleSuccess} />
-    </Box>
+    </PageShell>
   );
 }

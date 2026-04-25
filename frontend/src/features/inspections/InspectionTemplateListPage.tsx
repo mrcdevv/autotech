@@ -2,7 +2,6 @@ import { useState } from "react";
 
 import {
   Box,
-  Typography,
   Button,
   IconButton,
   CircularProgress,
@@ -21,6 +20,8 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useNavigate } from "react-router";
 
+import { PageShell } from "@/components/PageShell";
+import { PageToolbar } from "@/components/PageToolbar";
 import { useInspectionTemplates } from "@/features/inspections/useInspectionTemplates";
 import { inspectionTemplatesApi } from "@/api/inspections";
 
@@ -69,26 +70,24 @@ export default function InspectionTemplateListPage() {
   };
 
   return (
-    <Box sx={{ px: 3, py: 2.5 }}>
-      <Typography variant="h3" sx={{ mb: 2 }}>
-        Plantillas de inspeccion
-      </Typography>
-
+    <PageShell title="Plantillas de inspección">
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
 
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => navigate("/configuracion/plantillas-inspeccion/nueva")}
-        >
-          Nueva Plantilla
-        </Button>
-      </Box>
+      <PageToolbar
+        actions={
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate("/configuracion/plantillas-inspeccion/nueva")}
+          >
+            Nueva plantilla
+          </Button>
+        }
+      />
 
       {loading && (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
@@ -97,9 +96,9 @@ export default function InspectionTemplateListPage() {
       )}
 
       {!loading && templates.length === 0 && (
-        <Typography color="text.secondary" sx={{ mt: 4, textAlign: "center" }}>
+        <Box sx={{ mt: 4, textAlign: "center", color: "text.secondary" }}>
           No hay plantillas de inspección. Cree una para comenzar.
-        </Typography>
+        </Box>
       )}
 
       {templates.map((template) => (
@@ -123,12 +122,12 @@ export default function InspectionTemplateListPage() {
           }}
         >
           <Box sx={{ flex: 1 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 0.5 }}>
+            <Box sx={{ typography: "subtitle1", fontWeight: 500, mb: 0.5 }}>
               {template.title}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
+            </Box>
+            <Box sx={{ typography: "body2", color: "text.secondary" }}>
               {template.groups.length} categoría{template.groups.length !== 1 ? "s" : ""}
-            </Typography>
+            </Box>
           </Box>
           <Stack direction="row" spacing={0.5}>
             <IconButton
@@ -182,6 +181,6 @@ export default function InspectionTemplateListPage() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </PageShell>
   );
 }

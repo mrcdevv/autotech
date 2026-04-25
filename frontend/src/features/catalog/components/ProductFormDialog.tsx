@@ -24,8 +24,13 @@ interface FormErrors {
   [key: string]: string;
 }
 
+type ProductFormState = Omit<ProductRequest, "quantity" | "unitPrice"> & {
+  quantity: number | string | null;
+  unitPrice: number | string | null;
+};
+
 export function ProductFormDialog({ open, onClose, onSave, initialData }: ProductFormDialogProps) {
-  const [form, setForm] = useState<Omit<ProductRequest, "quantity"> & { quantity: number | string }>({
+  const [form, setForm] = useState<ProductFormState>({
     name: "",
     description: null,
     quantity: 0,

@@ -146,10 +146,11 @@ export default function ClientForm({ open, onClose, client, onSuccess }: ClientF
     if (!dni) return false;
     try {
       const response = await clientsApi.findByDni(dni);
-      if (client && response.data?.id === client.id) {
+      const foundClient = response.data.data;
+      if (client && foundClient.id === client.id) {
         return false;
       }
-      return response.data !== null;
+      return foundClient !== null;
     } catch {
       return false;
     }
@@ -205,7 +206,7 @@ export default function ClientForm({ open, onClose, client, onSuccess }: ClientF
       <DialogTitle>{client ? "Editar Cliente" : "Registrar Nuevo Cliente"}</DialogTitle>
       <DialogContent>
         {apiError && <Alert severity="error" sx={{ mb: 2, mt: 1 }}>{apiError}</Alert>}
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid size={{ xs: 12 }}>
               <FormControl fullWidth>

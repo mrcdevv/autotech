@@ -228,7 +228,15 @@ export function VehicleForm({
 
   const clientOptions: ClientAutocompleteResponse[] = [
     ...clients,
-    { id: NEW_CLIENT_ID, firstName: "+", lastName: "Nuevo Cliente", dni: null },
+    {
+      id: NEW_CLIENT_ID,
+      firstName: "+",
+      lastName: "Nuevo Cliente",
+      dni: null,
+      phone: null,
+      email: null,
+      clientType: null,
+    },
   ];
 
   return (

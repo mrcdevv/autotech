@@ -1,7 +1,8 @@
-import { DataGrid } from "@mui/x-data-grid";
 import { Box, IconButton, Chip, Typography } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+
+import { AppDataGrid } from "@/components/AppDataGrid";
 
 import type { GridColDef } from "@mui/x-data-grid";
 import type { PaymentResponse } from "@/types/payment";
@@ -115,13 +116,15 @@ export function PaymentHistoryGrid({
       <Typography variant="h6" gutterBottom>
         Historial de pagos
       </Typography>
-      <DataGrid
+      <AppDataGrid
         rows={payments}
         columns={columns}
         loading={loading}
-        autoHeight
         disableRowSelectionOnClick
         pageSizeOptions={[5, 10, 20]}
+        minHeight={320}
+        desktopHeight="360px"
+        emptyMessage="No se registraron pagos para esta factura."
         initialState={{
           pagination: { paginationModel: { pageSize: 10 } },
         }}

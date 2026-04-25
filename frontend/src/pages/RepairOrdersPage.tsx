@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-
-import { Box, Typography, TextField, Button, Autocomplete } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
 import { useNavigate } from "react-router";
 
+import { Button, Autocomplete, TextField } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+
+import { AppSearchField } from "@/components/AppSearchField";
+import { PageShell } from "@/components/PageShell";
+import { PageToolbar } from "@/components/PageToolbar";
 import { employeesApi } from "@/api/employees";
 import { tagsApi } from "@/api/tags";
 import { KanbanBoard } from "@/features/repair-orders/components/KanbanBoard";
@@ -45,59 +48,60 @@ export default function RepairOrdersPage() {
   );
 
   return (
-    <Box sx={{ px: 3, py: 2.5 }}>
-      <Typography variant="h3" sx={{ mb: 2 }}>
-        Ordenes de trabajo
-      </Typography>
-
-      <Box display="flex" gap={2} mb={2.5} flexWrap="wrap" alignItems="center">
-        <TextField
-          placeholder="Buscar por título, nombre, patente, marca, modelo..."
-          value={searchQuery}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          size="small"
-          sx={{ minWidth: 300, flex: 1 }}
-        />
-        <Autocomplete
-          options={employees}
-          getOptionLabel={(e) => `${e.firstName} ${e.lastName}`}
-          onChange={(_, value) => {
-            if (value) {
-              filterByEmployee(value.id);
-            } else {
-              refetch();
-            }
-          }}
-          renderInput={(params) => (
-            <TextField {...params} label="Filtrar por empleado" size="small" />
-          )}
-          sx={{ minWidth: 200 }}
-        />
-        <Autocomplete
-          options={tags}
-          getOptionLabel={(t) => t.name}
-          onChange={(_, value) => {
-            if (value) {
-              filterByTag(value.id);
-            } else {
-              refetch();
-            }
-          }}
-          renderInput={(params) => (
-            <TextField {...params} label="Filtrar por etiqueta" size="small" />
-          )}
-          sx={{ minWidth: 200 }}
-        />
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => navigate("/ordenes-trabajo/nueva")}
-        >
-          Nueva Orden
-        </Button>
-      </Box>
+    <PageShell title="Órdenes de trabajo">
+      <PageToolbar
+        filters={
+          <>
+            <AppSearchField
+              placeholder="Buscar por título, nombre, patente, marca, modelo..."
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              sx={{ width: { xs: "100%", md: 420 }, minWidth: 320 }}
+            />
+            <Autocomplete
+              options={employees}
+              getOptionLabel={(e) => `${e.firstName} ${e.lastName}`}
+              onChange={(_, value) => {
+                if (value) {
+                  filterByEmployee(value.id);
+                } else {
+                  refetch();
+                }
+              }}
+              renderInput={(params) => (
+                <TextField {...params} label="Filtrar por empleado" size="small" />
+              )}
+              sx={{ minWidth: 220 }}
+            />
+            <Autocomplete
+              options={tags}
+              getOptionLabel={(t) => t.name}
+              onChange={(_, value) => {
+                if (value) {
+                  filterByTag(value.id);
+                } else {
+                  refetch();
+                }
+              }}
+              renderInput={(params) => (
+                <TextField {...params} label="Filtrar por etiqueta" size="small" />
+              )}
+              sx={{ minWidth: 220 }}
+            />
+          </>
+        }
+        actions={
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate("/ordenes-trabajo/nueva")}
+          >
+            Nueva orden
+          </Button>
+        }
+      />
 
       <KanbanBoard orders={orders} loading={loading} onUpdateStatus={updateStatus} />
-    </Box>
+    </PageShell>
   );
 }

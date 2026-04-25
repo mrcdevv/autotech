@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 
 import {
-  Box,
   Typography,
   Button,
   Alert,
@@ -18,6 +17,8 @@ import AddIcon from "@mui/icons-material/Add";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 
+import { PageShell } from "@/components/PageShell";
+import { PageToolbar } from "@/components/PageToolbar";
 import { employeesApi } from "@/api/employees";
 import { EmployeeList } from "@/features/employees/EmployeeList";
 import { EmployeeForm } from "@/features/employees/EmployeeForm";
@@ -182,31 +183,20 @@ export default function EmployeesPage() {
   };
 
   return (
-    <Box sx={{ px: 3, py: 2.5 }}>
-      <Typography variant="h3" sx={{ mb: 2 }}>
-        Empleados
-      </Typography>
-
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-          flexWrap: "wrap",
-          gap: 2,
-        }}
-      >
-        <EmployeeFilters onFilterChange={handleFilterChange} />
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Button startIcon={<FileDownloadIcon />} onClick={handleExport}>
-            Exportar a Excel
-          </Button>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-            Nuevo Empleado
-          </Button>
-        </Box>
-      </Box>
+    <PageShell title="Empleados">
+      <PageToolbar
+        filters={<EmployeeFilters onFilterChange={handleFilterChange} />}
+        actions={
+          <>
+            <Button variant="outlined" startIcon={<FileDownloadIcon />} onClick={handleExport}>
+              Exportar a Excel
+            </Button>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+              Nuevo empleado
+            </Button>
+          </>
+        }
+      />
 
       <EmployeeList
         data={data}
@@ -309,6 +299,6 @@ export default function EmployeesPage() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageShell>
   );
 }
