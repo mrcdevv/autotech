@@ -19,7 +19,13 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     boolean existsByDniAndIdNot(String dni, Long id);
 
+    boolean existsByEmail(String email);
+
+    boolean existsByEmailAndIdNot(String email, Long id);
+
     Optional<Employee> findByDni(String dni);
+
+    Optional<Employee> findByEmail(String email);
 
     @EntityGraph(attributePaths = {"roles"})
     Optional<Employee> findWithRolesById(Long id);

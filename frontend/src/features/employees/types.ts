@@ -37,4 +37,5 @@ export interface EmployeeRequest {
   entryDate: string | null;
   status: EmployeeStatus;
   roleIds: number[];
+  password?: string;
 }

@@ -15,8 +15,12 @@ import {
   Chip,
   Box,
   OutlinedInput,
+  IconButton,
+  InputAdornment,
+  Stack,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -52,12 +56,14 @@ const INITIAL_FORM: EmployeeRequest = {
   entryDate: null,
   status: "ACTIVO",
   roleIds: [],
+  password: "",
 };
 
 export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormProps) {
   const [form, setForm] = useState<EmployeeRequest>(INITIAL_FORM);
   const [roles, setRoles] = useState<RoleResponse[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -83,8 +89,10 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
         status: employee.status,
         roleIds: employee.roles.map((r) => r.id),
       });
+      setShowPassword(false);
     } else {
       setForm(INITIAL_FORM);
+      setShowPassword(false);
     }
     setErrors({});
   }, [employee, open]);
@@ -95,7 +103,8 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
       form.lastName.trim() !== "" &&
       form.dni.trim() !== "" &&
       form.phone.trim() !== "" &&
-      form.roleIds.length > 0
+      form.roleIds.length > 0 &&
+      (employee !== null || (form.password !== undefined && form.password !== "" && form.password.length >= 6))
     );
   };
 
@@ -114,6 +123,12 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
       newErrors.email = "El formato del correo electrónico no es válido";
     }
     if (formToValidate.roleIds.length === 0) newErrors.roleIds = "Debe asignar al menos un rol";
+
+    if (!employee) {
+      if (!formToValidate.password || formToValidate.password.length < 6) {
+        newErrors.password = "La contraseña debe tener al menos 6 caracteres";
+      }
+    }
 
     if (showErrors) {
       setErrors(newErrors);
@@ -143,6 +158,16 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
     if (value === "" || /^[0-9]{1,8}$/.test(value)) {
       handleChange("dni", value);
     }
+  };
+
+  const generateRandomPassword = () => {
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    let newPassword = "";
+    for (let i = 0; i < 12; i++) {
+      newPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    handleChange("password", newPassword);
+    setShowPassword(true);
   };
 
   const handleSubmit = () => {
@@ -289,6 +314,42 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
                 </Select>
               </FormControl>
             </Grid>
+
+            {!isEditing && (
+              <Grid size={{ xs: 12 }}>
+                <Stack direction="row" spacing={2} alignItems="flex-start">
+                  <TextField
+                    fullWidth
+                    label="Contraseña"
+                    type={showPassword ? "text" : "password"}
+                    value={form.password || ""}
+                    onChange={(e) => handleChange("password", e.target.value)}
+                    error={!!errors.password}
+                    helperText={errors.password || "Obligatorio para nuevos empleados"}
+                    slotProps={{
+                      input: {
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                              {showPassword ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                    required
+                  />
+                  <Button 
+                    variant="outlined" 
+                    onClick={generateRandomPassword}
+                    sx={{ height: 56, whiteSpace: "nowrap" }}
+                  >
+                    Generar Aleatoria
+                  </Button>
+                </Stack>
+              </Grid>
+            )}
+
             <Grid size={{ xs: 12 }}>
               <FormControl fullWidth error={!!errors.roleIds} required>
                 <InputLabel>Cargo / Rol</InputLabel>

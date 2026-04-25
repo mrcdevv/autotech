@@ -73,6 +73,13 @@ public class Employee extends BaseEntity {
     @Builder.Default
     private EmployeeStatus status = EmployeeStatus.ACTIVO;
 
+    @Column(name = "password", nullable = false)
+    private String password;
+
+    @Column(name = "must_change_password", nullable = false)
+    @Builder.Default
+    private Boolean mustChangePassword = true;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "employee_roles",
