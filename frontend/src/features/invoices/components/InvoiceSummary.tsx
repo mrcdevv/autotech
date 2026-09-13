@@ -23,6 +23,18 @@ function formatCurrency(value: number): string {
   return value.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+const percentageRowSx = {
+  display: "flex",
+  alignItems: "center",
+  gap: 1,
+};
+
+const percentageLabelSx = {
+  width: 100,
+  flexShrink: 0,
+  whiteSpace: "nowrap",
+};
+
 export function InvoiceSummary({
   servicesSubtotal,
   productsSubtotal,
@@ -76,63 +88,59 @@ export function InvoiceSummary({
             <Typography variant="body2" fontWeight={500}>$ {formatCurrency(subtotal)}</Typography>
           </Box>
 
-          <Box display="flex" justifyContent="space-between" alignItems="center" gap={2}>
-            <Box display="flex" alignItems="center" gap={1} flex={1}>
-              <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
-                Descuento
-              </Typography>
-              <TextField
-                type="number"
-                value={discountPercentage === 0 ? "" : discountPercentage}
-                onChange={(e) => {
-                  const val = e.target.value === "" ? 0 : Math.min(100, Math.max(0, Number(e.target.value)));
-                  onDiscountChange(val);
-                }}
-                onKeyDown={blockNonNumeric}
-                slotProps={{
-                  input: {
-                    endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                  },
-                  htmlInput: { min: 0, max: 100, step: "0.01" },
-                }}
-                disabled={readonly}
-                size="small"
-                sx={{ maxWidth: 120 }}
-              />
-            </Box>
+          <Box sx={percentageRowSx}>
+            <Typography variant="body2" color="text.secondary" sx={percentageLabelSx}>
+              Descuento
+            </Typography>
+            <TextField
+              type="number"
+              value={discountPercentage === 0 ? "" : discountPercentage}
+              onChange={(e) => {
+                const val = e.target.value === "" ? 0 : Math.min(100, Math.max(0, Number(e.target.value)));
+                onDiscountChange(val);
+              }}
+              onKeyDown={blockNonNumeric}
+              slotProps={{
+                input: {
+                  endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                },
+                htmlInput: { "aria-label": "Descuento (%)", min: 0, max: 100, step: "0.01" },
+              }}
+              disabled={readonly}
+              size="small"
+              sx={{ width: 120 }}
+            />
             {discountPercentage > 0 && (
-              <Typography variant="body2" color="error.main">
+              <Typography variant="body2" color="error.main" sx={{ ml: "auto" }}>
                 - $ {formatCurrency(discountAmount)}
               </Typography>
             )}
           </Box>
 
-          <Box display="flex" justifyContent="space-between" alignItems="center" gap={2}>
-            <Box display="flex" alignItems="center" gap={1} flex={1}>
-              <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
-                Impuesto
-              </Typography>
-              <TextField
-                type="number"
-                value={taxPercentage === 0 ? "" : taxPercentage}
-                onChange={(e) => {
-                  const val = e.target.value === "" ? 0 : Math.min(100, Math.max(0, Number(e.target.value)));
-                  onTaxChange(val);
-                }}
-                onKeyDown={blockNonNumeric}
-                slotProps={{
-                  input: {
-                    endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                  },
-                  htmlInput: { min: 0, max: 100, step: "0.01" },
-                }}
-                disabled={readonly}
-                size="small"
-                sx={{ maxWidth: 120 }}
-              />
-            </Box>
+          <Box sx={percentageRowSx}>
+            <Typography variant="body2" color="text.secondary" sx={percentageLabelSx}>
+              Impuesto
+            </Typography>
+            <TextField
+              type="number"
+              value={taxPercentage === 0 ? "" : taxPercentage}
+              onChange={(e) => {
+                const val = e.target.value === "" ? 0 : Math.min(100, Math.max(0, Number(e.target.value)));
+                onTaxChange(val);
+              }}
+              onKeyDown={blockNonNumeric}
+              slotProps={{
+                input: {
+                  endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                },
+                htmlInput: { "aria-label": "Impuesto (%)", min: 0, max: 100, step: "0.01" },
+              }}
+              disabled={readonly}
+              size="small"
+              sx={{ width: 120 }}
+            />
             {taxPercentage > 0 && (
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ ml: "auto" }}>
                 + $ {formatCurrency(taxAmount)}
               </Typography>
             )}

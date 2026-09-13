@@ -8,6 +8,7 @@ import com.autotech.employee.dto.EmployeeResponse;
 import com.autotech.employee.model.Employee;
 import com.autotech.employee.model.EmployeeStatus;
 import com.autotech.employee.repository.EmployeeRepository;
+import com.autotech.email.service.EmailNotificationService;
 import com.autotech.role.model.Role;
 import com.autotech.role.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeMapper employeeMapper;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailNotificationService emailNotificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -86,6 +88,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         Employee saved = employeeRepository.save(employee);
         log.info("Employee created with id: {}", saved.getId());
+        emailNotificationService.notifyEmployeeCreated(saved, request.password());
         return employeeMapper.toResponse(saved);
     }
 
@@ -230,7 +233,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     @Transactional
-    public String resetPassword(Long id) {
+    public void resetPassword(Long id) {
         log.info("Resetting password for employee id: {}", id);
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Empleado", id));
@@ -241,7 +244,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeRepository.save(employee);
 
         log.info("Password reset for employee id: {}", id);
-        return tempPassword;
+        emailNotificationService.notifyPasswordReset(employee, tempPassword);
     }
 
     private String generateTempPassword() {

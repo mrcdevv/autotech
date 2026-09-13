@@ -9,13 +9,9 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
-  InputAdornment,
-  IconButton,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 
 import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
@@ -52,8 +48,7 @@ export default function EmployeesPage() {
   const [tempPasswordDialog, setTempPasswordDialog] = useState<{
     open: boolean;
     employeeName: string;
-    tempPassword: string;
-  }>({ open: false, employeeName: "", tempPassword: "" });
+  }>({ open: false, employeeName: "" });
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -151,11 +146,10 @@ export default function EmployeesPage() {
 
   const handleResetPassword = async (employee: EmployeeResponse) => {
     try {
-      const res = await employeesApi.resetPassword(employee.id);
+      await employeesApi.resetPassword(employee.id);
       setTempPasswordDialog({
         open: true,
         employeeName: `${employee.firstName} ${employee.lastName}`,
-        tempPassword: res.data.data ?? "",
       });
     } catch {
       showSnackbar("Error al restablecer la contraseña", "error");
@@ -263,32 +257,9 @@ export default function EmployeesPage() {
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Se generó una contraseña temporal para{" "}
-            <strong>{tempPasswordDialog.employeeName}</strong>. Compartísela de
-            forma segura. Al iniciar sesión, el sistema le pedirá que la cambie.
+            <strong>{tempPasswordDialog.employeeName}</strong> y se envió a su correo electrónico.
+            Al iniciar sesión, el sistema le pedirá que la cambie.
           </Typography>
-          <TextField
-            fullWidth
-            label="Contraseña temporal"
-            value={tempPasswordDialog.tempPassword}
-            slotProps={{
-              input: {
-                readOnly: true,
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => {
-                        navigator.clipboard.writeText(tempPasswordDialog.tempPassword);
-                        showSnackbar("Contraseña copiada al portapapeles", "success");
-                      }}
-                      edge="end"
-                    >
-                      <ContentCopyIcon />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              },
-            }}
-          />
         </DialogContent>
         <DialogActions>
           <Button

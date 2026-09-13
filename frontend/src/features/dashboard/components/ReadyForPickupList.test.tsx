@@ -27,7 +27,7 @@ describe("ReadyForPickupList", () => {
     expect(screen.getByText("No hay vehículos listos para entregar")).toBeInTheDocument();
   });
 
-  it("given orders, when rendered, then shows phone call link", () => {
+  it("given orders, when rendered, then does not show phone call action", () => {
     const orders = [
       {
         repairOrderId: 1,
@@ -40,7 +40,6 @@ describe("ReadyForPickupList", () => {
 
     render(<ReadyForPickupList orders={orders} />);
 
-    const phoneLink = screen.getByRole("link");
-    expect(phoneLink).toHaveAttribute("href", "tel:11-9876-5432");
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 });

@@ -58,14 +58,6 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    title: "Directorio",
-    items: [
-      { label: "Clientes", path: "/clientes", icon: <PeopleOutlinedIcon /> },
-      { label: "Vehículos", path: "/vehiculos", icon: <DirectionsCarOutlinedIcon /> },
-      { label: "Empleados", path: "/empleados", icon: <BadgeOutlinedIcon /> },
-    ],
-  },
-  {
     title: "Catálogo",
     items: [
       { label: "Servicios", path: "/servicios", icon: <MiscellaneousServicesOutlinedIcon /> },
@@ -76,6 +68,9 @@ const navSections: NavSection[] = [
   {
     title: "Administración",
     items: [
+      { label: "Clientes", path: "/clientes", icon: <PeopleOutlinedIcon /> },
+      { label: "Vehículos", path: "/vehiculos", icon: <DirectionsCarOutlinedIcon /> },
+      { label: "Empleados", path: "/empleados", icon: <BadgeOutlinedIcon /> },
       { label: "Reportes", path: "/reportes", icon: <AssessmentOutlinedIcon /> },
     ],
   },

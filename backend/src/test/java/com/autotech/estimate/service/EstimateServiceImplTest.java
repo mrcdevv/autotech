@@ -13,6 +13,7 @@ import com.autotech.estimate.dto.EstimateRequest;
 import com.autotech.estimate.dto.EstimateResponse;
 import com.autotech.estimate.dto.EstimateServiceItemRequest;
 import com.autotech.estimate.dto.InspectionIssueResponse;
+import com.autotech.email.service.EmailNotificationService;
 import com.autotech.estimate.model.Estimate;
 import com.autotech.estimate.model.EstimateProduct;
 import com.autotech.estimate.model.EstimateServiceItem;
@@ -76,6 +77,9 @@ class EstimateServiceImplTest {
 
     @Mock
     private InspectionRepository inspectionRepository;
+
+    @Mock
+    private EmailNotificationService emailNotificationService;
 
     @InjectMocks
     private EstimateServiceImpl estimateService;
@@ -145,7 +149,7 @@ class EstimateServiceImplTest {
         // Arrange
         Estimate estimate = buildEstimateWithRepairOrder(1L, 10L);
         EstimateDetailResponse detailResponse = buildDetailResponseWithRepairOrder(1L, 10L);
-        when(estimateRepository.findByRepairOrderId(10L)).thenReturn(Optional.of(estimate));
+        when(estimateRepository.findAllByRepairOrderId(10L)).thenReturn(List.of(estimate));
         when(estimateMapper.toDetailResponse(estimate)).thenReturn(detailResponse);
         when(inspectionRepository.findByRepairOrderId(10L)).thenReturn(Collections.emptyList());
 
@@ -160,7 +164,7 @@ class EstimateServiceImplTest {
     @Test
     void givenNonExistentRepairOrder_whenGetByRepairOrderId_thenThrowResourceNotFoundException() {
         // Arrange
-        when(estimateRepository.findByRepairOrderId(99L)).thenReturn(Optional.empty());
+        when(estimateRepository.findAllByRepairOrderId(99L)).thenReturn(Collections.emptyList());
 
         // Act & Assert
         assertThatThrownBy(() -> estimateService.getByRepairOrderId(99L))

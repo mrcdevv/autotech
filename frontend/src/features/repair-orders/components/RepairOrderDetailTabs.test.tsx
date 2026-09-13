@@ -52,21 +52,21 @@ const sampleOrder: RepairOrderDetailResponse = {
 };
 
 describe("RepairOrderDetailTabs", () => {
-  it("given order, when rendered, then shows 5 tab labels", () => {
+  it("given order, when rendered, then shows the tab labels", () => {
     render(<RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />);
 
     expect(screen.getByText("Información General")).toBeInTheDocument();
     expect(screen.getByText("Inspecciones")).toBeInTheDocument();
     expect(screen.getByText("Presupuesto")).toBeInTheDocument();
-    expect(screen.getByText("Trabajos")).toBeInTheDocument();
+    expect(screen.queryByText("Trabajos")).not.toBeInTheDocument();
     expect(screen.getByText("Factura")).toBeInTheDocument();
   });
 
   it("given order, when first tab active, then shows GeneralInfoTab content", () => {
     render(<RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />);
 
-    expect(screen.getByText("Datos del Cliente")).toBeInTheDocument();
-    expect(screen.getByText("Datos del Vehículo")).toBeInTheDocument();
+    expect(screen.getByText("Resumen Financiero")).toBeInTheDocument();
+    expect(screen.getByText("Motivo y Notas")).toBeInTheDocument();
   });
 
   it("given order, when clicking Inspecciones tab, then shows InspectionsTab", async () => {

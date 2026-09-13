@@ -59,7 +59,6 @@ export default function HomePage() {
         <Chip label="MUI v6" color="primary" />
         <Chip label="React 19" color="secondary" />
         <Chip label="TypeScript" variant="outlined" />
-        <Chip label="Vite" variant="outlined" />
       </Stack>
 
     </PageShell>

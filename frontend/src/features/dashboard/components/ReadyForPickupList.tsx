@@ -8,10 +8,8 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  IconButton,
-  Tooltip,
 } from "@mui/material";
-import PhoneIcon from "@mui/icons-material/Phone";
+
 import type { ReadyForPickupResponse } from "@/features/dashboard/types";
 
 interface ReadyForPickupListProps {
@@ -47,7 +45,6 @@ export function ReadyForPickupList({ orders }: ReadyForPickupListProps) {
                 <TableCell>Cliente</TableCell>
                 <TableCell>Patente</TableCell>
                 <TableCell>Teléfono</TableCell>
-                <TableCell />
               </TableRow>
             </TableHead>
             <TableBody>
@@ -56,17 +53,6 @@ export function ReadyForPickupList({ orders }: ReadyForPickupListProps) {
                   <TableCell>{order.clientFullName}</TableCell>
                   <TableCell>{order.vehiclePlate}</TableCell>
                   <TableCell>{order.clientPhone}</TableCell>
-                  <TableCell align="right" sx={{ p: 0 }}>
-                    <Tooltip title={`Llamar a ${order.clientPhone}`}>
-                      <IconButton
-                        size="small"
-                        href={`tel:${order.clientPhone}`}
-                        color="primary"
-                      >
-                        <PhoneIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

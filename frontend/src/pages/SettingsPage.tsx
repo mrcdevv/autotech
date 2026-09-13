@@ -9,6 +9,7 @@ import { InspectionTemplatesTab } from "@/features/settings/components/Inspectio
 import { CalendarSettingsTab } from "@/features/settings/components/CalendarSettingsTab";
 import { RepairOrderSettingsTab } from "@/features/settings/components/RepairOrderSettingsTab";
 import { DashboardSettingsTab } from "@/features/settings/components/DashboardSettingsTab";
+import { TagsSettingsTab } from "@/features/settings/components/TagsSettingsTab";
 
 export default function SettingsPage() {
   const [searchParams] = useSearchParams();
@@ -22,6 +23,7 @@ export default function SettingsPage() {
         <Tab label="Fichas técnicas" />
         <Tab label="Calendario" />
         <Tab label="Órdenes de trabajo" />
+        <Tab label="Etiquetas" />
         <Tab label="Panel de inicio" />
       </Tabs>
 
@@ -29,7 +31,8 @@ export default function SettingsPage() {
       {activeTab === 1 && <InspectionTemplatesTab />}
       {activeTab === 2 && <CalendarSettingsTab />}
       {activeTab === 3 && <RepairOrderSettingsTab />}
-      {activeTab === 4 && <DashboardSettingsTab />}
+      {activeTab === 4 && <TagsSettingsTab />}
+      {activeTab === 5 && <DashboardSettingsTab />}
     </PageShell>
   );
 }

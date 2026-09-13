@@ -20,18 +20,13 @@ vi.mock("@/features/appointments/hooks/useCalendarConfig", () => ({
   }),
 }));
 
-vi.mock("@/features/settings/components/TagsManager", () => ({
-  TagsManager: () => <div data-testid="tags-manager">TagsManager</div>,
-}));
-
 describe("CalendarSettingsTab", () => {
-  it("given config loaded, when rendered, then shows duration and TagsManager", () => {
+  it("given config loaded, when rendered, then shows calendar duration settings", () => {
     render(<CalendarSettingsTab />);
 
     expect(screen.getByText("Duración de citas por defecto")).toBeInTheDocument();
     expect(screen.getByLabelText("Duración (minutos)")).toHaveValue(45);
     expect(screen.getByText("Guardar")).toBeInTheDocument();
-    expect(screen.getByText("Etiquetas")).toBeInTheDocument();
-    expect(screen.getByTestId("tags-manager")).toBeInTheDocument();
+    expect(screen.queryByText("Etiquetas")).not.toBeInTheDocument();
   });
 });

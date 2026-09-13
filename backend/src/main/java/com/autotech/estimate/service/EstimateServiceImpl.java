@@ -12,6 +12,7 @@ import com.autotech.estimate.dto.EstimateRequest;
 import com.autotech.estimate.dto.EstimateResponse;
 import com.autotech.estimate.dto.EstimateServiceItemRequest;
 import com.autotech.estimate.dto.InspectionIssueResponse;
+import com.autotech.email.service.EmailNotificationService;
 import com.autotech.estimate.model.Estimate;
 import com.autotech.estimate.model.EstimateProduct;
 import com.autotech.estimate.model.EstimateServiceItem;
@@ -48,6 +49,7 @@ public class EstimateServiceImpl implements EstimateService {
     private final VehicleRepository vehicleRepository;
     private final RepairOrderRepository repairOrderRepository;
     private final InspectionRepository inspectionRepository;
+    private final EmailNotificationService emailNotificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -141,7 +143,9 @@ public class EstimateServiceImpl implements EstimateService {
 
         Estimate saved = estimateRepository.save(entity);
         log.info("Created estimate with id {}", saved.getId());
-        return getById(saved.getId());
+        EstimateDetailResponse response = getById(saved.getId());
+        emailNotificationService.notifyEstimateCreated(response);
+        return response;
     }
 
     @Override
@@ -188,7 +192,9 @@ public class EstimateServiceImpl implements EstimateService {
         entity.setStatus(EstimateStatus.ACEPTADO);
         estimateRepository.save(entity);
         log.info("Approved estimate with id {}", id);
-        return getById(id);
+        EstimateDetailResponse response = getById(id);
+        emailNotificationService.notifyEstimateStatusChanged(response);
+        return response;
     }
 
     @Override
@@ -202,7 +208,9 @@ public class EstimateServiceImpl implements EstimateService {
         entity.setStatus(EstimateStatus.RECHAZADO);
         estimateRepository.save(entity);
         log.info("Rejected estimate with id {}", id);
-        return getById(id);
+        EstimateDetailResponse response = getById(id);
+        emailNotificationService.notifyEstimateStatusChanged(response);
+        return response;
     }
 
     @Override
