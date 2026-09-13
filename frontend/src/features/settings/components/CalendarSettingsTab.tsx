@@ -4,7 +4,6 @@ import {
   Alert,
   Box,
   Button,
-  Divider,
   Snackbar,
   Stack,
   TextField,
@@ -12,7 +11,6 @@ import {
 } from "@mui/material";
 
 import { useCalendarConfig } from "@/features/appointments/hooks/useCalendarConfig";
-import { TagsManager } from "@/features/settings/components/TagsManager";
 
 export function CalendarSettingsTab() {
   const { config, updateConfig } = useCalendarConfig();
@@ -58,13 +56,6 @@ export function CalendarSettingsTab() {
           Guardar
         </Button>
       </Stack>
-
-      <Divider sx={{ mb: 3 }} />
-
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        Etiquetas
-      </Typography>
-      <TagsManager />
 
       <Snackbar
         open={snackbar.open}

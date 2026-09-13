@@ -82,7 +82,7 @@ describe("PaymentHistoryGrid", () => {
     );
 
     const editButtons = screen.getAllByTestId("EditIcon");
-    await user.click(editButtons[0]);
+    await user.click(editButtons[0]!);
 
     expect(onEdit).toHaveBeenCalledWith(payment);
   });
@@ -101,7 +101,7 @@ describe("PaymentHistoryGrid", () => {
     );
 
     const deleteButtons = screen.getAllByTestId("DeleteIcon");
-    await user.click(deleteButtons[0]);
+    await user.click(deleteButtons[0]!);
 
     expect(onDelete).toHaveBeenCalledWith(1, 1);
   });

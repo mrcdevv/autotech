@@ -7,6 +7,7 @@ import com.autotech.client.repository.ClientRepository;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.employee.model.Employee;
 import com.autotech.employee.repository.EmployeeRepository;
+import com.autotech.email.service.EmailNotificationService;
 import com.autotech.repairorder.dto.NotesUpdateRequest;
 import com.autotech.repairorder.dto.RepairOrderDetailResponse;
 import com.autotech.repairorder.dto.RepairOrderMapper;
@@ -42,6 +43,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
     private final AppointmentRepository appointmentRepository;
     private final EmployeeRepository employeeRepository;
     private final TagRepository tagRepository;
+    private final EmailNotificationService emailNotificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -202,6 +204,9 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         log.info("Updating repair order {} status from {} to {}", id, order.getStatus(), newStatus);
         order.setStatus(newStatus);
         RepairOrder saved = repairOrderRepository.save(order);
+        if (newStatus == RepairOrderStatus.LISTO_PARA_ENTREGAR) {
+            emailNotificationService.notifyVehicleReadyForPickup(saved);
+        }
         return repairOrderMapper.toResponse(saved);
     }
 

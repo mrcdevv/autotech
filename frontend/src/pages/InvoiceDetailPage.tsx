@@ -1,7 +1,8 @@
-import { Box, Typography, Button } from "@mui/material";
+import { Button } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useParams, useNavigate, useSearchParams } from "react-router";
 
+import { PageShell } from "@/components/PageShell";
 import { InvoiceDetail } from "@/features/invoices/components/InvoiceDetail";
 
 export default function InvoiceDetailPage() {
@@ -16,16 +17,20 @@ export default function InvoiceDetailPage() {
     : undefined;
 
   return (
-    <Box sx={{ px: 3, py: 2.5 }}>
-      <Box display="flex" alignItems="center" gap={2} mb={2}>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate("/facturas")} size="small">
+    <PageShell
+      title={isNew ? "Nueva factura" : `Factura #${id}`}
+      actions={
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate("/facturas")}
+          size="small"
+        >
           Volver
         </Button>
-        <Typography variant="h3">
-          {isNew ? "Nueva factura" : `Factura #${id}`}
-        </Typography>
-      </Box>
+      }
+    >
       <InvoiceDetail invoiceId={invoiceId} estimateId={estimateId} />
-    </Box>
+    </PageShell>
   );
 }

@@ -172,7 +172,7 @@ export function AppointmentFormDialog({
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Nueva cita</DialogTitle>
       <DialogContent dividers>
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6 }}>

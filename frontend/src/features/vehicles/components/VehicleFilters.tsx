@@ -59,18 +59,6 @@ export function VehicleFilters({ brands, onApplyFilter, onClearFilters }: Vehicl
         variant="outlined"
         startIcon={<FilterListIcon />}
         onClick={(e) => setAnchorEl(e.currentTarget)}
-        sx={{
-          borderRadius: "8px",
-          textTransform: "none",
-          fontWeight: 500,
-          color: "#475569",
-          borderColor: "#e2e8f0",
-          backgroundColor: "#fff",
-          "&:hover": {
-            backgroundColor: "#f8fafc",
-            borderColor: "#cbd5e1",
-          },
-        }}
       >
         Filtros
       </Button>

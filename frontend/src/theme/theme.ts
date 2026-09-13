@@ -1,4 +1,9 @@
 import { createTheme } from "@mui/material/styles";
+import { esES as materialEsES } from "@mui/material/locale";
+import { esES as dataGridEsES } from "@mui/x-data-grid/locales";
+import { esES as datePickersEsES } from "@mui/x-date-pickers/locales";
+
+import type {} from "@mui/x-data-grid/themeAugmentation";
 
 declare module "@mui/material/styles" {
   interface Palette {
@@ -379,8 +384,44 @@ const theme = createTheme({
         },
       },
     },
-
+    MuiDataGrid: {
+      styleOverrides: {
+        root: {
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #E2E8F0",
+          borderRadius: 8,
+          boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
+          overflow: "hidden",
+          "& .MuiDataGrid-columnHeaders": {
+            backgroundColor: "#F8FAFC",
+            borderBottom: "1px solid #E2E8F0",
+          },
+          "& .MuiDataGrid-columnHeaderTitle": {
+            fontWeight: 600,
+            fontSize: "0.75rem",
+            color: "#64748B",
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+          },
+          "& .MuiDataGrid-cell": {
+            borderBottom: "1px solid #F1F5F9",
+            color: "#334155",
+            fontSize: "0.8125rem",
+          },
+          "& .MuiDataGrid-row:hover": {
+            backgroundColor: "#F8FAFC",
+          },
+          "& .MuiDataGrid-footerContainer": {
+            borderTop: "1px solid #E2E8F0",
+            backgroundColor: "#F8FAFC",
+          },
+          "& .MuiDataGrid-iconSeparator": {
+            display: "none",
+          },
+        },
+      },
+    },
   },
-});
+}, materialEsES, dataGridEsES, datePickersEsES);
 
 export default theme;

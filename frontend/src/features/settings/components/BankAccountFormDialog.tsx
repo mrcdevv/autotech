@@ -48,6 +48,7 @@ export function BankAccountFormDialog({ open, account, onClose, onSave }: BankAc
   }, [open, account]);
 
   const selectedBank = banks.find((b) => b.id === bankId) ?? null;
+  const selectedBankLogo = selectedBank ? getBankLogo(selectedBank.name) : undefined;
 
   const handleSave = async () => {
     if (!bankId || !alias.trim()) return;
@@ -83,7 +84,36 @@ export function BankAccountFormDialog({ open, account, onClose, onSave }: BankAc
                 </Box>
               );
             }}
-            renderInput={(params) => <TextField {...params} label="Banco" required />}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Banco"
+                required
+                slotProps={{
+                  input: {
+                    ...params.InputProps,
+                    startAdornment: selectedBank ? (
+                      <>
+                        {selectedBankLogo ? (
+                          <Avatar
+                            src={selectedBankLogo}
+                            variant="rounded"
+                            sx={{ width: 28, height: 28, mr: 1 }}
+                          />
+                        ) : (
+                          <Avatar variant="rounded" sx={{ width: 28, height: 28, mr: 1 }}>
+                            <AccountBalanceIcon sx={{ fontSize: 16 }} />
+                          </Avatar>
+                        )}
+                        {params.InputProps.startAdornment}
+                      </>
+                    ) : (
+                      params.InputProps.startAdornment
+                    ),
+                  },
+                }}
+              />
+            )}
           />
           <TextField
             label="Alias o nombre de la cuenta"

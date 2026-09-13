@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 
 import {
   Box,
-  Typography,
   TextField,
   Button,
   IconButton,
@@ -38,6 +37,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 import { inspectionTemplatesApi } from "@/api/inspections";
+import { PageShell } from "@/components/PageShell";
 
 import type {
   InspectionTemplateGroupRequest,
@@ -441,11 +441,10 @@ export default function InspectionTemplateBuilder() {
   }
 
   return (
-    <Box sx={{ px: 3, py: 2.5, maxWidth: 900, mx: "auto" }}>
-      <Typography variant="h3" sx={{ mb: 3, fontWeight: 600 }}>
-        {isEditing ? "Editar plantilla de inspección" : "Nueva plantilla de inspección"}
-      </Typography>
-
+    <PageShell
+      title={isEditing ? "Editar plantilla de inspección" : "Nueva plantilla de inspección"}
+      contentSx={{ maxWidth: 960, mx: "auto" }}
+    >
       <TextField
         label="Título de la plantilla"
         value={title}
@@ -512,6 +511,6 @@ export default function InspectionTemplateBuilder() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </PageShell>
   );
 }

@@ -61,7 +61,7 @@ export function AppointmentEditDialog({
   };
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDayjs}>
+    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>Editar fecha y hora</DialogTitle>
         <DialogContent>

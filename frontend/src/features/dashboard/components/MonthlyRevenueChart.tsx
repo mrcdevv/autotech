@@ -13,9 +13,33 @@ const MONTH_LABELS = [
   "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
 ];
 
+function getMonthlyRevenueWithEmptyMonths(data: MonthlyRevenueResponse[], months: number) {
+  const totalsByMonth = new Map(
+    data.map((item) => [`${item.year}-${item.month}`, item.total])
+  );
+  const currentMonth = new Date();
+
+  return Array.from({ length: months }, (_, index) => {
+    const date = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth() - months + 1 + index,
+      1
+    );
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+
+    return {
+      year,
+      month,
+      total: totalsByMonth.get(`${year}-${month}`) ?? 0,
+    };
+  });
+}
+
 export function MonthlyRevenueChart({ data, months, onMonthsChange }: MonthlyRevenueChartProps) {
-  const labels = data.map((d) => `${MONTH_LABELS[d.month - 1]} ${d.year}`);
-  const values = data.map((d) => d.total);
+  const monthlyRevenue = getMonthlyRevenueWithEmptyMonths(data, months);
+  const labels = monthlyRevenue.map((d) => `${MONTH_LABELS[d.month - 1]} ${d.year}`);
+  const values = monthlyRevenue.map((d) => d.total);
 
   return (
     <Box>
@@ -31,7 +55,7 @@ export function MonthlyRevenueChart({ data, months, onMonthsChange }: MonthlyRev
           <ToggleButton value={12}>12 meses</ToggleButton>
         </ToggleButtonGroup>
       </Box>
-      {data.length === 0 ? (
+      {monthlyRevenue.length === 0 ? (
         <Typography color="text.secondary">No hay datos de ingresos</Typography>
       ) : (
         <BarChart

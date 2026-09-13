@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { isAxiosError } from "axios";
+
 import {
   Box,
   Card,
@@ -9,11 +11,21 @@ import {
   Button,
   Alert,
   InputAdornment,
-  IconButton
+  IconButton,
+  Stack
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+
 import { useAuth } from "../context/AuthContext";
 import { authApi } from "../api/authApi";
+
+function getLoginErrorMessage(error: unknown) {
+  if (isAxiosError<{ message?: string }>(error)) {
+    return error.response?.data?.message ?? "Credenciales inválidas o error en el servidor.";
+  }
+
+  return "Credenciales inválidas o error en el servidor.";
+}
 
 export function Login() {
   const [email, setEmail] = useState("");
@@ -42,8 +54,8 @@ export function Login() {
       } else {
         navigate("/", { replace: true });
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Credenciales inválidas o error en el servidor.");
+    } catch (err: unknown) {
+      setError(getLoginErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -51,74 +63,81 @@ export function Login() {
 
   return (
     <Box 
-      sx={{ 
-        height: "100vh", 
-        display: "flex", 
-        alignItems: "center", 
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "background.default"
+        bgcolor: "background.default",
+        px: 2,
       }}
     >
-      <Card sx={{ maxWidth: 400, width: "100%", p: 2 }}>
-        <CardContent>
-          <Box component="img" src="/vite.svg" alt="Logo Autotech" sx={{ display: "block", mx: "auto", mb: 2, height: 60 }} />
-          <Typography variant="h5" component="h1" textAlign="center" gutterBottom fontWeight="bold">
-            Autotech
-          </Typography>
-          <Typography variant="body2" textAlign="center" color="text.secondary" mb={3}>
-            Inicio de sesión administrativo
-          </Typography>
+      <Card sx={{ maxWidth: 420, width: "100%" }}>
+        <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+          <Stack spacing={1.5} alignItems="center" sx={{ mb: 3 }}>
+            <Box sx={{ textAlign: "center" }}>
+              <Typography variant="h3" component="h1">
+                Autotech
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Inicio de sesión
+              </Typography>
+            </Box>
+          </Stack>
 
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
           <form onSubmit={handleSubmit}>
-            <TextField
-              label="Correo Electrónico"
-              type="email"
-              fullWidth
-              margin="normal"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoFocus
-            />
-            <TextField
-              label="Contraseña"
-              type={showPassword ? "text" : "password"}
-              fullWidth
-              margin="normal"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              slotProps={{
-                input: {
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }
-              }}
-            />
-            <Button
-              type="submit"
-              variant="contained"
-              fullWidth
-              size="large"
-              disabled={loading}
-              sx={{ mt: 3, mb: 1 }}
-            >
-              {loading ? "Iniciando sesión..." : "Ingresar"}
-            </Button>
+            <Stack spacing={2.5}>
+              <TextField
+                label="Correo electrónico"
+                type="email"
+                fullWidth
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoFocus
+              />
+              <TextField
+                label="Contraseña"
+                type={showPassword ? "text" : "password"}
+                fullWidth
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }
+                }}
+              />
+              <Button
+                type="submit"
+                variant="contained"
+                fullWidth
+                size="large"
+                disabled={loading}
+              >
+                {loading ? "Iniciando sesión..." : "Ingresar"}
+              </Button>
+            </Stack>
 
             <Typography
               variant="caption"
               color="text.secondary"
               textAlign="center"
               display="block"
-              sx={{ mt: 1 }}
+              sx={{ mt: 2 }}
             >
               ¿Olvidaste tu contraseña? Contactá al administrador del sistema
               para que la restablezca.

@@ -1,8 +1,8 @@
-import { Chip, IconButton, Tooltip, Box, Typography } from "@mui/material";
+import { Chip, IconButton, Tooltip } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import SearchOffIcon from "@mui/icons-material/SearchOff";
-import { DataGrid } from "@mui/x-data-grid";
+
+import { AppDataGrid } from "@/components/AppDataGrid";
 
 import type { GridColDef } from "@mui/x-data-grid";
 import type { InvoiceResponse } from "@/types/invoice";
@@ -17,25 +17,6 @@ interface InvoiceListProps {
   onPageSizeChange: (pageSize: number) => void;
   onRowClick: (row: InvoiceResponse) => void;
   onDelete: (id: number) => void;
-}
-
-function CustomNoRowsOverlay() {
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100%",
-      }}
-    >
-      <SearchOffIcon sx={{ fontSize: 40, color: "text.secondary", mb: 1 }} />
-      <Typography variant="body1" color="text.secondary">
-        No se encuentra cargada una factura con esos datos
-      </Typography>
-    </Box>
-  );
 }
 
 export function InvoiceList({
@@ -53,20 +34,23 @@ export function InvoiceList({
     {
       field: "createdAt",
       headerName: "Fecha de creación",
-      width: 180,
+      flex: 1,
+      minWidth: 170,
       valueFormatter: (value: string) => new Date(value).toLocaleDateString("es-AR"),
     },
-    { field: "clientFullName", headerName: "Cliente", flex: 1 },
+    { field: "clientFullName", headerName: "Cliente", flex: 1.4, minWidth: 190 },
     {
       field: "vehiclePlate",
       headerName: "Patente",
-      width: 120,
+      flex: 0.75,
+      minWidth: 120,
       valueFormatter: (value: string | null) => value ?? "—",
     },
     {
       field: "status",
       headerName: "Estado",
-      width: 140,
+      flex: 0.8,
+      minWidth: 140,
       renderCell: (params) => (
         <Chip
           label={params.value === "PAGADA" ? "Pagada" : "Pendiente"}
@@ -78,13 +62,15 @@ export function InvoiceList({
     {
       field: "repairOrderId",
       headerName: "Orden de trabajo",
-      width: 160,
+      flex: 1,
+      minWidth: 160,
       valueFormatter: (value: number | null) => (value != null ? `#${value}` : "—"),
     },
     {
       field: "total",
       headerName: "Total",
-      width: 120,
+      flex: 0.75,
+      minWidth: 120,
       valueFormatter: (value: number | null) =>
         value != null ? `$${Number(value).toFixed(2)}` : "—",
     },
@@ -137,7 +123,7 @@ export function InvoiceList({
   ];
 
   return (
-    <DataGrid
+    <AppDataGrid
       rows={rows}
       columns={columns}
       loading={loading}
@@ -150,10 +136,7 @@ export function InvoiceList({
       }}
       pageSizeOptions={[12, 24, 48]}
       onRowClick={(params) => onRowClick(params.row)}
-      slots={{
-        noRowsOverlay: CustomNoRowsOverlay,
-      }}
-      sx={{ minHeight: 400 }}
+      emptyMessage="No se encuentra cargada una factura con esos datos."
     />
   );
 }

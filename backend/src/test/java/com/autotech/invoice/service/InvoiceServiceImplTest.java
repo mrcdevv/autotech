@@ -5,6 +5,7 @@ import com.autotech.client.model.ClientType;
 import com.autotech.client.repository.ClientRepository;
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
+import com.autotech.email.service.EmailNotificationService;
 import com.autotech.estimate.dto.EstimateInvoiceDataResponse;
 import com.autotech.estimate.dto.EstimateProductResponse;
 import com.autotech.estimate.dto.EstimateServiceItemResponse;
@@ -65,6 +66,9 @@ class InvoiceServiceImplTest {
 
     @Mock
     private EstimateService estimateService;
+
+    @Mock
+    private EmailNotificationService emailNotificationService;
 
     @InjectMocks
     private InvoiceServiceImpl invoiceService;

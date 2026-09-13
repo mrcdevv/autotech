@@ -80,9 +80,11 @@ public class EmployeeController {
     }
 
     @PutMapping("/{id}/reset-password")
-    public ResponseEntity<ApiResponse<String>> resetPassword(@PathVariable Long id) {
-        String tempPassword = employeeService.resetPassword(id);
-        return ResponseEntity.ok(ApiResponse.success("Contraseña restablecida", tempPassword));
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@PathVariable Long id) {
+        employeeService.resetPassword(id);
+        return ResponseEntity.ok(ApiResponse.success(
+                "Contraseña restablecida. Se envió una contraseña temporal por correo electrónico",
+                null));
     }
 
     @PutMapping("/{id}/roles")

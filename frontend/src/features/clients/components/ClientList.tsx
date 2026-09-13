@@ -1,7 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { DataGrid, GridColDef, GridPaginationModel, GridRowSelectionModel } from "@mui/x-data-grid";
-import { Box, Button, IconButton, Chip, Dialog, DialogTitle, DialogContent, DialogActions, Typography, Alert, Snackbar } from "@mui/material";
+import { GridActionsCellItem, GridColDef, GridPaginationModel, GridRowSelectionModel } from "@mui/x-data-grid";
+import { Button, Chip, Dialog, DialogTitle, DialogContent, DialogActions, Alert, Snackbar } from "@mui/material";
 import { Edit as EditIcon, Delete as DeleteIcon, Visibility as VisibilityIcon, Add as AddIcon, FileDownload as ExportIcon } from "@mui/icons-material";
+
+import { AppDataGrid } from "@/components/AppDataGrid";
+import { PageShell } from "@/components/PageShell";
+import { PageToolbar } from "@/components/PageToolbar";
 import { useClients } from "@/features/clients/hooks/useClients";
 import { clientsApi } from "@/api/clients";
 import ClientForm from "./ClientForm";
@@ -30,14 +34,15 @@ export default function ClientList() {
     }, [formOpen, refetch]);
 
     const columns: GridColDef<Client>[] = [
-        { field: "dni", headerName: "Documento", width: 150, valueGetter: (val) => val || "—" },
-        { field: "fullName", headerName: "Nombre Completo", width: 200, valueGetter: (_, row) => `${row.firstName} ${row.lastName}` },
-        { field: "phone", headerName: "Teléfono", width: 150 },
-        { field: "email", headerName: "Correo Electrónico", width: 200, valueGetter: (val) => val || "—" },
+        { field: "dni", headerName: "Documento", flex: 0.9, minWidth: 140, valueGetter: (val) => val || "—" },
+        { field: "fullName", headerName: "Nombre completo", flex: 1.4, minWidth: 190, valueGetter: (_, row) => `${row.firstName} ${row.lastName}` },
+        { field: "phone", headerName: "Teléfono", flex: 1, minWidth: 150 },
+        { field: "email", headerName: "Correo electrónico", flex: 1.5, minWidth: 220, valueGetter: (val) => val || "—" },
         {
             field: "clientType",
-            headerName: "Tipo Cliente",
-            width: 150,
+            headerName: "Tipo de cliente",
+            flex: 0.8,
+            minWidth: 150,
             renderCell: (params) => {
                 const color = params.value === "PERSONAL" ? "primary" : params.value === "EMPRESA" ? "success" : "warning";
                 return <Chip label={params.value} color={color} size="small" />;
@@ -45,16 +50,31 @@ export default function ClientList() {
         },
         {
             field: "actions",
-            headerName: "Acción",
+            type: "actions",
+            headerName: "Acciones",
             width: 150,
             sortable: false,
-            renderCell: (params) => (
-                <Box>
-                    <IconButton onClick={() => handleView(params.row)} size="small" color="info"><VisibilityIcon /></IconButton>
-                    <IconButton onClick={() => handleEdit(params.row)} size="small" color="primary"><EditIcon /></IconButton>
-                    <IconButton onClick={() => handleDeleteClick([params.row.id])} size="small" color="error"><DeleteIcon /></IconButton>
-                </Box>
-            )
+            getActions: (params) => [
+                <GridActionsCellItem
+                    key="view"
+                    icon={<VisibilityIcon />}
+                    label="Ver"
+                    onClick={() => handleView(params.row)}
+                />,
+                <GridActionsCellItem
+                    key="edit"
+                    icon={<EditIcon />}
+                    label="Editar"
+                    onClick={() => handleEdit(params.row)}
+                />,
+                <GridActionsCellItem
+                    key="delete"
+                    icon={<DeleteIcon />}
+                    label="Eliminar"
+                    onClick={() => handleDeleteClick([params.row.id])}
+                    color="error"
+                />,
+            ],
         }
     ];
 
@@ -125,14 +145,20 @@ export default function ClientList() {
     };
 
     return (
-        <Box sx={{ px: 3, py: 2.5 }}>
-            <Typography variant="h3" sx={{ mb: 2 }}>Clientes</Typography>
-            <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center' }}>
-                <ClientFilters onSearch={setQuery} />
-                <Box sx={{ flexGrow: 1 }} />
-                <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>Registrar Cliente</Button>
-                <Button variant="outlined" startIcon={<ExportIcon />} onClick={handleExport}>Exportar a Excel</Button>
-            </Box>
+        <PageShell title="Clientes">
+            <PageToolbar
+                filters={<ClientFilters onSearch={setQuery} />}
+                actions={
+                    <>
+                        <Button variant="outlined" startIcon={<ExportIcon />} onClick={handleExport}>
+                            Exportar a Excel
+                        </Button>
+                        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+                            Registrar cliente
+                        </Button>
+                    </>
+                }
+            />
 
             {fetchError && <Alert severity="error" sx={{ mb: 2 }}>{fetchError}</Alert>}
             {actionError && <Alert severity="error" sx={{ mb: 2 }}>{actionError}</Alert>}
@@ -140,22 +166,21 @@ export default function ClientList() {
                 <Alert severity="error" sx={{ mb: 2 }}>No se encuentra ningún cliente registrado con esos datos.</Alert>
             )}
 
-            <Box sx={{ height: 600, width: '100%' }}>
-                <DataGrid
-                    rows={clients}
-                    columns={columns}
-                    rowCount={totalElements}
-                    loading={loading}
-                    pageSizeOptions={[12, 24, 48]}
-                    paginationModel={{ page, pageSize: size }}
-                    paginationMode="server"
-                    onPaginationModelChange={handlePaginationModelChange}
-                    checkboxSelection
-                    onRowSelectionModelChange={setSelectedIds}
-                    rowSelectionModel={selectedIds}
-                    disableRowSelectionOnClick
-                />
-            </Box>
+            <AppDataGrid
+                rows={clients}
+                columns={columns}
+                rowCount={totalElements}
+                loading={loading}
+                pageSizeOptions={[12, 24, 48]}
+                paginationModel={{ page, pageSize: size }}
+                paginationMode="server"
+                onPaginationModelChange={handlePaginationModelChange}
+                checkboxSelection
+                onRowSelectionModelChange={setSelectedIds}
+                rowSelectionModel={selectedIds}
+                disableRowSelectionOnClick
+                emptyMessage="No hay clientes para mostrar."
+            />
 
             {selectedIds.length > 0 && (
                 <Button variant="contained" color="error" onClick={() => handleDeleteClick(selectedIds)} sx={{ mt: 2 }}>
@@ -185,6 +210,6 @@ export default function ClientList() {
                     {successMsg}
                 </Alert>
             </Snackbar>
-        </Box>
+        </PageShell>
     );
 }

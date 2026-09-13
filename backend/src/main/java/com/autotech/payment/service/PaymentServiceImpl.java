@@ -6,6 +6,7 @@ import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.employee.model.Employee;
 import com.autotech.employee.repository.EmployeeRepository;
+import com.autotech.email.service.EmailNotificationService;
 import com.autotech.invoice.dto.InvoiceDetailResponse;
 import com.autotech.invoice.model.Invoice;
 import com.autotech.invoice.repository.InvoiceRepository;
@@ -45,6 +46,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final EmployeeRepository employeeRepository;
     private final BankAccountService bankAccountService;
     private final ObjectMapper objectMapper;
+    private final EmailNotificationService emailNotificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -151,9 +153,9 @@ public class PaymentServiceImpl implements PaymentService {
             log.info("Invoice {} auto-updated to PAGADA (fully paid)", invoiceId);
         }
 
-        return paymentMapper.toResponse(
-                paymentRepository.findWithDetailsById(saved.getId()).orElse(saved)
-        );
+        Payment savedWithDetails = paymentRepository.findWithDetailsById(saved.getId()).orElse(saved);
+        emailNotificationService.notifyPaymentRegistered(savedWithDetails);
+        return paymentMapper.toResponse(savedWithDetails);
     }
 
     @Override

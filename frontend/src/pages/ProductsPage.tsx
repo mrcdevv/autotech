@@ -1,8 +1,11 @@
 import { useState } from "react";
 
-import { Box, Typography, Button, TextField, Alert, Snackbar, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
+import { Button, Alert, Snackbar, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 
+import { AppSearchField } from "@/components/AppSearchField";
+import { PageShell } from "@/components/PageShell";
+import { PageToolbar } from "@/components/PageToolbar";
 import { useProducts } from "@/features/catalog/hooks/useProducts";
 import { ProductsDataGrid } from "@/features/catalog/components/ProductsDataGrid";
 import { ProductFormDialog } from "@/features/catalog/components/ProductFormDialog";
@@ -87,32 +90,30 @@ export default function ProductsPage() {
   };
 
   return (
-    <Box sx={{ px: 3, py: 2.5 }}>
-      <Typography variant="h3" sx={{ mb: 2 }}>
-        Productos
-      </Typography>
-
+    <PageShell title="Productos">
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
 
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, gap: 2 }}>
-        <TextField
-          placeholder="Buscar por nombre o descripción..."
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setPage(0);
-          }}
-          size="small"
-          sx={{ minWidth: 300 }}
-        />
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-          Agregar producto
-        </Button>
-      </Box>
+      <PageToolbar
+        filters={
+          <AppSearchField
+            placeholder="Buscar por nombre o descripción..."
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(0);
+            }}
+          />
+        }
+        actions={
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+            Agregar producto
+          </Button>
+        }
+      />
 
       <ProductsDataGrid
         rows={products}
@@ -162,6 +163,6 @@ export default function ProductsPage() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </PageShell>
   );
 }

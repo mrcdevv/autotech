@@ -6,6 +6,7 @@ import com.autotech.client.repository.ClientRepository;
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.estimate.dto.EstimateInvoiceDataResponse;
+import com.autotech.email.service.EmailNotificationService;
 import com.autotech.estimate.service.EstimateService;
 import com.autotech.invoice.dto.InvoiceDetailResponse;
 import com.autotech.invoice.dto.InvoiceMapper;
@@ -44,6 +45,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final VehicleRepository vehicleRepository;
     private final RepairOrderRepository repairOrderRepository;
     private final EstimateService estimateService;
+    private final EmailNotificationService emailNotificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -130,7 +132,9 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         Invoice saved = invoiceRepository.save(entity);
         log.info("Created invoice with id {}", saved.getId());
-        return getById(saved.getId());
+        InvoiceDetailResponse response = getById(saved.getId());
+        emailNotificationService.notifyInvoiceCreated(response);
+        return response;
     }
 
     @Override

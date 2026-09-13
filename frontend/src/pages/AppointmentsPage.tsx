@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import {
   Alert,
   Autocomplete,
-  Box,
   Button,
   Chip,
   Dialog,
@@ -24,6 +23,8 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router";
 
+import { PageShell } from "@/components/PageShell";
+import { PageToolbar } from "@/components/PageToolbar";
 import { employeesApi } from "@/api/employees";
 import { useAppointments } from "@/features/appointments/hooks/useAppointments";
 import { useCalendarConfig } from "@/features/appointments/hooks/useCalendarConfig";
@@ -209,27 +210,27 @@ export default function AppointmentsPage() {
   const todayLabel = dayjs().format("dddd, DD MMM, YYYY");
 
   return (
-    <Box sx={{ px: 3, py: 2.5 }}>
+    <PageShell
+      title={todayLabel}
+      titleSx={{ textTransform: "capitalize" }}
+      actions={
+        <Chip
+          label="Hoy"
+          size="small"
+          variant="outlined"
+          onClick={() => setCurrentDate(new Date())}
+          sx={{ fontWeight: 500, cursor: "pointer" }}
+        />
+      }
+    >
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
 
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Typography variant="h3" sx={{ textTransform: "capitalize" }}>
-            {todayLabel}
-          </Typography>
-          <Chip
-            label="Hoy"
-            size="small"
-            variant="outlined"
-            onClick={() => setCurrentDate(new Date())}
-            sx={{ fontWeight: 500, cursor: "pointer" }}
-          />
-        </Box>
-        <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+      <PageToolbar
+        filters={
           <Autocomplete
             options={employees}
             getOptionLabel={(o) => `${o.firstName} ${o.lastName}`}
@@ -237,11 +238,13 @@ export default function AppointmentsPage() {
             onChange={(_e, v) => setEmployeeFilter(v?.id ?? null)}
             isOptionEqualToValue={(opt, val) => opt.id === val.id}
             renderInput={(params) => (
-              <TextField {...params} placeholder="Filtrar empleado" size="small" sx={{ width: 200 }} />
+              <TextField {...params} placeholder="Filtrar empleado" size="small" />
             )}
             size="small"
-            sx={{ width: 200 }}
+            sx={{ width: { xs: "100%", md: 240 } }}
           />
+        }
+        actions={
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -249,44 +252,47 @@ export default function AppointmentsPage() {
           >
             Nueva cita
           </Button>
-        </Box>
-      </Box>
+        }
+      />
 
       {/* Navigation row */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          <IconButton size="small" onClick={() => navigateDate(-1)} sx={{ color: "text.secondary" }}>
-            <ChevronLeftIcon fontSize="small" />
-          </IconButton>
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 600,
-              color: "text.primary",
-              minWidth: 200,
-              textAlign: "center",
-              textTransform: "capitalize",
-              fontSize: "1.1rem",
-            }}
+      <PageToolbar
+        filters={
+          <>
+            <IconButton size="small" onClick={() => navigateDate(-1)} sx={{ color: "text.secondary" }}>
+              <ChevronLeftIcon fontSize="small" />
+            </IconButton>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 600,
+                color: "text.primary",
+                minWidth: 200,
+                textAlign: "center",
+                textTransform: "capitalize",
+                fontSize: "1.1rem",
+              }}
+            >
+              {getNavigationLabel()}
+            </Typography>
+            <IconButton size="small" onClick={() => navigateDate(1)} sx={{ color: "text.secondary" }}>
+              <ChevronRightIcon fontSize="small" />
+            </IconButton>
+          </>
+        }
+        actions={
+          <Select
+            value={viewMode}
+            onChange={(e) => setViewMode(e.target.value as CalendarViewMode)}
+            size="small"
+            sx={{ minWidth: 140, fontSize: "0.85rem" }}
           >
-            {getNavigationLabel()}
-          </Typography>
-          <IconButton size="small" onClick={() => navigateDate(1)} sx={{ color: "text.secondary" }}>
-            <ChevronRightIcon fontSize="small" />
-          </IconButton>
-        </Box>
-
-        <Select
-          value={viewMode}
-          onChange={(e) => setViewMode(e.target.value as CalendarViewMode)}
-          size="small"
-          sx={{ minWidth: 140, fontSize: "0.85rem" }}
-        >
-          <MenuItem value="day">{VIEW_LABELS.day}</MenuItem>
-          <MenuItem value="week">{VIEW_LABELS.week}</MenuItem>
-          <MenuItem value="month">{VIEW_LABELS.month}</MenuItem>
-        </Select>
-      </Box>
+            <MenuItem value="day">{VIEW_LABELS.day}</MenuItem>
+            <MenuItem value="week">{VIEW_LABELS.week}</MenuItem>
+            <MenuItem value="month">{VIEW_LABELS.month}</MenuItem>
+          </Select>
+        }
+      />
 
       <CalendarView
         appointments={appointments}
@@ -397,6 +403,6 @@ export default function AppointmentsPage() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </PageShell>
   );
 }

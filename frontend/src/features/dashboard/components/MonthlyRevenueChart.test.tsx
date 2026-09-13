@@ -4,7 +4,12 @@ import userEvent from "@testing-library/user-event";
 import { MonthlyRevenueChart } from "./MonthlyRevenueChart";
 
 vi.mock("@mui/x-charts/BarChart", () => ({
-  BarChart: () => <div data-testid="bar-chart">BarChart</div>,
+  BarChart: ({ xAxis, series }: { xAxis: [{ data: string[] }]; series: [{ data: number[] }] }) => (
+    <div data-testid="bar-chart">
+      {xAxis[0].data.join(",")}
+      {series[0].data.join(",")}
+    </div>
+  ),
 }));
 
 describe("MonthlyRevenueChart", () => {
@@ -30,9 +35,9 @@ describe("MonthlyRevenueChart", () => {
     expect(onMonthsChange).toHaveBeenCalledWith(12);
   });
 
-  it("given empty data, when rendered, then shows empty state", () => {
+  it("given empty data, when rendered, then keeps every selected month with zero values", () => {
     render(<MonthlyRevenueChart data={[]} months={6} onMonthsChange={vi.fn()} />);
 
-    expect(screen.getByText("No hay datos de ingresos")).toBeInTheDocument();
+    expect(screen.getByTestId("bar-chart")).toHaveTextContent("0,0,0,0,0,0");
   });
 });

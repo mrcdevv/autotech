@@ -51,22 +51,14 @@ const navSections: NavSection[] = [
   {
     title: "Taller",
     items: [
-      { label: "Ordenes de trabajo", path: "/ordenes-trabajo", icon: <HandymanOutlinedIcon /> },
+      { label: "Órdenes de trabajo", path: "/ordenes-trabajo", icon: <HandymanOutlinedIcon /> },
       { label: "Calendario", path: "/calendario", icon: <CalendarMonthOutlinedIcon /> },
       { label: "Presupuestos", path: "/presupuestos", icon: <RequestQuoteOutlinedIcon /> },
       { label: "Facturas", path: "/facturas", icon: <ReceiptOutlinedIcon /> },
     ],
   },
   {
-    title: "Directorio",
-    items: [
-      { label: "Clientes", path: "/clientes", icon: <PeopleOutlinedIcon /> },
-      { label: "Vehiculos", path: "/vehiculos", icon: <DirectionsCarOutlinedIcon /> },
-      { label: "Empleados", path: "/empleados", icon: <BadgeOutlinedIcon /> },
-    ],
-  },
-  {
-    title: "Catalogo",
+    title: "Catálogo",
     items: [
       { label: "Servicios", path: "/servicios", icon: <MiscellaneousServicesOutlinedIcon /> },
       { label: "Productos", path: "/productos", icon: <Inventory2OutlinedIcon /> },
@@ -74,15 +66,18 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    title: "Administracion",
+    title: "Administración",
     items: [
+      { label: "Clientes", path: "/clientes", icon: <PeopleOutlinedIcon /> },
+      { label: "Vehículos", path: "/vehiculos", icon: <DirectionsCarOutlinedIcon /> },
+      { label: "Empleados", path: "/empleados", icon: <BadgeOutlinedIcon /> },
       { label: "Reportes", path: "/reportes", icon: <AssessmentOutlinedIcon /> },
     ],
   },
 ];
 
 const bottomNavItems: NavItem[] = [
-  { label: "Configuracion", path: "/configuracion", icon: <SettingsOutlinedIcon /> },
+  { label: "Configuración", path: "/configuracion", icon: <SettingsOutlinedIcon /> },
 ];
 
 interface SidebarProps {

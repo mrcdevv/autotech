@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 
 import {
-  Box,
   Typography,
   Button,
   Alert,
@@ -10,14 +9,12 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
-  InputAdornment,
-  IconButton,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 
+import { PageShell } from "@/components/PageShell";
+import { PageToolbar } from "@/components/PageToolbar";
 import { employeesApi } from "@/api/employees";
 import { EmployeeList } from "@/features/employees/EmployeeList";
 import { EmployeeForm } from "@/features/employees/EmployeeForm";
@@ -51,8 +48,7 @@ export default function EmployeesPage() {
   const [tempPasswordDialog, setTempPasswordDialog] = useState<{
     open: boolean;
     employeeName: string;
-    tempPassword: string;
-  }>({ open: false, employeeName: "", tempPassword: "" });
+  }>({ open: false, employeeName: "" });
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -150,11 +146,10 @@ export default function EmployeesPage() {
 
   const handleResetPassword = async (employee: EmployeeResponse) => {
     try {
-      const res = await employeesApi.resetPassword(employee.id);
+      await employeesApi.resetPassword(employee.id);
       setTempPasswordDialog({
         open: true,
         employeeName: `${employee.firstName} ${employee.lastName}`,
-        tempPassword: res.data.data ?? "",
       });
     } catch {
       showSnackbar("Error al restablecer la contraseña", "error");
@@ -182,31 +177,20 @@ export default function EmployeesPage() {
   };
 
   return (
-    <Box sx={{ px: 3, py: 2.5 }}>
-      <Typography variant="h3" sx={{ mb: 2 }}>
-        Empleados
-      </Typography>
-
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-          flexWrap: "wrap",
-          gap: 2,
-        }}
-      >
-        <EmployeeFilters onFilterChange={handleFilterChange} />
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Button startIcon={<FileDownloadIcon />} onClick={handleExport}>
-            Exportar a Excel
-          </Button>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-            Nuevo Empleado
-          </Button>
-        </Box>
-      </Box>
+    <PageShell title="Empleados">
+      <PageToolbar
+        filters={<EmployeeFilters onFilterChange={handleFilterChange} />}
+        actions={
+          <>
+            <Button variant="outlined" startIcon={<FileDownloadIcon />} onClick={handleExport}>
+              Exportar a Excel
+            </Button>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+              Nuevo empleado
+            </Button>
+          </>
+        }
+      />
 
       <EmployeeList
         data={data}
@@ -273,32 +257,9 @@ export default function EmployeesPage() {
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Se generó una contraseña temporal para{" "}
-            <strong>{tempPasswordDialog.employeeName}</strong>. Compartísela de
-            forma segura. Al iniciar sesión, el sistema le pedirá que la cambie.
+            <strong>{tempPasswordDialog.employeeName}</strong> y se envió a su correo electrónico.
+            Al iniciar sesión, el sistema le pedirá que la cambie.
           </Typography>
-          <TextField
-            fullWidth
-            label="Contraseña temporal"
-            value={tempPasswordDialog.tempPassword}
-            slotProps={{
-              input: {
-                readOnly: true,
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => {
-                        navigator.clipboard.writeText(tempPasswordDialog.tempPassword);
-                        showSnackbar("Contraseña copiada al portapapeles", "success");
-                      }}
-                      edge="end"
-                    >
-                      <ContentCopyIcon />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              },
-            }}
-          />
         </DialogContent>
         <DialogActions>
           <Button
@@ -309,6 +270,6 @@ export default function EmployeesPage() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageShell>
   );
 }

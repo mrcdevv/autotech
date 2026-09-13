@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Box, Tabs, Tab } from "@mui/material";
 
 import { GeneralInfoTab } from "./GeneralInfoTab";
-import { PlaceholderTab } from "./PlaceholderTab";
 import { InspectionsTab } from "@/features/inspections/InspectionsTab";
 import { EstimateTab } from "@/features/estimates/components/EstimateTab";
 import { InvoiceTab } from "@/features/invoices/components/InvoiceTab";
@@ -20,7 +19,6 @@ const TAB_LABELS = [
   "Información General",
   "Inspecciones",
   "Presupuesto",
-  "Trabajos",
   "Factura",
 ];
 
@@ -67,8 +65,7 @@ export function RepairOrderDetailTabs({ order, loading, onRefetch }: RepairOrder
           mechanicNotes={order.mechanicNotes}
         />
       )}
-      {activeTab === 3 && <PlaceholderTab />}
-      {activeTab === 4 && order && (
+      {activeTab === 3 && order && (
         <InvoiceTab repairOrderId={order.id} />
       )}
     </Box>

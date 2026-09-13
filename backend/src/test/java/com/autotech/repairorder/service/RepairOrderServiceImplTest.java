@@ -5,6 +5,7 @@ import com.autotech.client.model.Client;
 import com.autotech.client.model.ClientType;
 import com.autotech.client.repository.ClientRepository;
 import com.autotech.common.exception.ResourceNotFoundException;
+import com.autotech.email.service.EmailNotificationService;
 import com.autotech.employee.model.Employee;
 import com.autotech.employee.repository.EmployeeRepository;
 import com.autotech.repairorder.dto.RepairOrderDetailResponse;
@@ -60,6 +61,9 @@ class RepairOrderServiceImplTest {
 
     @Mock
     private TagRepository tagRepository;
+
+    @Mock
+    private EmailNotificationService emailNotificationService;
 
     @InjectMocks
     private RepairOrderServiceImpl repairOrderService;

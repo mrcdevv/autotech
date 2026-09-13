@@ -13,7 +13,7 @@ interface KanbanColumnProps {
 
 export function KanbanColumn({ title, orders, loading, onUpdateStatus }: KanbanColumnProps) {
   return (
-    <Paper sx={{ flex: 1, minWidth: 320, maxWidth: 400, p: 2 }}>
+    <Paper sx={{ flex: "1 1 0", minWidth: 320, p: 2 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h6">{title}</Typography>
         <Chip label={orders.length} size="small" />

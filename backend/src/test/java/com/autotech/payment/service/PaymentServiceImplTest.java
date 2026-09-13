@@ -5,6 +5,7 @@ import com.autotech.bankaccount.model.BankAccount;
 import com.autotech.bankaccount.service.BankAccountService;
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
+import com.autotech.email.service.EmailNotificationService;
 import com.autotech.employee.repository.EmployeeRepository;
 import com.autotech.invoice.dto.InvoiceDetailResponse;
 import com.autotech.invoice.dto.InvoiceProductResponse;
@@ -71,6 +72,9 @@ class PaymentServiceImplTest {
 
     @Spy
     private ObjectMapper objectMapper = new ObjectMapper();
+
+    @Mock
+    private EmailNotificationService emailNotificationService;
 
     @InjectMocks
     private PaymentServiceImpl paymentService;

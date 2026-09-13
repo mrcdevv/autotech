@@ -1,8 +1,10 @@
-import { DataGrid, GridActionsCellItem } from "@mui/x-data-grid";
+import { GridActionsCellItem } from "@mui/x-data-grid";
 import { Tooltip, Chip } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+
+import { AppDataGrid } from "@/components/AppDataGrid";
 
 import type { GridColDef } from "@mui/x-data-grid";
 import type { VehicleResponse } from "@/types/vehicle";
@@ -89,7 +91,7 @@ export function VehicleList({
   ];
 
   return (
-    <DataGrid
+    <AppDataGrid
       rows={rows}
       columns={columns}
       loading={loading}
@@ -102,37 +104,7 @@ export function VehicleList({
       }}
       pageSizeOptions={[12, 24, 48]}
       disableRowSelectionOnClick
-      sx={{
-        minHeight: 500,
-        backgroundColor: "background.paper",
-        boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)",
-        borderRadius: 2,
-        border: "none",
-        "& .MuiDataGrid-columnHeaders": {
-          backgroundColor: "#f8fafc",
-          borderBottom: "1px solid #e2e8f0",
-          color: "#475569",
-          fontWeight: 600,
-          textTransform: "uppercase",
-          fontSize: "0.75rem",
-          letterSpacing: "0.5px",
-        },
-        "& .MuiDataGrid-cell": {
-          borderBottom: "1px solid #f1f5f9",
-          color: "#334155",
-          fontSize: "0.875rem",
-        },
-        "& .MuiDataGrid-row:hover": {
-          backgroundColor: "#f1f5f9",
-        },
-        "& .MuiDataGrid-footerContainer": {
-          borderTop: "1px solid #e2e8f0",
-          backgroundColor: "#f8fafc",
-        },
-        "& .MuiDataGrid-iconSeparator": {
-          display: "none",
-        },
-      }}
+      emptyMessage="No hay vehículos para mostrar."
     />
   );
 }

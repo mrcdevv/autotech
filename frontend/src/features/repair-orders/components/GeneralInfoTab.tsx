@@ -16,7 +16,6 @@ import {
   LinearProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { DataGrid } from "@mui/x-data-grid";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import NotesIcon from "@mui/icons-material/Notes";
@@ -27,6 +26,7 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { estimatesApi } from "@/api/estimates";
 import { invoicesApi } from "@/api/invoices";
 import { paymentsApi } from "@/api/payments";
+import { AppDataGrid } from "@/components/AppDataGrid";
 
 import type { GridColDef } from "@mui/x-data-grid";
 import type { RepairOrderDetailResponse } from "../types";
@@ -410,15 +410,17 @@ export function GeneralInfoTab({ order, loading }: GeneralInfoTabProps) {
               />
             </Stack>
 
-            <DataGrid
+            <AppDataGrid
               rows={order.workHistory.map((entry) => ({
                 id: entry.repairOrderId,
                 ...entry,
               }))}
               columns={columns}
-              autoHeight
               disableRowSelectionOnClick
               disableColumnMenu
+              minHeight={320}
+              desktopHeight="360px"
+              emptyMessage="No hay historial de trabajo para mostrar."
               initialState={{
                 sorting: {
                   sortModel: [{ field: "createdAt", sort: "desc" }],
@@ -428,23 +430,6 @@ export function GeneralInfoTab({ order, loading }: GeneralInfoTabProps) {
                 },
               }}
               pageSizeOptions={[5, 10]}
-              sx={{
-                border: 0,
-                "& .MuiDataGrid-cell": {
-                  borderColor: "divider",
-                },
-                "& .MuiDataGrid-columnHeaders": {
-                  bgcolor: "grey.50",
-                  borderColor: "divider",
-                  fontWeight: 600,
-                },
-                "& .MuiDataGrid-row:hover": {
-                  bgcolor: "action.hover",
-                },
-                "& .MuiDataGrid-footerContainer": {
-                  borderColor: "divider",
-                },
-              }}
             />
           </CardContent>
         </Card>

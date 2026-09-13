@@ -40,7 +40,7 @@ export const employeesApi = {
     apiClient.put<ApiResponse<EmployeeResponse>>(`/employees/${id}/roles`, roleIds),
 
   resetPassword: (id: number) =>
-    apiClient.put<ApiResponse<string>>(`/employees/${id}/reset-password`),
+    apiClient.put<ApiResponse<void>>(`/employees/${id}/reset-password`),
 
   exportToExcel: () =>
     apiClient.get<Blob>("/employees/export/excel", {

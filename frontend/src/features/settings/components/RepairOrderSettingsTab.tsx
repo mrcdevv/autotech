@@ -1,14 +1,14 @@
-import { Box, Typography } from "@mui/material";
-
-import { TagsManager } from "@/features/settings/components/TagsManager";
+import { Alert, Box, Typography } from "@mui/material";
 
 export function RepairOrderSettingsTab() {
   return (
     <Box>
       <Typography variant="h6" sx={{ mb: 2 }}>
-        Etiquetas
+        Órdenes de trabajo
       </Typography>
-      <TagsManager />
+      <Alert severity="info">
+        Todavía no hay configuraciones específicas para órdenes de trabajo.
+      </Alert>
     </Box>
   );
 }
