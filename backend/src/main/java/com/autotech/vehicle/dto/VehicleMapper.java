@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class VehicleMapper {
 
-    public VehicleResponse toResponse(Vehicle entity) {
+    public VehicleResponse toResponse(Vehicle entity, boolean inRepair) {
         if (entity == null) return null;
         return new VehicleResponse(
                 entity.getId(),
@@ -24,6 +24,7 @@ public class VehicleMapper {
                 entity.getVehicleType() != null ? entity.getVehicleType().getId() : null,
                 entity.getVehicleType() != null ? entity.getVehicleType().getName() : null,
                 entity.getObservations(),
+                inRepair,
                 entity.getCreatedAt()
         );
     }

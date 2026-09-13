@@ -2,15 +2,13 @@ import { useState, useEffect } from "react";
 
 import {
   Box,
-  TextField,
   Select,
   MenuItem,
   InputLabel,
   FormControl,
-  InputAdornment,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
 
+import { AppSearchField } from "@/components/AppSearchField";
 import { rolesApi } from "@/api/roles";
 import type { RoleResponse } from "@/types/role";
 
@@ -37,28 +35,24 @@ export function EmployeeFilters({ onFilterChange }: EmployeeFiltersProps) {
   }, [dni, roleId, status, onFilterChange]);
 
   return (
-    <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
-      <TextField
-        size="small"
+    <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", flexWrap: "wrap" }}>
+      <AppSearchField
         placeholder="Buscar por DNI"
         value={dni}
-        onChange={(e) => setDni(e.target.value)}
-        slotProps={{
-          input: {
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          },
+        onChange={(e) => {
+          const value = e.target.value;
+          if (value === "" || /^[0-9]{1,8}$/.test(value)) {
+            setDni(value);
+          }
         }}
+        sx={{ width: { xs: "100%", md: 260 }, minWidth: 260 }}
       />
 
       <FormControl size="small" sx={{ minWidth: 180 }}>
-        <InputLabel>Filtrar por Cargo</InputLabel>
+        <InputLabel>Filtrar por cargo</InputLabel>
         <Select
           value={roleId}
-          label="Filtrar por Cargo"
+          label="Filtrar por cargo"
           onChange={(e) => setRoleId(e.target.value as number | "")}
         >
           <MenuItem value="">Todos</MenuItem>
@@ -71,10 +65,10 @@ export function EmployeeFilters({ onFilterChange }: EmployeeFiltersProps) {
       </FormControl>
 
       <FormControl size="small" sx={{ minWidth: 180 }}>
-        <InputLabel>Filtrar por Estado</InputLabel>
+        <InputLabel>Filtrar por estado</InputLabel>
         <Select
           value={status}
-          label="Filtrar por Estado"
+          label="Filtrar por estado"
           onChange={(e) => setStatus(e.target.value)}
         >
           <MenuItem value="">Todos</MenuItem>

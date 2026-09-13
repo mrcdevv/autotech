@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -19,14 +21,20 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     boolean existsByDniAndIdNot(String dni, Long id);
 
+    boolean existsByEmail(String email);
+
+    boolean existsByEmailAndIdNot(String email, Long id);
+
     Optional<Employee> findByDni(String dni);
+
+    Optional<Employee> findByEmail(String email);
 
     @EntityGraph(attributePaths = {"roles"})
     Optional<Employee> findWithRolesById(Long id);
 
     Page<Employee> findByStatus(EmployeeStatus status, Pageable pageable);
 
-    @Query("SELECT e FROM Employee e WHERE LOWER(e.dni) LIKE LOWER(CONCAT('%', :dni, '%'))")
+    @Query("SELECT e FROM Employee e WHERE LOWER(e.dni) LIKE LOWER(CONCAT(:dni, '%'))")
     Page<Employee> searchByDni(@Param("dni") String dni, Pageable pageable);
 
     @Query("""
@@ -35,6 +43,18 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
         WHERE r.id = :roleId
     """)
     Page<Employee> findByRoleId(@Param("roleId") Long roleId, Pageable pageable);
+
+    @Query("""
+        SELECT DISTINCT e.email FROM Employee e
+        JOIN e.roles r
+        WHERE r.name IN :roleNames
+        AND e.status = :status
+        AND e.email IS NOT NULL
+        AND e.email <> ''
+    """)
+    List<String> findActiveEmailsByRoleNames(
+            @Param("roleNames") Collection<String> roleNames,
+            @Param("status") EmployeeStatus status);
 
     @EntityGraph(attributePaths = {"roles"})
     Page<Employee> findAll(Pageable pageable);

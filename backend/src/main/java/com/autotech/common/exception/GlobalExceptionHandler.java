@@ -31,6 +31,13 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException ex) {
+        log.warn("Business rule violation: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException ex) {
         log.warn("Invalid argument: {}", ex.getMessage());
@@ -49,6 +56,16 @@ public class GlobalExceptionHandler {
         log.warn("Validation failed: {}", errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiResponse<>("error", "Validation failed", errors));
+    }
+
+    @ExceptionHandler({
+            org.springframework.security.authentication.BadCredentialsException.class,
+            org.springframework.security.core.userdetails.UsernameNotFoundException.class
+    })
+    public ResponseEntity<ApiResponse<Void>> handleAuthenticationException(Exception ex) {
+        log.warn("Authentication failed: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("Credenciales inválidas"));
     }
 
     @ExceptionHandler(Exception.class)

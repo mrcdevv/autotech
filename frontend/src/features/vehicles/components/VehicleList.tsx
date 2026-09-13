@@ -1,7 +1,10 @@
-import { DataGrid, GridActionsCellItem } from "@mui/x-data-grid";
+import { GridActionsCellItem } from "@mui/x-data-grid";
+import { Tooltip, Chip } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+
+import { AppDataGrid } from "@/components/AppDataGrid";
 
 import type { GridColDef } from "@mui/x-data-grid";
 import type { VehicleResponse } from "@/types/vehicle";
@@ -43,36 +46,52 @@ export function VehicleList({
     },
     { field: "clientDni", headerName: "Documento Propietario", flex: 1 },
     {
+      field: "inRepair",
+      headerName: "En reparación",
+      width: 140,
+      renderCell: (params) => (
+        <Chip
+          label={params.value ? "Sí" : "No"}
+          size="small"
+          color={params.value ? "warning" : "success"}
+          variant={params.value ? "filled" : "outlined"}
+        />
+      ),
+    },
+    {
       field: "actions",
       type: "actions",
       headerName: "Acciones",
       width: 150,
       getActions: (params) => [
-        <GridActionsCellItem
-          key="view"
-          icon={<VisibilityIcon />}
-          label="Ver"
-          onClick={() => onViewRow(params.row.id as number)}
-        />,
-        <GridActionsCellItem
-          key="edit"
-          icon={<EditIcon />}
-          label="Editar"
-          onClick={() => onEditRow(params.row.id as number)}
-        />,
-        <GridActionsCellItem
-          key="delete"
-          icon={<DeleteIcon />}
-          label="Eliminar"
-          onClick={() => onDeleteRow(params.row.id as number)}
-          color="error"
-        />,
+        <Tooltip title="Ver" key="view">
+          <GridActionsCellItem
+            icon={<VisibilityIcon />}
+            label="Ver"
+            onClick={() => onViewRow(params.row.id as number)}
+          />
+        </Tooltip>,
+        <Tooltip title="Editar" key="edit">
+          <GridActionsCellItem
+            icon={<EditIcon />}
+            label="Editar"
+            onClick={() => onEditRow(params.row.id as number)}
+          />
+        </Tooltip>,
+        <Tooltip title="Eliminar" key="delete">
+          <GridActionsCellItem
+            icon={<DeleteIcon />}
+            label="Eliminar"
+            onClick={() => onDeleteRow(params.row.id as number)}
+            color="error"
+          />
+        </Tooltip>,
       ],
     },
   ];
 
   return (
-    <DataGrid
+    <AppDataGrid
       rows={rows}
       columns={columns}
       loading={loading}
@@ -85,7 +104,7 @@ export function VehicleList({
       }}
       pageSizeOptions={[12, 24, 48]}
       disableRowSelectionOnClick
-      sx={{ minHeight: 400 }}
+      emptyMessage="No hay vehículos para mostrar."
     />
   );
 }

@@ -44,7 +44,7 @@ class VehicleControllerTest {
     private final VehicleResponse sampleResponse = new VehicleResponse(
             1L, 1L, "Juan", "Perez", "12345678", "ABC123",
             "CHASSIS001", "ENGINE001", 1L, "Toyota", "Corolla",
-            2020, 1L, "AUTO", null, LocalDateTime.now());
+            2020, 1L, "AUTO", null, false, LocalDateTime.now());
 
     @Test
     void givenValidRequest_whenCreateVehicle_thenReturnCreatedStatus() throws Exception {

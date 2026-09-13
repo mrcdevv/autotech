@@ -39,6 +39,9 @@ public record EmployeeRequest(
     @Size(max = 100, message = "La provincia no debe superar los 100 caracteres")
     String province,
 
+    @Size(max = 100, message = "La ciudad no debe superar los 100 caracteres")
+    String city,
+
     @Size(max = 100, message = "El país no debe superar los 100 caracteres")
     String country,
 
@@ -55,5 +58,8 @@ public record EmployeeRequest(
     EmployeeStatus status,
 
     @NotEmpty(message = "Debe asignar al menos un rol")
-    List<Long> roleIds
+    List<Long> roleIds,
+
+    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
+    String password
 ) {}

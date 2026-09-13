@@ -1,8 +1,11 @@
 import { useState } from "react";
 
-import { Box, Typography, Button, TextField, Alert, Snackbar } from "@mui/material";
+import { Button, Alert, Snackbar, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 
+import { AppSearchField } from "@/components/AppSearchField";
+import { PageShell } from "@/components/PageShell";
+import { PageToolbar } from "@/components/PageToolbar";
 import { useCatalogServices } from "@/features/catalog/hooks/useCatalogServices";
 import { ServicesDataGrid } from "@/features/catalog/components/ServicesDataGrid";
 import { ServiceFormDialog } from "@/features/catalog/components/ServiceFormDialog";
@@ -33,6 +36,8 @@ export default function ServicesPage() {
     message: "",
     severity: "success",
   });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [serviceToDelete, setServiceToDelete] = useState<number | null>(null);
 
   const showSnackbar = (message: string, severity: "success" | "error") => {
     setSnackbar({ open: true, message, severity });
@@ -66,42 +71,49 @@ export default function ServicesPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const confirmDelete = (id: number) => {
+    setServiceToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (serviceToDelete === null) return;
     try {
-      await deleteService(id);
+      await deleteService(serviceToDelete);
       showSnackbar("Servicio eliminado", "success");
     } catch {
       showSnackbar("Error al eliminar el servicio", "error");
+    } finally {
+      setDeleteDialogOpen(false);
+      setServiceToDelete(null);
     }
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Servicios
-      </Typography>
-
+    <PageShell title="Servicios">
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
 
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, gap: 2 }}>
-        <TextField
-          placeholder="Buscar por nombre o descripción..."
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setPage(0);
-          }}
-          size="small"
-          sx={{ minWidth: 300 }}
-        />
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-          Agregar servicio
-        </Button>
-      </Box>
+      <PageToolbar
+        filters={
+          <AppSearchField
+            placeholder="Buscar por nombre o descripción..."
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(0);
+            }}
+          />
+        }
+        actions={
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+            Agregar servicio
+          </Button>
+        }
+      />
 
       <ServicesDataGrid
         rows={services}
@@ -112,7 +124,7 @@ export default function ServicesPage() {
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
         onEditRow={handleEdit}
-        onDeleteRow={handleDelete}
+        onDeleteRow={confirmDelete}
       />
 
       <ServiceFormDialog
@@ -121,6 +133,21 @@ export default function ServicesPage() {
         onSave={handleSave}
         initialData={editingService}
       />
+
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Confirmar eliminación</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Estás seguro de que deseas eliminar este servicio? Esta acción no se puede deshacer.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+          <Button onClick={handleDelete} color="error" variant="contained">
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar
         open={snackbar.open}
@@ -136,6 +163,6 @@ export default function ServicesPage() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </PageShell>
   );
 }

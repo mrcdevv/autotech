@@ -24,8 +24,18 @@ interface FormErrors {
   [key: string]: string;
 }
 
+type ProductFormState = Omit<ProductRequest, "quantity" | "unitPrice"> & {
+  quantity: number | string | null;
+  unitPrice: number | string | null;
+};
+
 export function ProductFormDialog({ open, onClose, onSave, initialData }: ProductFormDialogProps) {
-  const [form, setForm] = useState<ProductRequest>({ name: "", description: null, quantity: 0, unitPrice: null });
+  const [form, setForm] = useState<ProductFormState>({
+    name: "",
+    description: null,
+    quantity: 0,
+    unitPrice: null,
+  });
   const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
@@ -52,13 +62,23 @@ export function ProductFormDialog({ open, onClose, onSave, initialData }: Produc
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
     if (!form.name.trim()) newErrors.name = "El nombre del producto es obligatorio";
+    if (form.quantity === "" || form.quantity === null || form.quantity === undefined) {
+      newErrors.quantity = "La cantidad es obligatoria";
+    }
+    if (form.unitPrice === "" || form.unitPrice === null || form.unitPrice === undefined) {
+      newErrors.unitPrice = "El precio unitario es obligatorio";
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
     if (validate()) {
-      await onSave(form);
+      await onSave({
+        ...form,
+        quantity: Number(form.quantity),
+        unitPrice: Number(form.unitPrice),
+      } as ProductRequest);
     }
   };
 
@@ -94,11 +114,14 @@ export function ProductFormDialog({ open, onClose, onSave, initialData }: Produc
                 fullWidth
                 label="Cantidad"
                 type="number"
-                value={form.quantity}
+                value={form.quantity ?? ""}
                 onChange={(e) => {
                   const val = e.target.value;
-                  handleChange("quantity", val === "" ? 0 : Math.max(0, parseInt(val)));
+                  handleChange("quantity", val === "" ? null : Math.max(0, parseInt(val)));
                 }}
+                error={!!errors.quantity}
+                helperText={errors.quantity}
+                required
                 slotProps={{ htmlInput: { min: 0 } }}
               />
             </Grid>
@@ -110,8 +133,11 @@ export function ProductFormDialog({ open, onClose, onSave, initialData }: Produc
                 value={form.unitPrice ?? ""}
                 onChange={(e) => {
                   const val = e.target.value;
-                  handleChange("unitPrice", val === "" ? null : parseFloat(val));
+                  handleChange("unitPrice", val === "" ? "" : parseFloat(val));
                 }}
+                error={!!errors.unitPrice}
+                helperText={errors.unitPrice}
+                required
                 slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
               />
             </Grid>

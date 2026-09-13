@@ -79,6 +79,14 @@ public class EmployeeController {
         return ResponseEntity.ok(ApiResponse.success(employeeService.filterByRole(roleId, pageable)));
     }
 
+    @PutMapping("/{id}/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@PathVariable Long id) {
+        employeeService.resetPassword(id);
+        return ResponseEntity.ok(ApiResponse.success(
+                "Contraseña restablecida. Se envió una contraseña temporal por correo electrónico",
+                null));
+    }
+
     @PutMapping("/{id}/roles")
     public ResponseEntity<ApiResponse<EmployeeResponse>> assignRoles(
             @PathVariable Long id,

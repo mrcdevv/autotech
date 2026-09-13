@@ -3,7 +3,6 @@ import {
   Typography,
   Card,
   CardContent,
-  Button,
   Stack,
   Alert,
   Chip,
@@ -13,23 +12,21 @@ import BuildIcon from "@mui/icons-material/Build";
 import PeopleIcon from "@mui/icons-material/People";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
-import SaveIcon from "@mui/icons-material/Save";
+
+import { PageShell } from "@/components/PageShell";
 
 const stats = [
-  { label: "Ordenes activas", value: 12, icon: <BuildIcon fontSize="large" color="primary" /> },
+  { label: "Órdenes activas", value: 12, icon: <BuildIcon fontSize="large" color="primary" /> },
   { label: "Clientes registrados", value: 48, icon: <PeopleIcon fontSize="large" color="primary" /> },
-  { label: "Vehiculos en taller", value: 7, icon: <DirectionsCarIcon fontSize="large" color="primary" /> },
+  { label: "Vehículos en taller", value: 7, icon: <DirectionsCarIcon fontSize="large" color="primary" /> },
   { label: "Facturas pendientes", value: 3, icon: <ReceiptLongIcon fontSize="large" color="secondary" /> },
 ];
 
 export default function HomePage() {
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Bienvenido a Autotech
-      </Typography>
+    <PageShell title="Bienvenido a Autotech">
       <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-        Sistema de gestion de taller mecanico
+        Sistema de gestión de taller mecánico
       </Typography>
 
       <Alert severity="success" sx={{ mb: 3 }}>
@@ -62,22 +59,8 @@ export default function HomePage() {
         <Chip label="MUI v6" color="primary" />
         <Chip label="React 19" color="secondary" />
         <Chip label="TypeScript" variant="outlined" />
-        <Chip label="Vite" variant="outlined" />
       </Stack>
 
-      <Stack direction="row" spacing={2}>
-        <Button variant="contained" color="primary">
-          Componente MUI funcional
-        </Button>
-        <Button
-          variant="contained"
-          color="success"
-          startIcon={<SaveIcon />}
-          onClick={() => console.log("Guardado!")}
-        >
-          Guardar
-        </Button>
-      </Stack>
-    </Box>
+    </PageShell>
   );
 }

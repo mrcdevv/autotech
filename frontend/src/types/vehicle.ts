@@ -14,6 +14,7 @@ export interface VehicleResponse {
   vehicleTypeId: number | null;
   vehicleTypeName: string | null;
   observations: string | null;
+  inRepair: boolean;
   createdAt: string;
 }
 
@@ -49,4 +50,7 @@ export interface ClientAutocompleteResponse {
   firstName: string;
   lastName: string;
   dni: string | null;
+  phone: string | null;
+  email: string | null;
+  clientType: string | null;
 }

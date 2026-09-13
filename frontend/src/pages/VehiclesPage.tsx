@@ -1,10 +1,7 @@
 import { useState } from "react";
 
 import {
-  Box,
-  Typography,
   Button,
-  TextField,
   Alert,
   Snackbar,
   Dialog,
@@ -15,6 +12,9 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 
+import { AppSearchField } from "@/components/AppSearchField";
+import { PageShell } from "@/components/PageShell";
+import { PageToolbar } from "@/components/PageToolbar";
 import { useVehicles } from "@/features/vehicles/hooks/useVehicles";
 import { useBrands } from "@/features/vehicles/hooks/useBrands";
 import { useVehicleTypes } from "@/features/vehicles/hooks/useVehicleTypes";
@@ -112,39 +112,41 @@ export default function VehiclesPage() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Vehículos
-      </Typography>
+    <PageShell title="Vehículos">
+      <PageToolbar
+        filters={
+          <>
+            <AppSearchField
+              placeholder="Buscar por patente..."
+              value={searchPlate}
+              onChange={(e) => {
+                setSearchPlate(e.target.value);
+                setPage(0);
+              }}
+            />
+            <VehicleFilters
+              brands={brands}
+              onApplyFilter={applyFilter}
+              onClearFilters={clearFilters}
+            />
+          </>
+        }
+        actions={
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreate}
+          >
+            Nuevo vehículo
+          </Button>
+        }
+      />
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
       )}
-
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, gap: 2 }}>
-        <TextField
-          placeholder="Buscar por patente..."
-          value={searchPlate}
-          onChange={(e) => {
-            setSearchPlate(e.target.value);
-            setPage(0);
-          }}
-          size="small"
-          sx={{ minWidth: 300 }}
-        />
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <VehicleFilters
-            brands={brands}
-            onApplyFilter={applyFilter}
-            onClearFilters={clearFilters}
-          />
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-            Nuevo vehículo
-          </Button>
-        </Box>
-      </Box>
 
       <VehicleList
         rows={vehicles}
@@ -198,6 +200,6 @@ export default function VehiclesPage() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </PageShell>
   );
 }

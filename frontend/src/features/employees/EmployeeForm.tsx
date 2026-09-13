@@ -15,8 +15,12 @@ import {
   Chip,
   Box,
   OutlinedInput,
+  IconButton,
+  InputAdornment,
+  Stack,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -45,18 +49,21 @@ const INITIAL_FORM: EmployeeRequest = {
   phone: "",
   address: null,
   province: null,
+  city: null,
   country: null,
   maritalStatus: null,
   childrenCount: 0,
   entryDate: null,
   status: "ACTIVO",
   roleIds: [],
+  password: "",
 };
 
 export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormProps) {
   const [form, setForm] = useState<EmployeeRequest>(INITIAL_FORM);
   const [roles, setRoles] = useState<RoleResponse[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -74,6 +81,7 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
         phone: employee.phone,
         address: employee.address,
         province: employee.province,
+        city: employee.city,
         country: employee.country,
         maritalStatus: employee.maritalStatus,
         childrenCount: employee.childrenCount,
@@ -81,35 +89,89 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
         status: employee.status,
         roleIds: employee.roles.map((r) => r.id),
       });
+      setShowPassword(false);
     } else {
       setForm(INITIAL_FORM);
+      setShowPassword(false);
     }
     setErrors({});
   }, [employee, open]);
 
-  const handleChange = (field: keyof EmployeeRequest, value: unknown) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => ({ ...prev, [field]: "" }));
+  const isFormComplete = (form: EmployeeRequest) => {
+    return (
+      form.firstName.trim() !== "" &&
+      form.lastName.trim() !== "" &&
+      form.dni.trim() !== "" &&
+      form.phone.trim() !== "" &&
+      form.roleIds.length > 0 &&
+      (employee !== null || (form.password !== undefined && form.password !== "" && form.password.length >= 6))
+    );
   };
 
-  const validate = (): boolean => {
+  const validate = (formToValidate: EmployeeRequest, showErrors: boolean = true): boolean => {
     const newErrors: FormErrors = {};
 
-    if (!form.firstName.trim()) newErrors.firstName = "El nombre es obligatorio";
-    if (!form.lastName.trim()) newErrors.lastName = "El apellido es obligatorio";
-    if (!form.dni.trim()) newErrors.dni = "El DNI es obligatorio";
-    if (!form.phone.trim()) newErrors.phone = "El teléfono es obligatorio";
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    if (!formToValidate.firstName.trim()) newErrors.firstName = "El nombre es obligatorio";
+    if (!formToValidate.lastName.trim()) newErrors.lastName = "El apellido es obligatorio";
+    if (!formToValidate.dni.trim()) {
+      newErrors.dni = "El DNI es obligatorio";
+    } else if (!/^[0-9]{8}$/.test(formToValidate.dni)) {
+      newErrors.dni = "El DNI debe contener 8 dígitos numéricos";
+    }
+    if (!formToValidate.phone.trim()) newErrors.phone = "El teléfono es obligatorio";
+    if (formToValidate.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formToValidate.email)) {
       newErrors.email = "El formato del correo electrónico no es válido";
     }
-    if (form.roleIds.length === 0) newErrors.roleIds = "Debe asignar al menos un rol";
+    if (formToValidate.roleIds.length === 0) newErrors.roleIds = "Debe asignar al menos un rol";
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (!employee) {
+      if (!formToValidate.password || formToValidate.password.length < 6) {
+        newErrors.password = "La contraseña debe tener al menos 6 caracteres";
+      }
+    }
+
+    if (showErrors) {
+      setErrors(newErrors);
+    }
+    return Object.keys(newErrors).length === 0 && isFormComplete(formToValidate);
+  };
+
+  const handleChange = (field: keyof EmployeeRequest, value: unknown) => {
+    const newForm = { ...form, [field]: value };
+    setForm(newForm);
+    // If there were already errors showing, update them silently to clear them as user types, 
+    // but don't show new ones. Actually, to be strict: "only when save is pressed".
+    // If user is fixing an error, it's nice if it disappears.
+    if (Object.keys(errors).length > 0) {
+      validate(newForm, true);
+    }
+  };
+
+  const handleLetterInputChange = (field: keyof EmployeeRequest, value: string) => {
+    // Allows letters (a-z, A-Z), common accented characters in Spanish, and spaces.
+    const filteredValue = value.replace(/[^a-zA-Z\u00C0-\u017F\s]/g, "");
+    handleChange(field, filteredValue);
+  };
+  
+  const handleDniChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === "" || /^[0-9]{1,8}$/.test(value)) {
+      handleChange("dni", value);
+    }
+  };
+
+  const generateRandomPassword = () => {
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    let newPassword = "";
+    for (let i = 0; i < 12; i++) {
+      newPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    handleChange("password", newPassword);
+    setShowPassword(true);
   };
 
   const handleSubmit = () => {
-    if (validate()) {
+    if (validate(form)) {
       onSave(form);
     }
   };
@@ -120,14 +182,14 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>{isEditing ? "Editar Empleado" : "Nuevo Empleado"}</DialogTitle>
       <DialogContent>
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="Nombre"
                 value={form.firstName}
-                onChange={(e) => handleChange("firstName", e.target.value)}
+                onChange={(e) => handleLetterInputChange("firstName", e.target.value)}
                 error={!!errors.firstName}
                 helperText={errors.firstName}
                 required
@@ -138,7 +200,7 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
                 fullWidth
                 label="Apellido"
                 value={form.lastName}
-                onChange={(e) => handleChange("lastName", e.target.value)}
+                onChange={(e) => handleLetterInputChange("lastName", e.target.value)}
                 error={!!errors.lastName}
                 helperText={errors.lastName}
                 required
@@ -149,7 +211,7 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
                 fullWidth
                 label="DNI"
                 value={form.dni}
-                onChange={(e) => handleChange("dni", e.target.value)}
+                onChange={handleDniChange}
                 error={!!errors.dni}
                 helperText={errors.dni}
                 required
@@ -191,6 +253,14 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
                 label="Provincia"
                 value={form.province ?? ""}
                 onChange={(e) => handleChange("province", e.target.value || null)}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                label="Ciudad"
+                value={form.city ?? ""}
+                onChange={(e) => handleChange("city", e.target.value || null)}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -244,6 +314,42 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
                 </Select>
               </FormControl>
             </Grid>
+
+            {!isEditing && (
+              <Grid size={{ xs: 12 }}>
+                <Stack direction="row" spacing={2} alignItems="flex-start">
+                  <TextField
+                    fullWidth
+                    label="Contraseña"
+                    type={showPassword ? "text" : "password"}
+                    value={form.password || ""}
+                    onChange={(e) => handleChange("password", e.target.value)}
+                    error={!!errors.password}
+                    helperText={errors.password || "Obligatorio para nuevos empleados"}
+                    slotProps={{
+                      input: {
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                              {showPassword ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                    required
+                  />
+                  <Button 
+                    variant="outlined" 
+                    onClick={generateRandomPassword}
+                    sx={{ height: 56, whiteSpace: "nowrap" }}
+                  >
+                    Generar Aleatoria
+                  </Button>
+                </Stack>
+              </Grid>
+            )}
+
             <Grid size={{ xs: 12 }}>
               <FormControl fullWidth error={!!errors.roleIds} required>
                 <InputLabel>Cargo / Rol</InputLabel>

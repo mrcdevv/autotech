@@ -8,6 +8,7 @@ import com.autotech.employee.dto.EmployeeResponse;
 import com.autotech.employee.model.Employee;
 import com.autotech.employee.model.EmployeeStatus;
 import com.autotech.employee.repository.EmployeeRepository;
+import com.autotech.email.service.EmailNotificationService;
 import com.autotech.role.model.Role;
 import com.autotech.role.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,10 +27,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Slf4j
 @Service
@@ -39,6 +43,8 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final EmployeeMapper employeeMapper;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final EmailNotificationService emailNotificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -65,13 +71,24 @@ public class EmployeeServiceImpl implements EmployeeService {
         if (employeeRepository.existsByDni(request.dni())) {
             throw new DuplicateResourceException("Ya existe un empleado con el DNI ingresado");
         }
+        
+        if (request.email() != null && employeeRepository.existsByEmail(request.email())) {
+            throw new DuplicateResourceException("Ya existe un empleado con el email ingresado");
+        }
+
+        if (request.password() == null || request.password().isBlank()) {
+            throw new IllegalArgumentException("La contraseña es obligatoria para crear un empleado");
+        }
 
         Employee employee = employeeMapper.toEntity(request);
+        employee.setPassword(passwordEncoder.encode(request.password()));
+        employee.setMustChangePassword(true);
         Set<Role> roles = resolveRoles(request.roleIds());
         employee.setRoles(roles);
 
         Employee saved = employeeRepository.save(employee);
         log.info("Employee created with id: {}", saved.getId());
+        emailNotificationService.notifyEmployeeCreated(saved, request.password());
         return employeeMapper.toResponse(saved);
     }
 
@@ -87,6 +104,10 @@ public class EmployeeServiceImpl implements EmployeeService {
             throw new DuplicateResourceException("Ya existe un empleado con el DNI ingresado");
         }
 
+        if (request.email() != null && employeeRepository.existsByEmailAndIdNot(request.email(), id)) {
+            throw new DuplicateResourceException("Ya existe un empleado con el email ingresado");
+        }
+
         employee.setFirstName(request.firstName());
         employee.setLastName(request.lastName());
         employee.setDni(request.dni());
@@ -94,6 +115,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setPhone(request.phone());
         employee.setAddress(request.address());
         employee.setProvince(request.province());
+        employee.setCity(request.city());
         employee.setCountry(request.country());
         employee.setMaritalStatus(request.maritalStatus());
         employee.setChildrenCount(request.childrenCount());
@@ -207,6 +229,32 @@ public class EmployeeServiceImpl implements EmployeeService {
             log.error("Error exporting employees to Excel", e);
             throw new RuntimeException("Error al exportar empleados a Excel", e);
         }
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(Long id) {
+        log.info("Resetting password for employee id: {}", id);
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Empleado", id));
+
+        String tempPassword = generateTempPassword();
+        employee.setPassword(passwordEncoder.encode(tempPassword));
+        employee.setMustChangePassword(true);
+        employeeRepository.save(employee);
+
+        log.info("Password reset for employee id: {}", id);
+        emailNotificationService.notifyPasswordReset(employee, tempPassword);
+    }
+
+    private String generateTempPassword() {
+        String chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder(10);
+        for (int i = 0; i < 10; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 
     private Set<Role> resolveRoles(List<Long> roleIds) {

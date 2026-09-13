@@ -1,0 +1,354 @@
+import { useState, useEffect } from "react";
+
+import {
+  Box,
+  TextField,
+  Button,
+  Autocomplete,
+  Alert,
+  CircularProgress,
+  Paper,
+  Typography,
+} from "@mui/material";
+import Grid from "@mui/material/Grid2";
+import { useSearchParams } from "react-router";
+
+import { clientsApi } from "@/api/clients";
+import { vehiclesApi } from "@/api/vehicles";
+import { brandsApi } from "@/api/brands";
+import { vehicleTypesApi } from "@/api/vehicleTypes";
+import { repairOrdersApi } from "@/api/repairOrders";
+import ClientForm from "@/features/clients/components/ClientForm";
+import { VehicleForm } from "@/features/vehicles/components/VehicleForm";
+
+import type { Client } from "@/features/clients/types/client";
+import type { VehicleResponse, VehicleRequest, BrandResponse, VehicleTypeResponse } from "@/types/vehicle";
+
+interface CreateRepairOrderFormProps {
+  onSuccess: () => void;
+}
+
+export function CreateRepairOrderForm({ onSuccess }: CreateRepairOrderFormProps) {
+  const [searchParams] = useSearchParams();
+  const prefillClientId = searchParams.get("clientId") ? Number(searchParams.get("clientId")) : null;
+  const prefillVehicleId = searchParams.get("vehicleId") ? Number(searchParams.get("vehicleId")) : null;
+  const prefillReason = searchParams.get("reason") ?? "";
+
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(prefillClientId);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(prefillVehicleId);
+  const [reason, setReason] = useState(prefillReason);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [clients, setClients] = useState<Client[]>([]);
+  const [vehicles, setVehicles] = useState<VehicleResponse[]>([]);
+  const [clientModalOpen, setClientModalOpen] = useState(false);
+  const [vehicleModalOpen, setVehicleModalOpen] = useState(false);
+
+  const [brands, setBrands] = useState<BrandResponse[]>([]);
+  const [vehicleTypes, setVehicleTypes] = useState<VehicleTypeResponse[]>([]);
+
+  useEffect(() => {
+    clientsApi.getAll(0, 1000).then((res) => setClients(res.data.data.content));
+    brandsApi.getAll().then((res) => setBrands(res.data.data));
+    vehicleTypesApi.getAll().then((res) => setVehicleTypes(res.data.data));
+  }, []);
+
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  useEffect(() => {
+    if (selectedClientId) {
+      vehiclesApi.getByClient(selectedClientId).then((res) => {
+        setVehicles(res.data.data);
+        setIsInitialLoad(false);
+      });
+    } else {
+      setVehicles([]);
+      setIsInitialLoad(false);
+    }
+    if (!isInitialLoad) {
+      setSelectedVehicleId(null);
+    }
+  }, [selectedClientId]);
+
+  const selectedClient = clients.find((c) => c.id === selectedClientId) ?? null;
+  const selectedVehicle = vehicles.find((v) => v.id === selectedVehicleId) ?? null;
+
+  const handleSubmit = async () => {
+    if (!selectedClientId || !selectedVehicleId) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await repairOrdersApi.create({
+        clientId: selectedClientId,
+        vehicleId: selectedVehicleId,
+        reason: reason || null,
+      });
+      onSuccess();
+    } catch {
+      setError("Error al crear la orden de trabajo");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSaveVehicle = async (data: VehicleRequest) => {
+    const res = await vehiclesApi.create({ ...data, clientId: selectedClientId! });
+    const newVehicle = res.data.data;
+    setVehicles((prev) => [...prev, newVehicle]);
+    setSelectedVehicleId(newVehicle.id);
+    setVehicleModalOpen(false);
+  };
+
+  const handleCreateBrand = async (name: string): Promise<BrandResponse> => {
+    const res = await brandsApi.create({ name });
+    const newBrand = res.data.data;
+    setBrands((prev) => [...prev, newBrand]);
+    return newBrand;
+  };
+
+  return (
+    <Box sx={{ maxWidth: 700, mx: "auto", py: 3 }}>
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      <Paper elevation={0} sx={{ p: 3, mb: 3, border: 1, borderColor: "divider" }}>
+        <Typography variant="h6" sx={{ mb: 2.5, fontWeight: 600 }}>
+          Seleccionar Cliente
+        </Typography>
+        <Box display="flex" alignItems="flex-start" gap={1.5}>
+          <Autocomplete
+            options={clients}
+            getOptionLabel={(c) => `${c.firstName} ${c.lastName} — ${c.dni || "Sin DNI"}`}
+            onChange={(_, value) => setSelectedClientId(value?.id ?? null)}
+            renderInput={(params) => <TextField {...params} label="Cliente" required />}
+            fullWidth
+          />
+          <Button
+            variant="outlined"
+            onClick={() => setClientModalOpen(true)}
+            sx={{ minWidth: 120, height: 56 }}
+          >
+            Nuevo
+          </Button>
+        </Box>
+
+        {selectedClient && (
+          <Box
+            sx={{
+              mt: 3,
+              p: 2.5,
+              bgcolor: "grey.50",
+              borderRadius: 1.5,
+              border: 1,
+              borderColor: "divider",
+            }}
+          >
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+              Datos del cliente
+            </Typography>
+            <Grid container spacing={2.5}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Nombre completo
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 0.5 }}>
+                    {`${selectedClient.firstName} ${selectedClient.lastName}`}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    DNI
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 0.5 }}>
+                    {selectedClient.dni || "—"}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Teléfono
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 0.5 }}>
+                    {selectedClient.phone || "—"}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Email
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 0.5 }}>
+                    {selectedClient.email || "—"}
+                  </Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          </Box>
+        )}
+      </Paper>
+
+      <Paper elevation={0} sx={{ p: 3, mb: 3, border: 1, borderColor: "divider" }}>
+        <Typography variant="h6" sx={{ mb: 2.5, fontWeight: 600 }}>
+          Seleccionar Vehículo
+        </Typography>
+        <Box display="flex" alignItems="flex-start" gap={1.5}>
+          <Autocomplete
+            options={vehicles}
+            getOptionLabel={(v) =>
+              `${[v.year, v.brandName, v.model].filter(Boolean).join(" ")} — ${v.plate}`
+            }
+            onChange={(_, value) => setSelectedVehicleId(value?.id ?? null)}
+            value={vehicles.find((v) => v.id === selectedVehicleId) || null}
+            disabled={!selectedClientId}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Vehículo"
+                required
+                helperText={!selectedClientId ? "Seleccione un cliente primero" : ""}
+              />
+            )}
+            fullWidth
+          />
+          <Button
+            variant="outlined"
+            disabled={!selectedClientId}
+            onClick={() => setVehicleModalOpen(true)}
+            sx={{ minWidth: 120, height: 56 }}
+          >
+            Nuevo
+          </Button>
+        </Box>
+
+        {selectedVehicle && (
+          <Box
+            sx={{
+              mt: 3,
+              p: 2.5,
+              bgcolor: "grey.50",
+              borderRadius: 1.5,
+              border: 1,
+              borderColor: "divider",
+            }}
+          >
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+              Datos del vehículo
+            </Typography>
+            <Grid container spacing={2.5}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Patente
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 0.5 }}>
+                    {selectedVehicle.plate}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Marca
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 0.5 }}>
+                    {selectedVehicle.brandName || "—"}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Modelo
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 0.5 }}>
+                    {selectedVehicle.model || "—"}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Año
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 0.5 }}>
+                    {selectedVehicle.year ?? "—"}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Número de chasis
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 0.5 }}>
+                    {selectedVehicle.chassisNumber || "—"}
+                  </Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          </Box>
+        )}
+      </Paper>
+
+      <Paper elevation={0} sx={{ p: 3, mb: 3, border: 1, borderColor: "divider" }}>
+        <Typography variant="h6" sx={{ mb: 2.5, fontWeight: 600 }}>
+          Motivo de la visita
+        </Typography>
+        <TextField
+          label="Describa el motivo de la visita o el servicio requerido"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          multiline
+          rows={4}
+          fullWidth
+          inputProps={{ maxLength: 5000 }}
+          placeholder="Ej: Cambio de aceite, revisión general, ruido en el motor, etc."
+        />
+      </Paper>
+
+      <Button
+        variant="contained"
+        onClick={handleSubmit}
+        disabled={!selectedClientId || !selectedVehicleId || submitting}
+        fullWidth
+        size="large"
+        sx={{ py: 1.5 }}
+      >
+        {submitting ? <CircularProgress size={24} /> : "Crear orden de trabajo"}
+      </Button>
+
+      {clientModalOpen && (
+        <ClientForm
+          open={clientModalOpen}
+          onClose={() => setClientModalOpen(false)}
+          client={null}
+          onSuccess={(newClient) => {
+            setClientModalOpen(false);
+            setClients((prev) => [...prev, newClient]);
+            setSelectedClientId(newClient.id);
+          }}
+        />
+      )}
+
+      {vehicleModalOpen && selectedClientId && (
+        <VehicleForm
+          open={vehicleModalOpen}
+          onClose={() => setVehicleModalOpen(false)}
+          onSave={handleSaveVehicle}
+          onCreateBrand={handleCreateBrand}
+          brands={brands}
+          vehicleTypes={vehicleTypes}
+        />
+      )}
+    </Box>
+  );
+}

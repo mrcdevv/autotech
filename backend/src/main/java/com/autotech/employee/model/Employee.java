@@ -52,6 +52,9 @@ public class Employee extends BaseEntity {
     @Column(name = "province", length = 100)
     private String province;
 
+    @Column(name = "city", length = 100)
+    private String city;
+
     @Column(name = "country", length = 100)
     private String country;
 
@@ -69,6 +72,13 @@ public class Employee extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private EmployeeStatus status = EmployeeStatus.ACTIVO;
+
+    @Column(name = "password", nullable = false)
+    private String password;
+
+    @Column(name = "must_change_password", nullable = false)
+    @Builder.Default
+    private Boolean mustChangePassword = true;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

@@ -1,8 +1,11 @@
 import { useState } from "react";
 
-import { Box, Typography, Button, TextField, Alert, Snackbar } from "@mui/material";
+import { Button, Alert, Snackbar } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 
+import { AppSearchField } from "@/components/AppSearchField";
+import { PageShell } from "@/components/PageShell";
+import { PageToolbar } from "@/components/PageToolbar";
 import { useCannedJobs } from "@/features/catalog/hooks/useCannedJobs";
 import { CannedJobsDataGrid } from "@/features/catalog/components/CannedJobsDataGrid";
 import { CannedJobFormDialog } from "@/features/catalog/components/CannedJobFormDialog";
@@ -79,32 +82,30 @@ export default function CannedJobsPage() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Trabajos enlatados
-      </Typography>
-
+    <PageShell title="Trabajos enlatados">
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
 
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, gap: 2 }}>
-        <TextField
-          placeholder="Buscar por título o descripción..."
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setPage(0);
-          }}
-          size="small"
-          sx={{ minWidth: 300 }}
-        />
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-          Agregar trabajo enlatado
-        </Button>
-      </Box>
+      <PageToolbar
+        filters={
+          <AppSearchField
+            placeholder="Buscar por título o descripción..."
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(0);
+            }}
+          />
+        }
+        actions={
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+            Agregar trabajo enlatado
+          </Button>
+        }
+      />
 
       <CannedJobsDataGrid
         rows={cannedJobs}
@@ -139,6 +140,6 @@ export default function CannedJobsPage() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </PageShell>
   );
 }

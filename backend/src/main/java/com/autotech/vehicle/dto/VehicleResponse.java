@@ -18,5 +18,6 @@ public record VehicleResponse(
         Long vehicleTypeId,
         String vehicleTypeName,
         String observations,
+        boolean inRepair,
         LocalDateTime createdAt
 ) {}

@@ -1,14 +1,26 @@
 import { useState, useCallback, useEffect } from "react";
 
-import { Box, Typography, Button, Alert, Snackbar } from "@mui/material";
+import {
+  Typography,
+  Button,
+  Alert,
+  Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 
+import { PageShell } from "@/components/PageShell";
+import { PageToolbar } from "@/components/PageToolbar";
 import { employeesApi } from "@/api/employees";
 import { EmployeeList } from "@/features/employees/EmployeeList";
 import { EmployeeForm } from "@/features/employees/EmployeeForm";
 import { EmployeeFilters } from "@/features/employees/EmployeeFilters";
 import { EmployeeDetail } from "@/features/employees/EmployeeDetail";
+import { WarningDialog } from "@/components/Shared/WarningDialog";
 import type { EmployeeResponse, EmployeeRequest } from "@/features/employees/types";
 import type { PageResponse, ApiResponse } from "@/types/api";
 import type { GridPaginationModel } from "@mui/x-data-grid";
@@ -30,6 +42,13 @@ export default function EmployeesPage() {
     message: "",
     severity: "success",
   });
+  const [warningDialogOpen, setWarningDialogOpen] = useState(false);
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<number | null>(null);
+  const [tempPasswordDialog, setTempPasswordDialog] = useState<{
+    open: boolean;
+    employeeName: string;
+  }>({ open: false, employeeName: "" });
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -83,14 +102,23 @@ export default function EmployeesPage() {
     setDetailOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-    try {
-      await employeesApi.delete(id);
-      showSnackbar("Empleado eliminado", "success");
-      fetchData();
-    } catch {
-      showSnackbar("Error al eliminar el empleado", "error");
+  const handleDelete = (id: number) => {
+    setEmployeeToDelete(id);
+    setDeleteConfirmationOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (employeeToDelete) {
+      try {
+        await employeesApi.delete(employeeToDelete);
+        showSnackbar("Empleado eliminado", "success");
+        fetchData();
+      } catch {
+        showSnackbar("Error al eliminar el empleado", "error");
+      }
     }
+    setDeleteConfirmationOpen(false);
+    setEmployeeToDelete(null);
   };
 
   const handleSave = async (request: EmployeeRequest) => {
@@ -107,7 +135,24 @@ export default function EmployeesPage() {
     } catch (err) {
       const error = err as { response?: { data?: ApiResponse<unknown> } };
       const message = error.response?.data?.message ?? "Error al guardar el empleado";
-      showSnackbar(message, "error");
+
+      if (message.includes("El DNI ya se encuentra registrado")) {
+        setWarningDialogOpen(true);
+      } else {
+        showSnackbar(message, "error");
+      }
+    }
+  };
+
+  const handleResetPassword = async (employee: EmployeeResponse) => {
+    try {
+      await employeesApi.resetPassword(employee.id);
+      setTempPasswordDialog({
+        open: true,
+        employeeName: `${employee.firstName} ${employee.lastName}`,
+      });
+    } catch {
+      showSnackbar("Error al restablecer la contraseña", "error");
     }
   };
 
@@ -132,31 +177,20 @@ export default function EmployeesPage() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Gestión de Empleados
-      </Typography>
-
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-          flexWrap: "wrap",
-          gap: 2,
-        }}
-      >
-        <EmployeeFilters onFilterChange={handleFilterChange} />
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Button startIcon={<FileDownloadIcon />} onClick={handleExport}>
-            Exportar a Excel
-          </Button>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-            Nuevo Empleado
-          </Button>
-        </Box>
-      </Box>
+    <PageShell title="Empleados">
+      <PageToolbar
+        filters={<EmployeeFilters onFilterChange={handleFilterChange} />}
+        actions={
+          <>
+            <Button variant="outlined" startIcon={<FileDownloadIcon />} onClick={handleExport}>
+              Exportar a Excel
+            </Button>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+              Nuevo empleado
+            </Button>
+          </>
+        }
+      />
 
       <EmployeeList
         data={data}
@@ -166,6 +200,7 @@ export default function EmployeesPage() {
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onResetPassword={handleResetPassword}
       />
 
       <EmployeeForm
@@ -195,6 +230,46 @@ export default function EmployeesPage() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+
+      <WarningDialog
+        open={warningDialogOpen}
+        onClose={() => setWarningDialogOpen(false)}
+        onConfirm={() => setWarningDialogOpen(false)}
+        title="DNI ya registrado"
+        message="El DNI que ha ingresado ya se encuentra registrado en el sistema. Por favor, verifique los datos e intente nuevamente."
+      />
+
+      <WarningDialog
+        open={deleteConfirmationOpen}
+        onClose={() => setDeleteConfirmationOpen(false)}
+        onConfirm={confirmDelete}
+        title="Confirmar Eliminación"
+        message="¿Está seguro de que desea eliminar este empleado? Esta acción no se puede deshacer."
+      />
+
+      <Dialog
+        open={tempPasswordDialog.open}
+        onClose={() => setTempPasswordDialog((prev) => ({ ...prev, open: false }))}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Contraseña restablecida</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Se generó una contraseña temporal para{" "}
+            <strong>{tempPasswordDialog.employeeName}</strong> y se envió a su correo electrónico.
+            Al iniciar sesión, el sistema le pedirá que la cambie.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="contained"
+            onClick={() => setTempPasswordDialog((prev) => ({ ...prev, open: false }))}
+          >
+            Entendido
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </PageShell>
   );
 }

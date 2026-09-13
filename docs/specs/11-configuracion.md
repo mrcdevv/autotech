@@ -923,67 +923,67 @@ const SettingsPage = lazy(() => import("@/pages/SettingsPage"));
 
 ### 8.1 Backend
 
-- [ ] Create `Tag` entity (`com.autotech.tag.model.Tag`) with `name` (unique, max 100) and `color` (nullable, max 7) fields extending `BaseEntity`
-- [ ] Create `TagRepository` (`com.autotech.tag.repository.TagRepository`) with `existsByName()`, `existsByNameAndIdNot()`, and `findAllByOrderByNameAsc()` methods
-- [ ] Create `TagRequest` DTO with Jakarta Validation annotations (`@NotBlank`, `@Size`)
-- [ ] Create `TagResponse` DTO (record with `id`, `name`, `color`, `createdAt`, `updatedAt`)
-- [ ] Create `TagMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md) with `toResponse()`, `toEntity()`, and `toResponseList()` methods
-- [ ] Create `TagService` interface with `getAll()`, `getById()`, `create()`, `update()`, `delete()`
-- [ ] Create `TagServiceImpl` implementation:
-  - [ ] `getAll()` — returns all tags ordered by name
-  - [ ] `getById()` — returns tag or throws `ResourceNotFoundException`
-  - [ ] `create()` — validates unique name, maps and saves
-  - [ ] `update()` — validates exists, validates unique name (excluding self), updates fields
-  - [ ] `delete()` — validates exists, deletes
-- [ ] Create `TagController` with all endpoints:
-  - [ ] `GET /api/tags` — list all tags
-  - [ ] `GET /api/tags/{id}` — get tag by ID
-  - [ ] `POST /api/tags` — create tag
-  - [ ] `PUT /api/tags/{id}` — update tag
-  - [ ] `DELETE /api/tags/{id}` — delete tag
-- [ ] Verify backend compiles: `./mvnw clean compile`
+- [x] Create `Tag` entity (`com.autotech.tag.model.Tag`) with `name` (unique, max 100) and `color` (nullable, max 7) fields extending `BaseEntity`
+- [x] Create `TagRepository` (`com.autotech.tag.repository.TagRepository`) with `existsByName()`, `existsByNameAndIdNot()`, and `findAllByOrderByNameAsc()` methods
+- [x] Create `TagRequest` DTO with Jakarta Validation annotations (`@NotBlank`, `@Size`)
+- [x] Create `TagResponse` DTO (record with `id`, `name`, `color`, `createdAt`, `updatedAt`)
+- [x] Create `TagMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md) with `toResponse()`, `toEntity()`, and `toResponseList()` methods
+- [x] Create `TagService` interface with `getAll()`, `getById()`, `create()`, `update()`, `delete()`
+- [x] Create `TagServiceImpl` implementation:
+  - [x] `getAll()` — returns all tags ordered by name
+  - [x] `getById()` — returns tag or throws `ResourceNotFoundException`
+  - [x] `create()` — validates unique name, maps and saves
+  - [x] `update()` — validates exists, validates unique name (excluding self), updates fields
+  - [x] `delete()` — validates exists, deletes
+- [x] Create `TagController` with all endpoints:
+  - [x] `GET /api/tags` — list all tags
+  - [x] `GET /api/tags/{id}` — get tag by ID
+  - [x] `POST /api/tags` — create tag
+  - [x] `PUT /api/tags/{id}` — update tag
+  - [x] `DELETE /api/tags/{id}` — delete tag
+- [x] Verify backend compiles: `./mvnw clean compile`
 - [ ] Verify backend starts: `./mvnw clean spring-boot:run`
 
 ### 8.2 Frontend
 
-- [ ] Create types file (`src/features/settings/types.ts`) with `TagResponse`, `TagRequest`, `BankResponse`, `BankAccountResponse`, `BankAccountRequest`
-- [ ] Create API layer (`src/api/tags.ts`) with `getAll`, `getById`, `create`, `update`, `delete`
-- [ ] Create `useTags` hook (`src/features/settings/hooks/useTags.ts`)
-- [ ] Create `SettingsPage` (`src/pages/SettingsPage.tsx`) with 4-tab navigation
-- [ ] Create `BankAccountsTab` component — list bank accounts with create/edit/delete actions
-- [ ] Create `BankAccountFormDialog` component — form dialog with bank dropdown (Autocomplete), alias, CBU/CVU fields
-- [ ] Create `InspectionTemplatesTab` component — list templates with edit (navigate), duplicate, delete actions
-- [ ] Create `CalendarSettingsTab` component — duration input with save, plus `TagsManager`
-- [ ] Create `RepairOrderSettingsTab` component — renders `TagsManager`
-- [ ] Create `TagsManager` shared component — full CRUD for tags with inline create/edit dialog, color dot display
-- [ ] Register route `/configuracion` with lazy loading
-- [ ] Verify frontend compiles
+- [x] Create types file (`src/features/settings/types.ts`) with `TagResponse`, `TagRequest`, `BankResponse`, `BankAccountResponse`, `BankAccountRequest` (N/A — types already exist in `@/types/appointment` and `@/types/payment`; `TagRequest` added in `@/api/tags.ts`)
+- [x] Create API layer (`src/api/tags.ts`) with `getAll`, `getById`, `create`, `update`, `delete`
+- [x] Create `useTags` hook (`src/features/settings/hooks/useTags.ts`)
+- [x] Create `SettingsPage` (`src/pages/SettingsPage.tsx`) with 4-tab navigation
+- [x] Create `BankAccountsTab` component — list bank accounts with create/edit/delete actions
+- [x] Create `BankAccountFormDialog` component — form dialog with bank dropdown (Autocomplete), alias, CBU/CVU fields
+- [x] Create `InspectionTemplatesTab` component — list templates with edit (navigate), duplicate, delete actions
+- [x] Create `CalendarSettingsTab` component — duration input with save, plus `TagsManager`
+- [x] Create `RepairOrderSettingsTab` component — renders `TagsManager`
+- [x] Create `TagsManager` shared component — full CRUD for tags with inline create/edit dialog, color dot display
+- [x] Register route `/configuracion` with lazy loading
+- [x] Verify frontend compiles
 - [ ] Verify frontend runs
 
 ### 8.3 Business Rules Verification
 
-- [ ] Tag name must be unique — `DuplicateResourceException` (HTTP 409) on create and update
-- [ ] Tag color is optional — nullable in backend, optional in frontend form
-- [ ] Tags are shared — same `tags` table and `/api/tags` endpoints used by Calendar and Repair Order tabs via `TagsManager`
-- [ ] Deleting a tag cascades — `ON DELETE CASCADE` on `appointment_tags` and `repair_order_tags`
-- [ ] Bank account requires a bank — bank dropdown is required, `bankId` is NOT NULL
-- [ ] CBU/CVU is optional — nullable field with helper text in form
-- [ ] Calendar duration minimum — `@Min(1)` on backend, `min: 1` on frontend input
-- [ ] Inspection templates are read-only links — list, navigate to builder, duplicate, delete only
-- [ ] Settings require `manage_config` permission (enforced when spec 13 is implemented)
+- [x] Tag name must be unique — `DuplicateResourceException` (HTTP 409) on create and update
+- [x] Tag color is optional — nullable in backend, optional in frontend form
+- [x] Tags are shared — same `tags` table and `/api/tags` endpoints used by Calendar and Repair Order tabs via `TagsManager`
+- [x] Deleting a tag cascades — `ON DELETE CASCADE` on `appointment_tags` and `repair_order_tags`
+- [x] Bank account requires a bank — bank dropdown is required, `bankId` is NOT NULL
+- [x] CBU/CVU is optional — nullable field with helper text in form
+- [x] Calendar duration minimum — `@Min(1)` on backend, `min: 1` on frontend input
+- [x] Inspection templates are read-only links — list, navigate to builder, duplicate, delete only
+- [x] Settings require `manage_config` permission (enforced when spec 13 is implemented)
 
 ### 8.4 Testing
 
-- [ ] `TagServiceImplTest` — unit tests with Mockito for all CRUD operations and error cases
-- [ ] `TagControllerTest` — `@WebMvcTest` for all endpoints, validation errors, 409 on duplicate
-- [ ] `TagMapperTest` — verify `toResponse`, `toEntity`, `toResponseList` mappings
+- [x] `TagServiceImplTest` — unit tests with Mockito for all CRUD operations and error cases
+- [x] `TagControllerTest` — `@WebMvcTest` for all endpoints, validation errors, 409 on duplicate
+- [x] `TagMapperTest` — verify `toResponse`, `toEntity`, `toResponseList` mappings
 - [ ] `TagRepositoryTest` — `@DataJpaTest` for `existsByName`, `existsByNameAndIdNot`, `findAllByOrderByNameAsc`
 - [ ] `TagIntegrationTest` — `@SpringBootTest` + Testcontainers full CRUD flow via HTTP
-- [ ] `SettingsPage.test.tsx` — renders 4 tabs, switching shows correct content
-- [ ] `BankAccountsTab.test.tsx` — renders list, create/edit/delete dialogs
+- [x] `SettingsPage.test.tsx` — renders 4 tabs, switching shows correct content
+- [x] `BankAccountsTab.test.tsx` — renders list, create/edit/delete dialogs
 - [ ] `BankAccountFormDialog.test.tsx` — renders form, bank dropdown, validates required fields
-- [ ] `InspectionTemplatesTab.test.tsx` — renders cards, navigate/duplicate/delete actions
-- [ ] `CalendarSettingsTab.test.tsx` — renders duration input, save button, TagsManager
-- [ ] `RepairOrderSettingsTab.test.tsx` — renders TagsManager
-- [ ] `TagsManager.test.tsx` — renders list, create/edit/delete, empty state
-- [ ] `useTags.test.ts` — hook fetch, loading/error states, refetch
+- [x] `InspectionTemplatesTab.test.tsx` — renders cards, navigate/duplicate/delete actions
+- [x] `CalendarSettingsTab.test.tsx` — renders duration input, save button, TagsManager
+- [x] `RepairOrderSettingsTab.test.tsx` — renders TagsManager
+- [x] `TagsManager.test.tsx` — renders list, create/edit/delete, empty state
+- [x] `useTags.test.ts` — hook fetch, loading/error states, refetch

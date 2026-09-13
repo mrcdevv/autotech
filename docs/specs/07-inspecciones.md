@@ -2066,115 +2066,115 @@ All routes lazy loaded via `React.lazy(() => import(...))`.
 
 ### 8.1 Backend
 
-- [ ] Create `InspectionItemStatus` enum (`OK`, `REVISAR`, `PROBLEMA`, `NO_APLICA`)
-- [ ] Create `InspectionTemplate` entity with `title`, OneToMany to `InspectionTemplateGroup` (cascade, orphanRemoval)
-- [ ] Create `InspectionTemplateGroup` entity with `title`, `sortOrder`, ManyToOne to `InspectionTemplate`, OneToMany to `InspectionTemplateItem` (cascade, orphanRemoval)
-- [ ] Create `InspectionTemplateItem` entity with `name`, `sortOrder`, ManyToOne to `InspectionTemplateGroup`
-- [ ] Create `CommonProblem` entity with `description`
-- [ ] Create `Inspection` entity with ManyToOne to `RepairOrder`, ManyToOne to `InspectionTemplate`, OneToMany to `InspectionItem` (cascade, orphanRemoval)
-- [ ] Create `InspectionItem` entity with ManyToOne to `Inspection`, ManyToOne to `InspectionTemplateItem`, `status` (enum), `comment`
-- [ ] Create `InspectionTemplateRepository` with `findWithGroupsAndItemsById`, `findAllByOrderByTitleAsc`
-- [ ] Create `InspectionTemplateGroupRepository` with `findByTemplateIdOrderBySortOrderAsc`, `findNextSortOrder`
-- [ ] Create `InspectionTemplateItemRepository` with `findByGroupIdOrderBySortOrderAsc`, `findNextSortOrder`
-- [ ] Create `CommonProblemRepository` with `findAllByOrderByDescriptionAsc`
-- [ ] Create `InspectionRepository` with `findByRepairOrderId` (EntityGraph), `findWithItemsById` (EntityGraph)
-- [ ] Create `InspectionItemRepository` with `findByInspectionId`
-- [ ] Create `InspectionTemplateRequest` record with Jakarta Validation (`@NotBlank` on `title`, `@NotEmpty`/`@Valid` on `groups`)
-- [ ] Create `InspectionTemplateGroupRequest` record with Jakarta Validation (`@NotBlank` on `title`, `@NotNull` on `sortOrder`, `@NotEmpty`/`@Valid` on `items`)
-- [ ] Create `InspectionTemplateItemRequest` record with Jakarta Validation (`@NotBlank` on `name`, `@NotNull` on `sortOrder`)
-- [ ] Create `InspectionTemplateResponse`, `InspectionTemplateGroupResponse`, `InspectionTemplateItemResponse` records
-- [ ] Create `CommonProblemRequest` record with Jakarta Validation (`@NotBlank` on `description`)
-- [ ] Create `CommonProblemResponse` record
-- [ ] Create `InspectionResponse` record (with nested `InspectionGroupWithItemsResponse`)
-- [ ] Create `InspectionGroupWithItemsResponse` record
-- [ ] Create `InspectionItemResponse` record
-- [ ] Create `InspectionItemRequest` record with Jakarta Validation (`@NotNull` on `id`/`status`)
-- [ ] Create `SaveInspectionItemsRequest` record with Jakarta Validation (`@NotEmpty`/`@Valid` on `items`)
-- [ ] Create `InspectionTemplateMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
-- [ ] Create `CommonProblemMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
-- [ ] Create `InspectionMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
-- [ ] Create `InspectionTemplateService` interface
-- [ ] Create `InspectionTemplateServiceImpl` with methods:
-  - [ ] `getAll()` — list all ordered by title ASC
-  - [ ] `getById(Long)` — fetch with groups and items
-  - [ ] `create(InspectionTemplateRequest)` — build entity tree with groups/items
-  - [ ] `update(Long, InspectionTemplateRequest)` — reconcile groups/items (add/update/remove)
-  - [ ] `delete(Long)` — cascade delete groups and items
-  - [ ] `duplicate(Long)` — deep copy with title suffixed " (Copia)"
-- [ ] Create `CommonProblemService` interface
-- [ ] Create `CommonProblemServiceImpl` with methods:
-  - [ ] `getAll()` — list all ordered by description ASC
-  - [ ] `getById(Long)` — fetch by ID
-  - [ ] `create(CommonProblemRequest)` — create new problem
-  - [ ] `update(Long, CommonProblemRequest)` — update description
-  - [ ] `delete(Long)` — delete problem
-- [ ] Create `InspectionService` interface
-- [ ] Create `InspectionServiceImpl` with methods:
-  - [ ] `createForRepairOrder(Long, Long)` — create inspection from template, items default to `NO_APLICA`
-  - [ ] `getByRepairOrder(Long)` — list inspections for repair order
-  - [ ] `getById(Long)` — fetch with items
-  - [ ] `saveItems(Long, SaveInspectionItemsRequest)` — batch update item statuses and comments
-  - [ ] `delete(Long)` — delete inspection
-  - [ ] `buildResponse(Inspection)` — private helper to group items by template group
-- [ ] Create `InspectionTemplateController` with endpoints:
-  - [ ] `GET /api/inspection-templates` — list all
-  - [ ] `GET /api/inspection-templates/{id}` — get by ID
-  - [ ] `POST /api/inspection-templates` — create
-  - [ ] `PUT /api/inspection-templates/{id}` — update
-  - [ ] `DELETE /api/inspection-templates/{id}` — delete
-  - [ ] `POST /api/inspection-templates/{id}/duplicate` — duplicate
-- [ ] Create `CommonProblemController` with endpoints:
-  - [ ] `GET /api/common-problems` — list all
-  - [ ] `GET /api/common-problems/{id}` — get by ID
-  - [ ] `POST /api/common-problems` — create
-  - [ ] `PUT /api/common-problems/{id}` — update
-  - [ ] `DELETE /api/common-problems/{id}` — delete
-- [ ] Create `InspectionController` with endpoints:
-  - [ ] `GET /api/repair-orders/{id}/inspections` — list inspections for repair order
-  - [ ] `POST /api/repair-orders/{id}/inspections?templateId=X` — create from template
-  - [ ] `GET /api/repair-orders/{id}/inspections/{inspId}` — get single inspection
-  - [ ] `PUT /api/repair-orders/{id}/inspections/{inspId}/items` — save item statuses
-  - [ ] `DELETE /api/repair-orders/{id}/inspections/{inspId}` — delete inspection
-- [ ] Verify backend compiles: `./mvnw clean compile`
-- [ ] Verify backend starts: `./mvnw clean spring-boot:run`
+- [x] Create `InspectionItemStatus` enum (`OK`, `REVISAR`, `PROBLEMA`, `NO_APLICA`)
+- [x] Create `InspectionTemplate` entity with `title`, OneToMany to `InspectionTemplateGroup` (cascade, orphanRemoval)
+- [x] Create `InspectionTemplateGroup` entity with `title`, `sortOrder`, ManyToOne to `InspectionTemplate`, OneToMany to `InspectionTemplateItem` (cascade, orphanRemoval)
+- [x] Create `InspectionTemplateItem` entity with `name`, `sortOrder`, ManyToOne to `InspectionTemplateGroup`
+- [x] Create `CommonProblem` entity with `description`
+- [x] Create `Inspection` entity with ManyToOne to `RepairOrder`, ManyToOne to `InspectionTemplate`, OneToMany to `InspectionItem` (cascade, orphanRemoval)
+- [x] Create `InspectionItem` entity with ManyToOne to `Inspection`, ManyToOne to `InspectionTemplateItem`, `status` (enum), `comment`
+- [x] Create `InspectionTemplateRepository` with `findWithGroupsAndItemsById`, `findAllByOrderByTitleAsc`
+- [x] Create `InspectionTemplateGroupRepository` with `findByTemplateIdOrderBySortOrderAsc`, `findNextSortOrder`
+- [x] Create `InspectionTemplateItemRepository` with `findByGroupIdOrderBySortOrderAsc`, `findNextSortOrder`
+- [x] Create `CommonProblemRepository` with `findAllByOrderByDescriptionAsc`
+- [x] Create `InspectionRepository` with `findByRepairOrderId` (EntityGraph), `findWithItemsById` (EntityGraph)
+- [x] Create `InspectionItemRepository` with `findByInspectionId`
+- [x] Create `InspectionTemplateRequest` record with Jakarta Validation (`@NotBlank` on `title`, `@NotEmpty`/`@Valid` on `groups`)
+- [x] Create `InspectionTemplateGroupRequest` record with Jakarta Validation (`@NotBlank` on `title`, `@NotNull` on `sortOrder`, `@NotEmpty`/`@Valid` on `items`)
+- [x] Create `InspectionTemplateItemRequest` record with Jakarta Validation (`@NotBlank` on `name`, `@NotNull` on `sortOrder`)
+- [x] Create `InspectionTemplateResponse`, `InspectionTemplateGroupResponse`, `InspectionTemplateItemResponse` records
+- [x] Create `CommonProblemRequest` record with Jakarta Validation (`@NotBlank` on `description`)
+- [x] Create `CommonProblemResponse` record
+- [x] Create `InspectionResponse` record (with nested `InspectionGroupWithItemsResponse`)
+- [x] Create `InspectionGroupWithItemsResponse` record
+- [x] Create `InspectionItemResponse` record
+- [x] Create `InspectionItemRequest` record with Jakarta Validation (`@NotNull` on `id`/`status`)
+- [x] Create `SaveInspectionItemsRequest` record with Jakarta Validation (`@NotEmpty`/`@Valid` on `items`)
+- [x] Create `InspectionTemplateMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
+- [x] Create `CommonProblemMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
+- [x] Create `InspectionMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
+- [x] Create `InspectionTemplateService` interface
+- [x] Create `InspectionTemplateServiceImpl` with methods:
+  - [x] `getAll()` — list all ordered by title ASC
+  - [x] `getById(Long)` — fetch with groups and items
+  - [x] `create(InspectionTemplateRequest)` — build entity tree with groups/items
+  - [x] `update(Long, InspectionTemplateRequest)` — reconcile groups/items (add/update/remove)
+  - [x] `delete(Long)` — cascade delete groups and items
+  - [x] `duplicate(Long)` — deep copy with title suffixed " (Copia)"
+- [x] Create `CommonProblemService` interface
+- [x] Create `CommonProblemServiceImpl` with methods:
+  - [x] `getAll()` — list all ordered by description ASC
+  - [x] `getById(Long)` — fetch by ID
+  - [x] `create(CommonProblemRequest)` — create new problem
+  - [x] `update(Long, CommonProblemRequest)` — update description
+  - [x] `delete(Long)` — delete problem
+- [x] Create `InspectionService` interface
+- [x] Create `InspectionServiceImpl` with methods:
+  - [x] `createForRepairOrder(Long, Long)` — create inspection from template, items default to `NO_APLICA`
+  - [x] `getByRepairOrder(Long)` — list inspections for repair order
+  - [x] `getById(Long)` — fetch with items
+  - [x] `saveItems(Long, SaveInspectionItemsRequest)` — batch update item statuses and comments
+  - [x] `delete(Long)` — delete inspection
+  - [x] `buildResponse(Inspection)` — private helper to group items by template group
+- [x] Create `InspectionTemplateController` with endpoints:
+  - [x] `GET /api/inspection-templates` — list all
+  - [x] `GET /api/inspection-templates/{id}` — get by ID
+  - [x] `POST /api/inspection-templates` — create
+  - [x] `PUT /api/inspection-templates/{id}` — update
+  - [x] `DELETE /api/inspection-templates/{id}` — delete
+  - [x] `POST /api/inspection-templates/{id}/duplicate` — duplicate
+- [x] Create `CommonProblemController` with endpoints:
+  - [x] `GET /api/common-problems` — list all
+  - [x] `GET /api/common-problems/{id}` — get by ID
+  - [x] `POST /api/common-problems` — create
+  - [x] `PUT /api/common-problems/{id}` — update
+  - [x] `DELETE /api/common-problems/{id}` — delete
+- [x] Create `InspectionController` with endpoints:
+  - [x] `GET /api/repair-orders/{id}/inspections` — list inspections for repair order
+  - [x] `POST /api/repair-orders/{id}/inspections?templateId=X` — create from template
+  - [x] `GET /api/repair-orders/{id}/inspections/{inspId}` — get single inspection
+  - [x] `PUT /api/repair-orders/{id}/inspections/{inspId}/items` — save item statuses
+  - [x] `DELETE /api/repair-orders/{id}/inspections/{inspId}` — delete inspection
+- [x] Verify backend compiles: `./mvnw clean compile`
+- [x] Verify backend starts: `./mvnw clean spring-boot:run`
 
 ### 8.2 Frontend
 
-- [ ] Create `src/features/inspections/types.ts` with types: `InspectionItemStatus`, `InspectionTemplateItemResponse`, `InspectionTemplateGroupResponse`, `InspectionTemplateResponse`, `InspectionTemplateItemRequest`, `InspectionTemplateGroupRequest`, `InspectionTemplateRequest`, `CommonProblemResponse`, `CommonProblemRequest`, `InspectionItemResponse`, `InspectionGroupWithItemsResponse`, `InspectionResponse`, `InspectionItemRequest`, `SaveInspectionItemsRequest`
-- [ ] Create `src/api/inspections.ts` API layer (`inspectionTemplatesApi`, `commonProblemsApi`, `inspectionsApi`)
-- [ ] Create `useInspectionTemplates` hook — fetch all templates
-- [ ] Create `useInspectionTemplate` hook — fetch single template by ID
-- [ ] Create `useCommonProblems` hook — fetch all common problems
-- [ ] Create `useRepairOrderInspections` hook — fetch inspections for a repair order
-- [ ] Create `InspectionTemplateListPage` (`/configuracion/plantillas-inspeccion`) — list with edit/duplicate/delete actions
-- [ ] Create `InspectionTemplateBuilder` (`/configuracion/plantillas-inspeccion/nueva` and `.../:id/editar`) — full-page builder with groups/items, drag-and-drop reorder, add/remove groups/items
-- [ ] Create `CommonProblemsPage` (`/configuracion/problemas-comunes`) — CRUD list with inline add/edit dialog
-- [ ] Create `InspectionsTab` component — replaces placeholder in repair order detail, with reason/notes fields, add inspection button, print button, inspection list
-- [ ] Create `InspectionForm` component — per-inspection form with status radio buttons (OK/REVISAR/PROBLEMA/NO_APLICA with colored icons), comment fields, save/delete actions
-- [ ] Create `AddInspectionDialog` component — modal to select a template for creating an inspection
-- [ ] Register routes with lazy loading:
-  - [ ] `/configuracion/plantillas-inspeccion` → `InspectionTemplateListPage`
-  - [ ] `/configuracion/plantillas-inspeccion/nueva` → `InspectionTemplateBuilder`
-  - [ ] `/configuracion/plantillas-inspeccion/:id/editar` → `InspectionTemplateBuilder`
-  - [ ] `/configuracion/problemas-comunes` → `CommonProblemsPage`
-- [ ] Replace `PlaceholderTab` for "Inspecciones" tab in `RepairOrderDetailTabs` with `InspectionsTab`
-- [ ] Verify frontend compiles
-- [ ] Verify frontend runs
+- [x] Create `src/features/inspections/types.ts` with types: `InspectionItemStatus`, `InspectionTemplateItemResponse`, `InspectionTemplateGroupResponse`, `InspectionTemplateResponse`, `InspectionTemplateItemRequest`, `InspectionTemplateGroupRequest`, `InspectionTemplateRequest`, `CommonProblemResponse`, `CommonProblemRequest`, `InspectionItemResponse`, `InspectionGroupWithItemsResponse`, `InspectionResponse`, `InspectionItemRequest`, `SaveInspectionItemsRequest`
+- [x] Create `src/api/inspections.ts` API layer (`inspectionTemplatesApi`, `commonProblemsApi`, `inspectionsApi`)
+- [x] Create `useInspectionTemplates` hook — fetch all templates
+- [x] Create `useInspectionTemplate` hook — fetch single template by ID
+- [x] Create `useCommonProblems` hook — fetch all common problems
+- [x] Create `useRepairOrderInspections` hook — fetch inspections for a repair order
+- [x] Create `InspectionTemplateListPage` (`/configuracion/plantillas-inspeccion`) — list with edit/duplicate/delete actions
+- [x] Create `InspectionTemplateBuilder` (`/configuracion/plantillas-inspeccion/nueva` and `.../:id/editar`) — full-page builder with groups/items, drag-and-drop reorder, add/remove groups/items
+- [x] Create `CommonProblemsPage` (`/configuracion/problemas-comunes`) — CRUD list with inline add/edit dialog
+- [x] Create `InspectionsTab` component — replaces placeholder in repair order detail, with reason/notes fields, add inspection button, print button, inspection list
+- [x] Create `InspectionForm` component — per-inspection form with status radio buttons (OK/REVISAR/PROBLEMA/NO_APLICA with colored icons), comment fields, save/delete actions
+- [x] Create `AddInspectionDialog` component — modal to select a template for creating an inspection
+- [x] Register routes with lazy loading:
+  - [x] `/configuracion/plantillas-inspeccion` → `InspectionTemplateListPage`
+  - [x] `/configuracion/plantillas-inspeccion/nueva` → `InspectionTemplateBuilder`
+  - [x] `/configuracion/plantillas-inspeccion/:id/editar` → `InspectionTemplateBuilder`
+  - [x] `/configuracion/problemas-comunes` → `CommonProblemsPage`
+- [x] Replace `PlaceholderTab` for "Inspecciones" tab in `RepairOrderDetailTabs` with `InspectionsTab`
+- [x] Verify frontend compiles
+- [x] Verify frontend runs
 
 ### 8.3 Business Rules Verification
 
-- [ ] Template must have ≥ 1 group (backend `@NotEmpty` + frontend disable save)
-- [ ] Each group must have ≥ 1 item (backend `@NotEmpty` + frontend disable save)
-- [ ] `sortOrder` derived from array index on frontend, stored as-is on backend
-- [ ] One status per inspection item (DB CHECK + enum + radio buttons)
-- [ ] Comment is optional (nullable column, `null` if empty)
-- [ ] Default status `NO_APLICA` when inspection created from template
-- [ ] Deleting a template cascades to groups/items but does not affect existing inspections
-- [ ] Duplicate template creates deep copy with title suffixed " (Copia)"
-- [ ] Template updates do not affect existing inspections
-- [ ] Repair order `reason` and `mechanic_notes` editable from InspectionsTab, saved via repair order update endpoint
-- [ ] Print inspection summary button disabled if no inspections exist
-- [ ] Common problems are simple CRUD lookup data
+- [x] Template must have ≥ 1 group (backend `@NotEmpty` + frontend disable save)
+- [x] Each group must have ≥ 1 item (backend `@NotEmpty` + frontend disable save)
+- [x] `sortOrder` derived from array index on frontend, stored as-is on backend
+- [x] One status per inspection item (DB CHECK + enum + radio buttons)
+- [x] Comment is optional (nullable column, `null` if empty)
+- [x] Default status `NO_APLICA` when inspection created from template
+- [x] Deleting a template cascades to groups/items but does not affect existing inspections
+- [x] Duplicate template creates deep copy with title suffixed " (Copia)"
+- [x] Template updates do not affect existing inspections
+- [x] Repair order `reason` and `mechanic_notes` editable from InspectionsTab, saved via repair order update endpoint
+- [x] Print inspection summary button disabled if no inspections exist
+- [x] Common problems are simple CRUD lookup data
 
 ### 8.4 Testing
 
