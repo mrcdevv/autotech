@@ -5,15 +5,12 @@ import {
   Avatar,
   Box,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Stack,
   TextField,
 } from "@mui/material";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 
+import { AppDialog } from "@/components/AppDialog";
 import { bankAccountsApi } from "@/api/bankAccounts";
 import { getBankLogo } from "@/assets/bank-logos";
 
@@ -62,10 +59,21 @@ export function BankAccountFormDialog({ open, account, onClose, onSave }: BankAc
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{account ? "Editar cuenta bancaria" : "Nueva cuenta bancaria"}</DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      title={account ? "Editar cuenta bancaria" : "Nueva cuenta bancaria"}
+      icon={<AccountBalanceIcon sx={{ fontSize: "1.25rem" }} />}
+      actions={
+        <>
+          <Button onClick={onClose} color="inherit">Cancelar</Button>
+          <Button variant="contained" onClick={handleSave} disabled={!bankId || !alias.trim()}>
+            Guardar
+          </Button>
+        </>
+      }
+    >
+      <Stack spacing={2} sx={{ mt: 0.5 }}>
           <Autocomplete
             options={banks}
             getOptionLabel={(b) => b.name}
@@ -128,13 +136,6 @@ export function BankAccountFormDialog({ open, account, onClose, onSave }: BankAc
             helperText="Opcional"
           />
         </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
-        <Button variant="contained" onClick={handleSave} disabled={!bankId || !alias.trim()}>
-          Guardar
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </AppDialog>
   );
 }

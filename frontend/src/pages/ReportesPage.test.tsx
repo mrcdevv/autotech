@@ -12,10 +12,9 @@ vi.mock("@/features/dashboard/components/ProductividadTab", () => ({
 }));
 
 describe("ReportesPage", () => {
-  it("given page loaded, when rendered, then shows title and Financiero tab by default", () => {
+  it("given page loaded, when rendered, then shows Financiero tab by default", () => {
     render(<ReportesPage />);
 
-    expect(screen.getByText("Reportes")).toBeInTheDocument();
     expect(screen.getByTestId("financiero-tab")).toBeInTheDocument();
   });
 

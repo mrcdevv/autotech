@@ -1,8 +1,10 @@
-import { Chip, IconButton, Tooltip } from "@mui/material";
+import { IconButton, Tooltip } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
 import { AppDataGrid } from "@/components/AppDataGrid";
+import { MonoText } from "@/components/MonoText";
+import { StatusBadge } from "@/components/StatusBadge";
 
 import type { GridColDef } from "@mui/x-data-grid";
 import type { InvoiceResponse } from "@/types/invoice";
@@ -44,7 +46,7 @@ export function InvoiceList({
       headerName: "Patente",
       flex: 0.75,
       minWidth: 120,
-      valueFormatter: (value: string | null) => value ?? "—",
+      renderCell: (params) => <MonoText>{params.value ?? "—"}</MonoText>,
     },
     {
       field: "status",
@@ -52,10 +54,9 @@ export function InvoiceList({
       flex: 0.8,
       minWidth: 140,
       renderCell: (params) => (
-        <Chip
+        <StatusBadge
           label={params.value === "PAGADA" ? "Pagada" : "Pendiente"}
-          color={params.value === "PAGADA" ? "success" : "warning"}
-          size="small"
+          tone={params.value === "PAGADA" ? "ok" : "warn"}
         />
       ),
     },
@@ -64,15 +65,22 @@ export function InvoiceList({
       headerName: "Orden de trabajo",
       flex: 1,
       minWidth: 160,
-      valueFormatter: (value: number | null) => (value != null ? `#${value}` : "—"),
+      renderCell: (params) => (
+        <MonoText>{params.value != null ? `#${params.value}` : "—"}</MonoText>
+      ),
     },
     {
       field: "total",
       headerName: "Total",
       flex: 0.75,
       minWidth: 120,
-      valueFormatter: (value: number | null) =>
-        value != null ? `$${Number(value).toFixed(2)}` : "—",
+      align: "right",
+      headerAlign: "right",
+      renderCell: (params) => (
+        <MonoText sx={{ display: "block", width: "100%", textAlign: "right" }}>
+          {params.value != null ? `$${Number(params.value).toFixed(2)}` : "—"}
+        </MonoText>
+      ),
     },
     {
       field: "actions",

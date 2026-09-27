@@ -101,7 +101,12 @@ export default function RepairOrdersPage() {
         }
       />
 
-      <KanbanBoard orders={orders} loading={loading} onUpdateStatus={updateStatus} />
+      <KanbanBoard
+        orders={orders}
+        loading={loading}
+        onUpdateStatus={updateStatus}
+        onRefetch={refetch}
+      />
     </PageShell>
   );
 }

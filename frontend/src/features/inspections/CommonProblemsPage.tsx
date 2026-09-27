@@ -7,11 +7,6 @@ import {
   ListItem,
   ListItemText,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  DialogContentText,
   TextField,
   CircularProgress,
   Alert,
@@ -20,7 +15,10 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined";
 
+import { AppConfirmDialog } from "@/components/AppConfirmDialog";
+import { AppDialog } from "@/components/AppDialog";
 import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
 import { useCommonProblems } from "@/features/inspections/useCommonProblems";
@@ -147,41 +145,42 @@ export default function CommonProblemsPage() {
         ))}
       </List>
 
-      <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>{selectedProblem ? "Editar problema" : "Nuevo problema"}</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Descripción"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            multiline
-            rows={3}
-            fullWidth
-            sx={{ mt: 1 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDialog}>Cancelar</Button>
-          <Button variant="contained" onClick={handleSave} disabled={!description.trim()}>
-            Guardar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <AppDialog
+        open={dialogOpen}
+        onClose={closeDialog}
+        title={selectedProblem ? "Editar problema" : "Nuevo problema"}
+        icon={<ReportProblemOutlinedIcon sx={{ fontSize: "1.25rem" }} />}
+        actions={
+          <>
+            <Button onClick={closeDialog} color="inherit">
+              Cancelar
+            </Button>
+            <Button variant="contained" onClick={handleSave} disabled={!description.trim()}>
+              Guardar
+            </Button>
+          </>
+        }
+      >
+        <TextField
+          label="Descripción"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          multiline
+          rows={3}
+          fullWidth
+          sx={{ mt: 1 }}
+        />
+      </AppDialog>
 
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Eliminar problema común</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            ¿Está seguro de que desea eliminar este problema común?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-            Eliminar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <AppConfirmDialog
+        open={deleteDialogOpen}
+        title="Eliminar problema común"
+        message="¿Está seguro de que desea eliminar este problema común? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        destructive
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteDialogOpen(false)}
+      />
 
       <Snackbar
         open={snackbar.open}

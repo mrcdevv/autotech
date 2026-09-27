@@ -1,10 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   Typography,
@@ -16,7 +12,9 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
+import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 
+import { AppDialog } from "@/components/AppDialog";
 import { catalogServicesApi } from "@/api/catalogServices";
 import { productsApi } from "@/api/products";
 
@@ -172,10 +170,20 @@ export function CannedJobFormDialog({ open, onClose, onSave, initialData }: Cann
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>{initialData ? "Editar trabajo enlatado" : "Nuevo trabajo enlatado"}</DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      title={initialData ? "Editar paquete de servicios" : "Nuevo paquete de servicios"}
+      icon={<HandymanOutlinedIcon sx={{ fontSize: "1.25rem" }} />}
+      actions={
+        <>
+          <Button onClick={onClose} color="inherit">Cancelar</Button>
+          <Button variant="contained" onClick={handleSave}>Guardar</Button>
+        </>
+      }
+    >
+        <Stack spacing={2} sx={{ mt: 0.5 }}>
           <TextField
             label="Título"
             value={title}
@@ -372,11 +380,6 @@ export function CannedJobFormDialog({ open, onClose, onSave, initialData }: Cann
             ))}
           </Box>
         </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
-        <Button variant="contained" onClick={handleSave}>Guardar</Button>
-      </DialogActions>
-    </Dialog>
+    </AppDialog>
   );
 }

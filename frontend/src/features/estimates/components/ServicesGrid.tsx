@@ -92,10 +92,10 @@ export function ServicesGrid({ services, onChange, readonly = false, showErrors 
         )}
       </Box>
 
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: 2.5 }}>
         {services.length === 0 ? (
-          <Box sx={{ py: 4, textAlign: "center" }}>
-            <BuildIcon sx={{ fontSize: 40, color: "grey.300", mb: 1 }} />
+          <Box sx={{ py: 2.5, textAlign: "center" }}>
+            <BuildIcon sx={{ fontSize: 32, color: "grey.300", mb: 1 }} />
             <Typography variant="body2" color="text.secondary">
               No hay servicios agregados
             </Typography>

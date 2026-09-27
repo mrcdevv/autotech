@@ -31,7 +31,7 @@ describe("KanbanColumn", () => {
 
     render(
       <MemoryRouter>
-        <KanbanColumn title="Presupuesto" orders={orders} loading={false} onUpdateStatus={vi.fn()} />
+        <KanbanColumn title="Presupuesto" tone="warn" orders={orders} loading={false} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
       </MemoryRouter>,
     );
 
@@ -42,7 +42,7 @@ describe("KanbanColumn", () => {
   it("given empty column, when rendered, then shows Sin órdenes message", () => {
     render(
       <MemoryRouter>
-        <KanbanColumn title="Completada" orders={[]} loading={false} onUpdateStatus={vi.fn()} />
+        <KanbanColumn title="Completada" tone="ok" orders={[]} loading={false} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
       </MemoryRouter>,
     );
 
@@ -52,7 +52,7 @@ describe("KanbanColumn", () => {
   it("given loading state, when rendered, then shows skeleton placeholders", () => {
     const { container } = render(
       <MemoryRouter>
-        <KanbanColumn title="Test" orders={[]} loading={true} onUpdateStatus={vi.fn()} />
+        <KanbanColumn title="Test" tone="neutral" orders={[]} loading={true} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
       </MemoryRouter>,
     );
 

@@ -1,10 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   Stack,
@@ -13,8 +9,10 @@ import {
   CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
+import DirectionsCarOutlinedIcon from "@mui/icons-material/DirectionsCarOutlined";
 import { useNavigate } from "react-router";
 
+import { AppDialog } from "@/components/AppDialog";
 import { clientAutocompleteApi } from "@/api/clientAutocomplete";
 
 import type {
@@ -240,10 +238,22 @@ export function VehicleForm({
   ];
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>{initialData ? "Editar vehículo" : "Nuevo vehículo"}</DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      title={initialData ? "Editar vehículo" : "Nuevo vehículo"}
+      icon={<DirectionsCarOutlinedIcon sx={{ fontSize: "1.25rem" }} />}
+      actions={
+        <>
+          <Button onClick={onClose} color="inherit">Cancelar</Button>
+          <Button variant="contained" onClick={handleSubmit} disabled={!isDirty}>
+            Guardar
+          </Button>
+        </>
+      }
+    >
+        <Stack spacing={2} sx={{ mt: 0.5 }}>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 6 }}>
               <Autocomplete
@@ -434,13 +444,6 @@ export function VehicleForm({
             </Grid>
           </Grid>
         </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
-        <Button variant="contained" onClick={handleSubmit} disabled={!isDirty}>
-          Guardar
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </AppDialog>
   );
 }

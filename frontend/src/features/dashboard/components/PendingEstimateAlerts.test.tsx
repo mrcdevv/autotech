@@ -17,7 +17,7 @@ describe("PendingEstimateAlerts", () => {
     render(<PendingEstimateAlerts alerts={alerts} thresholdDays={5} />);
 
     expect(screen.getByText(/Maria Garcia/)).toBeInTheDocument();
-    expect(screen.getByText(/7 días pendiente/)).toBeInTheDocument();
+    expect(screen.getByText("7 días")).toBeInTheDocument();
   });
 
   it("given no alerts, when rendered, then shows empty state", () => {

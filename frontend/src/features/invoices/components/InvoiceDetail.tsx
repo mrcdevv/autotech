@@ -13,11 +13,6 @@ import {
   Stack,
   Tabs,
   Tab,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
 } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -29,6 +24,7 @@ import axios from "axios";
 import { clientAutocompleteApi } from "@/api/clientAutocomplete";
 import { vehiclesApi } from "@/api/vehicles";
 import { estimatesApi } from "@/api/estimates";
+import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { useInvoice } from "@/features/invoices/hooks/useInvoice";
 import { ServicesGrid } from "./ServicesGrid";
 import { ProductsGrid } from "./ProductsGrid";
@@ -630,20 +626,15 @@ export function InvoiceDetail({ invoiceId, repairOrderId, estimateId }: InvoiceD
       )}
 
       {/* Confirm Dialog */}
-      <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)} className="no-print">
-        <DialogTitle>Confirmar creación de factura</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            ¿Está seguro de que los datos son correctos? Una vez creada, la factura no se podrá editar.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDialogOpen(false)}>Cancelar</Button>
-          <Button onClick={handleConfirmCreate} variant="contained">
-            Confirmar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <AppConfirmDialog
+        open={confirmDialogOpen}
+        className="no-print"
+        title="Confirmar creación de factura"
+        message="¿Está seguro de que los datos son correctos? Una vez creada, la factura no se podrá editar."
+        confirmLabel="Confirmar"
+        onConfirm={handleConfirmCreate}
+        onCancel={() => setConfirmDialogOpen(false)}
+      />
     </Box>
   );
 }

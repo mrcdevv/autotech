@@ -37,7 +37,7 @@ describe("ProductsDataGrid", () => {
   it("given loading state, when rendered, then shows loading overlay", () => {
     render(<ProductsDataGrid {...defaultProps} loading={true} rows={[]} totalCount={0} />);
 
-    expect(screen.getByRole("progressbar")).toBeInTheDocument();
+    expect(screen.getByTestId("grid-loading")).toBeInTheDocument();
   });
 
   it("given row with edit button, when clicking edit, then calls onEditRow", async () => {

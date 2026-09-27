@@ -1,5 +1,8 @@
-import { Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from "@mui/material";
+import { Box, Button, Chip, Stack, Typography } from "@mui/material";
+import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
 import dayjs from "dayjs";
+
+import { AppDialog } from "@/components/AppDialog";
 
 import type { AppointmentResponse } from "@/types/appointment";
 
@@ -40,10 +43,29 @@ export function AppointmentDetailDialog({ open, appointment, onClose, onEdit }: 
   const displayStatus = getDisplayStatus();
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{appointment.title ?? `Cita #${appointment.id}`}</DialogTitle>
-      <DialogContent dividers>
-        <Stack spacing={2}>
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      title={appointment.title ?? `Cita #${appointment.id}`}
+      icon={<EventNoteOutlinedIcon sx={{ fontSize: "1.25rem" }} />}
+      actions={
+        <>
+          <Button onClick={onClose} color="inherit">Cerrar</Button>
+          {onEdit && appointment.status !== "CANCELLED" && (
+            <Button
+              variant="contained"
+              onClick={() => {
+                onEdit(appointment);
+                onClose();
+              }}
+            >
+              Editar
+            </Button>
+          )}
+        </>
+      }
+    >
+      <Stack spacing={2}>
           <Box>
             <Typography variant="subtitle2" color="text.secondary">Estado</Typography>
             <Chip
@@ -130,21 +152,6 @@ export function AppointmentDetailDialog({ open, appointment, onClose, onEdit }: 
             <Typography>{formatDateTime(appointment.vehiclePickedUpAt)}</Typography>
           </Box>
         </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cerrar</Button>
-        {onEdit && appointment.status !== "CANCELLED" && (
-          <Button 
-            variant="contained" 
-            onClick={() => {
-              onEdit(appointment);
-              onClose();
-            }}
-          >
-            Editar
-          </Button>
-        )}
-      </DialogActions>
-    </Dialog>
+    </AppDialog>
   );
 }

@@ -1,3 +1,5 @@
+import type { StatusTone } from "@/theme/tokens";
+
 export type RepairOrderStatus =
   | "INGRESO_VEHICULO"
   | "ESPERANDO_APROBACION_PRESUPUESTO"
@@ -17,18 +19,25 @@ export const STATUS_LABELS: Record<RepairOrderStatus, string> = {
   ENTREGADO: "Entregado",
 };
 
-export const KANBAN_COLUMNS = [
+export const KANBAN_COLUMNS: {
+  title: string;
+  statuses: RepairOrderStatus[];
+  tone: StatusTone;
+}[] = [
   {
     title: "Presupuesto",
-    statuses: ["INGRESO_VEHICULO", "ESPERANDO_APROBACION_PRESUPUESTO"] as RepairOrderStatus[],
+    statuses: ["INGRESO_VEHICULO", "ESPERANDO_APROBACION_PRESUPUESTO"],
+    tone: "warn",
   },
   {
     title: "Trabajo en proceso",
-    statuses: ["ESPERANDO_REPUESTOS", "REPARACION", "PRUEBAS"] as RepairOrderStatus[],
+    statuses: ["ESPERANDO_REPUESTOS", "REPARACION", "PRUEBAS"],
+    tone: "info",
   },
   {
     title: "Completada",
-    statuses: ["LISTO_PARA_ENTREGAR", "ENTREGADO"] as RepairOrderStatus[],
+    statuses: ["LISTO_PARA_ENTREGAR", "ENTREGADO"],
+    tone: "ok",
   },
 ];
 

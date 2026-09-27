@@ -19,7 +19,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     @EntityGraph(attributePaths = {"client", "vehicle", "employees", "tags"})
     Optional<Appointment> findWithDetailsById(Long id);
 
-    @EntityGraph(attributePaths = {"client", "vehicle", "employees", "tags"})
+    @EntityGraph(attributePaths = {"client", "vehicle"})
     Page<Appointment> findAll(Pageable pageable);
 
     @Query("""

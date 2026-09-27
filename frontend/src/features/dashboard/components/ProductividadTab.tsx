@@ -2,8 +2,8 @@ import { Box, Button, CircularProgress, Alert, Card, CardContent } from "@mui/ma
 import Grid from "@mui/material/Grid2";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import TimerIcon from "@mui/icons-material/Timer";
+import { StatCard } from "@/components/StatCard";
 import { useProductividad } from "@/features/dashboard/hooks/useProductividad";
-import { KpiCard } from "./KpiCard";
 import { MechanicProductivityTable } from "./MechanicProductivityTable";
 import { TopServicesTable } from "./TopServicesTable";
 
@@ -28,10 +28,10 @@ export function ProductividadTab() {
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <KpiCard
-            title="Tiempo promedio de reparación"
+          <StatCard
+            label="Tiempo promedio de reparación"
             value={`${data.averageRepairDays.toFixed(1)} días`}
-            icon={<TimerIcon color="primary" fontSize="large" />}
+            icon={<TimerIcon color="primary" fontSize="small" />}
           />
         </Grid>
       </Grid>

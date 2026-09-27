@@ -5,14 +5,12 @@ import {
   Button,
   Alert,
   Snackbar,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import LockResetIcon from "@mui/icons-material/LockReset";
 
+import { AppDialog } from "@/components/AppDialog";
 import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
 import { employeesApi } from "@/api/employees";
@@ -247,29 +245,28 @@ export default function EmployeesPage() {
         message="¿Está seguro de que desea eliminar este empleado? Esta acción no se puede deshacer."
       />
 
-      <Dialog
+      <AppDialog
         open={tempPasswordDialog.open}
         onClose={() => setTempPasswordDialog((prev) => ({ ...prev, open: false }))}
+        title="Contraseña restablecida"
         maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle>Contraseña restablecida</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Se generó una contraseña temporal para{" "}
-            <strong>{tempPasswordDialog.employeeName}</strong> y se envió a su correo electrónico.
-            Al iniciar sesión, el sistema le pedirá que la cambie.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
+        icon={<LockResetIcon sx={{ fontSize: "1.25rem" }} />}
+        iconTone="ok"
+        actions={
           <Button
             variant="contained"
             onClick={() => setTempPasswordDialog((prev) => ({ ...prev, open: false }))}
           >
             Entendido
           </Button>
-        </DialogActions>
-      </Dialog>
+        }
+      >
+        <Typography variant="body2" color="text.secondary">
+          Se generó una contraseña temporal para{" "}
+          <strong>{tempPasswordDialog.employeeName}</strong> y se envió a su correo electrónico.
+          Al iniciar sesión, el sistema le pedirá que la cambie.
+        </Typography>
+      </AppDialog>
     </PageShell>
   );
 }

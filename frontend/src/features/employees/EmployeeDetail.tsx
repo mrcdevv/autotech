@@ -1,8 +1,4 @@
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   Typography,
   Chip,
@@ -10,6 +6,9 @@ import {
   Divider,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
+import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
+
+import { AppDialog } from "@/components/AppDialog";
 
 import type { EmployeeResponse } from "@/features/employees/types";
 
@@ -34,50 +33,51 @@ export function EmployeeDetail({ open, employee, onClose }: EmployeeDetailProps)
   if (!employee) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Detalle del Empleado</DialogTitle>
-      <DialogContent>
-        <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Field label="Nombre" value={employee.firstName} />
-          <Field label="Apellido" value={employee.lastName} />
-          <Field label="DNI" value={employee.dni} />
-          <Field label="Correo Electrónico" value={employee.email} />
-          <Field label="Teléfono" value={employee.phone} />
-          <Field label="Dirección" value={employee.address} />
-          <Field label="Provincia" value={employee.province} />
-          <Field label="Ciudad" value={employee.city} />
-          <Field label="País" value={employee.country} />
-          <Field label="Estado Civil" value={employee.maritalStatus} />
-          <Field label="Cantidad de Hijos" value={String(employee.childrenCount)} />
-          <Field label="Fecha de Entrada" value={employee.entryDate} />
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <Typography variant="caption" color="text.secondary">
-              Estado
-            </Typography>
-            <Stack direction="row" sx={{ mt: 0.5 }}>
-              <Chip
-                label={employee.status === "ACTIVO" ? "Activo" : "Inactivo"}
-                color={employee.status === "ACTIVO" ? "success" : "error"}
-                size="small"
-              />
-            </Stack>
-          </Grid>
-          <Grid size={{ xs: 12 }}>
-            <Divider sx={{ my: 1 }} />
-            <Typography variant="caption" color="text.secondary">
-              Roles
-            </Typography>
-            <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
-              {employee.roles.map((role) => (
-                <Chip key={role.id} label={role.name} size="small" variant="outlined" />
-              ))}
-            </Stack>
-          </Grid>
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      title="Detalle del Empleado"
+      maxWidth="md"
+      icon={<BadgeOutlinedIcon sx={{ fontSize: "1.25rem" }} />}
+      actions={<Button onClick={onClose} color="inherit">Cerrar</Button>}
+    >
+      <Grid container spacing={2} sx={{ mt: 0.5 }}>
+        <Field label="Nombre" value={employee.firstName} />
+        <Field label="Apellido" value={employee.lastName} />
+        <Field label="DNI" value={employee.dni} />
+        <Field label="Correo Electrónico" value={employee.email} />
+        <Field label="Teléfono" value={employee.phone} />
+        <Field label="Dirección" value={employee.address} />
+        <Field label="Provincia" value={employee.province} />
+        <Field label="Ciudad" value={employee.city} />
+        <Field label="País" value={employee.country} />
+        <Field label="Estado Civil" value={employee.maritalStatus} />
+        <Field label="Cantidad de Hijos" value={String(employee.childrenCount)} />
+        <Field label="Fecha de Entrada" value={employee.entryDate} />
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <Typography variant="caption" color="text.secondary">
+            Estado
+          </Typography>
+          <Stack direction="row" sx={{ mt: 0.5 }}>
+            <Chip
+              label={employee.status === "ACTIVO" ? "Activo" : "Inactivo"}
+              color={employee.status === "ACTIVO" ? "success" : "error"}
+              size="small"
+            />
+          </Stack>
         </Grid>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cerrar</Button>
-      </DialogActions>
-    </Dialog>
+        <Grid size={{ xs: 12 }}>
+          <Divider sx={{ my: 1 }} />
+          <Typography variant="caption" color="text.secondary">
+            Roles
+          </Typography>
+          <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
+            {employee.roles.map((role) => (
+              <Chip key={role.id} label={role.name} size="small" variant="outlined" />
+            ))}
+          </Stack>
+        </Grid>
+      </Grid>
+    </AppDialog>
   );
 }
