@@ -29,7 +29,7 @@ describe("KanbanBoard", () => {
   it("given orders, when rendered, then shows 3 columns with correct titles", () => {
     render(
       <MemoryRouter>
-        <KanbanBoard orders={[]} loading={false} onUpdateStatus={vi.fn()} />
+        <KanbanBoard orders={[]} loading={false} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
       </MemoryRouter>,
     );
 
@@ -47,7 +47,7 @@ describe("KanbanBoard", () => {
 
     render(
       <MemoryRouter>
-        <KanbanBoard orders={orders} loading={false} onUpdateStatus={vi.fn()} />
+        <KanbanBoard orders={orders} loading={false} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
       </MemoryRouter>,
     );
 
@@ -59,7 +59,7 @@ describe("KanbanBoard", () => {
   it("given loading state, when rendered, then shows loading placeholders", () => {
     const { container } = render(
       <MemoryRouter>
-        <KanbanBoard orders={[]} loading={true} onUpdateStatus={vi.fn()} />
+        <KanbanBoard orders={[]} loading={true} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
       </MemoryRouter>,
     );
 

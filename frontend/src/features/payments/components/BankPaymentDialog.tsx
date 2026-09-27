@@ -1,17 +1,15 @@
 import { useState, useEffect } from "react";
 
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   Box,
   Alert,
   Autocomplete,
 } from "@mui/material";
+import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 
+import { AppDialog } from "@/components/AppDialog";
 import { usePayments } from "../hooks/usePayments";
 import { useBankAccounts } from "../hooks/useBankAccounts";
 
@@ -102,14 +100,25 @@ export function BankPaymentDialog({
     : remaining;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        {isEditing
-          ? "Modificar pago a cuenta bancaria"
-          : "Agregar pago a cuenta bancaria"}
-      </DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      title={isEditing ? "Modificar pago a cuenta bancaria" : "Agregar pago a cuenta bancaria"}
+      icon={<AccountBalanceWalletOutlinedIcon sx={{ fontSize: "1.25rem" }} />}
+      actions={
+        <>
+          <Button onClick={onClose} color="inherit">Cancelar</Button>
+          <Button
+            variant="contained"
+            onClick={handleSubmit}
+            disabled={amount <= 0 || selectedBankAccountId === null}
+          >
+            Aceptar
+          </Button>
+        </>
+      }
+    >
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 0.5 }}>
           <TextField
             type="date"
             label="Fecha de pago"
@@ -181,17 +190,6 @@ export function BankPaymentDialog({
             </Box>
           </Alert>
         )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
-        <Button
-          variant="contained"
-          onClick={handleSubmit}
-          disabled={amount <= 0 || selectedBankAccountId === null}
-        >
-          Aceptar
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </AppDialog>
   );
 }

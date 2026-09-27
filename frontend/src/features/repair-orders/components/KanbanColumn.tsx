@@ -1,29 +1,75 @@
-import { Paper, Box, Typography, Chip, Skeleton } from "@mui/material";
+import { Box, Typography, Skeleton, Stack } from "@mui/material";
+
+import { MonoText } from "@/components/MonoText";
+import { StatusDot } from "@/components/StatusDot";
+import { dot } from "@/theme/tokens";
 
 import { RepairOrderCard } from "./RepairOrderCard";
 
+import type { StatusTone } from "@/theme/tokens";
 import type { RepairOrderResponse, StatusUpdateRequest } from "../types";
 
 interface KanbanColumnProps {
   title: string;
+  tone: StatusTone;
   orders: RepairOrderResponse[];
   loading: boolean;
   onUpdateStatus: (id: number, request: StatusUpdateRequest) => Promise<void>;
+  onRefetch: () => void;
 }
 
-export function KanbanColumn({ title, orders, loading, onUpdateStatus }: KanbanColumnProps) {
+export function KanbanColumn({ title, tone, orders, loading, onUpdateStatus, onRefetch }: KanbanColumnProps) {
   return (
-    <Paper sx={{ flex: "1 1 0", minWidth: 320, p: 2 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6">{title}</Typography>
-        <Chip label={orders.length} size="small" />
+    <Box
+      sx={{
+        flex: "1 1 0",
+        minWidth: 320,
+        display: "flex",
+        flexDirection: "column",
+        bgcolor: "grey.100",
+        border: "1px solid",
+        borderColor: "divider",
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 1,
+          px: 1.5,
+          py: 1.25,
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          bgcolor: "background.paper",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+          <StatusDot label="" color={dot[tone]} />
+          <Typography variant="overline" sx={{ color: "text.muted" }}>
+            {title}
+          </Typography>
+        </Box>
+        <MonoText
+          sx={{
+            fontSize: "0.6875rem",
+            color: "text.secondary",
+            border: "1px solid",
+            borderColor: "divider",
+            px: "7px",
+            py: "1px",
+          }}
+        >
+          {orders.length}
+        </MonoText>
       </Box>
-      <Box sx={{ overflowY: "auto", maxHeight: "calc(100vh - 250px)" }}>
+
+      <Stack spacing={1.25} sx={{ p: 1.25 }}>
         {loading ? (
           <>
-            <Skeleton variant="rectangular" height={120} sx={{ mb: 1, borderRadius: 1 }} />
-            <Skeleton variant="rectangular" height={120} sx={{ mb: 1, borderRadius: 1 }} />
-            <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 1 }} />
+            <Skeleton variant="rectangular" height={180} sx={{ borderRadius: 1 }} />
+            <Skeleton variant="rectangular" height={180} sx={{ borderRadius: 1 }} />
+            <Skeleton variant="rectangular" height={180} sx={{ borderRadius: 1 }} />
           </>
         ) : orders.length === 0 ? (
           <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 2 }}>
@@ -31,10 +77,15 @@ export function KanbanColumn({ title, orders, loading, onUpdateStatus }: KanbanC
           </Typography>
         ) : (
           orders.map((order) => (
-            <RepairOrderCard key={order.id} order={order} onUpdateStatus={onUpdateStatus} />
+            <RepairOrderCard
+              key={order.id}
+              order={order}
+              onUpdateStatus={onUpdateStatus}
+              onRefetch={onRefetch}
+            />
           ))
         )}
-      </Box>
-    </Paper>
+      </Stack>
+    </Box>
   );
 }

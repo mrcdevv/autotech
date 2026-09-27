@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Box, Button, CircularProgress, Alert, Card, CardContent } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import { StatCard } from "@/components/StatCard";
 import { useFinanciero } from "@/features/dashboard/hooks/useFinanciero";
-import { KpiCard } from "./KpiCard";
 import { MonthlyRevenueChart } from "./MonthlyRevenueChart";
 import { DebtAgingTable } from "./DebtAgingTable";
 import { TopUnpaidInvoicesList } from "./TopUnpaidInvoicesList";
@@ -39,24 +39,24 @@ export function FinancieroTab() {
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <KpiCard
-            title="Tasa de conversión"
+          <StatCard
+            label="Tasa de conversión"
             value={`${data.estimateConversionRate.toFixed(1)}%`}
-            icon={<PercentIcon color="primary" fontSize="large" />}
+            icon={<PercentIcon color="primary" fontSize="small" />}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <KpiCard
-            title="Presupuestos aceptados / total"
+          <StatCard
+            label="Presupuestos aceptados / total"
             value={`${data.estimatesAccepted} / ${data.estimatesTotal}`}
-            icon={<PercentIcon color="secondary" fontSize="large" />}
+            icon={<PercentIcon color="secondary" fontSize="small" />}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <KpiCard
-            title="Facturación pendiente"
+          <StatCard
+            label="Facturación pendiente"
             value={formatCurrency(data.totalPendingBilling)}
-            icon={<AttachMoneyIcon color="warning" fontSize="large" />}
+            icon={<AttachMoneyIcon color="warning" fontSize="small" />}
           />
         </Grid>
       </Grid>

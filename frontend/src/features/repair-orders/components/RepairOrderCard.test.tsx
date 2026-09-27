@@ -36,18 +36,18 @@ describe("RepairOrderCard", () => {
   it("given order, when rendered, then shows status badge and order id", () => {
     render(
       <MemoryRouter>
-        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} />
+        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Ingresó vehículo")).toBeInTheDocument();
+    expect(screen.getByText("Ingreso")).toBeInTheDocument();
     expect(screen.getByText("OT-1")).toBeInTheDocument();
   });
 
   it("given order, when rendered, then shows client name and phone", () => {
     render(
       <MemoryRouter>
-        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} />
+        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
       </MemoryRouter>,
     );
 
@@ -58,18 +58,18 @@ describe("RepairOrderCard", () => {
   it("given order, when rendered, then shows vehicle info", () => {
     render(
       <MemoryRouter>
-        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} />
+        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
       </MemoryRouter>,
     );
 
     expect(screen.getByText(/2020 Toyota Corolla/)).toBeInTheDocument();
-    expect(screen.getByText(/ABC123/)).toBeInTheDocument();
+    expect(screen.getAllByText(/ABC123/).length).toBeGreaterThan(0);
   });
 
   it("given order with employees, when rendered, then shows employee chips", () => {
     render(
       <MemoryRouter>
-        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} />
+        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
       </MemoryRouter>,
     );
 
@@ -79,7 +79,7 @@ describe("RepairOrderCard", () => {
   it("given order with tags, when rendered, then shows tag chips", () => {
     render(
       <MemoryRouter>
-        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} />
+        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
       </MemoryRouter>,
     );
 
@@ -90,7 +90,7 @@ describe("RepairOrderCard", () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter>
-        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} />
+        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
       </MemoryRouter>,
     );
 
@@ -99,19 +99,56 @@ describe("RepairOrderCard", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/ordenes-trabajo/1");
   });
 
-  it("given card, when clicking 3-dot menu, then shows menu options", async () => {
+  it("given card, when clicking 3-dot menu, then shows copy tracking code option", async () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter>
-        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} />
+        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
       </MemoryRouter>,
     );
 
-    const menuButton = screen.getByTestId("MoreVertIcon").closest("button")!;
+    const menuButton = screen.getByLabelText("Opciones de la orden");
     await user.click(menuButton);
 
-    expect(screen.getByText("Actualizar estado")).toBeInTheDocument();
     expect(screen.getByText("Copiar código de seguimiento")).toBeInTheDocument();
-    expect(screen.getByText("Editar")).toBeInTheDocument();
+  });
+
+  it("given card, when clicking 3-dot menu, then shows assign mechanic option", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByLabelText("Opciones de la orden"));
+
+    expect(screen.getByText("Asignar mecánico")).toBeInTheDocument();
+  });
+
+  it("given card, when clicking update status button, then opens status dialog", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Actualizar estado" }));
+
+    expect(screen.getByRole("radio", { name: "Reparación" })).toBeInTheDocument();
+  });
+
+  it("given card, when clicking view details button, then navigates to detail page", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Ver detalle" }));
+
+    expect(mockNavigate).toHaveBeenCalledWith("/ordenes-trabajo/1");
   });
 });

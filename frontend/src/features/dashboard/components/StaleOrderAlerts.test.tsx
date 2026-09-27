@@ -18,7 +18,7 @@ describe("StaleOrderAlerts", () => {
     render(<StaleOrderAlerts alerts={alerts} thresholdDays={5} />);
 
     expect(screen.getByText(/Cambio de aceite/)).toBeInTheDocument();
-    expect(screen.getByText(/10 días sin actualización/)).toBeInTheDocument();
+    expect(screen.getByText("10 días")).toBeInTheDocument();
   });
 
   it("given no alerts, when rendered, then shows empty state", () => {

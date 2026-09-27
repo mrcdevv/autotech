@@ -5,11 +5,6 @@ import {
   Autocomplete,
   Button,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   IconButton,
   MenuItem,
   Select,
@@ -23,6 +18,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router";
 
+import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
 import { employeesApi } from "@/api/employees";
@@ -353,41 +349,27 @@ export default function AppointmentsPage() {
         onSave={handleUpdate}
       />
 
-      <Dialog
+      <AppConfirmDialog
         open={deleteConfirmOpen}
-        onClose={() => setDeleteConfirmOpen(false)}
-      >
-        <DialogTitle>Eliminar cita</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            ¿Estás seguro de que deseas eliminar esta cita? Esta acción no se puede deshacer.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancelar</Button>
-          <Button onClick={handleDelete} color="error" variant="contained">
-            Eliminar
-          </Button>
-        </DialogActions>
-      </Dialog>
+        title="Eliminar cita"
+        message="¿Estás seguro de que deseas eliminar esta cita? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        destructive
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteConfirmOpen(false)}
+      />
 
-      <Dialog
+      <AppConfirmDialog
         open={cancelConfirmOpen}
-        onClose={() => setCancelConfirmOpen(false)}
-      >
-        <DialogTitle>Cancelar cita</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            ¿Estás seguro de que deseas cancelar esta cita? Pese a la cancelación, quedará registrada en el sistema.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCancelConfirmOpen(false)}>Volver</Button>
-          <Button onClick={handleCancel} color="warning" variant="contained">
-            Confirmar cancelación
-          </Button>
-        </DialogActions>
-      </Dialog>
+        title="Cancelar cita"
+        message="¿Estás seguro de que deseas cancelar esta cita? Pese a la cancelación, quedará registrada en el sistema."
+        confirmLabel="Confirmar cancelación"
+        cancelLabel="Volver"
+        iconTone="warn"
+        confirmColor="warning"
+        onConfirm={handleCancel}
+        onCancel={() => setCancelConfirmOpen(false)}
+      />
 
       <Snackbar
         open={snackbar.open}

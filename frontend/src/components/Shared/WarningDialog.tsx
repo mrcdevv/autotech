@@ -1,11 +1,8 @@
-import {
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Button,
-} from "@mui/material";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+
+import { AppConfirmDialog } from "@/components/AppConfirmDialog";
+
+import type { StatusTone } from "@/theme/tokens";
 
 interface WarningDialogProps {
   open: boolean;
@@ -13,6 +10,10 @@ interface WarningDialogProps {
   onConfirm: () => void;
   title: string;
   message: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  destructive?: boolean;
+  iconTone?: StatusTone;
 }
 
 export function WarningDialog({
@@ -21,21 +22,23 @@ export function WarningDialog({
   onConfirm,
   title,
   message,
+  confirmLabel = "Aceptar",
+  cancelLabel = "Rechazar",
+  destructive = false,
+  iconTone,
 }: WarningDialogProps) {
   return (
-    <Dialog open={open} onClose={onClose}>
-      <DialogTitle>{title}</DialogTitle>
-      <DialogContent>
-        <DialogContentText>{message}</DialogContentText>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} color="inherit">
-          Rechazar
-        </Button>
-        <Button onClick={onConfirm} color="primary" autoFocus>
-          Aceptar
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <AppConfirmDialog
+      open={open}
+      title={title}
+      message={message}
+      confirmLabel={confirmLabel}
+      cancelLabel={cancelLabel}
+      onConfirm={onConfirm}
+      onCancel={onClose}
+      destructive={destructive}
+      iconTone={iconTone ?? (destructive ? undefined : "warn")}
+      icon={<WarningAmberIcon sx={{ fontSize: "1.25rem" }} />}
+    />
   );
 }

@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { GridActionsCellItem, GridColDef, GridPaginationModel, GridRowSelectionModel } from "@mui/x-data-grid";
-import { Button, Chip, Dialog, DialogTitle, DialogContent, DialogActions, Alert, Snackbar } from "@mui/material";
+import { Button, Alert, Snackbar } from "@mui/material";
 import { Edit as EditIcon, Delete as DeleteIcon, Visibility as VisibilityIcon, Add as AddIcon, FileDownload as ExportIcon } from "@mui/icons-material";
 
+import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { AppDataGrid } from "@/components/AppDataGrid";
+import { MonoText } from "@/components/MonoText";
+import { StatusBadge } from "@/components/StatusBadge";
 import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
 import { useClients } from "@/features/clients/hooks/useClients";
@@ -34,9 +37,9 @@ export default function ClientList() {
     }, [formOpen, refetch]);
 
     const columns: GridColDef<Client>[] = [
-        { field: "dni", headerName: "Documento", flex: 0.9, minWidth: 140, valueGetter: (val) => val || "—" },
+        { field: "dni", headerName: "Documento", flex: 0.9, minWidth: 140, renderCell: (params) => <MonoText>{params.value || "—"}</MonoText> },
         { field: "fullName", headerName: "Nombre completo", flex: 1.4, minWidth: 190, valueGetter: (_, row) => `${row.firstName} ${row.lastName}` },
-        { field: "phone", headerName: "Teléfono", flex: 1, minWidth: 150 },
+        { field: "phone", headerName: "Teléfono", flex: 1, minWidth: 150, renderCell: (params) => <MonoText>{params.value || "—"}</MonoText> },
         { field: "email", headerName: "Correo electrónico", flex: 1.5, minWidth: 220, valueGetter: (val) => val || "—" },
         {
             field: "clientType",
@@ -44,8 +47,8 @@ export default function ClientList() {
             flex: 0.8,
             minWidth: 150,
             renderCell: (params) => {
-                const color = params.value === "PERSONAL" ? "primary" : params.value === "EMPRESA" ? "success" : "warning";
-                return <Chip label={params.value} color={color} size="small" />;
+                const tone = params.value === "PERSONAL" ? "info" : params.value === "EMPRESA" ? "ok" : "warn";
+                return <StatusBadge label={params.value} tone={tone} />;
             }
         },
         {
@@ -191,14 +194,15 @@ export default function ClientList() {
             <ClientForm open={formOpen} onClose={() => setFormOpen(false)} client={selectedClient} onSuccess={handleFormSuccess} />
             <ClientDetailDialog open={detailOpen} onClose={() => setDetailOpen(false)} client={selectedClient} />
 
-            <Dialog open={deleteDialogOpen} onClose={() => { setDeleteDialogOpen(false); setSelectedIds([]); }}>
-                <DialogTitle>Confirmar eliminación</DialogTitle>
-                <DialogContent>¿Está seguro de eliminar los clientes seleccionados?</DialogContent>
-                <DialogActions>
-                    <Button onClick={() => { setDeleteDialogOpen(false); setSelectedIds([]); }}>Cancelar</Button>
-                    <Button onClick={handleConfirmDelete} color="error" variant="contained">Eliminar</Button>
-                </DialogActions>
-            </Dialog>
+            <AppConfirmDialog
+                open={deleteDialogOpen}
+                title="Eliminar clientes"
+                message="¿Está seguro de eliminar los clientes seleccionados? Esta acción no se puede deshacer."
+                confirmLabel="Eliminar"
+                destructive
+                onConfirm={handleConfirmDelete}
+                onCancel={() => { setDeleteDialogOpen(false); setSelectedIds([]); }}
+            />
 
             <Snackbar
                 open={!!successMsg}

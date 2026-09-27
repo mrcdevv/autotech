@@ -1,15 +1,14 @@
 import { useState, useEffect } from "react";
 
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   Stack,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
+import Inventory2Icon from "@mui/icons-material/Inventory2";
+
+import { AppDialog } from "@/components/AppDialog";
 
 import type { ProductResponse, ProductRequest } from "@/types/catalog";
 
@@ -83,71 +82,75 @@ export function ProductFormDialog({ open, onClose, onSave, initialData }: Produc
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{initialData ? "Editar producto" : "Nuevo producto"}</DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                label="Nombre"
-                value={form.name}
-                onChange={(e) => handleChange("name", e.target.value)}
-                error={!!errors.name}
-                helperText={errors.name}
-                required
-              />
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                label="Descripción"
-                value={form.description ?? ""}
-                onChange={(e) => handleChange("description", e.target.value || null)}
-                multiline
-                rows={3}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="Cantidad"
-                type="number"
-                value={form.quantity ?? ""}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  handleChange("quantity", val === "" ? null : Math.max(0, parseInt(val)));
-                }}
-                error={!!errors.quantity}
-                helperText={errors.quantity}
-                required
-                slotProps={{ htmlInput: { min: 0 } }}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="Precio unitario"
-                type="number"
-                value={form.unitPrice ?? ""}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  handleChange("unitPrice", val === "" ? "" : parseFloat(val));
-                }}
-                error={!!errors.unitPrice}
-                helperText={errors.unitPrice}
-                required
-                slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
-              />
-            </Grid>
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      title={initialData ? "Editar producto" : "Nuevo producto"}
+      icon={<Inventory2Icon sx={{ fontSize: "1.25rem" }} />}
+      actions={
+        <>
+          <Button onClick={onClose} color="inherit">Cancelar</Button>
+          <Button variant="contained" onClick={handleSubmit}>Guardar</Button>
+        </>
+      }
+    >
+      <Stack spacing={2} sx={{ mt: 0.5 }}>
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              fullWidth
+              label="Nombre"
+              value={form.name}
+              onChange={(e) => handleChange("name", e.target.value)}
+              error={!!errors.name}
+              helperText={errors.name}
+              required
+            />
           </Grid>
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
-        <Button variant="contained" onClick={handleSubmit}>Guardar</Button>
-      </DialogActions>
-    </Dialog>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              fullWidth
+              label="Descripción"
+              value={form.description ?? ""}
+              onChange={(e) => handleChange("description", e.target.value || null)}
+              multiline
+              rows={3}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              fullWidth
+              label="Cantidad"
+              type="number"
+              value={form.quantity ?? ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                handleChange("quantity", val === "" ? null : Math.max(0, parseInt(val)));
+              }}
+              error={!!errors.quantity}
+              helperText={errors.quantity}
+              required
+              slotProps={{ htmlInput: { min: 0 } }}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              fullWidth
+              label="Precio unitario"
+              type="number"
+              value={form.unitPrice ?? ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                handleChange("unitPrice", val === "" ? "" : parseFloat(val));
+              }}
+              error={!!errors.unitPrice}
+              helperText={errors.unitPrice}
+              required
+              slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
+            />
+          </Grid>
+        </Grid>
+      </Stack>
+    </AppDialog>
   );
 }

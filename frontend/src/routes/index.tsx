@@ -48,7 +48,7 @@ export default function AppRoutes() {
             <Route path="/empleados" element={<EmployeesPage />} />
             <Route path="/servicios" element={<ServicesPage />} />
             <Route path="/productos" element={<ProductsPage />} />
-            <Route path="/trabajos-enlatados" element={<CannedJobsPage />} />
+            <Route path="/paquetes-de-servicios" element={<CannedJobsPage />} />
             <Route path="/clientes" element={<ClientsPage />} />
             <Route path="/vehiculos" element={<VehiclesPage />} />
             <Route path="/calendario" element={<AppointmentsPage />} />
