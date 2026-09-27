@@ -126,6 +126,6 @@ class CannedJobControllerTest {
         // Act & Assert
         mockMvc.perform(delete("/api/canned-jobs/1").with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Trabajo enlatado eliminado"));
+                .andExpect(jsonPath("$.message").value("Paquete de servicios eliminado"));
     }
 }
