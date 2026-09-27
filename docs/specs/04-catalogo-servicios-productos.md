@@ -1,4 +1,4 @@
-# 04 — Catálogo de Servicios, Productos y Trabajos Enlatados
+# 04 — Catálogo de Servicios, Productos y Paquetes de Servicios
 
 ## 1. Overview
 
@@ -6,7 +6,7 @@ This feature implements the **Services**, **Products**, and **Canned Jobs** cata
 
 - **Services**: labor items with a name, description, and optional price.
 - **Products**: parts/materials with a name, description, stock quantity, and optional unit price.
-- **Canned Jobs** (Trabajos enlatados): predefined bundles that group a set of services and products. They can be created from the config screen or from a repair order. When a canned job is applied to an estimate/invoice, the contained services and products are **snapshotted** (copied by value) — changes to the canned job do not retroactively affect existing estimates/invoices.
+- **Canned Jobs** (Paquetes de servicios): predefined bundles that group a set of services and products. They can be created from the config screen or from a repair order. When a canned job is applied to an estimate/invoice, the contained services and products are **snapshotted** (copied by value) — changes to the canned job do not retroactively affect existing estimates/invoices.
 
 **No dependencies** on other modules. These are catalog items consumed downstream.
 
@@ -419,7 +419,7 @@ public record CannedJobProductResponse(
 ) {}
 
 public record CannedJobRequest(
-        @NotBlank(message = "El título del trabajo enlatado es obligatorio")
+        @NotBlank(message = "El título del paquete de servicios es obligatorio")
         @Size(max = 255, message = "El título no puede superar los 255 caracteres")
         String title,
 
@@ -938,20 +938,20 @@ public class CannedJobController {
     public ResponseEntity<ApiResponse<CannedJobDetailResponse>> create(
             @Valid @RequestBody CannedJobRequest request) {
         CannedJobDetailResponse created = cannedJobService.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Trabajo enlatado creado", created));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Paquete de servicios creado", created));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<CannedJobDetailResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody CannedJobRequest request) {
-        return ResponseEntity.ok(ApiResponse.success("Trabajo enlatado actualizado", cannedJobService.update(id, request)));
+        return ResponseEntity.ok(ApiResponse.success("Paquete de servicios actualizado", cannedJobService.update(id, request)));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         cannedJobService.delete(id);
-        return ResponseEntity.ok(ApiResponse.success("Trabajo enlatado eliminado", null));
+        return ResponseEntity.ok(ApiResponse.success("Paquete de servicios eliminado", null));
     }
 }
 ```
@@ -1374,12 +1374,12 @@ export function ProductsDataGrid({ ... }: ProductsDataGridProps) {
 }
 ```
 
-#### `CannedJobsPage` — route: `/trabajos-enlatados`
+#### `CannedJobsPage` — route: `/paquetes-de-servicios`
 
 **UI Layout:**
-- Page title: **"Trabajos enlatados"**
+- Page title: **"Paquetes de servicios"**
 - Search `TextField` with placeholder: "Buscar por título o descripción..."
-- `Button` "Agregar trabajo enlatado" → opens `CannedJobFormDialog`
+- `Button` "Agregar paquete de servicios" → opens `CannedJobFormDialog`
 - `DataGrid`:
   - Columns: `Título`, `Descripción`, `Acciones` (edit + delete icon buttons)
   - Pagination: server-side, 12 rows per page
@@ -1471,7 +1471,7 @@ Add to `src/routes/`:
 ```tsx
 { path: "/servicios", element: <ServicesPage /> }
 { path: "/productos", element: <ProductsPage /> }
-{ path: "/trabajos-enlatados", element: <CannedJobsPage /> }
+{ path: "/paquetes-de-servicios", element: <CannedJobsPage /> }
 ```
 
 Use `React.lazy` for page-level components:
@@ -1638,7 +1638,7 @@ For each service (`CatalogServiceServiceImpl`, `ProductServiceImpl`, `CannedJobS
 - [x] Create `CannedJobFormDialog` component (Dialog for create/edit with Autocomplete search for existing services/products)
 - [x] Register route `/servicios` with lazy loading
 - [x] Register route `/productos` with lazy loading
-- [x] Register route `/trabajos-enlatados` with lazy loading
+- [x] Register route `/paquetes-de-servicios` with lazy loading
 - [x] Verify frontend compiles
 - [x] Verify frontend runs
 
