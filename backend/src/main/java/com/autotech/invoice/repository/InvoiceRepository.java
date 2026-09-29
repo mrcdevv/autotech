@@ -99,4 +99,37 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end,
             Pageable pageable);
+
+    @Query("""
+            SELECT YEAR(i.createdAt), MONTH(i.createdAt), COALESCE(SUM(i.total), 0)
+            FROM Invoice i
+            WHERE i.createdAt >= :start AND i.createdAt < :end
+            GROUP BY YEAR(i.createdAt), MONTH(i.createdAt)
+            ORDER BY YEAR(i.createdAt), MONTH(i.createdAt)
+            """)
+    List<Object[]> sumTotalGroupByMonth(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
+
+    @Query("""
+            SELECT s.serviceName, COUNT(s)
+            FROM Invoice i JOIN i.services s
+            WHERE i.createdAt >= :start AND i.createdAt < :end
+            GROUP BY s.serviceName
+            ORDER BY COUNT(s) DESC
+            """)
+    List<Object[]> countServiceOccurrences(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
+
+    @Query("""
+            SELECT s.serviceName, COALESCE(SUM(s.price), 0)
+            FROM Invoice i JOIN i.services s
+            WHERE i.createdAt >= :start AND i.createdAt < :end
+            GROUP BY s.serviceName
+            ORDER BY SUM(s.price) DESC
+            """)
+    List<Object[]> sumServiceRevenue(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
 }

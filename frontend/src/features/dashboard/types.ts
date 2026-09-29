@@ -96,6 +96,28 @@ export interface DashboardProductividadResponse {
   topServices: TopServiceResponse[];
 }
 
+export interface ServiceRevenueResponse {
+  serviceName: string;
+  totalRevenue: number;
+}
+
+export interface BrandCountResponse {
+  brandName: string;
+  count: number;
+}
+
+export interface FaultCountResponse {
+  faultName: string;
+  count: number;
+}
+
+export interface DashboardReportsResponse {
+  monthlyBilling: MonthlyRevenueResponse[];
+  topServices: TopServiceResponse[];
+  serviceRevenue: ServiceRevenueResponse[];
+  brandCounts: BrandCountResponse[];
+}
+
 export interface DashboardConfigResponse {
   staleThresholdDays: number;
 }
