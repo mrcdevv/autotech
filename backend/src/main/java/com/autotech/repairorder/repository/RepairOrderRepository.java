@@ -4,64 +4,32 @@ import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.model.RepairOrderStatus;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface RepairOrderRepository extends JpaRepository<RepairOrder, Long> {
-
-    @EntityGraph(attributePaths = {"client", "vehicle", "vehicle.brand", "employees", "tags"})
-    List<RepairOrder> findByStatusIn(List<RepairOrderStatus> statuses);
-
-    @EntityGraph(attributePaths = {"client", "vehicle", "vehicle.brand", "employees", "tags"})
-    List<RepairOrder> findAllByOrderByCreatedAtDesc();
+public interface RepairOrderRepository
+        extends JpaRepository<RepairOrder, Long>, JpaSpecificationExecutor<RepairOrder> {
 
     @EntityGraph(attributePaths = {"client", "vehicle", "vehicle.brand", "employees", "tags", "appointment"})
     Optional<RepairOrder> findWithDetailsById(Long id);
 
+    @EntityGraph(attributePaths = {"client", "vehicle", "vehicle.brand", "employees", "tags"})
+    List<RepairOrder> findAllByIdIn(Collection<Long> ids);
+
     List<RepairOrder> findByVehicleIdOrderByCreatedAtDesc(Long vehicleId);
 
-    boolean existsByVehicleIdAndStatusNot(Long vehicleId, RepairOrderStatus status);
+    boolean existsByVehicleIdAndStatusNotIn(Long vehicleId, Collection<RepairOrderStatus> statuses);
 
-    @EntityGraph(attributePaths = {"client", "vehicle", "vehicle.brand", "employees", "tags"})
-    @Query("""
-            SELECT DISTINCT ro FROM RepairOrder ro
-            LEFT JOIN ro.client c
-            LEFT JOIN ro.vehicle v
-            LEFT JOIN v.brand b
-            LEFT JOIN ro.employees e
-            LEFT JOIN ro.tags t
-            WHERE LOWER(ro.title) LIKE LOWER(CONCAT('%', :query, '%'))
-               OR LOWER(c.firstName) LIKE LOWER(CONCAT('%', :query, '%'))
-               OR LOWER(c.lastName) LIKE LOWER(CONCAT('%', :query, '%'))
-               OR LOWER(v.plate) LIKE LOWER(CONCAT('%', :query, '%'))
-               OR LOWER(b.name) LIKE LOWER(CONCAT('%', :query, '%'))
-               OR LOWER(v.model) LIKE LOWER(CONCAT('%', :query, '%'))
-            """)
-    List<RepairOrder> search(@Param("query") String query);
-
-    @Query("""
-            SELECT DISTINCT ro FROM RepairOrder ro
-            JOIN ro.employees e
-            WHERE e.id = :employeeId
-            """)
-    
-    List<RepairOrder> findByEmployeeId(@Param("employeeId") Long employeeId);
-
-    @Query("""
-            SELECT DISTINCT ro FROM RepairOrder ro
-            JOIN ro.tags t
-            WHERE t.id = :tagId
-            """)
-    List<RepairOrder> findByTagId(@Param("tagId") Long tagId);
-
-    Long countByStatusNot(RepairOrderStatus status);
+    Long countByStatusNotIn(Collection<RepairOrderStatus> statuses);
 
     Long countByStatus(RepairOrderStatus status);
 
@@ -79,12 +47,12 @@ public interface RepairOrderRepository extends JpaRepository<RepairOrder, Long> 
     @Query("""
             SELECT ro FROM RepairOrder ro
             JOIN FETCH ro.client JOIN FETCH ro.vehicle
-            WHERE ro.updatedAt < :threshold AND ro.status <> :excludedStatus
+            WHERE ro.updatedAt < :threshold AND ro.status NOT IN :excludedStatuses
             ORDER BY ro.updatedAt ASC
             """)
     List<RepairOrder> findStaleOrders(
             @Param("threshold") LocalDateTime threshold,
-            @Param("excludedStatus") RepairOrderStatus excludedStatus);
+            @Param("excludedStatuses") Collection<RepairOrderStatus> excludedStatuses);
 
     @Query(value = """
             SELECT AVG(EXTRACT(EPOCH FROM (ro.updated_at - ro.created_at)) / 86400)

@@ -52,7 +52,9 @@ public class DashboardServiceImpl implements DashboardService {
     public DashboardSummaryResponse getSummary() {
         DashboardConfig config = getConfigInternal();
 
-        Long openOrderCount = repairOrderRepository.countByStatusNot(RepairOrderStatus.ENTREGADO);
+        List<RepairOrderStatus> closedStatuses = List.of(
+                RepairOrderStatus.ENTREGADO, RepairOrderStatus.CANCELADO);
+        Long openOrderCount = repairOrderRepository.countByStatusNotIn(closedStatuses);
         Long readyForPickupCount = repairOrderRepository.countByStatus(RepairOrderStatus.LISTO_PARA_ENTREGAR);
 
         LocalDateTime todayStart = LocalDate.now().atStartOfDay();
@@ -89,7 +91,7 @@ public class DashboardServiceImpl implements DashboardService {
 
         LocalDateTime staleThreshold = LocalDateTime.now().minusDays(config.getStaleThresholdDays());
         List<StaleOrderAlertResponse> staleAlerts = repairOrderRepository
-                .findStaleOrders(staleThreshold, RepairOrderStatus.ENTREGADO).stream()
+                .findStaleOrders(staleThreshold, closedStatuses).stream()
                 .map(ro -> new StaleOrderAlertResponse(
                         ro.getId(),
                         ro.getTitle(),
