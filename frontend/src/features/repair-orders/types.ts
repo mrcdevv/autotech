@@ -7,7 +7,8 @@ export type RepairOrderStatus =
   | "REPARACION"
   | "PRUEBAS"
   | "LISTO_PARA_ENTREGAR"
-  | "ENTREGADO";
+  | "ENTREGADO"
+  | "CANCELADO";
 
 export const STATUS_LABELS: Record<RepairOrderStatus, string> = {
   INGRESO_VEHICULO: "Ingresó vehículo",
@@ -17,6 +18,7 @@ export const STATUS_LABELS: Record<RepairOrderStatus, string> = {
   PRUEBAS: "Pruebas",
   LISTO_PARA_ENTREGAR: "Listo para entregar",
   ENTREGADO: "Entregado",
+  CANCELADO: "Cancelada",
 };
 
 export const KANBAN_COLUMNS: {
@@ -39,6 +41,11 @@ export const KANBAN_COLUMNS: {
     statuses: ["LISTO_PARA_ENTREGAR", "ENTREGADO"],
     tone: "ok",
   },
+  {
+    title: "Cancelada",
+    statuses: ["CANCELADO"],
+    tone: "bad",
+  },
 ];
 
 export const UPDATABLE_STATUSES: RepairOrderStatus[] = [
@@ -47,6 +54,20 @@ export const UPDATABLE_STATUSES: RepairOrderStatus[] = [
   "PRUEBAS",
   "LISTO_PARA_ENTREGAR",
   "ENTREGADO",
+  "CANCELADO",
+];
+
+// Terminal statuses: hidden from the Kanban by default, shown in the history view.
+export const CLOSED_STATUSES: RepairOrderStatus[] = ["ENTREGADO", "CANCELADO"];
+
+// Every status that is still "work in progress" (the Kanban default view).
+export const ACTIVE_STATUSES: RepairOrderStatus[] = [
+  "INGRESO_VEHICULO",
+  "ESPERANDO_APROBACION_PRESUPUESTO",
+  "ESPERANDO_REPUESTOS",
+  "REPARACION",
+  "PRUEBAS",
+  "LISTO_PARA_ENTREGAR",
 ];
 
 export interface EmployeeSummary {
