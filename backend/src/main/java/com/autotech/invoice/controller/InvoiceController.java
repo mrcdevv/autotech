@@ -5,6 +5,7 @@ import com.autotech.invoice.dto.InvoiceDetailResponse;
 import com.autotech.invoice.dto.InvoiceRequest;
 import com.autotech.invoice.dto.InvoiceResponse;
 import com.autotech.invoice.model.InvoiceStatus;
+import com.autotech.invoice.service.InvoicePdfService;
 import com.autotech.invoice.service.InvoiceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class InvoiceController {
 
     private final InvoiceService invoiceService;
+    private final InvoicePdfService invoicePdfService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<InvoiceResponse>>> getAll(
@@ -60,6 +64,15 @@ public class InvoiceController {
         InvoiceDetailResponse created = invoiceService.createFromEstimate(estimateId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Factura creada desde presupuesto", created));
+    }
+
+    @GetMapping("/{id}/pdf")
+    public ResponseEntity<byte[]> downloadPdf(@PathVariable Long id) {
+        byte[] pdf = invoicePdfService.generate(id);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"factura-" + id + ".pdf\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
     }
 
     @DeleteMapping("/{id}")
