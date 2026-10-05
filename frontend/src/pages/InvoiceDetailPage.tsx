@@ -1,5 +1,3 @@
-import { Button } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useParams, useNavigate, useSearchParams } from "react-router";
 
 import { PageShell } from "@/components/PageShell";
@@ -17,20 +15,12 @@ export default function InvoiceDetailPage() {
     : undefined;
 
   return (
-    <PageShell
-      title={isNew ? "Nueva factura" : `Factura #${id}`}
-      actions={
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate("/facturas")}
-          size="small"
-        >
-          Volver
-        </Button>
-      }
-    >
-      <InvoiceDetail invoiceId={invoiceId} estimateId={estimateId} />
+    <PageShell title={isNew ? "Nueva factura" : `Factura #${id}`}>
+      <InvoiceDetail
+        invoiceId={invoiceId}
+        estimateId={estimateId}
+        onBack={() => navigate("/facturas")}
+      />
     </PageShell>
   );
 }
