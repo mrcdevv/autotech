@@ -7,5 +7,6 @@ public enum RepairOrderStatus {
     REPARACION,
     PRUEBAS,
     LISTO_PARA_ENTREGAR,
-    ENTREGADO
+    ENTREGADO,
+    CANCELADO
 }

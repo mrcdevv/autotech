@@ -44,9 +44,12 @@ export const text = {
 
 export const status = {
   warn: { bg: "#F6EBD1", fg: "#7A570E" },
+  parts: { bg: "#FBE7D2", fg: "#8A4B12" },
   ok: { bg: "#DFEEE3", fg: "#1E6B41" },
+  done: { bg: "#DAEFEB", fg: "#0A5F55" },
   bad: { bg: "#F8E2DC", fg: "#A6371F" },
   info: { bg: "#E2EAF7", fg: "#2C5CB0" },
+  testing: { bg: "#EAE4F8", fg: "#4B3390" },
   neutral: { bg: "#EAE8E1", fg: "#4E545E" },
 } as const;
 
@@ -54,9 +57,12 @@ export type StatusTone = keyof typeof status;
 
 export const dot = {
   warn: "#C08A14",
+  parts: "#D97A1F",
   ok: "#27965A",
+  done: "#0E8A7A",
   bad: "#D0452F",
   info: "#3B76D9",
+  testing: "#7B5BD6",
   neutral: "#62676F",
 } as const;
 

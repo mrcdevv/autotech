@@ -145,8 +145,9 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     private VehicleResponse toResponseWithRepairStatus(Vehicle vehicle) {
-        boolean inRepair = repairOrderRepository.existsByVehicleIdAndStatusNot(
-                vehicle.getId(), RepairOrderStatus.ENTREGADO);
+        boolean inRepair = repairOrderRepository.existsByVehicleIdAndStatusNotIn(
+                vehicle.getId(),
+                List.of(RepairOrderStatus.ENTREGADO, RepairOrderStatus.CANCELADO));
         return vehicleMapper.toResponse(vehicle, inRepair);
     }
 

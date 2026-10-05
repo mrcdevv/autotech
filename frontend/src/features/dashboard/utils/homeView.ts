@@ -91,7 +91,7 @@ function clientLabel(order: RepairOrderResponse): string {
 
 function openOrders(orders: RepairOrderResponse[]): RepairOrderResponse[] {
   return orders
-    .filter((order) => order.status !== "ENTREGADO")
+    .filter((order) => order.status !== "ENTREGADO" && order.status !== "CANCELADO")
     .sort((a, b) => {
       const priorityDiff = STATUS_META[a.status].priority - STATUS_META[b.status].priority;
       if (priorityDiff !== 0) return priorityDiff;

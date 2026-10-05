@@ -4,6 +4,7 @@ import { appointmentsApi } from "@/api/appointments";
 import { dashboardApi } from "@/api/dashboard";
 import { invoicesApi } from "@/api/invoices";
 import { repairOrdersApi } from "@/api/repairOrders";
+import { ACTIVE_STATUSES } from "@/features/repair-orders/types";
 import type { DashboardSummaryResponse } from "@/features/dashboard/types";
 import type { RepairOrderResponse } from "@/features/repair-orders/types";
 import type { AppointmentResponse } from "@/types/appointment";
@@ -11,6 +12,7 @@ import type { InvoiceResponse } from "@/types/invoice";
 
 const UPCOMING_DAYS = 7;
 const INVOICE_PAGE_SIZE = 100;
+const ACTIVE_ORDERS_LIMIT = 200;
 
 function toLocalIso(date: Date): string {
   const pad = (value: number) => String(value).padStart(2, "0");
@@ -39,13 +41,13 @@ export function useHomeDashboard() {
 
       const [summaryRes, ordersRes, appointmentsRes, invoicesRes] = await Promise.all([
         dashboardApi.getSummary(),
-        repairOrdersApi.getAll(),
+        repairOrdersApi.search({ statuses: ACTIVE_STATUSES, size: ACTIVE_ORDERS_LIMIT }),
         appointmentsApi.getByDateRange(toLocalIso(rangeStart), toLocalIso(rangeEnd)),
         invoicesApi.getAll({ size: INVOICE_PAGE_SIZE, sort: "createdAt,desc" }),
       ]);
 
       setSummary(summaryRes.data.data);
-      setOrders(ordersRes.data.data);
+      setOrders(ordersRes.data.data.content);
       setAppointments(appointmentsRes.data.data);
       setInvoices(invoicesRes.data.data.content);
     } catch {

@@ -23,16 +23,22 @@ declare module "@mui/material/styles" {
     };
     status: {
       warn: { bg: string; fg: string };
+      parts: { bg: string; fg: string };
       ok: { bg: string; fg: string };
+      done: { bg: string; fg: string };
       bad: { bg: string; fg: string };
       info: { bg: string; fg: string };
+      testing: { bg: string; fg: string };
       neutral: { bg: string; fg: string };
     };
     dot: {
       warn: string;
+      parts: string;
       ok: string;
+      done: string;
       bad: string;
       info: string;
+      testing: string;
       neutral: string;
     };
   }
@@ -51,16 +57,22 @@ declare module "@mui/material/styles" {
     };
     status?: {
       warn?: { bg: string; fg: string };
+      parts?: { bg: string; fg: string };
       ok?: { bg: string; fg: string };
+      done?: { bg: string; fg: string };
       bad?: { bg: string; fg: string };
       info?: { bg: string; fg: string };
+      testing?: { bg: string; fg: string };
       neutral?: { bg: string; fg: string };
     };
     dot?: {
       warn?: string;
+      parts?: string;
       ok?: string;
+      done?: string;
       bad?: string;
       info?: string;
+      testing?: string;
       neutral?: string;
     };
   }
