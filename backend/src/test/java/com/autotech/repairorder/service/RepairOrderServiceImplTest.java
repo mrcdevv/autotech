@@ -9,6 +9,7 @@ import com.autotech.email.service.EmailNotificationService;
 import com.autotech.employee.model.Employee;
 import com.autotech.employee.repository.EmployeeRepository;
 import com.autotech.repairorder.dto.RepairOrderDetailResponse;
+import com.autotech.repairorder.dto.RepairOrderFilter;
 import com.autotech.repairorder.dto.RepairOrderMapper;
 import com.autotech.repairorder.dto.RepairOrderRequest;
 import com.autotech.repairorder.dto.RepairOrderResponse;
@@ -27,6 +28,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,6 +41,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -268,6 +275,62 @@ class RepairOrderServiceImplTest {
     }
 
     @Test
+    void givenActiveStatus_whenUpdateStatusToCancelado_thenReturnCancelledOrder() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(1L, client);
+        RepairOrder order = buildRepairOrder(1L, client, vehicle);
+        order.setStatus(RepairOrderStatus.REPARACION);
+        StatusUpdateRequest request = new StatusUpdateRequest(RepairOrderStatus.CANCELADO);
+        RepairOrderResponse response = buildResponse(1L);
+
+        when(repairOrderRepository.findWithDetailsById(1L)).thenReturn(Optional.of(order));
+        when(repairOrderRepository.save(order)).thenReturn(order);
+        when(repairOrderMapper.toResponse(order)).thenReturn(response);
+
+        // Act
+        RepairOrderResponse result = repairOrderService.updateStatus(1L, request);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(order.getStatus()).isEqualTo(RepairOrderStatus.CANCELADO);
+    }
+
+    @Test
+    void givenCancelledOrder_whenUpdateStatus_thenThrowIllegalArgumentException() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(1L, client);
+        RepairOrder order = buildRepairOrder(1L, client, vehicle);
+        order.setStatus(RepairOrderStatus.CANCELADO);
+        StatusUpdateRequest request = new StatusUpdateRequest(RepairOrderStatus.REPARACION);
+
+        when(repairOrderRepository.findWithDetailsById(1L)).thenReturn(Optional.of(order));
+
+        // Act & Assert
+        assertThatThrownBy(() -> repairOrderService.updateStatus(1L, request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("terminal");
+    }
+
+    @Test
+    void givenDeliveredOrder_whenUpdateStatusToCancelado_thenThrowIllegalArgumentException() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(1L, client);
+        RepairOrder order = buildRepairOrder(1L, client, vehicle);
+        order.setStatus(RepairOrderStatus.ENTREGADO);
+        StatusUpdateRequest request = new StatusUpdateRequest(RepairOrderStatus.CANCELADO);
+
+        when(repairOrderRepository.findWithDetailsById(1L)).thenReturn(Optional.of(order));
+
+        // Act & Assert
+        assertThatThrownBy(() -> repairOrderService.updateStatus(1L, request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("entregada");
+    }
+
+    @Test
     void givenValidTitle_whenUpdateTitle_thenReturnUpdatedOrder() {
         // Arrange
         Client client = buildClient(1L);
@@ -286,25 +349,6 @@ class RepairOrderServiceImplTest {
         // Assert
         assertThat(result).isNotNull();
         assertThat(order.getTitle()).isEqualTo("New Title");
-    }
-
-    @Test
-    void givenStatusList_whenGetByStatus_thenReturnFilteredOrders() {
-        // Arrange
-        Client client = buildClient(1L);
-        Vehicle vehicle = buildVehicle(1L, client);
-        RepairOrder order = buildRepairOrder(1L, client, vehicle);
-        RepairOrderResponse response = buildResponse(1L);
-        List<RepairOrderStatus> statuses = List.of(RepairOrderStatus.INGRESO_VEHICULO);
-
-        when(repairOrderRepository.findByStatusIn(statuses)).thenReturn(List.of(order));
-        when(repairOrderMapper.toResponse(order)).thenReturn(response);
-
-        // Act
-        List<RepairOrderResponse> result = repairOrderService.getByStatus(statuses);
-
-        // Assert
-        assertThat(result).hasSize(1);
     }
 
     @Test
@@ -352,75 +396,45 @@ class RepairOrderServiceImplTest {
     }
 
     @Test
-    void givenQuery_whenSearch_thenReturnMatchingOrders() {
+    void givenFilter_whenSearch_thenReturnPagedResponses() {
         // Arrange
         Client client = buildClient(1L);
         Vehicle vehicle = buildVehicle(1L, client);
         RepairOrder order = buildRepairOrder(1L, client, vehicle);
         RepairOrderResponse response = buildResponse(1L);
+        RepairOrderFilter filter = new RepairOrderFilter(
+                List.of(RepairOrderStatus.REPARACION), null, null, null, null, "Perez");
+        Pageable pageable = PageRequest.of(0, 20);
 
-        when(repairOrderRepository.search("Perez")).thenReturn(List.of(order));
+        when(repairOrderRepository.findAll(any(Specification.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(order), pageable, 1));
+        when(repairOrderRepository.findAllByIdIn(List.of(1L))).thenReturn(List.of(order));
         when(repairOrderMapper.toResponse(order)).thenReturn(response);
 
         // Act
-        List<RepairOrderResponse> result = repairOrderService.search("Perez");
+        Page<RepairOrderResponse> result = repairOrderService.search(filter, pageable);
 
         // Assert
-        assertThat(result).hasSize(1);
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).title()).isEqualTo(response.title());
     }
 
     @Test
-    void givenBlankQuery_whenSearch_thenReturnAllOrders() {
+    void givenFilterMatchingNothing_whenSearch_thenReturnEmptyPage() {
         // Arrange
-        Client client = buildClient(1L);
-        Vehicle vehicle = buildVehicle(1L, client);
-        RepairOrder order = buildRepairOrder(1L, client, vehicle);
-        RepairOrderResponse response = buildResponse(1L);
+        RepairOrderFilter filter = new RepairOrderFilter(null, null, null, null, null, null);
+        Pageable pageable = PageRequest.of(0, 20);
 
-        when(repairOrderRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(order));
-        when(repairOrderMapper.toResponse(order)).thenReturn(response);
+        when(repairOrderRepository.findAll(any(Specification.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 0));
 
         // Act
-        List<RepairOrderResponse> result = repairOrderService.search("");
+        Page<RepairOrderResponse> result = repairOrderService.search(filter, pageable);
 
         // Assert
-        assertThat(result).hasSize(1);
-    }
-
-    @Test
-    void givenEmployeeId_whenFilterByEmployee_thenReturnFilteredOrders() {
-        // Arrange
-        Client client = buildClient(1L);
-        Vehicle vehicle = buildVehicle(1L, client);
-        RepairOrder order = buildRepairOrder(1L, client, vehicle);
-        RepairOrderResponse response = buildResponse(1L);
-
-        when(repairOrderRepository.findByEmployeeId(1L)).thenReturn(List.of(order));
-        when(repairOrderMapper.toResponse(order)).thenReturn(response);
-
-        // Act
-        List<RepairOrderResponse> result = repairOrderService.filterByEmployee(1L);
-
-        // Assert
-        assertThat(result).hasSize(1);
-    }
-
-    @Test
-    void givenTagId_whenFilterByTag_thenReturnFilteredOrders() {
-        // Arrange
-        Client client = buildClient(1L);
-        Vehicle vehicle = buildVehicle(1L, client);
-        RepairOrder order = buildRepairOrder(1L, client, vehicle);
-        RepairOrderResponse response = buildResponse(1L);
-
-        when(repairOrderRepository.findByTagId(1L)).thenReturn(List.of(order));
-        when(repairOrderMapper.toResponse(order)).thenReturn(response);
-
-        // Act
-        List<RepairOrderResponse> result = repairOrderService.filterByTag(1L);
-
-        // Assert
-        assertThat(result).hasSize(1);
+        assertThat(result.getTotalElements()).isZero();
+        assertThat(result.getContent()).isEmpty();
     }
 
     // --- Helpers ---

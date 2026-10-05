@@ -47,14 +47,16 @@ All tables already exist in `V1__init_schema.sql`. **No new migration needed.**
 | `appointment_id` | `BIGINT` | FK → `appointments(id)`, nullable |
 | `reason` | `TEXT` | nullable |
 | `client_source` | `VARCHAR(100)` | nullable |
-| `status` | `VARCHAR(50)` | NOT NULL, DEFAULT `'INGRESO_VEHICULO'`, CHECK (7 values) |
+| `status` | `VARCHAR(50)` | NOT NULL, DEFAULT `'INGRESO_VEHICULO'`, CHECK (8 values) |
 | `mechanic_notes` | `TEXT` | nullable |
 | `created_at` | `TIMESTAMP` | NOT NULL, DEFAULT NOW() |
 | `updated_at` | `TIMESTAMP` | NOT NULL, DEFAULT NOW() |
 
 **Indexes**: `idx_repair_orders_client_id`, `idx_repair_orders_vehicle_id`, `idx_repair_orders_status`.
 
-**Status CHECK values**: `INGRESO_VEHICULO`, `ESPERANDO_APROBACION_PRESUPUESTO`, `ESPERANDO_REPUESTOS`, `REPARACION`, `PRUEBAS`, `LISTO_PARA_ENTREGAR`, `ENTREGADO`.
+**Status CHECK values**: `INGRESO_VEHICULO`, `ESPERANDO_APROBACION_PRESUPUESTO`, `ESPERANDO_REPUESTOS`, `REPARACION`, `PRUEBAS`, `LISTO_PARA_ENTREGAR`, `ENTREGADO`, `CANCELADO`.
+
+> The `CANCELADO` value was added in a later migration (`V7__add_cancelled_repair_order_status.sql`) that recreates the `repair_orders_status_check` constraint.
 
 ### 3.2 `repair_order_employees` (join table)
 
@@ -113,7 +115,8 @@ public enum RepairOrderStatus {
     REPARACION,
     PRUEBAS,
     LISTO_PARA_ENTREGAR,
-    ENTREGADO
+    ENTREGADO,
+    CANCELADO
 }
 ```
 
@@ -462,7 +465,7 @@ Location: `com.autotech.repairorder.service.RepairOrderService`
 ```java
 public interface RepairOrderService {
 
-    List<RepairOrderResponse> getAll();
+    Page<RepairOrderResponse> search(RepairOrderFilter filter, Pageable pageable);
 
     RepairOrderDetailResponse getById(Long id);
 
@@ -476,17 +479,11 @@ public interface RepairOrderService {
 
     RepairOrderResponse updateTitle(Long id, TitleUpdateRequest request);
 
-    List<RepairOrderResponse> getByStatus(List<RepairOrderStatus> statuses);
-
     RepairOrderResponse assignEmployees(Long id, List<Long> employeeIds);
 
     RepairOrderResponse assignTags(Long id, List<Long> tagIds);
 
-    List<RepairOrderResponse> search(String query);
-
-    List<RepairOrderResponse> filterByEmployee(Long employeeId);
-
-    List<RepairOrderResponse> filterByTag(Long tagId);
+    RepairOrderDetailResponse updateNotes(Long id, NotesUpdateRequest request);
 }
 ```
 
@@ -911,19 +908,28 @@ public class RepairOrderController {
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/repair-orders` | List all repair orders (for Kanban) |
+| `GET` | `/api/repair-orders` | Filtered + paginated search (see query params below) |
 | `GET` | `/api/repair-orders/{id}` | Get repair order detail (with work history) |
 | `POST` | `/api/repair-orders` | Create a new repair order |
 | `PUT` | `/api/repair-orders/{id}` | Update a repair order |
 | `DELETE` | `/api/repair-orders/{id}` | Delete a repair order |
 | `PATCH` | `/api/repair-orders/{id}/status` | Update status |
 | `PATCH` | `/api/repair-orders/{id}/title` | Update title |
-| `GET` | `/api/repair-orders/by-status?statuses=...` | Get by status(es) |
 | `PUT` | `/api/repair-orders/{id}/employees` | Assign employees |
 | `PUT` | `/api/repair-orders/{id}/tags` | Assign tags |
-| `GET` | `/api/repair-orders/search?query=...` | Search (title, name, plate, brand, model) |
-| `GET` | `/api/repair-orders/filter/by-employee?employeeId=...` | Filter by assigned employee |
-| `GET` | `/api/repair-orders/filter/by-tag?tagId=...` | Filter by tag |
+
+**`GET /api/repair-orders` query params** (all optional, combinable, server-side):
+
+| Param | Type | Meaning |
+|-------|------|---------|
+| `statuses` | comma-separated `RepairOrderStatus` | Filter by one or more statuses |
+| `from` / `to` | `yyyy-MM-dd` | Created-at date range (inclusive) |
+| `employeeId` | `Long` | Orders with that employee assigned |
+| `tagId` | `Long` | Orders with that tag |
+| `q` | `String` | Case-insensitive match on title, client name, plate, brand, model |
+| `page` / `size` / `sort` | Spring `Pageable` | Defaults: `page=0`, `size=20`, `sort=createdAt,desc` |
+
+Returns `ApiResponse<Page<RepairOrderResponse>>`.
 
 ---
 
@@ -974,7 +980,8 @@ export type RepairOrderStatus =
   | "REPARACION"
   | "PRUEBAS"
   | "LISTO_PARA_ENTREGAR"
-  | "ENTREGADO";
+  | "ENTREGADO"
+  | "CANCELADO";
 
 // ---- Human-readable status labels (Spanish) ----
 
@@ -986,6 +993,7 @@ export const STATUS_LABELS: Record<RepairOrderStatus, string> = {
   PRUEBAS: "Pruebas",
   LISTO_PARA_ENTREGAR: "Listo para entregar",
   ENTREGADO: "Entregado",
+  CANCELADO: "Cancelada",
 };
 
 // ---- Kanban column mapping ----
@@ -1003,6 +1011,10 @@ export const KANBAN_COLUMNS = [
     title: "Completada",
     statuses: ["LISTO_PARA_ENTREGAR", "ENTREGADO"] as RepairOrderStatus[],
   },
+  {
+    title: "Cancelada",
+    statuses: ["CANCELADO"] as RepairOrderStatus[],
+  },
 ];
 
 // ---- Statuses available for manual update ----
@@ -1014,6 +1026,7 @@ export const UPDATABLE_STATUSES: RepairOrderStatus[] = [
   "PRUEBAS",
   "LISTO_PARA_ENTREGAR",
   "ENTREGADO",
+  "CANCELADO",
 ];
 
 // ---- Nested types ----
@@ -1218,49 +1231,19 @@ export function useRepairOrders() {
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
-  const searchOrders = useCallback(async (query: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await repairOrdersApi.search(query);
-      setOrders(res.data.data);
-    } catch (err: unknown) {
-      setError("Error al buscar órdenes");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const filterByEmployee = useCallback(async (employeeId: number) => {
-    setLoading(true);
-    try {
-      const res = await repairOrdersApi.filterByEmployee(employeeId);
-      setOrders(res.data.data);
-    } catch { setError("Error al filtrar por empleado"); }
-    finally { setLoading(false); }
-  }, []);
-
-  const filterByTag = useCallback(async (tagId: number) => {
-    setLoading(true);
-    try {
-      const res = await repairOrdersApi.filterByTag(tagId);
-      setOrders(res.data.data);
-    } catch { setError("Error al filtrar por etiqueta"); }
-    finally { setLoading(false); }
-  }, []);
-
   const updateStatus = useCallback(async (id: number, request: StatusUpdateRequest) => {
     await repairOrdersApi.updateStatus(id, request);
     await fetchOrders();  // refetch after status change
   }, [fetchOrders]);
 
-  return {
-    orders, loading, error,
-    refetch: fetchOrders,
-    searchOrders, filterByEmployee, filterByTag, updateStatus,
-  };
+  return { orders, loading, error, refetch: fetchOrders, updateStatus };
 }
 ```
+
+> **Filtering note**: the hook only fetches all orders (`getAll`). Search and the
+> employee/tag filters are applied client-side in `RepairOrdersPage` (see below), so
+> they can be combined freely. `repairOrdersApi.search` / `filterByEmployee` /
+> `filterByTag` remain available for the future server-side filtering phase.
 
 #### `useRepairOrder.ts`
 
@@ -1310,28 +1293,35 @@ Location: `src/pages/RepairOrdersPage.tsx`
 // Default export (page-level component, lazy loaded)
 // Layout:
 //   - Page title: "Órdenes de Trabajo" (Typography h4)
-//   - Top bar:
-//     - TextField: search input with placeholder "Buscar por título, nombre, patente, marca, modelo..."
-//       Debounced (300ms), calls searchOrders(query) or refetch() when cleared
-//     - Autocomplete/Select: filter by employee (loads from /api/employees)
-//     - Autocomplete/Select: filter by tag (loads from /api/tags)
+//   - Top bar (filters are sent server-side, combinable):
+//     - AppSearchField: search input (debounce-free; part of the query key)
+//     - Tab "Tablero": Autocomplete employee + Autocomplete tag + "N activas"
+//     - Tab "Historial": date inputs "Desde" / "Hasta" + "N finalizadas"
 //     - Button: "Nueva Orden" (variant="contained", startIcon=<AddIcon />)
-//       onClick → navigate("/ordenes-trabajo/nueva")
-//   - KanbanBoard component (receives orders, loading, updateStatus handler)
+//   - Tabs: "Tablero" (KanbanBoard) | "Historial" (RepairOrderHistory grid)
+//
+//   Three useRepairOrders instances with different params:
+//     - Board active:      { statuses: ACTIVE_STATUSES, q, employeeId, tagId, size: 200 }
+//     - Board recent closed:{ statuses: CLOSED_STATUSES, q, employeeId, tagId, from: now-30d, size: 200 }
+//     - History:           { statuses: CLOSED_STATUSES, q, from, to, page, size }
+//   The board merges the two "Board" instances (active + recently closed).
 
 export default function RepairOrdersPage() {
-  const { orders, loading, error, refetch, searchOrders, filterByEmployee, filterByTag, updateStatus } = useRepairOrders();
+  const kanban = useRepairOrders(kanbanParams);
+  const history = useRepairOrders(historyParams);
   const navigate = useNavigate();
 
-  // State for search query, employee filter, tag filter
-  // Handlers for search, filter change, status update, navigation
-
   return (
-    <Box>
-      <Typography variant="h4">Órdenes de Trabajo</Typography>
-      {/* Top bar with search + filters + "Nueva Orden" button */}
-      <KanbanBoard orders={orders} loading={loading} onUpdateStatus={updateStatus} />
-    </Box>
+    <PageShell title="Órdenes de trabajo">
+      <PageToolbar filters={/* search + (employee/tag | date range) */} actions={/* Nueva orden */} />
+      <Tabs value={tab} onChange={handleTabChange}>
+        <Tab label="Tablero" value="kanban" />
+        <Tab label="Historial" value="historial" />
+      </Tabs>
+      {tab === "kanban"
+        ? <KanbanBoard orders={kanban.orders} loading={kanban.loading} onUpdateStatus={kanban.updateStatus} onRefetch={kanban.refetch} />
+        : <RepairOrderHistory rows={history.orders} loading={history.loading} rowCount={history.totalElements} paginationModel={historyPagination} onPaginationModelChange={setHistoryPagination} />}
+    </PageShell>
   );
 }
 ```
@@ -2076,8 +2066,9 @@ const CreateRepairOrderPage = lazy(() => import("@/pages/CreateRepairOrderPage")
 
 | # | Rule | Implementation |
 |---|------|----------------|
-| 1 | **Status transitions: cannot go back to initial states** | `INGRESO_VEHICULO` and `ESPERANDO_APROBACION_PRESUPUESTO` cannot be set via the `updateStatus` endpoint. They are initial states only. The service throws `IllegalArgumentException` if attempted. The available statuses for manual update are: `ESPERANDO_REPUESTOS`, `REPARACION`, `PRUEBAS`, `LISTO_PARA_ENTREGAR`, `ENTREGADO`. |
-| 2 | **Kanban column mapping** | Column **Presupuesto** = `INGRESO_VEHICULO` + `ESPERANDO_APROBACION_PRESUPUESTO`. Column **Trabajo en proceso** = `ESPERANDO_REPUESTOS` + `REPARACION` + `PRUEBAS`. Column **Completada** = `LISTO_PARA_ENTREGAR` + `ENTREGADO`. Each card shows its sub-status as a badge so the user can distinguish states within a column. |
+| 1 | **Status transitions: cannot go back to initial states** | `INGRESO_VEHICULO` and `ESPERANDO_APROBACION_PRESUPUESTO` cannot be set via the `updateStatus` endpoint. They are initial states only. The service throws `IllegalArgumentException` if attempted. The available statuses for manual update are: `ESPERANDO_REPUESTOS`, `REPARACION`, `PRUEBAS`, `LISTO_PARA_ENTREGAR`, `ENTREGADO`, `CANCELADO`. |
+| 1b | **`CANCELADO` is a terminal status** | Once an order is `CANCELADO` it cannot be moved to any other status (the service throws `IllegalArgumentException`). A delivered order (`ENTREGADO`) cannot be cancelled either. Cancelled orders are excluded from the "Vehículos en taller" KPI, stale-order alerts, the workshop carousel, the work queue, and the vehicle `inRepair` flag. |
+| 2 | **Kanban column mapping** | Column **Presupuesto** = `INGRESO_VEHICULO` + `ESPERANDO_APROBACION_PRESUPUESTO`. Column **Trabajo en proceso** = `ESPERANDO_REPUESTOS` + `REPARACION` + `PRUEBAS`. Column **Completada** = `LISTO_PARA_ENTREGAR` + `ENTREGADO`. Column **Cancelada** = `CANCELADO`. Each card shows its sub-status as a badge so the user can distinguish states within a column. |
 | 3 | **Title auto-generation** | When a repair order is created, the title is auto-generated as `"OT-{id} {clientLastName} - {vehiclePlate}"`. The user can edit the title later via the detail view. |
 | 4 | **Cascading client → vehicle on creation** | The vehicle dropdown is disabled until a client is selected. When the client changes, the vehicle selection is cleared and the vehicle list is refreshed to show only vehicles belonging to the new client. The backend validates that `vehicle.client_id == clientId`. |
 | 5 | **Client and vehicle must exist** | Backend validates that `clientId` and `vehicleId` resolve to existing records. Throws `ResourceNotFoundException` (HTTP 404) if not found. |
@@ -2087,6 +2078,9 @@ const CreateRepairOrderPage = lazy(() => import("@/pages/CreateRepairOrderPage")
 | 9 | **Search** | Text search across: `title`, `client.firstName`, `client.lastName`, `vehicle.plate`, `vehicle.brand.name`, `vehicle.model`. Case-insensitive partial match. |
 | 10 | **Filter by employee** | Filter orders by assigned employee. Uses the `repair_order_employees` join table. |
 | 11 | **Filter by tag** | Filter orders by assigned tag. Uses the `repair_order_tags` join table. |
+| 11b | **Server-side combinable filters + pagination** | `GET /api/repair-orders` accepts `statuses`, `from`, `to`, `employeeId`, `tagId`, `q` and `Pageable`. Implemented with `JpaSpecificationExecutor` + `RepairOrderSpecifications`; the service pages IDs and then re-fetches full entities with an `@EntityGraph` (`findAllByIdIn`) to avoid N+1 and in-memory pagination. |
+| 11c | **Board = active + recently closed; history is a separate tab** | `RepairOrdersPage` has a **Tablero** tab and a **Historial** tab. The board merges two queries: all `ACTIVE_STATUSES` **plus** `CLOSED_STATUSES` closed within the last **30 days** (`updatedAt >= now-30d`, the closure date set by `@PreUpdate`). A **"Mostrar finalizadas"** switch (ON by default) includes/excludes the recently closed orders from the board. The **Historial** tab is a paginated `AppDataGrid` over all `CLOSED_STATUSES` with a date range. Recent closures therefore appear in **both** places: the board for daily context, the history as the full archive. The Inicio dashboard requests only `ACTIVE_STATUSES`. |
+| 11d | **Date range filters `updatedAt`** | The `from`/`to` params of `GET /api/repair-orders` filter on `updatedAt` (última actualización / fecha de cierre), not `createdAt`, so "cerradas en los últimos N días" is expressed as `from = now-N`. |
 | 12 | **Status update confirmation** | The `StatusUpdateDialog` shows a confirmation alert: "¿Está seguro de cambiar de '{oldStatus}' a '{newStatus}'?" before executing the change. |
 | 13 | **Copy tracking code** | The 3-dot menu "Copiar código de seguimiento" copies the order ID to the clipboard. |
 | 14 | **Default status** | New orders always start with `INGRESO_VEHICULO`. This is enforced by the entity `@Builder.Default` and the DB `DEFAULT` clause. |
@@ -2324,7 +2318,8 @@ pages/
 ### 8.3 Business Rules Verification
 
 - [x] Status transitions: cannot go back to `INGRESO_VEHICULO` or `ESPERANDO_APROBACION_PRESUPUESTO` via `updateStatus`
-- [x] Kanban column mapping: Presupuesto = `INGRESO_VEHICULO` + `ESPERANDO_APROBACION_PRESUPUESTO`, Trabajo en proceso = `ESPERANDO_REPUESTOS` + `REPARACION` + `PRUEBAS`, Completada = `LISTO_PARA_ENTREGAR` + `ENTREGADO`
+- [x] `CANCELADO` is terminal and cannot be reached from `ENTREGADO`; excluded from open-order metrics and vehicle `inRepair`
+- [x] Kanban column mapping: Presupuesto = `INGRESO_VEHICULO` + `ESPERANDO_APROBACION_PRESUPUESTO`, Trabajo en proceso = `ESPERANDO_REPUESTOS` + `REPARACION` + `PRUEBAS`, Completada = `LISTO_PARA_ENTREGAR` + `ENTREGADO`, Cancelada = `CANCELADO`
 - [x] Title auto-generation: `"OT-{id} {clientLastName} - {vehiclePlate}"` on creation
 - [x] Cascading client → vehicle: vehicle disabled until client selected, clears on client change, backend validates ownership
 - [x] Client and vehicle must exist (404 if not found)

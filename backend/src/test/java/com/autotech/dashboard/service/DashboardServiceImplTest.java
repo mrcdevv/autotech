@@ -65,7 +65,7 @@ class DashboardServiceImplTest {
         // Arrange
         DashboardConfig config = buildConfig();
         when(dashboardConfigRepository.findAll()).thenReturn(List.of(config));
-        when(repairOrderRepository.countByStatusNot(RepairOrderStatus.ENTREGADO)).thenReturn(5L);
+        when(repairOrderRepository.countByStatusNotIn(List.of(RepairOrderStatus.ENTREGADO, RepairOrderStatus.CANCELADO))).thenReturn(5L);
         when(repairOrderRepository.countByStatus(RepairOrderStatus.LISTO_PARA_ENTREGAR)).thenReturn(2L);
         when(appointmentRepository.countByStartTimeBetween(any(), any())).thenReturn(3L);
         when(estimateRepository.countByStatus(EstimateStatus.PENDIENTE)).thenReturn(4L);
@@ -96,7 +96,7 @@ class DashboardServiceImplTest {
         // Arrange
         DashboardConfig config = buildConfig();
         when(dashboardConfigRepository.findAll()).thenReturn(List.of(config));
-        when(repairOrderRepository.countByStatusNot(RepairOrderStatus.ENTREGADO)).thenReturn(0L);
+        when(repairOrderRepository.countByStatusNotIn(List.of(RepairOrderStatus.ENTREGADO, RepairOrderStatus.CANCELADO))).thenReturn(0L);
         when(repairOrderRepository.countByStatus(RepairOrderStatus.LISTO_PARA_ENTREGAR)).thenReturn(0L);
         when(appointmentRepository.countByStartTimeBetween(any(), any())).thenReturn(0L);
         when(estimateRepository.countByStatus(EstimateStatus.PENDIENTE)).thenReturn(0L);
@@ -126,7 +126,7 @@ class DashboardServiceImplTest {
         // Arrange
         DashboardConfig config = buildConfig();
         when(dashboardConfigRepository.findAll()).thenReturn(List.of(config));
-        when(repairOrderRepository.countByStatusNot(any())).thenReturn(0L);
+        when(repairOrderRepository.countByStatusNotIn(any())).thenReturn(0L);
         when(repairOrderRepository.countByStatus(any())).thenReturn(0L);
         when(appointmentRepository.countByStartTimeBetween(any(), any())).thenReturn(6L);
         when(estimateRepository.countByStatus(any())).thenReturn(0L);
@@ -159,7 +159,7 @@ class DashboardServiceImplTest {
         // Arrange
         DashboardConfig config = buildConfig();
         when(dashboardConfigRepository.findAll()).thenReturn(List.of(config));
-        when(repairOrderRepository.countByStatusNot(any())).thenReturn(1L);
+        when(repairOrderRepository.countByStatusNotIn(any())).thenReturn(1L);
         when(repairOrderRepository.countByStatus(any())).thenReturn(0L);
         when(appointmentRepository.countByStartTimeBetween(any(), any())).thenReturn(0L);
         when(estimateRepository.countByStatus(any())).thenReturn(0L);
@@ -186,7 +186,7 @@ class DashboardServiceImplTest {
         // Arrange
         DashboardConfig config = buildConfig();
         when(dashboardConfigRepository.findAll()).thenReturn(List.of(config));
-        when(repairOrderRepository.countByStatusNot(any())).thenReturn(0L);
+        when(repairOrderRepository.countByStatusNotIn(any())).thenReturn(0L);
         when(repairOrderRepository.countByStatus(any())).thenReturn(0L);
         when(appointmentRepository.countByStartTimeBetween(any(), any())).thenReturn(0L);
         when(estimateRepository.countByStatus(any())).thenReturn(0L);
