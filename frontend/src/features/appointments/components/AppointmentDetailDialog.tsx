@@ -3,6 +3,7 @@ import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
 import dayjs from "dayjs";
 
 import { AppDialog } from "@/components/AppDialog";
+import { getAppointmentStatus } from "@/features/appointments/appointmentStatus";
 
 import type { AppointmentResponse } from "@/types/appointment";
 
@@ -27,20 +28,7 @@ function formatDateTime(iso: string | null): string {
 export function AppointmentDetailDialog({ open, appointment, onClose, onEdit }: AppointmentDetailDialogProps) {
   if (!appointment) return null;
 
-  const getDisplayStatus = () => {
-    if (appointment.status === "COMPLETED") {
-      return { label: "Completada", color: "success" as const };
-    }
-    if (appointment.status === "CANCELLED") {
-      return { label: "Cancelada", color: "error" as const };
-    }
-    if (appointment.vehicleArrivedAt) {
-      return { label: "En progreso", color: "info" as const };
-    }
-    return { label: "Programada", color: "primary" as const };
-  };
-
-  const displayStatus = getDisplayStatus();
+  const displayStatus = getAppointmentStatus(appointment);
 
   return (
     <AppDialog

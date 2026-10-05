@@ -3,6 +3,7 @@ import { Box, CircularProgress, Typography } from "@mui/material";
 import dayjs from "dayjs";
 
 import { AppointmentCard, MultiDayBar } from "./AppointmentCard";
+import { CalendarEventBlock } from "./CalendarEventBlock";
 import { OverlappingAppointmentsMenu } from "./OverlappingAppointmentsMenu";
 
 import type { Dayjs } from "dayjs";
@@ -18,6 +19,7 @@ interface CalendarViewProps {
   onAppointmentClick: (appointment: AppointmentResponse) => void;
   onMenuOpen: (event: React.MouseEvent<HTMLElement>, appointment: AppointmentResponse) => void;
   onDateClick?: (date: Date) => void;
+  onAppointmentReschedule?: (id: number, startTime: string, endTime: string) => void;
 }
 
 export function CalendarView({
@@ -30,6 +32,7 @@ export function CalendarView({
   onAppointmentClick,
   onMenuOpen,
   onDateClick,
+  onAppointmentReschedule,
 }: CalendarViewProps) {
   if (loading) {
     return (
@@ -50,6 +53,7 @@ export function CalendarView({
           onAppointmentClick={onAppointmentClick}
           onMenuOpen={onMenuOpen}
           onDateClick={onDateClick}
+          onReschedule={onAppointmentReschedule}
         />
       );
     case "week":
@@ -62,6 +66,7 @@ export function CalendarView({
           onAppointmentClick={onAppointmentClick}
           onMenuOpen={onMenuOpen}
           onDateClick={onDateClick}
+          onReschedule={onAppointmentReschedule}
         />
       );
     case "month":
@@ -146,6 +151,7 @@ interface SharedProps {
   onAppointmentClick: (appointment: AppointmentResponse) => void;
   onMenuOpen: (event: React.MouseEvent<HTMLElement>, appointment: AppointmentResponse) => void;
   onDateClick?: (date: Date) => void;
+  onReschedule?: (id: number, startTime: string, endTime: string) => void;
 }
 
 function TimeGutter({ hours }: { hours: number[] }) {
@@ -211,7 +217,7 @@ interface DayViewProps extends SharedProps {
   endHour: number;
 }
 
-function DayView({ appointments, date, startHour, endHour, onAppointmentClick, onMenuOpen, onDateClick }: DayViewProps) {
+function DayView({ appointments, date, startHour, endHour, onAppointmentClick, onMenuOpen, onDateClick, onReschedule }: DayViewProps) {
   const [overlapMenuAnchor, setOverlapMenuAnchor] = useState<HTMLElement | null>(null);
   const [overlapMenuAppts, setOverlapMenuAppts] = useState<AppointmentResponse[]>([]);
   
@@ -254,26 +260,23 @@ function DayView({ appointments, date, startHour, endHour, onAppointmentClick, o
               const widthPct = 100 / group.length;
               const leftPct = widthPct * idx;
               return (
-                <Box 
-                  key={`group-${groupIdx}-${apt.id}`} 
-                  sx={{ 
-                    position: "absolute", top, left: `calc(${leftPct}% + 4px)`, 
-                    width: `calc(${widthPct}% - 6px)`, height: `calc(${height} - 2px)`, zIndex: 1 + idx,
-                    transition: "all 0.15s ease-in-out",
-                    "&:hover": group.length > 1 ? {
-                      zIndex: 50,
-                      width: "calc(100% - 8px)",
-                      left: "4px",
-                    } : {}
-                  }}
-                >
-                  <AppointmentCard 
-                    appointment={apt}
-                    showFullTags={false}
-                    onClick={onAppointmentClick}
-                    onMenuOpen={onMenuOpen}
-                  />
-                </Box>
+                <CalendarEventBlock
+                  key={`group-${groupIdx}-${apt.id}`}
+                  appointment={apt}
+                  top={top}
+                  height={height - 2}
+                  left={`calc(${leftPct}% + 4px)`}
+                  width={`calc(${widthPct}% - 6px)`}
+                  zIndex={1 + idx}
+                  groupSize={group.length}
+                  dateStr={dateStr}
+                  startHour={startHour}
+                  endHour={endHour}
+                  hourHeight={HOUR_HEIGHT}
+                  onClick={onAppointmentClick}
+                  onMenuOpen={onMenuOpen}
+                  onReschedule={onReschedule}
+                />
               );
             });
           })}
@@ -302,7 +305,7 @@ interface WeekViewProps extends SharedProps {
   endHour: number;
 }
 
-function WeekView({ appointments, date, startHour, endHour, onAppointmentClick, onMenuOpen, onDateClick }: WeekViewProps) {
+function WeekView({ appointments, date, startHour, endHour, onAppointmentClick, onMenuOpen, onDateClick, onReschedule }: WeekViewProps) {
   const [overlapMenuAnchor, setOverlapMenuAnchor] = useState<HTMLElement | null>(null);
   const [overlapMenuAppts, setOverlapMenuAppts] = useState<AppointmentResponse[]>([]);
   
@@ -381,26 +384,23 @@ function WeekView({ appointments, date, startHour, endHour, onAppointmentClick, 
                   const widthPct = 100 / group.length;
                   const leftPct = widthPct * idx;
                   return (
-                    <Box 
-                      key={`group-${dateStr}-${groupIdx}-${apt.id}`} 
-                      sx={{ 
-                        position: "absolute", top, left: `calc(${leftPct}% + 4px)`, 
-                        width: `calc(${widthPct}% - 6px)`, height: `calc(${height} - 2px)`, zIndex: 1 + idx,
-                        transition: "all 0.15s ease-in-out",
-                        "&:hover": group.length > 1 ? {
-                          zIndex: 50,
-                          width: "calc(100% - 8px)",
-                          left: "4px",
-                        } : {}
-                      }}
-                    >
-                      <AppointmentCard 
-                        appointment={apt}
-                        showFullTags={false}
-                        onClick={onAppointmentClick}
-                        onMenuOpen={onMenuOpen}
-                      />
-                    </Box>
+                    <CalendarEventBlock
+                      key={`group-${dateStr}-${groupIdx}-${apt.id}`}
+                      appointment={apt}
+                      top={top}
+                      height={height - 2}
+                      left={`calc(${leftPct}% + 4px)`}
+                      width={`calc(${widthPct}% - 6px)`}
+                      zIndex={1 + idx}
+                      groupSize={group.length}
+                      dateStr={dateStr}
+                      startHour={startHour}
+                      endHour={endHour}
+                      hourHeight={HOUR_HEIGHT}
+                      onClick={onAppointmentClick}
+                      onMenuOpen={onMenuOpen}
+                      onReschedule={onReschedule}
+                    />
                   );
                 });
               })}

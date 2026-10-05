@@ -53,6 +53,7 @@ export default function AppointmentsPage() {
     setEmployeeFilter,
     createAppointment,
     updateAppointment,
+    rescheduleAppointment,
     deleteAppointment,
     markVehicleArrived,
     cancelAppointment,
@@ -209,15 +210,6 @@ export default function AppointmentsPage() {
     <PageShell
       title={todayLabel}
       titleSx={{ textTransform: "capitalize" }}
-      actions={
-        <Chip
-          label="Hoy"
-          size="small"
-          variant="outlined"
-          onClick={() => setCurrentDate(new Date())}
-          sx={{ fontWeight: 500, cursor: "pointer" }}
-        />
-      }
     >
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -227,18 +219,30 @@ export default function AppointmentsPage() {
 
       <PageToolbar
         filters={
-          <Autocomplete
-            options={employees}
-            getOptionLabel={(o) => `${o.firstName} ${o.lastName}`}
-            value={employees.find((e) => e.id === employeeFilter) ?? null}
-            onChange={(_e, v) => setEmployeeFilter(v?.id ?? null)}
-            isOptionEqualToValue={(opt, val) => opt.id === val.id}
-            renderInput={(params) => (
-              <TextField {...params} placeholder="Filtrar empleado" size="small" />
-            )}
-            size="small"
-            sx={{ width: { xs: "100%", md: 240 } }}
-          />
+          <>
+            <Autocomplete
+              options={employees}
+              getOptionLabel={(o) => `${o.firstName} ${o.lastName}`}
+              value={employees.find((e) => e.id === employeeFilter) ?? null}
+              onChange={(_e, v) => setEmployeeFilter(v?.id ?? null)}
+              isOptionEqualToValue={(opt, val) => opt.id === val.id}
+              renderInput={(params) => (
+                <TextField {...params} placeholder="Filtrar empleado" size="small" />
+              )}
+              size="small"
+              sx={{ width: { xs: "100%", md: 240 } }}
+            />
+            <Select
+              value={viewMode}
+              onChange={(e) => setViewMode(e.target.value as CalendarViewMode)}
+              size="small"
+              sx={{ minWidth: 140, fontSize: "0.85rem" }}
+            >
+              <MenuItem value="day">{VIEW_LABELS.day}</MenuItem>
+              <MenuItem value="week">{VIEW_LABELS.week}</MenuItem>
+              <MenuItem value="month">{VIEW_LABELS.month}</MenuItem>
+            </Select>
+          </>
         }
         actions={
           <Button
@@ -274,19 +278,14 @@ export default function AppointmentsPage() {
             <IconButton size="small" onClick={() => navigateDate(1)} sx={{ color: "text.secondary" }}>
               <ChevronRightIcon fontSize="small" />
             </IconButton>
+            <Chip
+              label="Hoy"
+              size="small"
+              variant="outlined"
+              onClick={() => setCurrentDate(new Date())}
+              sx={{ fontWeight: 500, cursor: "pointer", ml: 0.5 }}
+            />
           </>
-        }
-        actions={
-          <Select
-            value={viewMode}
-            onChange={(e) => setViewMode(e.target.value as CalendarViewMode)}
-            size="small"
-            sx={{ minWidth: 140, fontSize: "0.85rem" }}
-          >
-            <MenuItem value="day">{VIEW_LABELS.day}</MenuItem>
-            <MenuItem value="week">{VIEW_LABELS.week}</MenuItem>
-            <MenuItem value="month">{VIEW_LABELS.month}</MenuItem>
-          </Select>
         }
       />
 
@@ -305,6 +304,14 @@ export default function AppointmentsPage() {
         onDateClick={(date) => {
           setCurrentDate(date);
           setViewMode("day");
+        }}
+        onAppointmentReschedule={async (id, startTime, endTime) => {
+          try {
+            await rescheduleAppointment(id, startTime, endTime);
+            showSnackbar("Cita reprogramada", "success");
+          } catch {
+            showSnackbar("Error al reprogramar la cita", "error");
+          }
         }}
       />
 
