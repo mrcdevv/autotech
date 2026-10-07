@@ -1,5 +1,6 @@
 package com.autotech.dashboard.service;
 
+import com.autotech.common.excel.ExcelTableBuilder;
 import com.autotech.dashboard.dto.DashboardFinancieroResponse;
 import com.autotech.dashboard.dto.DashboardProductividadResponse;
 import com.autotech.dashboard.dto.DebtAgingResponse;
@@ -8,13 +9,9 @@ import com.autotech.dashboard.dto.MonthlyRevenueResponse;
 import com.autotech.dashboard.dto.TopServiceResponse;
 import com.autotech.dashboard.dto.UnpaidInvoiceResponse;
 import lombok.RequiredArgsConstructor;
-import org.apache.poi.ss.SpreadsheetVersion;
-import org.apache.poi.ss.util.AreaReference;
-import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFTable;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 
@@ -86,7 +83,7 @@ public class DashboardExportServiceImpl implements DashboardExportService {
             cell.setCellStyle(currencyStyle);
         }
 
-        createTableInSheet(sheet, "IngresosMensuales", headers, data.size());
+        ExcelTableBuilder.createTable(sheet, "IngresosMensuales", headers, data.size(), true);
     }
 
     private void createDebtAgingSheet(XSSFWorkbook workbook, List<DebtAgingResponse> data) {
@@ -109,7 +106,7 @@ public class DashboardExportServiceImpl implements DashboardExportService {
             cell.setCellStyle(currencyStyle);
         }
 
-        createTableInSheet(sheet, "AntiguedadDeuda", headers, data.size());
+        ExcelTableBuilder.createTable(sheet, "AntiguedadDeuda", headers, data.size(), true);
     }
 
     private void createUnpaidInvoicesSheet(XSSFWorkbook workbook, List<UnpaidInvoiceResponse> data) {
@@ -134,7 +131,7 @@ public class DashboardExportServiceImpl implements DashboardExportService {
             row.createCell(4).setCellValue(item.createdAt() != null ? item.createdAt().format(DATE_FORMATTER) : "");
         }
 
-        createTableInSheet(sheet, "FacturasImpagas", headers, data.size());
+        ExcelTableBuilder.createTable(sheet, "FacturasImpagas", headers, data.size(), true);
     }
 
     private void createFinancieroSummarySheet(XSSFWorkbook workbook, DashboardFinancieroResponse data) {
@@ -162,7 +159,7 @@ public class DashboardExportServiceImpl implements DashboardExportService {
         row4.createCell(0).setCellValue("Facturación pendiente total");
         row4.createCell(1).setCellValue("$" + data.totalPendingBilling().toPlainString());
 
-        createTableInSheet(sheet, "ResumenFinanciero", headers, 4);
+        ExcelTableBuilder.createTable(sheet, "ResumenFinanciero", headers, 4, true);
     }
 
     private void createMechanicSheet(XSSFWorkbook workbook, List<MechanicProductivityResponse> data,
@@ -186,18 +183,7 @@ public class DashboardExportServiceImpl implements DashboardExportService {
         }
 
         if (!data.isEmpty()) {
-            int lastRow = 2 + data.size();
-            int lastCol = headers.length - 1;
-            AreaReference area = new AreaReference(
-                    new CellReference(2, 0), new CellReference(lastRow, lastCol),
-                    SpreadsheetVersion.EXCEL2007);
-            XSSFTable table = sheet.createTable(area);
-            table.setName("ProductividadMecanicos");
-            table.setDisplayName("ProductividadMecanicos");
-            table.setStyleName("TableStyleMedium2");
-            for (int i = 0; i < headers.length; i++) {
-                table.getCTTable().getTableColumns().getTableColumnArray(i).setName(headers[i]);
-            }
+            ExcelTableBuilder.createTable(sheet, "ProductividadMecanicos", headers, data.size(), 2, false);
         }
 
         for (int i = 0; i < headers.length; i++) {
@@ -221,36 +207,7 @@ public class DashboardExportServiceImpl implements DashboardExportService {
             row.createCell(1).setCellValue(item.count());
         }
 
-        createTableInSheet(sheet, "ServiciosMasFacturados", headers, data.size());
-    }
-
-    private void createTableInSheet(XSSFSheet sheet, String tableName,
-                                    String[] headers, int dataRowCount) {
-        if (dataRowCount == 0) {
-            for (int i = 0; i < headers.length; i++) {
-                sheet.autoSizeColumn(i);
-            }
-            return;
-        }
-
-        int lastRow = dataRowCount;
-        int lastCol = headers.length - 1;
-        AreaReference area = new AreaReference(
-                new CellReference(0, 0), new CellReference(lastRow, lastCol),
-                SpreadsheetVersion.EXCEL2007);
-
-        XSSFTable table = sheet.createTable(area);
-        table.setName(tableName);
-        table.setDisplayName(tableName);
-        table.setStyleName("TableStyleMedium2");
-
-        for (int i = 0; i < headers.length; i++) {
-            table.getCTTable().getTableColumns().getTableColumnArray(i).setName(headers[i]);
-        }
-
-        for (int i = 0; i <= lastCol; i++) {
-            sheet.autoSizeColumn(i);
-        }
+        ExcelTableBuilder.createTable(sheet, "ServiciosMasFacturados", headers, data.size(), true);
     }
 
     private XSSFCellStyle createCurrencyStyle(XSSFWorkbook workbook) {

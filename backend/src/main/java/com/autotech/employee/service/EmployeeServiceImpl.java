@@ -2,6 +2,7 @@ package com.autotech.employee.service;
 
 import com.autotech.common.exception.DuplicateResourceException;
 import com.autotech.common.exception.ResourceNotFoundException;
+import com.autotech.common.excel.ExcelTableBuilder;
 import com.autotech.employee.dto.EmployeeMapper;
 import com.autotech.employee.dto.EmployeeRequest;
 import com.autotech.employee.dto.EmployeeResponse;
@@ -17,8 +18,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -188,16 +188,16 @@ public class EmployeeServiceImpl implements EmployeeService {
         log.info("Exporting employees to Excel");
         List<Employee> employees = employeeRepository.findAll();
 
-        try (Workbook workbook = new XSSFWorkbook()) {
-            Sheet sheet = workbook.createSheet("Empleados");
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            XSSFSheet sheet = workbook.createSheet("Empleados");
 
             Font headerFont = workbook.createFont();
             headerFont.setBold(true);
             CellStyle headerStyle = workbook.createCellStyle();
             headerStyle.setFont(headerFont);
 
-            Row headerRow = sheet.createRow(0);
             String[] headers = {"DNI", "Nombre Completo", "Teléfono", "Email", "Estado", "Roles"};
+            Row headerRow = sheet.createRow(0);
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(headers[i]);
@@ -218,9 +218,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                 row.createCell(5).setCellValue(roleNames);
             }
 
-            for (int i = 0; i < headers.length; i++) {
-                sheet.autoSizeColumn(i);
-            }
+            ExcelTableBuilder.createTable(sheet, "Empleados", headers, employees.size(), true);
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             workbook.write(out);

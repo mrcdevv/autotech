@@ -9,9 +9,14 @@ import com.autotech.client.model.Client;
 import com.autotech.client.model.ClientType;
 import com.autotech.client.repository.ClientRepository;
 import com.autotech.common.exception.ResourceNotFoundException;
+import com.autotech.common.excel.ExcelTableBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -175,13 +180,14 @@ public class ClientServiceImpl implements ClientService {
     @Transactional(readOnly = true)
     public byte[] exportToExcel() {
         List<Client> clients = clientRepository.findAll();
-        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            Sheet sheet = workbook.createSheet("Clientes");
+        try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            XSSFSheet sheet = workbook.createSheet("Clientes");
+
+            String[] headers = { "ID", "Nombre", "Apellido", "DNI", "Nombre Comercial", "Email", "Teléfono",
+                    "Dirección", "Provincia", "País", "Tipo", "Fecha Entrada" };
 
             // Header
             Row headerRow = sheet.createRow(0);
-            String[] headers = { "ID", "Nombre", "Apellido", "DNI", "Nombre Comercial", "Email", "Teléfono",
-                    "Dirección", "Provincia", "País", "Tipo", "Fecha Entrada" };
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(headers[i]);
@@ -210,10 +216,7 @@ public class ClientServiceImpl implements ClientService {
                 row.createCell(11).setCellValue(client.getEntryDate() != null ? client.getEntryDate().toString() : "");
             }
 
-            // Auto size columns
-            for (int i = 0; i < headers.length; i++) {
-                sheet.autoSizeColumn(i);
-            }
+            ExcelTableBuilder.createTable(sheet, "Clientes", headers, clients.size(), true);
 
             workbook.write(out);
             return out.toByteArray();

@@ -22,6 +22,7 @@ import { WarningDialog } from "@/components/Shared/WarningDialog";
 import type { EmployeeResponse, EmployeeRequest } from "@/features/employees/types";
 import type { PageResponse, ApiResponse } from "@/types/api";
 import type { GridPaginationModel } from "@mui/x-data-grid";
+import { downloadFile } from "@/utils/downloadFile";
 
 export default function EmployeesPage() {
   const [data, setData] = useState<PageResponse<EmployeeResponse> | null>(null);
@@ -157,14 +158,7 @@ export default function EmployeesPage() {
   const handleExport = async () => {
     try {
       const res = await employeesApi.exportToExcel();
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", "empleados.xlsx");
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      downloadFile(new Blob([res.data]), "empleados.xlsx");
     } catch {
       showSnackbar("Error al exportar a Excel", "error");
     }

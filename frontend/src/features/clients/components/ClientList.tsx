@@ -11,6 +11,7 @@ import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
 import { useClients } from "@/features/clients/hooks/useClients";
 import { clientsApi } from "@/api/clients";
+import { downloadFile } from "@/utils/downloadFile";
 import ClientForm from "./ClientForm";
 import ClientDetailDialog from "./ClientDetailDialog";
 import ClientFilters from "./ClientFilters";
@@ -129,14 +130,7 @@ export default function ClientList() {
     const handleExport = async () => {
         try {
             const response = await clientsApi.exportToExcel();
-            // Create download link
-            const url = window.URL.createObjectURL(new Blob([response.data as BlobPart]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', 'clientes.xlsx');
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
+            downloadFile(response.data, 'clientes.xlsx');
         } catch {
             setActionError("Error al exportar a Excel");
         }

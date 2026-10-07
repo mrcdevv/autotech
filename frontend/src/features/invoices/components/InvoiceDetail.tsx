@@ -27,6 +27,7 @@ import { clientAutocompleteApi } from "@/api/clientAutocomplete";
 import { vehiclesApi } from "@/api/vehicles";
 import { estimatesApi } from "@/api/estimates";
 import { invoicesApi } from "@/api/invoices";
+import { downloadFile } from "@/utils/downloadFile";
 import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { FormPageLayout } from "@/components/FormPageLayout";
 import { FormSection } from "@/components/FormSection";
@@ -328,14 +329,7 @@ export function InvoiceDetail({ invoiceId, repairOrderId, estimateId, onBack }: 
     setApiError(null);
     try {
       const res = await invoicesApi.downloadPdf(invoice.id);
-      const url = URL.createObjectURL(res.data);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `factura-${invoice.id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
+      downloadFile(res.data, `factura-${invoice.id}.pdf`);
     } catch {
       setApiError("No se pudo generar el PDF de la factura");
     } finally {

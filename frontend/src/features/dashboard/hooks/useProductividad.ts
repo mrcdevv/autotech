@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { dashboardApi } from "@/api/dashboard";
 import type { DashboardProductividadResponse } from "@/features/dashboard/types";
+import { downloadFile } from "@/utils/downloadFile";
 
 export function useProductividad() {
   const [data, setData] = useState<DashboardProductividadResponse | null>(null);
@@ -27,12 +28,7 @@ export function useProductividad() {
   const exportToExcel = useCallback(async () => {
     try {
       const res = await dashboardApi.exportProductividad();
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "dashboard_productividad.xlsx";
-      link.click();
-      window.URL.revokeObjectURL(url);
+      downloadFile(new Blob([res.data]), "dashboard_productividad.xlsx");
     } catch {
       setError("Error al exportar a Excel");
     }

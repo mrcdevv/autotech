@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { dashboardApi } from "@/api/dashboard";
 import type { DashboardFinancieroResponse } from "@/features/dashboard/types";
+import { downloadFile } from "@/utils/downloadFile";
 
 export function useFinanciero(months: number = 6) {
   const [data, setData] = useState<DashboardFinancieroResponse | null>(null);
@@ -27,12 +28,7 @@ export function useFinanciero(months: number = 6) {
   const exportToExcel = useCallback(async () => {
     try {
       const res = await dashboardApi.exportFinanciero(months);
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "dashboard_financiero.xlsx";
-      link.click();
-      window.URL.revokeObjectURL(url);
+      downloadFile(new Blob([res.data]), "dashboard_financiero.xlsx");
     } catch {
       setError("Error al exportar a Excel");
     }
