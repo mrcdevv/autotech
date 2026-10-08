@@ -24,6 +24,14 @@ vi.mock("@/features/settings/components/DashboardSettingsTab", () => ({
   DashboardSettingsTab: () => <div data-testid="dashboard-settings-tab">DashboardSettingsTab</div>,
 }));
 
+vi.mock("@/features/settings/components/RolesSettings", () => ({
+  RolesSettings: () => <div data-testid="roles-settings">RolesSettings</div>,
+}));
+
+vi.mock("@/features/settings/components/TaxSettings", () => ({
+  TaxSettings: () => <div data-testid="tax-settings">TaxSettings</div>,
+}));
+
 function renderSettingsPage() {
   return render(
     <MemoryRouter>
@@ -39,11 +47,20 @@ describe("SettingsPage", () => {
     expect(screen.getByText("Gestioná los ajustes generales del taller")).toBeInTheDocument();
   });
 
-  it("given page, when rendered, then shows both sections", () => {
+  it("given page, when rendered, then shows all sections", () => {
     renderSettingsPage();
 
     expect(screen.getByRole("heading", { name: "Taller" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Catálogos" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Facturación" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Accesos" })).toBeInTheDocument();
+  });
+
+  it("given page, when rendered, then shows billing and access cards", () => {
+    renderSettingsPage();
+
+    expect(screen.getAllByText("Impuestos")).toHaveLength(2);
+    expect(screen.getAllByText("Roles y permisos")).toHaveLength(2);
   });
 
   it("given page, when rendered, then renders all settings config components", () => {
@@ -54,5 +71,7 @@ describe("SettingsPage", () => {
     expect(screen.getByTestId("bank-accounts-tab")).toBeInTheDocument();
     expect(screen.getByTestId("inspection-templates-tab")).toBeInTheDocument();
     expect(screen.getByTestId("tags-settings-tab")).toBeInTheDocument();
+    expect(screen.getByTestId("tax-settings")).toBeInTheDocument();
+    expect(screen.getByTestId("roles-settings")).toBeInTheDocument();
   });
 });
