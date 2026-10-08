@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
-import { vi, describe, it, expect } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import SettingsPage from "./SettingsPage";
 
@@ -15,10 +15,6 @@ vi.mock("@/features/settings/components/InspectionTemplatesTab", () => ({
 
 vi.mock("@/features/settings/components/CalendarSettingsTab", () => ({
   CalendarSettingsTab: () => <div data-testid="calendar-settings-tab">CalendarSettingsTab</div>,
-}));
-
-vi.mock("@/features/settings/components/RepairOrderSettingsTab", () => ({
-  RepairOrderSettingsTab: () => <div data-testid="repair-order-settings-tab">RepairOrderSettingsTab</div>,
 }));
 
 vi.mock("@/features/settings/components/TagsSettingsTab", () => ({
@@ -38,24 +34,33 @@ function renderSettingsPage() {
 }
 
 describe("SettingsPage", () => {
-  it("given page, when rendered, then shows settings tabs", () => {
+  it("given page, when rendered, then shows all settings navigation items", () => {
     renderSettingsPage();
 
-    expect(screen.getByText("Pagos / Cuentas bancarias")).toBeInTheDocument();
-    expect(screen.getByText("Fichas técnicas")).toBeInTheDocument();
     expect(screen.getByText("Calendario")).toBeInTheDocument();
-    expect(screen.getByText("Órdenes de trabajo")).toBeInTheDocument();
-    expect(screen.getByText("Etiquetas")).toBeInTheDocument();
     expect(screen.getByText("Panel de inicio")).toBeInTheDocument();
+    expect(screen.getByText("Cuentas bancarias")).toBeInTheDocument();
+    expect(screen.getByText("Fichas técnicas")).toBeInTheDocument();
+    expect(screen.getByText("Etiquetas")).toBeInTheDocument();
+    expect(screen.queryByText("Órdenes de trabajo")).not.toBeInTheDocument();
   });
 
-  it("given page, when rendered, then shows first tab by default", () => {
+  it("given page, when rendered, then shows calendar settings by default", () => {
     renderSettingsPage();
+
+    expect(screen.getByTestId("calendar-settings-tab")).toBeInTheDocument();
+  });
+
+  it("given calendar active, when clicking bank accounts, then shows bank accounts", async () => {
+    const user = userEvent.setup();
+    renderSettingsPage();
+
+    await user.click(screen.getByText("Cuentas bancarias"));
 
     expect(screen.getByTestId("bank-accounts-tab")).toBeInTheDocument();
   });
 
-  it("given tabs, when clicking second tab, then shows inspection templates", async () => {
+  it("given calendar active, when clicking inspection templates, then shows inspection templates", async () => {
     const user = userEvent.setup();
     renderSettingsPage();
 
@@ -64,39 +69,21 @@ describe("SettingsPage", () => {
     expect(screen.getByTestId("inspection-templates-tab")).toBeInTheDocument();
   });
 
-  it("given tabs, when clicking third tab, then shows calendar settings", async () => {
-    const user = userEvent.setup();
-    renderSettingsPage();
-
-    await user.click(screen.getByText("Calendario"));
-
-    expect(screen.getByTestId("calendar-settings-tab")).toBeInTheDocument();
-  });
-
-  it("given tabs, when clicking fourth tab, then shows repair order settings", async () => {
-    const user = userEvent.setup();
-    renderSettingsPage();
-
-    await user.click(screen.getByText("Órdenes de trabajo"));
-
-    expect(screen.getByTestId("repair-order-settings-tab")).toBeInTheDocument();
-  });
-
-  it("given tabs, when clicking tags tab, then shows tag settings", async () => {
-    const user = userEvent.setup();
-    renderSettingsPage();
-
-    await user.click(screen.getByText("Etiquetas"));
-
-    expect(screen.getByTestId("tags-settings-tab")).toBeInTheDocument();
-  });
-
-  it("given tabs, when clicking dashboard tab, then shows dashboard settings", async () => {
+  it("given calendar active, when clicking dashboard, then shows dashboard settings", async () => {
     const user = userEvent.setup();
     renderSettingsPage();
 
     await user.click(screen.getByText("Panel de inicio"));
 
     expect(screen.getByTestId("dashboard-settings-tab")).toBeInTheDocument();
+  });
+
+  it("given calendar active, when clicking tags, then shows tag settings", async () => {
+    const user = userEvent.setup();
+    renderSettingsPage();
+
+    await user.click(screen.getByText("Etiquetas"));
+
+    expect(screen.getByTestId("tags-settings-tab")).toBeInTheDocument();
   });
 });

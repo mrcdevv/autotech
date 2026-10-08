@@ -1,38 +1,67 @@
 import { useState } from "react";
 
-import { Tabs, Tab } from "@mui/material";
-import { useSearchParams } from "react-router";
+import { Box, Stack } from "@mui/material";
 
 import { PageShell } from "@/components/PageShell";
 import { BankAccountsTab } from "@/features/settings/components/BankAccountsTab";
-import { InspectionTemplatesTab } from "@/features/settings/components/InspectionTemplatesTab";
 import { CalendarSettingsTab } from "@/features/settings/components/CalendarSettingsTab";
-import { RepairOrderSettingsTab } from "@/features/settings/components/RepairOrderSettingsTab";
 import { DashboardSettingsTab } from "@/features/settings/components/DashboardSettingsTab";
+import { InspectionTemplatesTab } from "@/features/settings/components/InspectionTemplatesTab";
+import { SettingsSideNav } from "@/features/settings/components/SettingsSideNav";
 import { TagsSettingsTab } from "@/features/settings/components/TagsSettingsTab";
 
+import type { SettingsNavSection } from "@/features/settings/components/SettingsSideNav";
+
+const SETTINGS_SECTIONS: SettingsNavSection[] = [
+  {
+    title: "Taller",
+    items: [
+      { id: "calendar", label: "Calendario" },
+      { id: "dashboard", label: "Panel de inicio" },
+    ],
+  },
+  {
+    title: "Catálogos",
+    items: [
+      { id: "bank-accounts", label: "Cuentas bancarias" },
+      { id: "inspection-templates", label: "Fichas técnicas" },
+      { id: "tags", label: "Etiquetas" },
+    ],
+  },
+];
+
 export default function SettingsPage() {
-  const [searchParams] = useSearchParams();
-  const initialTab = Number(searchParams.get("tab")) || 0;
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const [activeId, setActiveId] = useState("calendar");
+
+  const renderContent = () => {
+    switch (activeId) {
+      case "bank-accounts":
+        return <BankAccountsTab />;
+      case "inspection-templates":
+        return <InspectionTemplatesTab />;
+      case "calendar":
+        return <CalendarSettingsTab />;
+      case "tags":
+        return <TagsSettingsTab />;
+      case "dashboard":
+        return <DashboardSettingsTab />;
+      default:
+        return null;
+    }
+  };
 
   return (
     <PageShell title="Configuración">
-      <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 2.5 }}>
-        <Tab label="Pagos / Cuentas bancarias" />
-        <Tab label="Fichas técnicas" />
-        <Tab label="Calendario" />
-        <Tab label="Órdenes de trabajo" />
-        <Tab label="Etiquetas" />
-        <Tab label="Panel de inicio" />
-      </Tabs>
-
-      {activeTab === 0 && <BankAccountsTab />}
-      {activeTab === 1 && <InspectionTemplatesTab />}
-      {activeTab === 2 && <CalendarSettingsTab />}
-      {activeTab === 3 && <RepairOrderSettingsTab />}
-      {activeTab === 4 && <TagsSettingsTab />}
-      {activeTab === 5 && <DashboardSettingsTab />}
+      <Stack direction={{ xs: "column", md: "row" }} spacing={{ xs: 2, md: 3 }}>
+        <Box sx={{ width: { xs: "100%", md: 240 }, flexShrink: 0 }}>
+          <SettingsSideNav
+            sections={SETTINGS_SECTIONS}
+            activeId={activeId}
+            onSelect={setActiveId}
+          />
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>{renderContent()}</Box>
+      </Stack>
     </PageShell>
   );
 }
