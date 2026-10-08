@@ -21,6 +21,7 @@ import com.autotech.invoice.model.InvoiceStatus;
 import com.autotech.invoice.repository.InvoiceRepository;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.repository.RepairOrderRepository;
+import com.autotech.tax.service.TaxConfigService;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +47,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final RepairOrderRepository repairOrderRepository;
     private final EstimateService estimateService;
     private final EmailNotificationService emailNotificationService;
+    private final TaxConfigService taxConfigService;
 
     @Override
     @Transactional(readOnly = true)
@@ -112,11 +114,16 @@ public class InvoiceServiceImpl implements InvoiceService {
             estimateService.getById(request.estimateId());
         }
 
+        BigDecimal taxPercentage = request.taxPercentage() != null
+                ? request.taxPercentage()
+                : taxConfigService.getConfig().getTaxPercentage();
+
         Invoice entity = invoiceMapper.toEntity(request);
         entity.setClient(client);
         entity.setVehicle(vehicle);
         entity.setRepairOrder(repairOrder);
         entity.setStatus(InvoiceStatus.PENDIENTE);
+        entity.setTaxPercentage(taxPercentage);
 
         if (request.estimateId() != null) {
             com.autotech.estimate.model.Estimate estimateRef = com.autotech.estimate.model.Estimate.builder().build();
@@ -127,7 +134,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         addChildEntities(entity, request);
 
         BigDecimal total = calculateTotal(request.services(), request.products(),
-                request.discountPercentage(), request.taxPercentage());
+                request.discountPercentage(), taxPercentage);
         entity.setTotal(total);
 
         Invoice saved = invoiceRepository.save(entity);

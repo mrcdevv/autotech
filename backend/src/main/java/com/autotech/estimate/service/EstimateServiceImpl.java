@@ -24,6 +24,7 @@ import com.autotech.inspection.model.InspectionItemStatus;
 import com.autotech.inspection.repository.InspectionRepository;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.repository.RepairOrderRepository;
+import com.autotech.tax.service.TaxConfigService;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +51,7 @@ public class EstimateServiceImpl implements EstimateService {
     private final RepairOrderRepository repairOrderRepository;
     private final InspectionRepository inspectionRepository;
     private final EmailNotificationService emailNotificationService;
+    private final TaxConfigService taxConfigService;
 
     @Override
     @Transactional(readOnly = true)
@@ -129,16 +131,21 @@ public class EstimateServiceImpl implements EstimateService {
             }
         }
 
+        BigDecimal taxPercentage = request.taxPercentage() != null
+                ? request.taxPercentage()
+                : taxConfigService.getConfig().getTaxPercentage();
+
         Estimate entity = estimateMapper.toEntity(request);
         entity.setClient(client);
         entity.setVehicle(vehicle);
         entity.setRepairOrder(repairOrder);
         entity.setStatus(EstimateStatus.PENDIENTE);
+        entity.setTaxPercentage(taxPercentage);
 
         addChildEntities(entity, request);
 
         BigDecimal total = calculateTotal(request.services(), request.products(),
-                request.discountPercentage(), request.taxPercentage());
+                request.discountPercentage(), taxPercentage);
         entity.setTotal(total);
 
         Estimate saved = estimateRepository.save(entity);
@@ -163,17 +170,21 @@ public class EstimateServiceImpl implements EstimateService {
         Vehicle vehicle = vehicleRepository.findById(request.vehicleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle", request.vehicleId()));
 
+        BigDecimal taxPercentage = request.taxPercentage() != null
+                ? request.taxPercentage()
+                : taxConfigService.getConfig().getTaxPercentage();
+
         entity.setClient(client);
         entity.setVehicle(vehicle);
         entity.setDiscountPercentage(request.discountPercentage() != null ? request.discountPercentage() : BigDecimal.ZERO);
-        entity.setTaxPercentage(request.taxPercentage() != null ? request.taxPercentage() : BigDecimal.ZERO);
+        entity.setTaxPercentage(taxPercentage);
 
         entity.getServices().clear();
         entity.getProducts().clear();
         addChildEntities(entity, request);
 
         BigDecimal total = calculateTotal(request.services(), request.products(),
-                request.discountPercentage(), request.taxPercentage());
+                request.discountPercentage(), taxPercentage);
         entity.setTotal(total);
 
         Estimate saved = estimateRepository.save(entity);

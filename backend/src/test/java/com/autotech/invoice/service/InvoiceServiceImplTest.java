@@ -22,6 +22,8 @@ import com.autotech.invoice.repository.InvoiceRepository;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.model.RepairOrderStatus;
 import com.autotech.repairorder.repository.RepairOrderRepository;
+import com.autotech.tax.model.TaxConfig;
+import com.autotech.tax.service.TaxConfigService;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
 import org.junit.jupiter.api.Test;
@@ -43,6 +45,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -69,6 +72,9 @@ class InvoiceServiceImplTest {
 
     @Mock
     private EmailNotificationService emailNotificationService;
+
+    @Mock
+    private TaxConfigService taxConfigService;
 
     @InjectMocks
     private InvoiceServiceImpl invoiceService;
@@ -198,6 +204,70 @@ class InvoiceServiceImplTest {
 
         assertThat(result.id()).isEqualTo(1L);
         verify(invoiceRepository).save(any(Invoice.class));
+    }
+
+    @Test
+    void givenRequestWithoutTaxPercentage_whenCreate_thenUsesDefaultTax21() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        InvoiceRequest request = new InvoiceRequest(1L, 2L, null, null,
+                BigDecimal.ZERO, null,
+                List.of(new InvoiceServiceItemRequest("Service A", BigDecimal.valueOf(100))),
+                Collections.emptyList());
+
+        Invoice mappedEntity = Invoice.builder()
+                .discountPercentage(BigDecimal.ZERO)
+                .taxPercentage(BigDecimal.ZERO)
+                .build();
+        Invoice savedEntity = buildInvoice(1L);
+        InvoiceDetailResponse detailResponse = buildDetailResponse(1L);
+        TaxConfig taxConfig = buildTaxConfig(BigDecimal.valueOf(21));
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(taxConfigService.getConfig()).thenReturn(taxConfig);
+        when(invoiceMapper.toEntity(request)).thenReturn(mappedEntity);
+        when(invoiceRepository.save(any(Invoice.class))).thenReturn(savedEntity);
+        when(invoiceRepository.findWithDetailsById(1L)).thenReturn(Optional.of(savedEntity));
+        when(invoiceMapper.toDetailResponse(savedEntity)).thenReturn(detailResponse);
+
+        InvoiceDetailResponse result = invoiceService.create(request);
+
+        assertThat(result).isNotNull();
+        assertThat(mappedEntity.getTaxPercentage()).isEqualByComparingTo(BigDecimal.valueOf(21));
+        assertThat(mappedEntity.getTotal()).isEqualByComparingTo(BigDecimal.valueOf(121));
+        verify(taxConfigService).getConfig();
+    }
+
+    @Test
+    void givenRequestWithTaxPercentage_whenCreate_thenUsesRequestTax() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        InvoiceRequest request = new InvoiceRequest(1L, 2L, null, null,
+                BigDecimal.ZERO, BigDecimal.valueOf(10),
+                List.of(new InvoiceServiceItemRequest("Service A", BigDecimal.valueOf(100))),
+                Collections.emptyList());
+
+        Invoice mappedEntity = Invoice.builder()
+                .discountPercentage(BigDecimal.ZERO)
+                .taxPercentage(BigDecimal.ZERO)
+                .build();
+        Invoice savedEntity = buildInvoice(1L);
+        InvoiceDetailResponse detailResponse = buildDetailResponse(1L);
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(invoiceMapper.toEntity(request)).thenReturn(mappedEntity);
+        when(invoiceRepository.save(any(Invoice.class))).thenReturn(savedEntity);
+        when(invoiceRepository.findWithDetailsById(1L)).thenReturn(Optional.of(savedEntity));
+        when(invoiceMapper.toDetailResponse(savedEntity)).thenReturn(detailResponse);
+
+        InvoiceDetailResponse result = invoiceService.create(request);
+
+        assertThat(result).isNotNull();
+        assertThat(mappedEntity.getTaxPercentage()).isEqualByComparingTo(BigDecimal.valueOf(10));
+        assertThat(mappedEntity.getTotal()).isEqualByComparingTo(BigDecimal.valueOf(110));
+        verify(taxConfigService, never()).getConfig();
     }
 
     @Test
@@ -513,6 +583,12 @@ class InvoiceServiceImplTest {
                 .build();
         order.setId(id);
         return order;
+    }
+
+    private TaxConfig buildTaxConfig(BigDecimal taxPercentage) {
+        TaxConfig config = TaxConfig.builder().taxPercentage(taxPercentage).build();
+        config.setId(1L);
+        return config;
     }
 
     private Invoice buildInvoice(Long id) {
