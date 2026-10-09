@@ -6,6 +6,8 @@ import type {
   DashboardProductividadResponse,
   DashboardConfigResponse,
   DashboardConfigRequest,
+  DashboardReportsResponse,
+  FaultCountResponse,
 } from "@/features/dashboard/types";
 
 export const dashboardApi = {
@@ -21,6 +23,18 @@ export const dashboardApi = {
     apiClient.get<ApiResponse<DashboardProductividadResponse>>(
       "/dashboard/productividad"
     ),
+
+  getReports: (from: string, to: string) =>
+    apiClient.get<ApiResponse<DashboardReportsResponse>>(
+      `/dashboard/reports/summary?from=${from}&to=${to}`
+    ),
+
+  getReportFaults: (from: string, to: string, brandId?: number | null) => {
+    const brandParam = brandId ? `&brandId=${brandId}` : "";
+    return apiClient.get<ApiResponse<FaultCountResponse[]>>(
+      `/dashboard/reports/faults?from=${from}&to=${to}${brandParam}`
+    );
+  },
 
   getConfig: () =>
     apiClient.get<ApiResponse<DashboardConfigResponse>>("/dashboard/config"),

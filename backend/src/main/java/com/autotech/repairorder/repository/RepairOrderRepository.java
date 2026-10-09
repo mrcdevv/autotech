@@ -75,4 +75,17 @@ public interface RepairOrderRepository
             @Param("status") RepairOrderStatus status,
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end);
+
+    @Query("""
+            SELECT b.name, COUNT(ro)
+            FROM RepairOrder ro
+            JOIN ro.vehicle v
+            JOIN v.brand b
+            WHERE ro.createdAt >= :start AND ro.createdAt < :end
+            GROUP BY b.name
+            ORDER BY COUNT(ro) DESC
+            """)
+    List<Object[]> countByBrand(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
 }
