@@ -3,17 +3,20 @@ import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect } from "vitest";
 
 import { ServicesGrid } from "./ServicesGrid";
+import { formatCurrency } from "@/utils/formatCurrency";
 
 import type { InvoiceServiceItemRequest } from "@/types/invoice";
+
+// formatCurrency emits a non-breaking space (U+00A0) after the "$" symbol, which the
+// testing-library normalizer collapses to a plain space in the DOM text. Normalize the
+// expectation the same way so exact string matching works.
+const money = (value: number) => formatCurrency(value).replace(/\u00A0/g, " ");
 
 vi.mock("@/api/catalogServices", () => ({
   catalogServicesApi: {
     search: vi.fn().mockResolvedValue({ data: { data: { content: [] } } }),
   },
 }));
-
-const money = (value: number) =>
-  value.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 describe("ServicesGrid", () => {
   const defaultServices: InvoiceServiceItemRequest[] = [
@@ -25,7 +28,7 @@ describe("ServicesGrid", () => {
     render(<ServicesGrid services={defaultServices} onChange={vi.fn()} />);
 
     expect(screen.getByText("Subtotal servicios:")).toBeInTheDocument();
-    expect(screen.getByText(`$ ${money(300)}`)).toBeInTheDocument();
+    expect(screen.getByText(money(300))).toBeInTheDocument();
   });
 
   it("given services, when clicking add, then calls onChange with new row", async () => {

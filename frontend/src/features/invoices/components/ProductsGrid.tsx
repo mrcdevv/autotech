@@ -7,6 +7,8 @@ import Inventory2Icon from "@mui/icons-material/Inventory2";
 
 import { productsApi } from "@/api/products";
 
+import { formatCurrency } from "@/utils/formatCurrency";
+
 import type { InvoiceProductRequest } from "@/types/invoice";
 import type { ProductResponse } from "@/types/catalog";
 
@@ -23,10 +25,6 @@ interface ProductsGridProps {
   onChange: (products: InvoiceProductRequest[]) => void;
   readonly?: boolean;
   showErrors?: boolean;
-}
-
-function formatCurrency(value: number): string {
-  return value.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 export function ProductsGrid({ products, onChange, readonly = false, showErrors = false }: ProductsGridProps) {
@@ -221,7 +219,7 @@ export function ProductsGrid({ products, onChange, readonly = false, showErrors 
                 />
                 <TextField
                   label="Total"
-                  value={`$ ${formatCurrency((prod.quantity || 0) * (prod.unitPrice || 0))}`}
+                  value={formatCurrency((prod.quantity || 0) * (prod.unitPrice || 0))}
                   size="small"
                   sx={{ flex: 1 }}
                   slotProps={{
@@ -256,7 +254,7 @@ export function ProductsGrid({ products, onChange, readonly = false, showErrors 
             Subtotal productos:
           </Typography>
           <Typography variant="subtitle2" sx={{ fontSize: "0.9rem" }}>
-            $ {formatCurrency(productsSubtotal)}
+            {formatCurrency(productsSubtotal)}
           </Typography>
         </Box>
       )}

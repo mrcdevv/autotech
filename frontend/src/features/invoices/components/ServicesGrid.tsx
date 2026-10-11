@@ -7,6 +7,8 @@ import BuildIcon from "@mui/icons-material/Build";
 
 import { catalogServicesApi } from "@/api/catalogServices";
 
+import { formatCurrency } from "@/utils/formatCurrency";
+
 import type { InvoiceServiceItemRequest } from "@/types/invoice";
 import type { CatalogServiceResponse } from "@/types/catalog";
 
@@ -23,10 +25,6 @@ interface ServicesGridProps {
   onChange: (services: InvoiceServiceItemRequest[]) => void;
   readonly?: boolean;
   showErrors?: boolean;
-}
-
-function formatCurrency(value: number): string {
-  return value.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 export function ServicesGrid({ services, onChange, readonly = false, showErrors = false }: ServicesGridProps) {
@@ -221,7 +219,7 @@ export function ServicesGrid({ services, onChange, readonly = false, showErrors 
             Subtotal servicios:
           </Typography>
           <Typography variant="subtitle2" sx={{ fontSize: "0.9rem" }}>
-            $ {formatCurrency(servicesSubtotal)}
+            {formatCurrency(servicesSubtotal)}
           </Typography>
         </Box>
       )}

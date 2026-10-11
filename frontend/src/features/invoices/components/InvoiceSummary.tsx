@@ -1,6 +1,8 @@
 import { Box, Typography, TextField, InputAdornment, Paper, Stack, Divider } from "@mui/material";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 
+import { formatCurrency } from "@/utils/formatCurrency";
+
 const allowedDecimalKeys = new Set(["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight", "Home", "End"]);
 function blockNonNumeric(e: React.KeyboardEvent) {
   if (allowedDecimalKeys.has(e.key) || e.ctrlKey || e.metaKey) return;
@@ -17,10 +19,6 @@ interface InvoiceSummaryProps {
   onDiscountChange: (value: number) => void;
   onTaxChange: (value: number) => void;
   readonly?: boolean;
-}
-
-function formatCurrency(value: number): string {
-  return value.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 const percentageRowSx = {
@@ -74,18 +72,18 @@ export function InvoiceSummary({
         <Stack spacing={1.5}>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="body2" color="text.secondary">Subtotal servicios</Typography>
-            <Typography variant="body2">$ {formatCurrency(servicesSubtotal)}</Typography>
+            <Typography variant="body2">{formatCurrency(servicesSubtotal)}</Typography>
           </Box>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="body2" color="text.secondary">Subtotal productos</Typography>
-            <Typography variant="body2">$ {formatCurrency(productsSubtotal)}</Typography>
+            <Typography variant="body2">{formatCurrency(productsSubtotal)}</Typography>
           </Box>
 
           <Divider />
 
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="body2" fontWeight={500}>Subtotal</Typography>
-            <Typography variant="body2" fontWeight={500}>$ {formatCurrency(subtotal)}</Typography>
+            <Typography variant="body2" fontWeight={500}>{formatCurrency(subtotal)}</Typography>
           </Box>
 
           <Box sx={percentageRowSx}>
@@ -112,7 +110,7 @@ export function InvoiceSummary({
             />
             {discountPercentage > 0 && (
               <Typography variant="body2" color="error.main" sx={{ ml: "auto" }}>
-                - $ {formatCurrency(discountAmount)}
+                -{formatCurrency(discountAmount)}
               </Typography>
             )}
           </Box>
@@ -141,7 +139,7 @@ export function InvoiceSummary({
             />
             {taxPercentage > 0 && (
               <Typography variant="body2" color="text.secondary" sx={{ ml: "auto" }}>
-                + $ {formatCurrency(taxAmount)}
+                +{formatCurrency(taxAmount)}
               </Typography>
             )}
           </Box>
@@ -158,7 +156,7 @@ export function InvoiceSummary({
               Total
             </Typography>
             <Typography variant="h5" sx={{ color: "primary.contrastText", fontWeight: 700 }}>
-              $ {formatCurrency(finalPrice)}
+              {formatCurrency(finalPrice)}
             </Typography>
           </Box>
         </Stack>

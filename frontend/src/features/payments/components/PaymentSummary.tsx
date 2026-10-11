@@ -1,12 +1,11 @@
 import { Box, Typography, Divider, Paper } from "@mui/material";
 
+import { formatCurrency } from "@/utils/formatCurrency";
 import type { PaymentSummaryResponse } from "@/types/payment";
 
 interface PaymentSummaryProps {
   summary: PaymentSummaryResponse | null;
 }
-
-const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
 
 export function PaymentSummary({ summary }: PaymentSummaryProps) {
   if (!summary) return null;
