@@ -208,7 +208,6 @@ export function ServicesGrid({ services, onChange, readonly = false, showErrors 
             px: 3,
             py: 1.5,
             display: "flex",
-            justifyContent: "flex-end",
             alignItems: "center",
             borderTop: 1,
             borderColor: "divider",
@@ -218,7 +217,7 @@ export function ServicesGrid({ services, onChange, readonly = false, showErrors 
           <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
             Subtotal servicios:
           </Typography>
-          <Typography variant="subtitle2" sx={{ fontSize: "0.9rem" }}>
+          <Typography variant="subtitle2" sx={{ flex: 1, textAlign: "right", fontSize: "0.9rem" }}>
             {formatCurrency(servicesSubtotal)}
           </Typography>
         </Box>

@@ -35,6 +35,24 @@ describe("PaymentSummary", () => {
     expect(screen.getByText(money(806.8))).toBeInTheDocument();
   });
 
+  it("given amounts, when rendered, then every amount element is explicitly right-aligned", () => {
+    render(<PaymentSummary summary={buildSummary()} />);
+
+    const amounts = [
+      money(1000), // Total en servicios
+      money(200), // Total en partes
+      money(226.8), // Impuestos
+      `-${money(120)}`, // Descuento
+      money(1306.8), // Total
+      money(500), // Total pagado a la fecha
+      money(806.8), // Restante por pagar
+    ];
+    for (const amount of amounts) {
+      const element = screen.getByText(amount);
+      expect(getComputedStyle(element).textAlign).toBe("right");
+    }
+  });
+
   it("given remaining > 0, when rendered, then remaining label is visible", () => {
     render(<PaymentSummary summary={buildSummary({ remaining: 806.8 })} />);
 

@@ -50,6 +50,23 @@ describe("EstimateSummary", () => {
     expect(screen.getByText(money(871.2))).toBeInTheDocument();
   });
 
+  it("given amounts, when rendered, then every amount element is explicitly right-aligned", () => {
+    render(<EstimateSummary {...defaultProps} discountPercentage={10} taxPercentage={21} />);
+
+    const amounts = [
+      money(500), // Subtotal servicios
+      money(300), // Subtotal productos
+      money(800), // Subtotal
+      `-${money(80)}`, // Descuento
+      `+${money(151.2)}`, // Impuesto (21% over 720 after the discount)
+      money(871.2), // Total
+    ];
+    for (const amount of amounts) {
+      const element = screen.getByText(amount);
+      expect(getComputedStyle(element).textAlign).toBe("right");
+    }
+  });
+
   it("given readonly mode, when rendered, then disables discount and tax fields", () => {
     render(<EstimateSummary {...defaultProps} readonly />);
 

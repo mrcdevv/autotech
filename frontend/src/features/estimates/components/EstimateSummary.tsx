@@ -72,18 +72,18 @@ export function EstimateSummary({
         <Stack spacing={1.5}>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="body2" color="text.secondary">Subtotal servicios</Typography>
-            <Typography variant="body2">{formatCurrency(servicesSubtotal)}</Typography>
+            <Typography variant="body2" sx={{ textAlign: "right" }}>{formatCurrency(servicesSubtotal)}</Typography>
           </Box>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="body2" color="text.secondary">Subtotal productos</Typography>
-            <Typography variant="body2">{formatCurrency(productsSubtotal)}</Typography>
+            <Typography variant="body2" sx={{ textAlign: "right" }}>{formatCurrency(productsSubtotal)}</Typography>
           </Box>
 
           <Divider />
 
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="body2" fontWeight={500}>Subtotal</Typography>
-            <Typography variant="body2" fontWeight={500}>{formatCurrency(subtotal)}</Typography>
+            <Typography variant="body2" fontWeight={500} sx={{ textAlign: "right" }}>{formatCurrency(subtotal)}</Typography>
           </Box>
 
           <Box sx={percentageRowSx}>
@@ -109,7 +109,7 @@ export function EstimateSummary({
               sx={{ width: 120 }}
             />
             {discountPercentage > 0 && (
-              <Typography variant="body2" color="error.main" sx={{ ml: "auto" }}>
+              <Typography variant="body2" color="error.main" sx={{ flex: 1, textAlign: "right" }}>
                 -{formatCurrency(discountAmount)}
               </Typography>
             )}
@@ -138,7 +138,7 @@ export function EstimateSummary({
               sx={{ width: 120 }}
             />
             {taxPercentage > 0 && (
-              <Typography variant="body2" color="text.secondary" sx={{ ml: "auto" }}>
+              <Typography variant="body2" color="text.secondary" sx={{ flex: 1, textAlign: "right" }}>
                 +{formatCurrency(taxAmount)}
               </Typography>
             )}
@@ -155,7 +155,7 @@ export function EstimateSummary({
             <Typography variant="subtitle1" sx={{ color: "primary.contrastText", fontWeight: 600 }}>
               Total
             </Typography>
-            <Typography variant="h5" sx={{ color: "primary.contrastText", fontWeight: 700 }}>
+            <Typography variant="h5" sx={{ color: "primary.contrastText", fontWeight: 700, textAlign: "right" }}>
               {formatCurrency(finalPrice)}
             </Typography>
           </Box>

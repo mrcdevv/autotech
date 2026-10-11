@@ -32,6 +32,14 @@ describe("ProductsGrid", () => {
     expect(screen.getByText(money(115))).toBeInTheDocument();
   });
 
+  it("given products, when rendered, then the subtotal amount is explicitly right-aligned", () => {
+    render(<ProductsGrid products={defaultProducts} onChange={vi.fn()} />);
+
+    // 4*25 + 1*15 = 115
+    const element = screen.getByText(money(115));
+    expect(getComputedStyle(element).textAlign).toBe("right");
+  });
+
   it("given products, when clicking add, then calls onChange with new row", async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();

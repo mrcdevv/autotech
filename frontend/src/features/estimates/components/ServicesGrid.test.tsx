@@ -31,6 +31,13 @@ describe("ServicesGrid", () => {
     expect(screen.getByText(money(300))).toBeInTheDocument();
   });
 
+  it("given services, when rendered, then the subtotal amount is explicitly right-aligned", () => {
+    render(<ServicesGrid services={defaultServices} onChange={vi.fn()} />);
+
+    const element = screen.getByText(money(300));
+    expect(getComputedStyle(element).textAlign).toBe("right");
+  });
+
   it("given services, when clicking add, then calls onChange with new row", async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
