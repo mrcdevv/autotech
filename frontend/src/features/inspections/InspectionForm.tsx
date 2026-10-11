@@ -10,11 +10,6 @@ import {
   TextField,
   Button,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
   ToggleButtonGroup,
   ToggleButton,
   Divider,
@@ -25,6 +20,7 @@ import ErrorIcon from "@mui/icons-material/Error";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
 
+import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { inspectionsApi } from "@/api/inspections";
 
 import type { InspectionResponse, InspectionItemStatus, InspectionItemRequest } from "@/features/inspections/types";
@@ -387,20 +383,16 @@ export function InspectionForm({
         </Button>
       </CardActions>
 
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} className="no-print">
-        <DialogTitle>Eliminar inspección</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            ¿Está seguro de que desea eliminar esta inspección? Esta acción no se puede deshacer.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
-          <Button onClick={handleDelete} color="error" variant="contained">
-            Eliminar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <AppConfirmDialog
+        open={deleteDialogOpen}
+        className="no-print"
+        title="Eliminar inspección"
+        message="¿Está seguro de que desea eliminar esta inspección? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        destructive
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteDialogOpen(false)}
+      />
     </Card>
   );
 }

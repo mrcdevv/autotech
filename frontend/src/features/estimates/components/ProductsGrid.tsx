@@ -95,10 +95,10 @@ export function ProductsGrid({ products, onChange, readonly = false, showErrors 
         )}
       </Box>
 
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: 2.5 }}>
         {products.length === 0 ? (
-          <Box sx={{ py: 4, textAlign: "center" }}>
-            <Inventory2Icon sx={{ fontSize: 40, color: "grey.300", mb: 1 }} />
+          <Box sx={{ py: 2.5, textAlign: "center" }}>
+            <Inventory2Icon sx={{ fontSize: 32, color: "grey.300", mb: 1 }} />
             <Typography variant="body2" color="text.secondary">
               No hay productos agregados
             </Typography>

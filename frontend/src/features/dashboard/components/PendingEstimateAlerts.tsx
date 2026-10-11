@@ -1,6 +1,12 @@
-import { Card, CardContent, Typography, Alert, Stack } from "@mui/material";
-import { formatCurrency } from "@/utils/formatCurrency";
+import { Typography } from "@mui/material";
+
+import { MonoText } from "@/components/MonoText";
+import { Panel } from "@/components/Panel";
+import { PanelRow } from "@/components/PanelRow";
+import { RowText } from "@/components/RowText";
+import { StatusBadge } from "@/components/StatusBadge";
 import type { PendingEstimateAlertResponse } from "@/features/dashboard/types";
+import { formatCurrency } from "@/utils/formatCurrency";
 
 interface PendingEstimateAlertsProps {
   alerts: PendingEstimateAlertResponse[];
@@ -9,29 +15,26 @@ interface PendingEstimateAlertsProps {
 
 export function PendingEstimateAlerts({ alerts, thresholdDays }: PendingEstimateAlertsProps) {
   return (
-    <Card>
-      <CardContent>
-        <Typography variant="h6" sx={{ mb: 1 }}>
-          Presupuestos pendientes (+{thresholdDays} días)
+    <Panel title={`Presupuestos pendientes (+${thresholdDays} días)`} contentSx={{ mt: "2px" }}>
+      {alerts.length === 0 ? (
+        <Typography variant="body2" sx={{ color: "text.secondary", py: 1 }}>
+          No hay presupuestos pendientes
         </Typography>
-        {alerts.length === 0 ? (
-          <Typography color="text.secondary">No hay presupuestos pendientes</Typography>
-        ) : (
-          <Stack spacing={1}>
-            {alerts.map((alert) => (
-              <Alert key={alert.estimateId} severity="info" variant="outlined">
-                <Typography variant="body2">
-                  <strong>{alert.clientFullName}</strong> ({alert.vehiclePlate})
-                  {" — "}{formatCurrency(alert.total)}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {alert.daysPending} días pendiente
-                </Typography>
-              </Alert>
-            ))}
-          </Stack>
-        )}
-      </CardContent>
-    </Card>
+      ) : (
+        alerts.map((alert) => (
+          <PanelRow key={alert.estimateId}>
+            <RowText
+              primary={alert.clientFullName}
+              secondary={
+                <>
+                  {alert.vehiclePlate} · <MonoText>{formatCurrency(alert.total)}</MonoText>
+                </>
+              }
+            />
+            <StatusBadge tone="info" label={`${alert.daysPending} días`} />
+          </PanelRow>
+        ))
+      )}
+    </Panel>
   );
 }

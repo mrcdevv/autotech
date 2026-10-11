@@ -1,8 +1,9 @@
 import { useState } from "react";
 
-import { Button, Alert, Snackbar, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
+import { Button, Alert, Snackbar } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 
+import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { AppSearchField } from "@/components/AppSearchField";
 import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
@@ -134,20 +135,15 @@ export default function ProductsPage() {
         initialData={editingProduct}
       />
 
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Confirmar eliminación</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            ¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
-          <Button onClick={handleDelete} color="error" variant="contained">
-            Eliminar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <AppConfirmDialog
+        open={deleteDialogOpen}
+        title="Eliminar producto"
+        message="¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        destructive
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteDialogOpen(false)}
+      />
 
       <Snackbar
         open={snackbar.open}

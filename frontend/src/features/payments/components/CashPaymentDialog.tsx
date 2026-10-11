@@ -1,16 +1,14 @@
 import { useState, useEffect } from "react";
 
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   Box,
   Alert,
 } from "@mui/material";
+import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
 
+import { AppDialog } from "@/components/AppDialog";
 import { usePayments } from "../hooks/usePayments";
 
 import type { PaymentRequest, PaymentResponse } from "@/types/payment";
@@ -92,14 +90,21 @@ export function CashPaymentDialog({
     : remaining;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        {isEditing
-          ? "Modificar pago en efectivo"
-          : "Agregar pago en efectivo"}
-      </DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      title={isEditing ? "Modificar pago en efectivo" : "Agregar pago en efectivo"}
+      icon={<PaymentsOutlinedIcon sx={{ fontSize: "1.25rem" }} />}
+      actions={
+        <>
+          <Button onClick={onClose} color="inherit">Cancelar</Button>
+          <Button variant="contained" onClick={handleSubmit} disabled={amount <= 0}>
+            Aceptar
+          </Button>
+        </>
+      }
+    >
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 0.5 }}>
           <TextField
             type="date"
             label="Fecha de pago"
@@ -157,17 +162,6 @@ export function CashPaymentDialog({
             </Box>
           </Alert>
         )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
-        <Button
-          variant="contained"
-          onClick={handleSubmit}
-          disabled={amount <= 0}
-        >
-          Aceptar
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </AppDialog>
   );
 }

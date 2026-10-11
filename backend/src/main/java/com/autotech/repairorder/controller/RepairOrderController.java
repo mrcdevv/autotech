@@ -8,6 +8,7 @@ import com.autotech.invoice.dto.InvoiceDetailResponse;
 import com.autotech.invoice.service.InvoiceService;
 import com.autotech.repairorder.dto.NotesUpdateRequest;
 import com.autotech.repairorder.dto.RepairOrderDetailResponse;
+import com.autotech.repairorder.dto.RepairOrderFilter;
 import com.autotech.repairorder.dto.RepairOrderRequest;
 import com.autotech.repairorder.dto.RepairOrderResponse;
 import com.autotech.repairorder.dto.StatusUpdateRequest;
@@ -16,6 +17,11 @@ import com.autotech.repairorder.model.RepairOrderStatus;
 import com.autotech.repairorder.service.RepairOrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -29,6 +35,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -41,8 +48,16 @@ public class RepairOrderController {
     private final InvoiceService invoiceService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<RepairOrderResponse>>> getAll() {
-        return ResponseEntity.ok(ApiResponse.success(repairOrderService.getAll()));
+    public ResponseEntity<ApiResponse<Page<RepairOrderResponse>>> search(
+            @RequestParam(required = false) List<RepairOrderStatus> statuses,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) Long employeeId,
+            @RequestParam(required = false) Long tagId,
+            @RequestParam(required = false) String q,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        RepairOrderFilter filter = new RepairOrderFilter(statuses, from, to, employeeId, tagId, q);
+        return ResponseEntity.ok(ApiResponse.success(repairOrderService.search(filter, pageable)));
     }
 
     @GetMapping("/{id}")
@@ -96,12 +111,6 @@ public class RepairOrderController {
                 ApiResponse.success("Título actualizado", repairOrderService.updateTitle(id, request)));
     }
 
-    @GetMapping("/by-status")
-    public ResponseEntity<ApiResponse<List<RepairOrderResponse>>> getByStatus(
-            @RequestParam List<RepairOrderStatus> statuses) {
-        return ResponseEntity.ok(ApiResponse.success(repairOrderService.getByStatus(statuses)));
-    }
-
     @PutMapping("/{id}/employees")
     public ResponseEntity<ApiResponse<RepairOrderResponse>> assignEmployees(
             @PathVariable Long id,
@@ -116,24 +125,6 @@ public class RepairOrderController {
             @RequestBody List<Long> tagIds) {
         return ResponseEntity.ok(
                 ApiResponse.success("Etiquetas asignadas", repairOrderService.assignTags(id, tagIds)));
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<ApiResponse<List<RepairOrderResponse>>> search(
-            @RequestParam(required = false) String query) {
-        return ResponseEntity.ok(ApiResponse.success(repairOrderService.search(query)));
-    }
-
-    @GetMapping("/filter/by-employee")
-    public ResponseEntity<ApiResponse<List<RepairOrderResponse>>> filterByEmployee(
-            @RequestParam Long employeeId) {
-        return ResponseEntity.ok(ApiResponse.success(repairOrderService.filterByEmployee(employeeId)));
-    }
-
-    @GetMapping("/filter/by-tag")
-    public ResponseEntity<ApiResponse<List<RepairOrderResponse>>> filterByTag(
-            @RequestParam Long tagId) {
-        return ResponseEntity.ok(ApiResponse.success(repairOrderService.filterByTag(tagId)));
     }
 
     @GetMapping("/{id}/estimate")

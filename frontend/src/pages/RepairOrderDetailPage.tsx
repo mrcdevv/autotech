@@ -1,41 +1,52 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 import {
   Box,
-  TextField,
-  Button,
+  Typography,
   CircularProgress,
   Alert,
-  Typography,
-  Card,
-  CardContent,
   Stack,
-  Divider,
+  IconButton,
+  Button,
+  TextField,
 } from "@mui/material";
+import Grid from "@mui/material/Grid2";
 import { useParams } from "react-router";
-import PersonIcon from "@mui/icons-material/Person";
-import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
+import EditIcon from "@mui/icons-material/Edit";
 
+import { AppDialog } from "@/components/AppDialog";
+import { MonoText } from "@/components/MonoText";
 import { PageShell } from "@/components/PageShell";
-import { PageToolbar } from "@/components/PageToolbar";
+import { Panel } from "@/components/Panel";
+import { StatusBadge } from "@/components/StatusBadge";
 import { RepairOrderDetailTabs } from "@/features/repair-orders/components/RepairOrderDetailTabs";
 import { useRepairOrder } from "@/features/repair-orders/hooks/useRepairOrder";
+import { STATUS_META } from "@/features/repair-orders/statusMeta";
+
+import type { ReactNode } from "react";
 
 export default function RepairOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { order, loading, error, refetch, updateTitle } = useRepairOrder(Number(id));
 
-  const [editableTitle, setEditableTitle] = useState("");
+  const [titleDialogOpen, setTitleDialogOpen] = useState(false);
+  const [titleDraft, setTitleDraft] = useState("");
+  const [savingTitle, setSavingTitle] = useState(false);
 
-  useEffect(() => {
-    if (order?.title) {
-      setEditableTitle(order.title);
-    }
-  }, [order?.title]);
+  const handleOpenEditTitle = () => {
+    setTitleDraft(order?.title ?? "");
+    setTitleDialogOpen(true);
+  };
 
   const handleSaveTitle = async () => {
-    if (editableTitle.trim()) {
-      await updateTitle({ title: editableTitle.trim() });
+    const trimmed = titleDraft.trim();
+    if (!trimmed) return;
+    setSavingTitle(true);
+    try {
+      await updateTitle({ title: trimmed });
+      setTitleDialogOpen(false);
+    } finally {
+      setSavingTitle(false);
     }
   };
 
@@ -55,66 +66,164 @@ export default function RepairOrderDetailPage() {
     );
   }
 
+  const meta = order ? STATUS_META[order.status] : null;
+
   return (
     <PageShell title={`Orden de trabajo #${id}`}>
-      <PageToolbar
-        filters={
-          <TextField
-            value={editableTitle}
-            onChange={(e) => setEditableTitle(e.target.value)}
-            variant="outlined"
-            fullWidth
-            inputProps={{ maxLength: 255 }}
-            placeholder="Ingrese un título para la orden de trabajo"
-            sx={{ width: { xs: "100%", md: 520 } }}
-          />
-        }
-        actions={
-          <Button variant="contained" onClick={handleSaveTitle} sx={{ minWidth: 120 }}>
-            Guardar
-          </Button>
-        }
-      />
+      {order && meta && (
+        <Stack spacing={2} sx={{ mb: 2.5 }}>
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                flex: "none",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                bgcolor: meta.color,
+                color: "#FFFFFF",
+              }}
+            >
+              <MonoText sx={{ fontSize: "0.8125rem", fontWeight: 700 }}>OT-{order.id}</MonoText>
+            </Box>
 
-      {order && (
-        <Card elevation={0} sx={{ mb: 2, border: 1, borderColor: "divider", bgcolor: "grey.50" }}>
-          <CardContent sx={{ py: 1.5, px: 2.5, "&:last-child": { pb: 1.5 } }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
-              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
-                <PersonIcon color="primary" sx={{ fontSize: 20, flexShrink: 0 }} />
-                <Box sx={{ minWidth: 0, overflow: "hidden" }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Stack direction="row" spacing={0.75} alignItems="center" sx={{ minWidth: 0 }}>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 700,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {order.title ?? `Orden de trabajo #${id}`}
+                </Typography>
+                <IconButton
+                  size="small"
+                  aria-label="Editar título"
+                  onClick={handleOpenEditTitle}
+                  sx={{ flexShrink: 0 }}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </Stack>
+            </Box>
+
+            <StatusBadge tone={meta.tone} label={meta.label} sx={{ flexShrink: 0 }} />
+          </Stack>
+
+          <Panel title="Cliente y vehículo">
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <FieldRow label="Cliente">
                   <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
                     {`${order.clientFirstName} ${order.clientLastName}`}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" noWrap>
-                    DNI: {order.clientDni || "—"} • Tel: {order.clientPhone || "—"}
-                    {order.clientEmail && ` • ${order.clientEmail}`}
+                </FieldRow>
+                <FieldRow label="Teléfono">
+                  <MonoText sx={{ fontSize: "0.8125rem" }}>{order.clientPhone || "—"}</MonoText>
+                </FieldRow>
+                <FieldRow label="DNI">
+                  <MonoText sx={{ fontSize: "0.8125rem" }}>{order.clientDni || "—"}</MonoText>
+                </FieldRow>
+                <FieldRow label="Email">
+                  <Typography variant="body2" noWrap>
+                    {order.clientEmail || "—"}
                   </Typography>
-                </Box>
-              </Stack>
-
-              <Divider orientation="vertical" flexItem />
-
-              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
-                <DirectionsCarIcon color="primary" sx={{ fontSize: 20, flexShrink: 0 }} />
-                <Box sx={{ minWidth: 0, overflow: "hidden" }}>
+                </FieldRow>
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <FieldRow label="Vehículo">
                   <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
-                    {order.vehiclePlate}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" noWrap>
                     {[order.vehicleYear, order.vehicleBrandName, order.vehicleModel]
                       .filter(Boolean)
                       .join(" ") || "—"}
-                    {order.vehicleChassisNumber && ` • VIN: ${order.vehicleChassisNumber}`}
                   </Typography>
-                </Box>
-              </Stack>
-            </Box>
-          </CardContent>
-        </Card>
+                </FieldRow>
+                <FieldRow label="Patente">
+                  <MonoText sx={{ fontSize: "0.8125rem" }}>{order.vehiclePlate}</MonoText>
+                </FieldRow>
+                <FieldRow label="VIN">
+                  <MonoText sx={{ fontSize: "0.8125rem" }}>
+                    {order.vehicleChassisNumber || "—"}
+                  </MonoText>
+                </FieldRow>
+              </Grid>
+            </Grid>
+          </Panel>
+        </Stack>
       )}
 
       <RepairOrderDetailTabs order={order} loading={loading} onRefetch={refetch} />
+
+      <AppDialog
+        open={titleDialogOpen}
+        title="Editar título"
+        subtitle={`Orden de trabajo #${id}`}
+        onClose={() => setTitleDialogOpen(false)}
+        icon={<EditIcon sx={{ fontSize: "1.25rem" }} />}
+        actions={
+          <>
+            <Button color="inherit" onClick={() => setTitleDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="contained"
+              disabled={!titleDraft.trim() || savingTitle}
+              onClick={handleSaveTitle}
+            >
+              {savingTitle ? "Guardando…" : "Guardar"}
+            </Button>
+          </>
+        }
+      >
+        <TextField
+          label="Título"
+          value={titleDraft}
+          onChange={(e) => setTitleDraft(e.target.value)}
+          fullWidth
+          autoFocus
+          inputProps={{ maxLength: 255 }}
+          helperText="Máximo 255 caracteres"
+        />
+      </AppDialog>
     </PageShell>
+  );
+}
+
+interface FieldRowProps {
+  label: string;
+  children: ReactNode;
+}
+
+function FieldRow({ label, children }: FieldRowProps) {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "baseline",
+        justifyContent: "space-between",
+        gap: 2,
+        py: 0.75,
+      }}
+    >
+      <Typography variant="overline" sx={{ color: "text.faint", flex: "none" }}>
+        {label}
+      </Typography>
+      <Box
+        sx={{
+          minWidth: 0,
+          textAlign: "right",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {children}
+      </Box>
+    </Box>
   );
 }

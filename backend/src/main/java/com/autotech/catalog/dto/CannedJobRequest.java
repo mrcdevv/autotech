@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 
 public record CannedJobRequest(
-        @NotBlank(message = "El título del trabajo enlatado es obligatorio")
+        @NotBlank(message = "El título del paquete de servicios es obligatorio")
         @Size(max = 255, message = "El título no puede superar los 255 caracteres")
         String title,
 

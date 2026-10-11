@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
+import { Button, Stack } from "@mui/material";
+import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+
+import { AppDialog } from "@/components/AppDialog";
 
 import type { Dayjs } from "dayjs";
 import type { AppointmentResponse, AppointmentUpdateRequest } from "@/types/appointment";
@@ -62,37 +65,41 @@ export function AppointmentEditDialog({
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle>Editar fecha y hora</DialogTitle>
-        <DialogContent>
-          <Stack spacing={3} sx={{ mt: 1 }}>
-            <DateTimePicker
-              label="Fecha y hora de inicio"
-              value={startTime}
-              onChange={(newValue) => setStartTime(newValue)}
-              disabled={saving}
-            />
-            <DateTimePicker
-              label="Fecha y hora de fin"
-              value={endTime}
-              onChange={(newValue) => setEndTime(newValue)}
-              disabled={saving}
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} disabled={saving}>
-            Cancelar
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleSave}
-            disabled={saving || !startTime || !endTime}
-          >
-            Guardar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <AppDialog
+        open={open}
+        onClose={handleClose}
+        title="Editar fecha y hora"
+        icon={<ScheduleOutlinedIcon sx={{ fontSize: "1.25rem" }} />}
+        actions={
+          <>
+            <Button onClick={handleClose} disabled={saving} color="inherit">
+              Cancelar
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={saving || !startTime || !endTime}
+            >
+              Guardar
+            </Button>
+          </>
+        }
+      >
+        <Stack spacing={3} sx={{ mt: 0.5 }}>
+          <DateTimePicker
+            label="Fecha y hora de inicio"
+            value={startTime}
+            onChange={(newValue) => setStartTime(newValue)}
+            disabled={saving}
+          />
+          <DateTimePicker
+            label="Fecha y hora de fin"
+            value={endTime}
+            onChange={(newValue) => setEndTime(newValue)}
+            disabled={saving}
+          />
+        </Stack>
+      </AppDialog>
     </LocalizationProvider>
   );
 }

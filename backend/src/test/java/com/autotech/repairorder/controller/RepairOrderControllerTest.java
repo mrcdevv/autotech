@@ -5,17 +5,21 @@ import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.estimate.service.EstimateService;
 import com.autotech.invoice.service.InvoiceService;
 import com.autotech.repairorder.dto.RepairOrderDetailResponse;
+import com.autotech.repairorder.dto.RepairOrderFilter;
 import com.autotech.repairorder.dto.RepairOrderRequest;
 import com.autotech.repairorder.dto.RepairOrderResponse;
 import com.autotech.repairorder.dto.StatusUpdateRequest;
 import com.autotech.repairorder.dto.TitleUpdateRequest;
 import com.autotech.repairorder.model.RepairOrderStatus;
 import com.autotech.repairorder.service.RepairOrderService;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -57,6 +61,12 @@ class RepairOrderControllerTest {
     @MockitoBean
     private InvoiceService invoiceService;
 
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
+
     private final RepairOrderResponse sampleResponse = new RepairOrderResponse(
             1L, "OT-1 Perez - ABC123", RepairOrderStatus.INGRESO_VEHICULO,
             1L, "Juan", "Perez", "1234567890",
@@ -75,12 +85,14 @@ class RepairOrderControllerTest {
     );
 
     @Test
-    void getAll_returns200WithList() throws Exception {
-        when(repairOrderService.getAll()).thenReturn(List.of(sampleResponse));
+    void search_returns200WithPage() throws Exception {
+        when(repairOrderService.search(any(RepairOrderFilter.class), any()))
+                .thenReturn(new PageImpl<>(List.of(sampleResponse)));
 
         mockMvc.perform(get("/api/repair-orders"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].title").value("OT-1 Perez - ABC123"));
+                .andExpect(jsonPath("$.data.content[0].title").value("OT-1 Perez - ABC123"))
+                .andExpect(jsonPath("$.data.totalElements").value(1));
     }
 
     @Test
@@ -201,15 +213,6 @@ class RepairOrderControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void search_returns200() throws Exception {
-        when(repairOrderService.search("test")).thenReturn(List.of(sampleResponse));
-
-        mockMvc.perform(get("/api/repair-orders/search").param("query", "test"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].title").value("OT-1 Perez - ABC123"));
     }
 
     @Test

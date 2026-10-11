@@ -46,4 +46,7 @@ export const invoicesApi = {
 
   delete: (id: number) =>
     apiClient.delete<ApiResponse<void>>(`/invoices/${id}`),
+
+  downloadPdf: (id: number) =>
+    apiClient.get<Blob>(`/invoices/${id}/pdf`, { responseType: "blob" }),
 };

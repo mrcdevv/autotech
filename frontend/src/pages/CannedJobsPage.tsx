@@ -53,16 +53,16 @@ export default function CannedJobsPage() {
       setEditingJob(detail);
       setDialogOpen(true);
     } catch {
-      showSnackbar("Error al cargar el trabajo enlatado", "error");
+      showSnackbar("Error al cargar el paquete de servicios", "error");
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
       await deleteCannedJob(id);
-      showSnackbar("Trabajo enlatado eliminado", "success");
+      showSnackbar("Paquete de servicios eliminado", "success");
     } catch {
-      showSnackbar("Error al eliminar el trabajo enlatado", "error");
+      showSnackbar("Error al eliminar el paquete de servicios", "error");
     }
   };
 
@@ -70,19 +70,19 @@ export default function CannedJobsPage() {
     try {
       if (editingJob) {
         await updateCannedJob(editingJob.id, data);
-        showSnackbar("Trabajo enlatado actualizado", "success");
+        showSnackbar("Paquete de servicios actualizado", "success");
       } else {
         await createCannedJob(data);
-        showSnackbar("Trabajo enlatado creado", "success");
+        showSnackbar("Paquete de servicios creado", "success");
       }
       setDialogOpen(false);
     } catch {
-      showSnackbar("Error al guardar el trabajo enlatado", "error");
+      showSnackbar("Error al guardar el paquete de servicios", "error");
     }
   };
 
   return (
-    <PageShell title="Trabajos enlatados">
+    <PageShell title="Paquetes de servicios">
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
@@ -102,7 +102,7 @@ export default function CannedJobsPage() {
         }
         actions={
           <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-            Agregar trabajo enlatado
+            Agregar paquete de servicios
           </Button>
         }
       />

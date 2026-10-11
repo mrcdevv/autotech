@@ -1,11 +1,12 @@
 import { GridActionsCellItem } from "@mui/x-data-grid";
-import { Chip } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import LockResetIcon from "@mui/icons-material/LockReset";
 
 import { AppDataGrid } from "@/components/AppDataGrid";
+import { MonoText } from "@/components/MonoText";
+import { StatusBadge } from "@/components/StatusBadge";
 
 import type { GridColDef, GridPaginationModel } from "@mui/x-data-grid";
 import type { EmployeeResponse } from "@/features/employees/types";
@@ -33,24 +34,23 @@ export function EmployeeList({
   onResetPassword,
 }: EmployeeListProps) {
   const columns: GridColDef[] = [
-    { field: "dni", headerName: "Documento", flex: 1 },
+    { field: "dni", headerName: "Documento", flex: 1, renderCell: (params) => <MonoText>{params.value || "—"}</MonoText> },
     {
       field: "fullName",
       headerName: "Nombre Completo",
       flex: 1.5,
       valueGetter: (_value, row) => `${row.firstName} ${row.lastName}`,
     },
-    { field: "phone", headerName: "Teléfono", flex: 1 },
+    { field: "phone", headerName: "Teléfono", flex: 1, renderCell: (params) => <MonoText>{params.value || "—"}</MonoText> },
     { field: "email", headerName: "Correo Electrónico", flex: 1.5 },
     {
       field: "status",
       headerName: "Estado",
       flex: 0.8,
       renderCell: (params) => (
-        <Chip
+        <StatusBadge
           label={params.value === "ACTIVO" ? "Activo" : "Inactivo"}
-          color={params.value === "ACTIVO" ? "success" : "error"}
-          size="small"
+          tone={params.value === "ACTIVO" ? "ok" : "bad"}
         />
       ),
     },

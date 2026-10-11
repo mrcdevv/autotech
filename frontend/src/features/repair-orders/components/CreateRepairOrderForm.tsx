@@ -20,8 +20,10 @@ import { vehicleTypesApi } from "@/api/vehicleTypes";
 import { repairOrdersApi } from "@/api/repairOrders";
 import ClientForm from "@/features/clients/components/ClientForm";
 import { VehicleForm } from "@/features/vehicles/components/VehicleForm";
+import { useMechanics } from "../hooks/useMechanics";
 
 import type { Client } from "@/features/clients/types/client";
+import type { EmployeeResponse } from "@/features/employees/types";
 import type { VehicleResponse, VehicleRequest, BrandResponse, VehicleTypeResponse } from "@/types/vehicle";
 
 interface CreateRepairOrderFormProps {
@@ -37,8 +39,11 @@ export function CreateRepairOrderForm({ onSuccess }: CreateRepairOrderFormProps)
   const [selectedClientId, setSelectedClientId] = useState<number | null>(prefillClientId);
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(prefillVehicleId);
   const [reason, setReason] = useState(prefillReason);
+  const [selectedMechanics, setSelectedMechanics] = useState<EmployeeResponse[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { mechanics, loading: mechanicsLoading } = useMechanics();
 
   const [clients, setClients] = useState<Client[]>([]);
   const [vehicles, setVehicles] = useState<VehicleResponse[]>([]);
@@ -83,6 +88,7 @@ export function CreateRepairOrderForm({ onSuccess }: CreateRepairOrderFormProps)
         clientId: selectedClientId,
         vehicleId: selectedVehicleId,
         reason: reason || null,
+        employeeIds: selectedMechanics.map((mechanic) => mechanic.id),
       });
       onSuccess();
     } catch {
@@ -108,15 +114,23 @@ export function CreateRepairOrderForm({ onSuccess }: CreateRepairOrderFormProps)
   };
 
   return (
-    <Box sx={{ maxWidth: 700, mx: "auto", py: 3 }}>
+    <Box sx={{ width: "100%" }}>
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
 
-      <Paper elevation={0} sx={{ p: 3, mb: 3, border: 1, borderColor: "divider" }}>
-        <Typography variant="h6" sx={{ mb: 2.5, fontWeight: 600 }}>
+      <Box
+        sx={{
+          display: "grid",
+          gap: 2,
+          gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" },
+          alignItems: "start",
+        }}
+      >
+      <Paper elevation={0} sx={{ p: 2.5, border: 1, borderColor: "divider" }}>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
           Seleccionar Cliente
         </Typography>
         <Box display="flex" alignItems="flex-start" gap={1.5}>
@@ -196,8 +210,8 @@ export function CreateRepairOrderForm({ onSuccess }: CreateRepairOrderFormProps)
         )}
       </Paper>
 
-      <Paper elevation={0} sx={{ p: 3, mb: 3, border: 1, borderColor: "divider" }}>
-        <Typography variant="h6" sx={{ mb: 2.5, fontWeight: 600 }}>
+      <Paper elevation={0} sx={{ p: 2.5, border: 1, borderColor: "divider" }}>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
           Seleccionar Vehículo
         </Typography>
         <Box display="flex" alignItems="flex-start" gap={1.5}>
@@ -299,8 +313,11 @@ export function CreateRepairOrderForm({ onSuccess }: CreateRepairOrderFormProps)
         )}
       </Paper>
 
-      <Paper elevation={0} sx={{ p: 3, mb: 3, border: 1, borderColor: "divider" }}>
-        <Typography variant="h6" sx={{ mb: 2.5, fontWeight: 600 }}>
+      <Paper
+        elevation={0}
+        sx={{ p: 2.5, border: 1, borderColor: "divider", gridColumn: "1 / -1" }}
+      >
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
           Motivo de la visita
         </Typography>
         <TextField
@@ -315,13 +332,41 @@ export function CreateRepairOrderForm({ onSuccess }: CreateRepairOrderFormProps)
         />
       </Paper>
 
+      <Paper
+        elevation={0}
+        sx={{ p: 2.5, border: 1, borderColor: "divider", gridColumn: "1 / -1" }}
+      >
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+          Mecánicos asignados
+        </Typography>
+        <Autocomplete
+          multiple
+          options={mechanics}
+          value={selectedMechanics}
+          onChange={(_event, value) => setSelectedMechanics(value)}
+          getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
+          isOptionEqualToValue={(option, value) => option.id === value.id}
+          loading={mechanicsLoading}
+          noOptionsText="No hay mecánicos activos"
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Mecánicos"
+              placeholder="Seleccioná los mecánicos"
+              helperText="Opcional. Solo se listan empleados activos con rol MECANICO"
+            />
+          )}
+        />
+      </Paper>
+      </Box>
+
       <Button
         variant="contained"
         onClick={handleSubmit}
         disabled={!selectedClientId || !selectedVehicleId || submitting}
         fullWidth
         size="large"
-        sx={{ py: 1.5 }}
+        sx={{ py: 1.5, mt: 2 }}
       >
         {submitting ? <CircularProgress size={24} /> : "Crear orden de trabajo"}
       </Button>

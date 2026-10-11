@@ -38,10 +38,9 @@ function renderSettingsPage() {
 }
 
 describe("SettingsPage", () => {
-  it("given page, when rendered, then shows title and settings tabs", () => {
+  it("given page, when rendered, then shows settings tabs", () => {
     renderSettingsPage();
 
-    expect(screen.getByText("Configuración")).toBeInTheDocument();
     expect(screen.getByText("Pagos / Cuentas bancarias")).toBeInTheDocument();
     expect(screen.getByText("Fichas técnicas")).toBeInTheDocument();
     expect(screen.getByText("Calendario")).toBeInTheDocument();

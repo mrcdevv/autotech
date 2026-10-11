@@ -1,4 +1,8 @@
-import { Dialog, DialogTitle, DialogContent, Grid, Typography, Divider, Button, DialogActions } from "@mui/material";
+import { Grid, Typography, Divider, Button } from "@mui/material";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+
+import { AppDialog } from "@/components/AppDialog";
+
 import type { Client } from "@/features/clients/types/client";
 
 interface ClientDetailDialogProps {
@@ -11,10 +15,14 @@ export default function ClientDetailDialog({ open, onClose, client }: ClientDeta
     if (!client) return null;
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-            <DialogTitle>Detalle del Cliente</DialogTitle>
-            <DialogContent dividers>
-                <Grid container spacing={2}>
+        <AppDialog
+            open={open}
+            onClose={onClose}
+            title="Detalle del Cliente"
+            icon={<PersonOutlineIcon sx={{ fontSize: "1.25rem" }} />}
+            actions={<Button onClick={onClose} color="inherit">Cerrar</Button>}
+        >
+            <Grid container spacing={2}>
                     <Grid item xs={12}>
                         <Typography variant="subtitle2" color="text.secondary">ID</Typography>
                         <Typography variant="body1">{client.id}</Typography>
@@ -58,10 +66,6 @@ export default function ClientDetailDialog({ open, onClose, client }: ClientDeta
                         <Typography variant="body1">{client.country || "—"}</Typography>
                     </Grid>
                 </Grid>
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={onClose}>Cerrar</Button>
-            </DialogActions>
-        </Dialog>
+        </AppDialog>
     );
 }

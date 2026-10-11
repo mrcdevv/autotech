@@ -39,7 +39,7 @@ describe("CannedJobFormDialog", () => {
   it("given create mode, when opened, then shows empty fields", () => {
     render(<CannedJobFormDialog {...defaultProps} />);
 
-    expect(screen.getByText("Nuevo trabajo enlatado")).toBeInTheDocument();
+    expect(screen.getByText("Nuevo paquete de servicios")).toBeInTheDocument();
     expect(screen.getByLabelText(/título/i)).toHaveValue("");
     expect(screen.getByLabelText(/descripción/i)).toHaveValue("");
   });
@@ -47,7 +47,7 @@ describe("CannedJobFormDialog", () => {
   it("given edit mode with initial data, when opened, then shows pre-filled fields", () => {
     render(<CannedJobFormDialog {...defaultProps} initialData={sampleDetail} />);
 
-    expect(screen.getByText("Editar trabajo enlatado")).toBeInTheDocument();
+    expect(screen.getByText("Editar paquete de servicios")).toBeInTheDocument();
     expect(screen.getByLabelText(/título/i)).toHaveValue("Full Service");
   });
 

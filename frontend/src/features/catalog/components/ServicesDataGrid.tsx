@@ -3,6 +3,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 import { AppDataGrid } from "@/components/AppDataGrid";
+import { MonoText } from "@/components/MonoText";
 
 import type { GridColDef } from "@mui/x-data-grid";
 import type { CatalogServiceResponse } from "@/types/catalog";
@@ -38,7 +39,13 @@ export function ServicesDataGrid({
       headerName: "Precio",
       width: 150,
       type: "number",
-      valueFormatter: (value: number | null) => (value != null ? `$${value.toFixed(2)}` : "—"),
+      align: "right",
+      headerAlign: "right",
+      renderCell: (params) => (
+        <MonoText sx={{ display: "block", width: "100%", textAlign: "right" }}>
+          {params.value != null ? `$${Number(params.value).toFixed(2)}` : "—"}
+        </MonoText>
+      ),
     },
     {
       field: "actions",

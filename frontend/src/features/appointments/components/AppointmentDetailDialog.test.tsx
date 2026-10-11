@@ -52,24 +52,12 @@ describe("AppointmentDetailDialog", () => {
     expect(pendienteElements.length).toBeGreaterThan(0);
   });
 
-  it("given client arrived true, when rendered, then shows Sí", () => {
+  it("given vehicle arrived, when rendered, then shows En progreso status", () => {
     render(
       <AppointmentDetailDialog open={true} appointment={baseAppointment} onClose={vi.fn()} />,
     );
 
-    expect(screen.getByText("Sí")).toBeInTheDocument();
-  });
-
-  it("given client arrived false, when rendered, then shows No", () => {
-    render(
-      <AppointmentDetailDialog
-        open={true}
-        appointment={{ ...baseAppointment, clientArrived: false }}
-        onClose={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText("No")).toBeInTheDocument();
+    expect(screen.getByText("En progreso")).toBeInTheDocument();
   });
 
   it("given null appointment, when rendered, then renders nothing", () => {

@@ -50,6 +50,19 @@ export function useAppointments() {
     await fetchAppointments();
   };
 
+  const rescheduleAppointment = async (id: number, startTime: string, endTime: string) => {
+    const previous = appointments;
+    setAppointments((list) =>
+      list.map((a) => (a.id === id ? { ...a, startTime, endTime } : a)),
+    );
+    try {
+      await appointmentsApi.update(id, { startTime, endTime });
+    } catch (err) {
+      setAppointments(previous);
+      throw err;
+    }
+  };
+
   const deleteAppointment = async (id: number) => {
     await appointmentsApi.delete(id);
     await fetchAppointments();
@@ -87,6 +100,7 @@ export function useAppointments() {
     setEmployeeFilter,
     createAppointment,
     updateAppointment,
+    rescheduleAppointment,
     deleteAppointment,
     markClientArrived,
     markVehicleArrived,

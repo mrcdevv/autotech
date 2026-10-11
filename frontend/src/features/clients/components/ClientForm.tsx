@@ -1,9 +1,5 @@
 import { useState, useEffect } from "react";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   Select,
@@ -14,10 +10,12 @@ import {
   CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
+import { AppDialog } from "@/components/AppDialog";
 import { clientsApi } from "@/api/clients";
 import type { Client, ClientRequest, ClientType } from "@/features/clients/types/client";
 
@@ -202,12 +200,24 @@ export default function ClientForm({ open, onClose, client, onSuccess }: ClientF
   const isMetadataRequired = form.clientType !== "TEMPORAL";
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>{client ? "Editar Cliente" : "Registrar Nuevo Cliente"}</DialogTitle>
-      <DialogContent>
-        {apiError && <Alert severity="error" sx={{ mb: 2, mt: 1 }}>{apiError}</Alert>}
-        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
-          <Grid container spacing={2} sx={{ mt: 1 }}>
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      title={client ? "Editar Cliente" : "Registrar Nuevo Cliente"}
+      icon={<PersonOutlineIcon sx={{ fontSize: "1.25rem" }} />}
+      actions={
+        <>
+          <Button onClick={onClose} disabled={loading} color="inherit">Cancelar</Button>
+          <Button variant="contained" onClick={handleSubmit} disabled={loading}>
+            {loading ? <CircularProgress size={24} /> : "Guardar"}
+          </Button>
+        </>
+      }
+    >
+      {apiError && <Alert severity="error" sx={{ mb: 2, mt: 1 }}>{apiError}</Alert>}
+      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+        <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid size={{ xs: 12 }}>
               <FormControl fullWidth>
                 <InputLabel>Tipo de Cliente</InputLabel>
@@ -334,13 +344,6 @@ export default function ClientForm({ open, onClose, client, onSuccess }: ClientF
             )}
           </Grid>
         </LocalizationProvider>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={loading}>Cancelar</Button>
-        <Button variant="contained" onClick={handleSubmit} disabled={loading}>
-          {loading ? <CircularProgress size={24} /> : "Guardar"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </AppDialog>
   );
 }

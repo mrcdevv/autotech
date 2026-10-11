@@ -1,10 +1,12 @@
 import { GridActionsCellItem } from "@mui/x-data-grid";
-import { Tooltip, Chip } from "@mui/material";
+import { Tooltip } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
 import { AppDataGrid } from "@/components/AppDataGrid";
+import { MonoText } from "@/components/MonoText";
+import { StatusBadge } from "@/components/StatusBadge";
 
 import type { GridColDef } from "@mui/x-data-grid";
 import type { VehicleResponse } from "@/types/vehicle";
@@ -35,7 +37,7 @@ export function VehicleList({
   onViewRow,
 }: VehicleListProps) {
   const columns: GridColDef[] = [
-    { field: "plate", headerName: "Patente", flex: 1 },
+    { field: "plate", headerName: "Patente", flex: 1, renderCell: (params) => <MonoText>{params.value || "—"}</MonoText> },
     { field: "model", headerName: "Modelo", flex: 1 },
     {
       field: "owner",
@@ -44,17 +46,15 @@ export function VehicleList({
       valueGetter: (_value: unknown, row: VehicleResponse) =>
         `${row.clientFirstName} ${row.clientLastName}`,
     },
-    { field: "clientDni", headerName: "Documento Propietario", flex: 1 },
+    { field: "clientDni", headerName: "Documento Propietario", flex: 1, renderCell: (params) => <MonoText>{params.value || "—"}</MonoText> },
     {
       field: "inRepair",
       headerName: "En reparación",
       width: 140,
       renderCell: (params) => (
-        <Chip
+        <StatusBadge
           label={params.value ? "Sí" : "No"}
-          size="small"
-          color={params.value ? "warning" : "success"}
-          variant={params.value ? "filled" : "outlined"}
+          tone={params.value ? "warn" : "ok"}
         />
       ),
     },

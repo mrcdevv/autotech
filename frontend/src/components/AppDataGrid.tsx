@@ -1,4 +1,4 @@
-import { Box, Typography } from "@mui/material";
+import { Box, Skeleton, Typography } from "@mui/material";
 import SearchOffIcon from "@mui/icons-material/SearchOff";
 import { DataGrid } from "@mui/x-data-grid";
 
@@ -11,9 +11,13 @@ interface AppDataGridProps<R extends GridValidRowModel> extends DataGridProps<R>
   desktopHeight?: string;
 }
 
+const ROW_HEIGHT = 48;
+const GRID_CHROME = 44 + 52;
+const MIN_VISIBLE_ROWS = 3;
+
 export function AppDataGrid<R extends GridValidRowModel>({
   emptyMessage = "No hay registros para mostrar.",
-  minHeight = 460,
+  minHeight = 200,
   desktopHeight = "calc(100vh - 220px)",
   pageSizeOptions = [12, 24, 48],
   disableRowSelectionOnClick = true,
@@ -25,7 +29,7 @@ export function AppDataGrid<R extends GridValidRowModel>({
     <Box
       sx={{
         height: "100%",
-        minHeight: 180,
+        minHeight: 160,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -34,10 +38,33 @@ export function AppDataGrid<R extends GridValidRowModel>({
         gap: 1,
       }}
     >
-      <SearchOffIcon sx={{ fontSize: 40, color: "text.disabled" }} />
+      <SearchOffIcon sx={{ fontSize: 36, color: "text.disabled" }} />
       <Typography variant="body2">{emptyMessage}</Typography>
     </Box>
   );
+
+  const LoadingOverlay = () => (
+    <Box
+      data-testid="grid-loading"
+      role="status"
+      aria-label="Cargando"
+      sx={{ width: "100%", px: 1.5, py: 1 }}
+    >
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Skeleton
+          key={i}
+          variant="rectangular"
+          height={28}
+          sx={{ my: "5px", borderRadius: "4px", bgcolor: "rgba(29, 31, 36, 0.05)" }}
+        />
+      ))}
+    </Box>
+  );
+
+  const rowCount = props.rows?.length ?? 0;
+  const visibleRows = Math.max(rowCount, MIN_VISIBLE_ROWS);
+  const contentHeight = GRID_CHROME + visibleRows * ROW_HEIGHT + 2;
+  const height = `min(${contentHeight}px, ${desktopHeight})`;
 
   const gridSx: SxProps<Theme> = [
     {
@@ -60,14 +87,14 @@ export function AppDataGrid<R extends GridValidRowModel>({
         width: "100%",
         minWidth: 0,
         minHeight,
-        height: { xs: minHeight, lg: desktopHeight },
+        height: { xs: minHeight, lg: height },
       }}
     >
       <DataGrid
         {...props}
         pageSizeOptions={pageSizeOptions}
         disableRowSelectionOnClick={disableRowSelectionOnClick}
-        slots={{ noRowsOverlay: NoRowsOverlay, ...slots }}
+        slots={{ noRowsOverlay: NoRowsOverlay, loadingOverlay: LoadingOverlay, ...slots }}
         sx={gridSx}
       />
     </Box>

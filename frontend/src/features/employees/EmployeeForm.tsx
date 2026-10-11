@@ -1,10 +1,6 @@
 import { useState, useEffect } from "react";
 
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   Select,
@@ -20,12 +16,13 @@ import {
   Stack,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { BadgeOutlined, Visibility, VisibilityOff } from "@mui/icons-material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 
+import { AppDialog } from "@/components/AppDialog";
 import { rolesApi } from "@/api/roles";
 import type { RoleResponse } from "@/types/role";
 import type { EmployeeResponse, EmployeeRequest, EmployeeStatus } from "@/features/employees/types";
@@ -179,11 +176,21 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
   const isEditing = employee !== null;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>{isEditing ? "Editar Empleado" : "Nuevo Empleado"}</DialogTitle>
-      <DialogContent>
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      title={isEditing ? "Editar Empleado" : "Nuevo Empleado"}
+      icon={<BadgeOutlined sx={{ fontSize: "1.25rem" }} />}
+      actions={
+        <>
+          <Button onClick={onClose} color="inherit">Cancelar</Button>
+          <Button variant="contained" onClick={handleSubmit}>Guardar</Button>
+        </>
+      }
+    >
         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
-          <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
@@ -378,13 +385,6 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
             </Grid>
           </Grid>
         </LocalizationProvider>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
-        <Button variant="contained" onClick={handleSubmit}>
-          Guardar
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </AppDialog>
   );
 }

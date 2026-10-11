@@ -56,6 +56,5 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
             @Param("roleNames") Collection<String> roleNames,
             @Param("status") EmployeeStatus status);
 
-    @EntityGraph(attributePaths = {"roles"})
     Page<Employee> findAll(Pageable pageable);
 }

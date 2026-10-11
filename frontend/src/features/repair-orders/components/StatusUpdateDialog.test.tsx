@@ -20,6 +20,7 @@ describe("StatusUpdateDialog", () => {
     expect(screen.getByText("Pruebas")).toBeInTheDocument();
     expect(screen.getByText("Listo para entregar")).toBeInTheDocument();
     expect(screen.getByText("Entregado")).toBeInTheDocument();
+    expect(screen.getByText("Cancelada")).toBeInTheDocument();
     expect(screen.queryByText("Ingresó vehículo")).not.toBeInTheDocument();
   });
 

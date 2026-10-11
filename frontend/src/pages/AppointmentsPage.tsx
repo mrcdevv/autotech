@@ -5,11 +5,6 @@ import {
   Autocomplete,
   Button,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   IconButton,
   MenuItem,
   Select,
@@ -23,6 +18,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router";
 
+import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
 import { employeesApi } from "@/api/employees";
@@ -57,6 +53,7 @@ export default function AppointmentsPage() {
     setEmployeeFilter,
     createAppointment,
     updateAppointment,
+    rescheduleAppointment,
     deleteAppointment,
     markVehicleArrived,
     cancelAppointment,
@@ -213,15 +210,6 @@ export default function AppointmentsPage() {
     <PageShell
       title={todayLabel}
       titleSx={{ textTransform: "capitalize" }}
-      actions={
-        <Chip
-          label="Hoy"
-          size="small"
-          variant="outlined"
-          onClick={() => setCurrentDate(new Date())}
-          sx={{ fontWeight: 500, cursor: "pointer" }}
-        />
-      }
     >
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -231,18 +219,30 @@ export default function AppointmentsPage() {
 
       <PageToolbar
         filters={
-          <Autocomplete
-            options={employees}
-            getOptionLabel={(o) => `${o.firstName} ${o.lastName}`}
-            value={employees.find((e) => e.id === employeeFilter) ?? null}
-            onChange={(_e, v) => setEmployeeFilter(v?.id ?? null)}
-            isOptionEqualToValue={(opt, val) => opt.id === val.id}
-            renderInput={(params) => (
-              <TextField {...params} placeholder="Filtrar empleado" size="small" />
-            )}
-            size="small"
-            sx={{ width: { xs: "100%", md: 240 } }}
-          />
+          <>
+            <Autocomplete
+              options={employees}
+              getOptionLabel={(o) => `${o.firstName} ${o.lastName}`}
+              value={employees.find((e) => e.id === employeeFilter) ?? null}
+              onChange={(_e, v) => setEmployeeFilter(v?.id ?? null)}
+              isOptionEqualToValue={(opt, val) => opt.id === val.id}
+              renderInput={(params) => (
+                <TextField {...params} placeholder="Filtrar empleado" size="small" />
+              )}
+              size="small"
+              sx={{ width: { xs: "100%", md: 240 } }}
+            />
+            <Select
+              value={viewMode}
+              onChange={(e) => setViewMode(e.target.value as CalendarViewMode)}
+              size="small"
+              sx={{ minWidth: 140, fontSize: "0.85rem" }}
+            >
+              <MenuItem value="day">{VIEW_LABELS.day}</MenuItem>
+              <MenuItem value="week">{VIEW_LABELS.week}</MenuItem>
+              <MenuItem value="month">{VIEW_LABELS.month}</MenuItem>
+            </Select>
+          </>
         }
         actions={
           <Button
@@ -278,19 +278,14 @@ export default function AppointmentsPage() {
             <IconButton size="small" onClick={() => navigateDate(1)} sx={{ color: "text.secondary" }}>
               <ChevronRightIcon fontSize="small" />
             </IconButton>
+            <Chip
+              label="Hoy"
+              size="small"
+              variant="outlined"
+              onClick={() => setCurrentDate(new Date())}
+              sx={{ fontWeight: 500, cursor: "pointer", ml: 0.5 }}
+            />
           </>
-        }
-        actions={
-          <Select
-            value={viewMode}
-            onChange={(e) => setViewMode(e.target.value as CalendarViewMode)}
-            size="small"
-            sx={{ minWidth: 140, fontSize: "0.85rem" }}
-          >
-            <MenuItem value="day">{VIEW_LABELS.day}</MenuItem>
-            <MenuItem value="week">{VIEW_LABELS.week}</MenuItem>
-            <MenuItem value="month">{VIEW_LABELS.month}</MenuItem>
-          </Select>
         }
       />
 
@@ -309,6 +304,14 @@ export default function AppointmentsPage() {
         onDateClick={(date) => {
           setCurrentDate(date);
           setViewMode("day");
+        }}
+        onAppointmentReschedule={async (id, startTime, endTime) => {
+          try {
+            await rescheduleAppointment(id, startTime, endTime);
+            showSnackbar("Cita reprogramada", "success");
+          } catch {
+            showSnackbar("Error al reprogramar la cita", "error");
+          }
         }}
       />
 
@@ -353,41 +356,27 @@ export default function AppointmentsPage() {
         onSave={handleUpdate}
       />
 
-      <Dialog
+      <AppConfirmDialog
         open={deleteConfirmOpen}
-        onClose={() => setDeleteConfirmOpen(false)}
-      >
-        <DialogTitle>Eliminar cita</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            ¿Estás seguro de que deseas eliminar esta cita? Esta acción no se puede deshacer.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancelar</Button>
-          <Button onClick={handleDelete} color="error" variant="contained">
-            Eliminar
-          </Button>
-        </DialogActions>
-      </Dialog>
+        title="Eliminar cita"
+        message="¿Estás seguro de que deseas eliminar esta cita? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        destructive
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteConfirmOpen(false)}
+      />
 
-      <Dialog
+      <AppConfirmDialog
         open={cancelConfirmOpen}
-        onClose={() => setCancelConfirmOpen(false)}
-      >
-        <DialogTitle>Cancelar cita</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            ¿Estás seguro de que deseas cancelar esta cita? Pese a la cancelación, quedará registrada en el sistema.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCancelConfirmOpen(false)}>Volver</Button>
-          <Button onClick={handleCancel} color="warning" variant="contained">
-            Confirmar cancelación
-          </Button>
-        </DialogActions>
-      </Dialog>
+        title="Cancelar cita"
+        message="¿Estás seguro de que deseas cancelar esta cita? Pese a la cancelación, quedará registrada en el sistema."
+        confirmLabel="Confirmar cancelación"
+        cancelLabel="Volver"
+        iconTone="warn"
+        confirmColor="warning"
+        onConfirm={handleCancel}
+        onCancel={() => setCancelConfirmOpen(false)}
+      />
 
       <Snackbar
         open={snackbar.open}

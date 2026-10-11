@@ -12,6 +12,9 @@ vi.mock("@/api/catalogServices", () => ({
   },
 }));
 
+const money = (value: number) =>
+  value.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 describe("ServicesGrid", () => {
   const defaultServices: EstimateServiceItemRequest[] = [
     { serviceName: "Oil change", price: 100 },
@@ -21,7 +24,8 @@ describe("ServicesGrid", () => {
   it("given services, when rendered, then shows subtotal", () => {
     render(<ServicesGrid services={defaultServices} onChange={vi.fn()} />);
 
-    expect(screen.getByText("Subtotal servicios: $300.00")).toBeInTheDocument();
+    expect(screen.getByText("Subtotal servicios:")).toBeInTheDocument();
+    expect(screen.getByText(`$ ${money(300)}`)).toBeInTheDocument();
   });
 
   it("given services, when clicking add, then calls onChange with new row", async () => {
@@ -29,7 +33,7 @@ describe("ServicesGrid", () => {
     const user = userEvent.setup();
     render(<ServicesGrid services={defaultServices} onChange={onChange} />);
 
-    await user.click(screen.getByText("Agregar servicio"));
+    await user.click(screen.getByText("Agregar"));
 
     expect(onChange).toHaveBeenCalledWith([
       ...defaultServices,
@@ -40,7 +44,7 @@ describe("ServicesGrid", () => {
   it("given readonly mode, when rendered, then hides add and delete buttons", () => {
     render(<ServicesGrid services={defaultServices} onChange={vi.fn()} readonly />);
 
-    expect(screen.queryByText("Agregar servicio")).not.toBeInTheDocument();
+    expect(screen.queryByText("Agregar")).not.toBeInTheDocument();
   });
 
   it("given services, when rendered, then shows Servicios title", () => {

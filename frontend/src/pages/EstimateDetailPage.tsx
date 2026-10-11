@@ -1,5 +1,3 @@
-import { Button } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useParams, useNavigate } from "react-router";
 
 import { PageShell } from "@/components/PageShell";
@@ -12,20 +10,8 @@ export default function EstimateDetailPage() {
   const estimateId = isNew ? undefined : Number(id);
 
   return (
-    <PageShell
-      title={isNew ? "Nuevo presupuesto" : `Presupuesto #${id}`}
-      actions={
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate("/presupuestos")}
-          size="small"
-        >
-          Volver
-        </Button>
-      }
-    >
-      <EstimateDetail estimateId={estimateId} />
+    <PageShell title={isNew ? "Nuevo presupuesto" : `Presupuesto #${id}`}>
+      <EstimateDetail estimateId={estimateId} onBack={() => navigate("/presupuestos")} />
     </PageShell>
   );
 }

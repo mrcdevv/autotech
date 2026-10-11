@@ -1,23 +1,22 @@
-import { Box, CircularProgress, Alert, Button } from "@mui/material";
-import Grid from "@mui/material/Grid2";
-import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import EventIcon from "@mui/icons-material/Event";
-import DescriptionIcon from "@mui/icons-material/Description";
-import AssessmentIcon from "@mui/icons-material/Assessment";
+import { Alert, Box, CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router";
 
-import { PageShell } from "@/components/PageShell";
-import { useDashboard } from "@/features/dashboard/hooks/useDashboard";
-import { KpiCard } from "@/features/dashboard/components/KpiCard";
-import { StatusBreakdownCard } from "@/features/dashboard/components/StatusBreakdownCard";
-import { TodayAppointmentsList } from "@/features/dashboard/components/TodayAppointmentsList";
-import { ReadyForPickupList } from "@/features/dashboard/components/ReadyForPickupList";
-import { StaleOrderAlerts } from "@/features/dashboard/components/StaleOrderAlerts";
+import { DailyCash } from "@/features/dashboard/components/DailyCash";
 import { PendingEstimateAlerts } from "@/features/dashboard/components/PendingEstimateAlerts";
+import { StaleOrderAlerts } from "@/features/dashboard/components/StaleOrderAlerts";
+import { UpcomingAppointments } from "@/features/dashboard/components/UpcomingAppointments";
+import { WorkQueue } from "@/features/dashboard/components/WorkQueue";
+import { WorkshopCarousel } from "@/features/dashboard/components/WorkshopCarousel";
+import { useHomeDashboard } from "@/features/dashboard/hooks/useHomeDashboard";
+import {
+  buildDailyCash,
+  buildUpcomingAppointments,
+  buildWorkQueue,
+  buildWorkshopCarousel,
+} from "@/features/dashboard/utils/homeView";
 
 export default function DashboardPage() {
-  const { summary, loading, error } = useDashboard();
+  const { summary, orders, appointments, invoices, loading, error } = useHomeDashboard();
   const navigate = useNavigate();
 
   if (loading) {
@@ -27,59 +26,55 @@ export default function DashboardPage() {
       </Box>
     );
   }
+
   if (error) return <Alert severity="error">{error}</Alert>;
   if (!summary) return null;
 
+  const carousel = buildWorkshopCarousel(orders);
+  const queue = buildWorkQueue(orders);
+  const upcomingAppointments = buildUpcomingAppointments(appointments);
+  const cash = buildDailyCash(invoices);
+
   return (
-    <PageShell
-      title="Inicio"
-      actions={
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<AssessmentIcon />}
-          onClick={() => navigate("/reportes")}
-        >
-          Ver reportes
-        </Button>
-      }
-    >
+    <Box>
+      <WorkshopCarousel items={carousel} onOpen={(id) => navigate(`/ordenes-trabajo/${id}`)} />
 
-      <Grid container spacing={2} sx={{ mb: 2.5 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <KpiCard title="Vehículos en taller" value={summary.openRepairOrderCount} icon={<DirectionsCarIcon color="primary" fontSize="large" />} />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <KpiCard title="Listas para entregar" value={summary.readyForPickupCount} icon={<CheckCircleIcon color="success" fontSize="large" />} />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <KpiCard title="Citas de hoy" value={summary.todayAppointmentCount} icon={<EventIcon color="primary" fontSize="large" />} />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <KpiCard title="Presupuestos pendientes" value={summary.pendingEstimateCount} icon={<DescriptionIcon color="warning" fontSize="large" />} />
-        </Grid>
-      </Grid>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "minmax(0, 1fr)", lg: "minmax(0, 1.6fr) minmax(0, 1fr)" },
+          gap: "16px",
+          alignItems: "start",
+        }}
+      >
+        <WorkQueue items={queue} onViewOrders={() => navigate("/ordenes-trabajo")} />
 
-      <Grid container spacing={2} sx={{ mb: 2.5 }}>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <StatusBreakdownCard statusCounts={summary.repairOrderStatusCounts} />
-        </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <TodayAppointmentsList appointments={summary.todayAppointments} />
-        </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <ReadyForPickupList orders={summary.readyForPickupOrders} />
-        </Grid>
-      </Grid>
+        <Box sx={{ display: "grid", gap: "16px", minWidth: 0 }}>
+          <UpcomingAppointments
+            appointments={upcomingAppointments}
+            onViewCalendar={() => navigate("/calendario")}
+          />
+          <DailyCash cash={cash} />
+        </Box>
+      </Box>
 
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <StaleOrderAlerts alerts={summary.staleOrderAlerts} thresholdDays={summary.staleThresholdDays} />
-        </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <PendingEstimateAlerts alerts={summary.pendingEstimateAlerts} thresholdDays={summary.staleThresholdDays} />
-        </Grid>
-      </Grid>
-    </PageShell>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "repeat(2, minmax(0, 1fr))" },
+          gap: "16px",
+          mt: "16px",
+        }}
+      >
+        <StaleOrderAlerts
+          alerts={summary.staleOrderAlerts}
+          thresholdDays={summary.staleThresholdDays}
+        />
+        <PendingEstimateAlerts
+          alerts={summary.pendingEstimateAlerts}
+          thresholdDays={summary.staleThresholdDays}
+        />
+      </Box>
+    </Box>
   );
 }

@@ -1,16 +1,15 @@
 import { useState, useEffect } from "react";
 
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   Stack,
   InputAdornment,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
+import BuildIcon from "@mui/icons-material/Build";
+
+import { AppDialog } from "@/components/AppDialog";
 
 import type { CatalogServiceResponse, CatalogServiceRequest } from "@/types/catalog";
 
@@ -73,63 +72,67 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{initialData ? "Editar servicio" : "Nuevo servicio"}</DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                label="Nombre"
-                placeholder="Ej: Cambio de aceite"
-                value={form.name}
-                onChange={(e) => handleChange("name", e.target.value)}
-                error={!!errors.name}
-                helperText={errors.name}
-                required
-              />
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                label="Descripción"
-                placeholder="Ej: Cambio de aceite sintético 10W-40 y filtro de aceite"
-                value={form.description ?? ""}
-                onChange={(e) => handleChange("description", e.target.value || null)}
-                multiline
-                rows={3}
-              />
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                label="Precio"
-                placeholder="Ej: 5000.00"
-                type="number"
-                value={form.price ?? ""}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  handleChange("price", val === "" ? "" : parseFloat(val));
-                }}
-                error={!!errors.price}
-                helperText={errors.price}
-                required
-                slotProps={{
-                  htmlInput: { min: 0, step: "0.01" },
-                  input: {
-                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                  },
-                }}
-              />
-            </Grid>
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      title={initialData ? "Editar servicio" : "Nuevo servicio"}
+      icon={<BuildIcon sx={{ fontSize: "1.25rem" }} />}
+      actions={
+        <>
+          <Button onClick={onClose} color="inherit">Cancelar</Button>
+          <Button variant="contained" onClick={handleSubmit}>Guardar</Button>
+        </>
+      }
+    >
+      <Stack spacing={2} sx={{ mt: 0.5 }}>
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              fullWidth
+              label="Nombre"
+              placeholder="Ej: Cambio de aceite"
+              value={form.name}
+              onChange={(e) => handleChange("name", e.target.value)}
+              error={!!errors.name}
+              helperText={errors.name}
+              required
+            />
           </Grid>
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
-        <Button variant="contained" onClick={handleSubmit}>Guardar</Button>
-      </DialogActions>
-    </Dialog>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              fullWidth
+              label="Descripción"
+              placeholder="Ej: Cambio de aceite sintético 10W-40 y filtro de aceite"
+              value={form.description ?? ""}
+              onChange={(e) => handleChange("description", e.target.value || null)}
+              multiline
+              rows={3}
+            />
+          </Grid>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              fullWidth
+              label="Precio"
+              placeholder="Ej: 5000.00"
+              type="number"
+              value={form.price ?? ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                handleChange("price", val === "" ? "" : parseFloat(val));
+              }}
+              error={!!errors.price}
+              helperText={errors.price}
+              required
+              slotProps={{
+                htmlInput: { min: 0, step: "0.01" },
+                input: {
+                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                },
+              }}
+            />
+          </Grid>
+        </Grid>
+      </Stack>
+    </AppDialog>
   );
 }

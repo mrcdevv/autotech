@@ -33,7 +33,7 @@ export function RepairOrderDetailTabs({ order, loading, onRefetch }: RepairOrder
         ))}
       </Tabs>
 
-      {activeTab === 0 && <GeneralInfoTab order={order} loading={loading} />}
+      {activeTab === 0 && <GeneralInfoTab order={order} loading={loading} onRefetch={onRefetch} />}
       {activeTab === 1 && order && (
         <InspectionsTab
           repairOrderId={order.id}

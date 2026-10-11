@@ -1,9 +1,11 @@
-import { Chip, IconButton, Tooltip } from "@mui/material";
+import { IconButton, Tooltip } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 
 import { AppDataGrid } from "@/components/AppDataGrid";
+import { MonoText } from "@/components/MonoText";
+import { StatusBadge } from "@/components/StatusBadge";
 
 import type { GridColDef } from "@mui/x-data-grid";
 import type { EstimateResponse } from "@/types/estimate";
@@ -42,41 +44,52 @@ export function EstimateList({
       valueFormatter: (value: string) => new Date(value).toLocaleDateString("es-AR"),
     },
     { field: "clientFullName", headerName: "Cliente", flex: 1.4, minWidth: 190 },
-    { field: "vehiclePlate", headerName: "Patente", flex: 0.75, minWidth: 120 },
+    {
+      field: "vehiclePlate",
+      headerName: "Patente",
+      flex: 0.75,
+      minWidth: 120,
+      renderCell: (params) => <MonoText>{params.value ?? "—"}</MonoText>,
+    },
     { field: "vehicleModel", headerName: "Modelo", flex: 0.9, minWidth: 150 },
     {
       field: "status",
       headerName: "Estado",
       flex: 0.8,
       minWidth: 140,
-      renderCell: (params) => (
-        <Chip
-          label={params.value}
-          color={
-            params.value === "ACEPTADO"
-              ? "success"
-              : params.value === "RECHAZADO"
-                ? "error"
-                : "warning"
-          }
-          size="small"
-        />
-      ),
+      renderCell: (params) => {
+        const tone =
+          params.value === "ACEPTADO" ? "ok" : params.value === "RECHAZADO" ? "bad" : "warn";
+        const label =
+          params.value === "ACEPTADO"
+            ? "Aceptado"
+            : params.value === "RECHAZADO"
+              ? "Rechazado"
+              : "Pendiente";
+        return <StatusBadge label={label} tone={tone} />;
+      },
     },
     {
       field: "repairOrderId",
       headerName: "Orden de trabajo",
       flex: 1,
       minWidth: 160,
-      valueFormatter: (value: number | null) => (value != null ? `#${value}` : "—"),
+      renderCell: (params) => (
+        <MonoText>{params.value != null ? `#${params.value}` : "—"}</MonoText>
+      ),
     },
     {
       field: "total",
       headerName: "Total",
       flex: 0.75,
       minWidth: 120,
-      valueFormatter: (value: number | null) =>
-        value != null ? `$${Number(value).toFixed(2)}` : "—",
+      align: "right",
+      headerAlign: "right",
+      renderCell: (params) => (
+        <MonoText sx={{ display: "block", width: "100%", textAlign: "right" }}>
+          {params.value != null ? `$${Number(params.value).toFixed(2)}` : "—"}
+        </MonoText>
+      ),
     },
     {
       field: "actions",

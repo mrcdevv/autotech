@@ -45,19 +45,19 @@ public class CannedJobController {
     public ResponseEntity<ApiResponse<CannedJobDetailResponse>> create(
             @Valid @RequestBody CannedJobRequest request) {
         CannedJobDetailResponse created = cannedJobService.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Trabajo enlatado creado", created));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Paquete de servicios creado", created));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<CannedJobDetailResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody CannedJobRequest request) {
-        return ResponseEntity.ok(ApiResponse.success("Trabajo enlatado actualizado", cannedJobService.update(id, request)));
+        return ResponseEntity.ok(ApiResponse.success("Paquete de servicios actualizado", cannedJobService.update(id, request)));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         cannedJobService.delete(id);
-        return ResponseEntity.ok(ApiResponse.success("Trabajo enlatado eliminado", null));
+        return ResponseEntity.ok(ApiResponse.success("Paquete de servicios eliminado", null));
     }
 }

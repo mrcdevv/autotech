@@ -1,3 +1,5 @@
+import type { StatusTone } from "@/theme/tokens";
+
 export type RepairOrderStatus =
   | "INGRESO_VEHICULO"
   | "ESPERANDO_APROBACION_PRESUPUESTO"
@@ -5,7 +7,8 @@ export type RepairOrderStatus =
   | "REPARACION"
   | "PRUEBAS"
   | "LISTO_PARA_ENTREGAR"
-  | "ENTREGADO";
+  | "ENTREGADO"
+  | "CANCELADO";
 
 export const STATUS_LABELS: Record<RepairOrderStatus, string> = {
   INGRESO_VEHICULO: "Ingresó vehículo",
@@ -15,20 +18,33 @@ export const STATUS_LABELS: Record<RepairOrderStatus, string> = {
   PRUEBAS: "Pruebas",
   LISTO_PARA_ENTREGAR: "Listo para entregar",
   ENTREGADO: "Entregado",
+  CANCELADO: "Cancelada",
 };
 
-export const KANBAN_COLUMNS = [
+export const KANBAN_COLUMNS: {
+  title: string;
+  statuses: RepairOrderStatus[];
+  tone: StatusTone;
+}[] = [
   {
     title: "Presupuesto",
-    statuses: ["INGRESO_VEHICULO", "ESPERANDO_APROBACION_PRESUPUESTO"] as RepairOrderStatus[],
+    statuses: ["INGRESO_VEHICULO", "ESPERANDO_APROBACION_PRESUPUESTO"],
+    tone: "warn",
   },
   {
     title: "Trabajo en proceso",
-    statuses: ["ESPERANDO_REPUESTOS", "REPARACION", "PRUEBAS"] as RepairOrderStatus[],
+    statuses: ["ESPERANDO_REPUESTOS", "REPARACION", "PRUEBAS"],
+    tone: "info",
   },
   {
     title: "Completada",
-    statuses: ["LISTO_PARA_ENTREGAR", "ENTREGADO"] as RepairOrderStatus[],
+    statuses: ["LISTO_PARA_ENTREGAR", "ENTREGADO"],
+    tone: "ok",
+  },
+  {
+    title: "Cancelada",
+    statuses: ["CANCELADO"],
+    tone: "bad",
   },
 ];
 
@@ -38,6 +54,20 @@ export const UPDATABLE_STATUSES: RepairOrderStatus[] = [
   "PRUEBAS",
   "LISTO_PARA_ENTREGAR",
   "ENTREGADO",
+  "CANCELADO",
+];
+
+// Terminal statuses: hidden from the Kanban by default, shown in the history view.
+export const CLOSED_STATUSES: RepairOrderStatus[] = ["ENTREGADO", "CANCELADO"];
+
+// Every status that is still "work in progress" (the Kanban default view).
+export const ACTIVE_STATUSES: RepairOrderStatus[] = [
+  "INGRESO_VEHICULO",
+  "ESPERANDO_APROBACION_PRESUPUESTO",
+  "ESPERANDO_REPUESTOS",
+  "REPARACION",
+  "PRUEBAS",
+  "LISTO_PARA_ENTREGAR",
 ];
 
 export interface EmployeeSummary {

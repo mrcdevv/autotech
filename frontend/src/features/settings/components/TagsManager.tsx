@@ -4,10 +4,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   IconButton,
   InputAdornment,
   List,
@@ -25,7 +21,9 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CheckIcon from "@mui/icons-material/Check";
+import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 
+import { AppDialog } from "@/components/AppDialog";
 import { tagsApi } from "@/api/tags";
 import { useTags } from "@/features/settings/hooks/useTags";
 
@@ -127,10 +125,22 @@ export function TagsManager() {
         <Typography color="text.secondary">No hay etiquetas creadas</Typography>
       )}
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>{selectedTag ? "Editar etiqueta" : "Nueva etiqueta"}</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
+      <AppDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        maxWidth="xs"
+        title={selectedTag ? "Editar etiqueta" : "Nueva etiqueta"}
+        icon={<LocalOfferOutlinedIcon sx={{ fontSize: "1.25rem" }} />}
+        actions={
+          <>
+            <Button onClick={() => setDialogOpen(false)} color="inherit">Cancelar</Button>
+            <Button variant="contained" onClick={handleSave} disabled={!name.trim()}>
+              Guardar
+            </Button>
+          </>
+        }
+      >
+          <Stack spacing={2} sx={{ mt: 0.5 }}>
             <TextField label="Nombre" value={name} onChange={(e) => setName(e.target.value)} required fullWidth />
             <Box>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -139,14 +149,7 @@ export function TagsManager() {
               <ColorPicker value={color} onChange={setColor} />
             </Box>
           </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={handleSave} disabled={!name.trim()}>
-            Guardar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      </AppDialog>
 
       <Snackbar
         open={snackbar.open}

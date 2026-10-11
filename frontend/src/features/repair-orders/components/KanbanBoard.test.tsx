@@ -26,16 +26,17 @@ const mockOrder = (id: number, status: RepairOrderResponse["status"]): RepairOrd
 });
 
 describe("KanbanBoard", () => {
-  it("given orders, when rendered, then shows 3 columns with correct titles", () => {
+  it("given orders, when rendered, then shows 4 columns with correct titles", () => {
     render(
       <MemoryRouter>
-        <KanbanBoard orders={[]} loading={false} onUpdateStatus={vi.fn()} />
+        <KanbanBoard orders={[]} loading={false} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
       </MemoryRouter>,
     );
 
     expect(screen.getByText("Presupuesto")).toBeInTheDocument();
     expect(screen.getByText("Trabajo en proceso")).toBeInTheDocument();
     expect(screen.getByText("Completada")).toBeInTheDocument();
+    expect(screen.getByText("Cancelada")).toBeInTheDocument();
   });
 
   it("given orders with different statuses, when rendered, then groups them into correct columns", () => {
@@ -43,23 +44,25 @@ describe("KanbanBoard", () => {
       mockOrder(1, "INGRESO_VEHICULO"),
       mockOrder(2, "REPARACION"),
       mockOrder(3, "ENTREGADO"),
+      mockOrder(4, "CANCELADO"),
     ];
 
     render(
       <MemoryRouter>
-        <KanbanBoard orders={orders} loading={false} onUpdateStatus={vi.fn()} />
+        <KanbanBoard orders={orders} loading={false} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
       </MemoryRouter>,
     );
 
     expect(screen.getByText("OT-1")).toBeInTheDocument();
     expect(screen.getByText("OT-2")).toBeInTheDocument();
     expect(screen.getByText("OT-3")).toBeInTheDocument();
+    expect(screen.getByText("OT-4")).toBeInTheDocument();
   });
 
   it("given loading state, when rendered, then shows loading placeholders", () => {
     const { container } = render(
       <MemoryRouter>
-        <KanbanBoard orders={[]} loading={true} onUpdateStatus={vi.fn()} />
+        <KanbanBoard orders={[]} loading={true} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
       </MemoryRouter>,
     );
 

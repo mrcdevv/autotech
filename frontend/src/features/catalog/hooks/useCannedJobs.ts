@@ -21,7 +21,7 @@ export function useCannedJobs() {
       setCannedJobs(res.data.data.content);
       setTotalCount(res.data.data.totalElements);
     } catch {
-      setError("Error al cargar trabajos enlatados");
+      setError("Error al cargar paquetes de servicios");
     } finally {
       setLoading(false);
     }

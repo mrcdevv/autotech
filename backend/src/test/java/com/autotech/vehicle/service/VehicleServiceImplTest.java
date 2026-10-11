@@ -4,7 +4,6 @@ import com.autotech.client.model.Client;
 import com.autotech.client.model.ClientType;
 import com.autotech.client.service.ClientService;
 import com.autotech.common.exception.ResourceNotFoundException;
-import com.autotech.repairorder.model.RepairOrderStatus;
 import com.autotech.repairorder.repository.RepairOrderRepository;
 import com.autotech.vehicle.dto.VehicleMapper;
 import com.autotech.vehicle.dto.VehicleRequest;
@@ -70,7 +69,7 @@ class VehicleServiceImplTest {
         Vehicle entity = buildVehicle(1L);
         VehicleResponse response = buildResponse(1L);
         when(vehicleRepository.findById(1L)).thenReturn(Optional.of(entity));
-        when(repairOrderRepository.existsByVehicleIdAndStatusNot(anyLong(), any(RepairOrderStatus.class))).thenReturn(false);
+        when(repairOrderRepository.existsByVehicleIdAndStatusNotIn(anyLong(), any())).thenReturn(false);
         when(vehicleMapper.toResponse(entity, false)).thenReturn(response);
 
         // Act
@@ -109,7 +108,7 @@ class VehicleServiceImplTest {
         when(vehicleTypeRepository.findById(1L)).thenReturn(Optional.of(vehicleType));
         when(vehicleMapper.toEntity(request)).thenReturn(entity);
         when(vehicleRepository.save(entity)).thenReturn(saved);
-        when(repairOrderRepository.existsByVehicleIdAndStatusNot(anyLong(), any(RepairOrderStatus.class))).thenReturn(false);
+        when(repairOrderRepository.existsByVehicleIdAndStatusNotIn(anyLong(), any())).thenReturn(false);
         when(vehicleMapper.toResponse(saved, false)).thenReturn(response);
 
         // Act
@@ -162,7 +161,7 @@ class VehicleServiceImplTest {
         when(brandRepository.findById(1L)).thenReturn(Optional.of(brand));
         when(vehicleTypeRepository.findById(1L)).thenReturn(Optional.of(vehicleType));
         when(vehicleRepository.save(existing)).thenReturn(saved);
-        when(repairOrderRepository.existsByVehicleIdAndStatusNot(anyLong(), any(RepairOrderStatus.class))).thenReturn(false);
+        when(repairOrderRepository.existsByVehicleIdAndStatusNotIn(anyLong(), any())).thenReturn(false);
         when(vehicleMapper.toResponse(saved, false)).thenReturn(response);
 
         // Act
@@ -217,7 +216,7 @@ class VehicleServiceImplTest {
         Page<Vehicle> entityPage = new PageImpl<>(List.of(entity));
 
         when(vehicleRepository.findByPlateContainingIgnoreCase("ABC", pageable)).thenReturn(entityPage);
-        when(repairOrderRepository.existsByVehicleIdAndStatusNot(anyLong(), any(RepairOrderStatus.class))).thenReturn(false);
+        when(repairOrderRepository.existsByVehicleIdAndStatusNotIn(anyLong(), any())).thenReturn(false);
         when(vehicleMapper.toResponse(entity, false)).thenReturn(response);
 
         // Act
@@ -235,7 +234,7 @@ class VehicleServiceImplTest {
         VehicleResponse response = buildResponse(1L);
 
         when(vehicleRepository.findByClientId(1L)).thenReturn(List.of(entity));
-        when(repairOrderRepository.existsByVehicleIdAndStatusNot(anyLong(), any(RepairOrderStatus.class))).thenReturn(false);
+        when(repairOrderRepository.existsByVehicleIdAndStatusNotIn(anyLong(), any())).thenReturn(false);
         when(vehicleMapper.toResponse(entity, false)).thenReturn(response);
 
         // Act

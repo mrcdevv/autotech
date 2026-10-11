@@ -10,6 +10,7 @@ import com.autotech.employee.repository.EmployeeRepository;
 import com.autotech.email.service.EmailNotificationService;
 import com.autotech.repairorder.dto.NotesUpdateRequest;
 import com.autotech.repairorder.dto.RepairOrderDetailResponse;
+import com.autotech.repairorder.dto.RepairOrderFilter;
 import com.autotech.repairorder.dto.RepairOrderMapper;
 import com.autotech.repairorder.dto.RepairOrderRequest;
 import com.autotech.repairorder.dto.RepairOrderResponse;
@@ -18,18 +19,25 @@ import com.autotech.repairorder.dto.TitleUpdateRequest;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.model.RepairOrderStatus;
 import com.autotech.repairorder.repository.RepairOrderRepository;
+import com.autotech.repairorder.repository.RepairOrderSpecifications;
 import com.autotech.tag.model.Tag;
 import com.autotech.tag.repository.TagRepository;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -47,10 +55,22 @@ public class RepairOrderServiceImpl implements RepairOrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<RepairOrderResponse> getAll() {
-        return repairOrderRepository.findAllByOrderByCreatedAtDesc().stream()
+    public Page<RepairOrderResponse> search(RepairOrderFilter filter, Pageable pageable) {
+        Page<RepairOrder> page = repairOrderRepository.findAll(
+                RepairOrderSpecifications.from(filter), pageable);
+
+        List<Long> ids = page.map(RepairOrder::getId).getContent();
+        if (ids.isEmpty()) {
+            return page.map(repairOrderMapper::toResponse);
+        }
+
+        Map<Long, RepairOrder> byId = repairOrderRepository.findAllByIdIn(ids).stream()
+                .collect(Collectors.toMap(RepairOrder::getId, Function.identity()));
+        List<RepairOrderResponse> content = ids.stream()
+                .map(byId::get)
                 .map(repairOrderMapper::toResponse)
                 .toList();
+        return new PageImpl<>(content, pageable, page.getTotalElements());
     }
 
     @Override
@@ -193,6 +213,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", id));
 
         RepairOrderStatus newStatus = request.newStatus();
+        RepairOrderStatus currentStatus = order.getStatus();
 
         if (newStatus == RepairOrderStatus.INGRESO_VEHICULO
                 || newStatus == RepairOrderStatus.ESPERANDO_APROBACION_PRESUPUESTO) {
@@ -201,7 +222,19 @@ public class RepairOrderServiceImpl implements RepairOrderService {
                     + "Los estados 'Ingresó vehículo' y 'Esperando aprobación presupuesto' son estados iniciales.");
         }
 
-        log.info("Updating repair order {} status from {} to {}", id, order.getStatus(), newStatus);
+        if (currentStatus == RepairOrderStatus.CANCELADO) {
+            throw new IllegalArgumentException(
+                    "No se puede cambiar el estado de una orden de trabajo cancelada. "
+                    + "El estado 'Cancelado' es terminal.");
+        }
+
+        if (newStatus == RepairOrderStatus.CANCELADO
+                && currentStatus == RepairOrderStatus.ENTREGADO) {
+            throw new IllegalArgumentException(
+                    "No se puede cancelar una orden de trabajo ya entregada.");
+        }
+
+        log.info("Updating repair order {} status from {} to {}", id, currentStatus, newStatus);
         order.setStatus(newStatus);
         RepairOrder saved = repairOrderRepository.save(order);
         if (newStatus == RepairOrderStatus.LISTO_PARA_ENTREGAR) {
@@ -220,14 +253,6 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         RepairOrder saved = repairOrderRepository.save(order);
         log.info("Updated title for repair order {} to '{}'", id, request.title());
         return repairOrderMapper.toResponse(saved);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<RepairOrderResponse> getByStatus(List<RepairOrderStatus> statuses) {
-        return repairOrderRepository.findByStatusIn(statuses).stream()
-                .map(repairOrderMapper::toResponse)
-                .toList();
     }
 
     @Override
@@ -260,33 +285,6 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         RepairOrder saved = repairOrderRepository.save(order);
         log.info("Assigned {} tags to repair order {}", tagIds != null ? tagIds.size() : 0, id);
         return repairOrderMapper.toResponse(saved);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<RepairOrderResponse> search(String query) {
-        if (query == null || query.isBlank()) {
-            return getAll();
-        }
-        return repairOrderRepository.search(query).stream()
-                .map(repairOrderMapper::toResponse)
-                .toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<RepairOrderResponse> filterByEmployee(Long employeeId) {
-        return repairOrderRepository.findByEmployeeId(employeeId).stream()
-                .map(repairOrderMapper::toResponse)
-                .toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<RepairOrderResponse> filterByTag(Long tagId) {
-        return repairOrderRepository.findByTagId(tagId).stream()
-                .map(repairOrderMapper::toResponse)
-                .toList();
     }
 
     @Override

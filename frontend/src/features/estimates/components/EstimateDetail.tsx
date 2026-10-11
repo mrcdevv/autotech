@@ -11,7 +11,9 @@ import {
   Alert,
   Paper,
   Stack,
+  IconButton,
 } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SaveIcon from "@mui/icons-material/Save";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
@@ -23,6 +25,9 @@ import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import { useNavigate } from "react-router";
 import axios from "axios";
 
+import { FormPageLayout } from "@/components/FormPageLayout";
+import { FormSection } from "@/components/FormSection";
+import { InfoList } from "@/components/InfoList";
 import { clientAutocompleteApi } from "@/api/clientAutocomplete";
 import { vehiclesApi } from "@/api/vehicles";
 import { inspectionsApi } from "@/api/inspections";
@@ -129,24 +134,7 @@ interface EstimateDetailProps {
   mechanicNotes?: string | null;
   repairOrderClient?: RepairOrderClientData;
   repairOrderVehicle?: RepairOrderVehicleData;
-}
-
-interface InfoFieldProps {
-  label: string;
-  value: string | number | null | undefined;
-}
-
-function InfoField({ label, value }: InfoFieldProps) {
-  return (
-    <Box sx={{ minWidth: 100 }}>
-      <Typography variant="overline" sx={{ color: "text.secondary", lineHeight: 1.6, display: "block", mb: 0.25 }}>
-        {label}
-      </Typography>
-      <Typography variant="body1" sx={{ fontWeight: 500, color: "text.primary" }}>
-        {value ?? "—"}
-      </Typography>
-    </Box>
-  );
+  onBack?: () => void;
 }
 
 function ContextSections({
@@ -164,68 +152,34 @@ function ContextSections({
   return (
     <>
       {reason && (
-        <Paper sx={{ p: 0, overflow: "hidden" }}>
-          <Box
-            sx={{
-              px: 3, py: 2, display: "flex", alignItems: "center", gap: 1.5,
-              bgcolor: "grey.50", borderBottom: 1, borderColor: "divider",
-            }}
-          >
-            <ChatBubbleOutlineIcon sx={{ color: "primary.main", fontSize: 20 }} />
-            <Typography variant="subtitle2" sx={{ fontSize: "0.9rem" }}>
-              Motivo de consulta
-            </Typography>
-          </Box>
-          <Box sx={{ p: 3 }}>
-            <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-              {reason}
-            </Typography>
-          </Box>
-        </Paper>
+        <FormSection
+          title="Motivo de consulta"
+          icon={<ChatBubbleOutlineIcon sx={{ color: "primary.main", fontSize: 20 }} />}
+        >
+          <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+            {reason}
+          </Typography>
+        </FormSection>
       )}
 
       {mechanicNotes && (
-        <Paper sx={{ p: 0, overflow: "hidden" }}>
-          <Box
-            sx={{
-              px: 3, py: 2, display: "flex", alignItems: "center", gap: 1.5,
-              bgcolor: "grey.50", borderBottom: 1, borderColor: "divider",
-            }}
-          >
-            <EngineeringIcon sx={{ color: "primary.main", fontSize: 20 }} />
-            <Typography variant="subtitle2" sx={{ fontSize: "0.9rem" }}>
-              Observaciones del mecánico
-            </Typography>
-          </Box>
-          <Box sx={{ p: 3 }}>
-            <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-              {mechanicNotes}
-            </Typography>
-          </Box>
-        </Paper>
+        <FormSection
+          title="Observaciones del mecánico"
+          icon={<EngineeringIcon sx={{ color: "primary.main", fontSize: 20 }} />}
+        >
+          <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+            {mechanicNotes}
+          </Typography>
+        </FormSection>
       )}
 
       {inspectionIssues.length > 0 && (
-        <Paper sx={{ p: 0, overflow: "hidden" }}>
-          <Box
-            sx={{
-              px: 3, py: 2, display: "flex", alignItems: "center", gap: 1.5,
-              bgcolor: "grey.50", borderBottom: 1, borderColor: "divider",
-            }}
-          >
-            <ReportProblemIcon sx={{ color: "warning.main", fontSize: 20 }} />
-            <Typography variant="subtitle2" sx={{ fontSize: "0.9rem" }}>
-              Problemas de inspección
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{ bgcolor: "warning.main", color: "white", px: 1, py: 0.25, borderRadius: 1, fontSize: "0.7rem", fontWeight: 600 }}
-            >
-              {inspectionIssues.length}
-            </Typography>
-          </Box>
-          <Box sx={{ p: 3 }}>
-            <Stack spacing={1}>
+        <FormSection
+          title="Problemas de inspección"
+          icon={<ReportProblemIcon sx={{ color: "warning.main", fontSize: 20 }} />}
+          count={inspectionIssues.length}
+        >
+          <Stack spacing={1}>
               {inspectionIssues.map((issue) => (
                 <Box
                   key={issue.id}
@@ -251,15 +205,14 @@ function ContextSections({
                   </Box>
                 </Box>
               ))}
-            </Stack>
-          </Box>
-        </Paper>
+          </Stack>
+        </FormSection>
       )}
     </>
   );
 }
 
-export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNotes, repairOrderClient, repairOrderVehicle }: EstimateDetailProps) {
+export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNotes, repairOrderClient, repairOrderVehicle, onBack }: EstimateDetailProps) {
   const navigate = useNavigate();
   const { estimate, allEstimates, noActiveEstimate, loading, error, clearError, createEstimate, updateEstimate, approveEstimate, rejectEstimate } =
     useEstimate(estimateId, repairOrderId);
@@ -286,6 +239,7 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
   const isNew = !estimateId && !repairOrderId;
   const isReadonly = estimate != null && estimate.status !== "PENDIENTE";
   const fromRepairOrder = repairOrderId != null;
+  const displayId = estimate?.id ?? estimateId;
 
   // Fetch inspection issues independently so they're always available
   useEffect(() => {
@@ -576,10 +530,58 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
   }
 
   // ── Main form ──
+  const actions = (!isReadonly || (estimate?.id && estimate.status === "PENDIENTE")) && (
+    <Paper
+      sx={{
+        p: 2,
+        display: "flex",
+        flexDirection: "column",
+        gap: 1.5,
+        bgcolor: "grey.50",
+      }}
+    >
+      {estimate?.id && estimate.status === "PENDIENTE" && (
+        <>
+          <Button variant="outlined" color="error" startIcon={<CloseIcon />} onClick={handleReject} fullWidth>
+            Rechazar
+          </Button>
+          <Button variant="contained" color="success" startIcon={<CheckIcon />} onClick={handleApprove} fullWidth>
+            Aprobar
+          </Button>
+        </>
+      )}
+      {!isReadonly && (
+        <Button
+          variant="contained"
+          startIcon={<SaveIcon />}
+          onClick={handleSave}
+          disabled={saving || !selectedClient || !selectedVehicle}
+          fullWidth
+        >
+          {saving ? "Guardando..." : "Guardar"}
+        </Button>
+      )}
+    </Paper>
+  );
+
   return (
-    <Stack spacing={3} sx={{ mt: 2 }}>
-      {estimate?.status && (
-        <Box display="flex" alignItems="center" gap={2}>
+    <>
+      <Stack
+        direction="row"
+        alignItems="center"
+        gap={1.5}
+        flexWrap="wrap"
+        sx={{ mt: fromRepairOrder ? 2 : 0, pb: 1.5, mb: 2, borderBottom: 1, borderColor: "divider" }}
+      >
+        {onBack && (
+          <IconButton onClick={onBack} size="small" aria-label="Volver" sx={{ ml: -0.5 }}>
+            <ArrowBackIcon />
+          </IconButton>
+        )}
+        <Typography variant="h6" noWrap sx={{ fontSize: "1.25rem", fontWeight: 600 }}>
+          {displayId ? `Presupuesto #${displayId}` : "Nuevo presupuesto"}
+        </Typography>
+        {estimate?.status && (
           <Chip
             label={estimate.status === "ACEPTADO" ? "Aprobado" : estimate.status === "RECHAZADO" ? "Rechazado" : "Pendiente"}
             color={
@@ -590,14 +592,31 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
                   : "warning"
             }
           />
-          {rejectedEstimates.length > 0 && estimate.status !== "RECHAZADO" && (
-            <Typography variant="caption" color="text.secondary">
-              {rejectedEstimates.length} presupuesto{rejectedEstimates.length > 1 ? "s" : ""} rechazado{rejectedEstimates.length > 1 ? "s" : ""} anteriormente
-            </Typography>
-          )}
-        </Box>
-      )}
+        )}
+        {rejectedEstimates.length > 0 && estimate?.status !== "RECHAZADO" && (
+          <Typography variant="caption" color="text.secondary">
+            {rejectedEstimates.length} presupuesto{rejectedEstimates.length > 1 ? "s" : ""} rechazado{rejectedEstimates.length > 1 ? "s" : ""} anteriormente
+          </Typography>
+        )}
+      </Stack>
 
+      <FormPageLayout
+        aside={
+          <Stack spacing={2}>
+            <EstimateSummary
+              servicesSubtotal={servicesSubtotal}
+              productsSubtotal={productsSubtotal}
+              discountPercentage={discountPercentage}
+              taxPercentage={taxPercentage}
+              onDiscountChange={setDiscountPercentage}
+              onTaxChange={setTaxPercentage}
+              readonly={isReadonly}
+            />
+            {actions}
+          </Stack>
+        }
+      >
+        <Stack spacing={3}>
       {apiError && (
         <Alert severity="error" onClose={() => setApiError(null)}>
           {apiError}
@@ -614,20 +633,10 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
       <ContextSections reason={reason} mechanicNotes={mechanicNotes} inspectionIssues={inspectionIssues} />
 
       {/* Client & Vehicle Section */}
-      <Paper sx={{ p: 0, overflow: "hidden" }}>
-        <Box
-          sx={{
-            px: 3, py: 2, display: "flex", alignItems: "center", gap: 1.5,
-            bgcolor: "grey.50", borderBottom: 1, borderColor: "divider",
-          }}
-        >
-          <PersonIcon sx={{ color: "primary.main", fontSize: 20 }} />
-          <Typography variant="subtitle2" sx={{ fontSize: "0.9rem" }}>
-            Cliente y vehículo
-          </Typography>
-        </Box>
-
-        <Box sx={{ p: 3 }}>
+      <FormSection
+        title="Cliente y vehículo"
+        icon={<PersonIcon sx={{ color: "primary.main", fontSize: 20 }} />}
+      >
           <Box display="flex" gap={2} flexWrap="wrap">
             <Autocomplete
               options={clients}
@@ -689,42 +698,46 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
             />
           </Box>
 
-          {selectedClient && (
-            <Box sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: "divider" }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-                <PersonIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                <Typography variant="caption" sx={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "text.secondary" }}>
-                  Datos del cliente
-                </Typography>
-              </Box>
-              <Box display="flex" gap={4} flexWrap="wrap">
-                <InfoField label="Nombre" value={`${selectedClient.firstName} ${selectedClient.lastName}`} />
-                <InfoField label="DNI" value={selectedClient.dni} />
-                {selectedClient.phone && <InfoField label="Teléfono" value={selectedClient.phone} />}
-                {selectedClient.email && <InfoField label="Email" value={selectedClient.email} />}
-                {selectedClient.clientType && <InfoField label="Tipo de cliente" value={selectedClient.clientType} />}
-              </Box>
+          {(selectedClient || selectedVehicle) && (
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                gap: 3,
+                mt: 3,
+                pt: 2,
+                borderTop: 1,
+                borderColor: "divider",
+              }}
+            >
+              {selectedClient && (
+                <InfoList
+                  title="Datos del cliente"
+                  icon={<PersonIcon sx={{ fontSize: 16, color: "text.secondary" }} />}
+                  items={[
+                    { label: "Nombre", value: `${selectedClient.firstName} ${selectedClient.lastName}` },
+                    { label: "DNI", value: selectedClient.dni },
+                    ...(selectedClient.phone ? [{ label: "Teléfono", value: selectedClient.phone }] : []),
+                    ...(selectedClient.email ? [{ label: "Email", value: selectedClient.email }] : []),
+                    ...(selectedClient.clientType ? [{ label: "Tipo de cliente", value: selectedClient.clientType }] : []),
+                  ]}
+                />
+              )}
+              {selectedVehicle && (
+                <InfoList
+                  title="Datos del vehículo"
+                  icon={<DirectionsCarIcon sx={{ fontSize: 16, color: "text.secondary" }} />}
+                  items={[
+                    { label: "Patente", value: selectedVehicle.plate },
+                    { label: "Marca", value: selectedVehicle.brandName },
+                    { label: "Modelo", value: selectedVehicle.model },
+                    { label: "Año", value: selectedVehicle.year },
+                  ]}
+                />
+              )}
             </Box>
           )}
-
-          {selectedVehicle && (
-            <Box sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: "divider" }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-                <DirectionsCarIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                <Typography variant="caption" sx={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "text.secondary" }}>
-                  Datos del vehículo
-                </Typography>
-              </Box>
-              <Box display="flex" gap={4} flexWrap="wrap">
-                <InfoField label="Patente" value={selectedVehicle.plate} />
-                <InfoField label="Marca" value={selectedVehicle.brandName} />
-                <InfoField label="Modelo" value={selectedVehicle.model} />
-                <InfoField label="Año" value={selectedVehicle.year} />
-              </Box>
-            </Box>
-          )}
-        </Box>
-      </Paper>
+      </FormSection>
 
       {/* Services Grid */}
       <ServicesGrid services={services} onChange={setServices} readonly={isReadonly} showErrors={showErrors} />
@@ -732,64 +745,8 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
       {/* Products Grid */}
       <ProductsGrid products={products} onChange={setProducts} readonly={isReadonly} showErrors={showErrors} />
 
-      {/* Summary */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-        <Box sx={{ width: { xs: "100%", md: 420 } }}>
-          <EstimateSummary
-            servicesSubtotal={servicesSubtotal}
-            productsSubtotal={productsSubtotal}
-            discountPercentage={discountPercentage}
-            taxPercentage={taxPercentage}
-            onDiscountChange={setDiscountPercentage}
-            onTaxChange={setTaxPercentage}
-            readonly={isReadonly}
-          />
-        </Box>
-      </Box>
-
-      {/* Actions */}
-      {(!isReadonly || (estimate?.id && estimate.status === "PENDIENTE")) && (
-        <Paper
-          sx={{
-            p: 2,
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 2,
-            bgcolor: "grey.50",
-          }}
-        >
-          {estimate?.id && estimate.status === "PENDIENTE" && (
-            <>
-              <Button
-                variant="outlined"
-                color="error"
-                startIcon={<CloseIcon />}
-                onClick={handleReject}
-              >
-                Rechazar
-              </Button>
-              <Button
-                variant="contained"
-                color="success"
-                startIcon={<CheckIcon />}
-                onClick={handleApprove}
-              >
-                Aprobar
-              </Button>
-            </>
-          )}
-          {!isReadonly && (
-            <Button
-              variant="contained"
-              startIcon={<SaveIcon />}
-              onClick={handleSave}
-              disabled={saving || !selectedClient || !selectedVehicle}
-            >
-              {saving ? "Guardando..." : "Guardar"}
-            </Button>
-          )}
-        </Paper>
-      )}
-    </Stack>
+        </Stack>
+      </FormPageLayout>
+    </>
   );
 }

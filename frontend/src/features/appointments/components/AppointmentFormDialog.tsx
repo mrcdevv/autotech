@@ -5,10 +5,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   FormControl,
   InputLabel,
   MenuItem,
@@ -18,12 +14,14 @@ import {
   Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
+import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router";
 
+import { AppDialog } from "@/components/AppDialog";
 import { clientsApi } from "@/api/clients";
 import { vehiclesApi } from "@/api/vehicles";
 import { employeesApi } from "@/api/employees";
@@ -169,11 +167,27 @@ export function AppointmentFormDialog({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Nueva cita</DialogTitle>
-      <DialogContent dividers>
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      title="Nueva cita"
+      icon={<EventAvailableOutlinedIcon sx={{ fontSize: "1.25rem" }} />}
+      actions={
+        <>
+          <Button onClick={onClose} disabled={saving} color="inherit">Cancelar</Button>
+          <Button
+            variant="contained"
+            onClick={handleSave}
+            disabled={saving || !startTime || !endTime || (isTitleRequired && !title.trim()) || isVehicleMissing}
+          >
+            {saving ? <CircularProgress size={24} /> : "Guardar"}
+          </Button>
+        </>
+      }
+    >
         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
-          <Stack spacing={2} sx={{ mt: 1 }}>
+          <Stack spacing={2} sx={{ mt: 0.5 }}>
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <DateTimePicker
@@ -417,17 +431,6 @@ export function AppointmentFormDialog({
             </Grid>
           </Stack>
         </LocalizationProvider>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={saving}>Cancelar</Button>
-        <Button
-          variant="contained"
-          onClick={handleSave}
-          disabled={saving || !startTime || !endTime || (isTitleRequired && !title.trim()) || isVehicleMissing}
-        >
-          {saving ? <CircularProgress size={24} /> : "Guardar"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </AppDialog>
   );
 }

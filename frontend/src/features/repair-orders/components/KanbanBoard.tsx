@@ -9,9 +9,10 @@ interface KanbanBoardProps {
   orders: RepairOrderResponse[];
   loading: boolean;
   onUpdateStatus: (id: number, request: StatusUpdateRequest) => Promise<void>;
+  onRefetch: () => void;
 }
 
-export function KanbanBoard({ orders, loading, onUpdateStatus }: KanbanBoardProps) {
+export function KanbanBoard({ orders, loading, onUpdateStatus, onRefetch }: KanbanBoardProps) {
   const groupedOrders = KANBAN_COLUMNS.map((col) => ({
     ...col,
     orders: orders
@@ -22,10 +23,10 @@ export function KanbanBoard({ orders, loading, onUpdateStatus }: KanbanBoardProp
   return (
     <Box
       display="flex"
-      gap={2}
+      gap={1.5}
       sx={{
         overflowX: "auto",
-        minHeight: "calc(100vh - 220px)",
+        alignItems: "flex-start",
         pb: 1,
       }}
     >
@@ -33,9 +34,11 @@ export function KanbanBoard({ orders, loading, onUpdateStatus }: KanbanBoardProp
         <KanbanColumn
           key={col.title}
           title={col.title}
+          tone={col.tone}
           orders={col.orders}
           loading={loading}
           onUpdateStatus={onUpdateStatus}
+          onRefetch={onRefetch}
         />
       ))}
     </Box>

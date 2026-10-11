@@ -5,12 +5,16 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import dayjs from "dayjs";
 
+import { StatusBadge } from "@/components/StatusBadge";
+import { getAppointmentStatus } from "@/features/appointments/appointmentStatus";
+
 import type { AppointmentResponse } from "@/types/appointment";
 
 interface AppointmentCardProps {
   appointment: AppointmentResponse;
   variant?: "block" | "month";
   showFullTags?: boolean;
+  expanded?: boolean;
   overlappingCount?: number;
   onOverlapClick?: (event: React.MouseEvent<HTMLElement>) => void;
   onClick: (appointment: AppointmentResponse) => void;
@@ -30,6 +34,7 @@ export function AppointmentCard({
   appointment,
   variant = "block",
   showFullTags = false,
+  expanded = false,
   overlappingCount = 0,
   onOverlapClick,
   onClick,
@@ -41,6 +46,7 @@ export function AppointmentCard({
   const isCancelled = appointment.status === "CANCELLED";
   const isCompleted = appointment.status === "COMPLETED";
   const isInProgress = !isCancelled && !isCompleted && appointment.vehicleArrivedAt !== null;
+  const status = getAppointmentStatus(appointment);
 
   if (variant === "month") {
     return (
@@ -150,6 +156,7 @@ export function AppointmentCard({
         position: "relative",
         height: "100%",
         minHeight: 48,
+        overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
@@ -195,9 +202,12 @@ export function AppointmentCard({
                 {title}
               </Typography>
             </Box>
-            <Typography color="inherit" sx={{ fontSize: "0.85rem", lineHeight: 1.2, opacity: 0.9, mb: 0.5 }} noWrap>
-              {timeLabel}
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.5, minWidth: 0 }}>
+              <Typography color="inherit" sx={{ fontSize: "0.85rem", lineHeight: 1.2, opacity: 0.9 }} noWrap>
+                {timeLabel}
+              </Typography>
+              <StatusBadge label={status.label} tone={status.tone} />
+            </Box>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}>
             {isCompleted && (
@@ -241,8 +251,42 @@ export function AppointmentCard({
             {appointment.vehiclePlate && ` — ${appointment.vehiclePlate}`}
           </Typography>
         )}
+
+        {expanded && (
+          <Box sx={{ mt: 0.5, minHeight: 0, overflow: "hidden" }}>
+            {appointment.purpose && (
+              <Typography color="inherit" sx={{ fontSize: "0.8rem", opacity: 0.9 }} noWrap>
+                {appointment.purpose}
+              </Typography>
+            )}
+            {appointment.employees.length > 0 && (
+              <Typography color="inherit" sx={{ fontSize: "0.8rem", opacity: 0.9 }} noWrap>
+                {appointment.employees.map((e) => `${e.firstName} ${e.lastName}`).join(", ")}
+              </Typography>
+            )}
+            {appointment.tags.length > 0 && (
+              <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", mt: 0.5 }}>
+                {appointment.tags.map((tag) => (
+                  <Chip
+                    key={tag.id}
+                    label={tag.name}
+                    size="small"
+                    sx={{
+                      height: 18,
+                      fontSize: "0.65rem",
+                      bgcolor: alpha("#fff", 0.2),
+                      color: "#fff",
+                      border: `1px solid ${alpha("#fff", 0.3)}`,
+                      "& .MuiChip-label": { px: 0.75, py: 0 },
+                    }}
+                  />
+                ))}
+              </Box>
+            )}
+          </Box>
+        )}
       </Box>
-      
+
       <Box>
         {showFullTags && appointment.tags.length > 0 && (
           <Box sx={{ display: "flex", gap: 0.5, mb: 0.5, flexWrap: "wrap" }}>

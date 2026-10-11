@@ -21,6 +21,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -80,6 +81,7 @@ public class Appointment extends BaseEntity {
             joinColumns = @JoinColumn(name = "appointment_id"),
             inverseJoinColumns = @JoinColumn(name = "employee_id")
     )
+    @BatchSize(size = 50)
     @Builder.Default
     private Set<Employee> employees = new HashSet<>();
 
@@ -89,6 +91,7 @@ public class Appointment extends BaseEntity {
             joinColumns = @JoinColumn(name = "appointment_id"),
             inverseJoinColumns = @JoinColumn(name = "tag_id")
     )
+    @BatchSize(size = 50)
     @Builder.Default
     private Set<Tag> tags = new HashSet<>();
 

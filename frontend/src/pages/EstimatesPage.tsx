@@ -8,14 +8,10 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 
+import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { AppSearchField } from "@/components/AppSearchField";
 import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
@@ -139,20 +135,15 @@ export default function EstimatesPage() {
         onInvoice={handleInvoice}
       />
 
-      <Dialog open={deleteDialogId != null} onClose={() => setDeleteDialogId(null)}>
-        <DialogTitle>Eliminar presupuesto</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            ¿Estás seguro de que querés eliminar este presupuesto? Esta acción no se puede deshacer.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogId(null)}>Cancelar</Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-            Eliminar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <AppConfirmDialog
+        open={deleteDialogId != null}
+        title="Eliminar presupuesto"
+        message="¿Estás seguro de que querés eliminar este presupuesto? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        destructive
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteDialogId(null)}
+      />
     </PageShell>
   );
 }

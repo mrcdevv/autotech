@@ -70,7 +70,7 @@ export function CannedJobsDataGrid({
       }}
       pageSizeOptions={[12, 24, 48]}
       disableRowSelectionOnClick
-      emptyMessage="No hay trabajos enlatados para mostrar."
+      emptyMessage="No hay paquetes de servicios para mostrar."
     />
   );
 }

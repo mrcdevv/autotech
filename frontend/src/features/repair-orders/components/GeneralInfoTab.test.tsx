@@ -39,38 +39,54 @@ const sampleOrder: RepairOrderDetailResponse = {
 };
 
 describe("GeneralInfoTab", () => {
-  it("given order, when rendered, then shows client data as readonly", () => {
-    render(<GeneralInfoTab order={sampleOrder} loading={false} />);
+  it("given order, when rendered, then shows status and reason", () => {
+    render(<GeneralInfoTab order={sampleOrder} loading={false} onRefetch={vi.fn()} />);
 
-    expect(screen.getByDisplayValue("Juan Perez")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("12345678")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("1234567890")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("juan@test.com")).toBeInTheDocument();
+    expect(screen.getByText("Ingreso")).toBeInTheDocument();
+    expect(screen.getByText("Engine noise")).toBeInTheDocument();
   });
 
-  it("given order, when rendered, then shows vehicle data as readonly", () => {
-    render(<GeneralInfoTab order={sampleOrder} loading={false} />);
+  it("given order, when rendered, then shows summary and notes sections", () => {
+    render(<GeneralInfoTab order={sampleOrder} loading={false} onRefetch={vi.fn()} />);
 
-    expect(screen.getByDisplayValue("2020 Toyota Corolla")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("ABC123")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("CHASSIS001")).toBeInTheDocument();
+    expect(screen.getByText("Resumen Financiero")).toBeInTheDocument();
+    expect(screen.getByText("Motivo y Notas")).toBeInTheDocument();
   });
 
   it("given order, when rendered, then shows work history section", () => {
-    render(<GeneralInfoTab order={sampleOrder} loading={false} />);
+    render(<GeneralInfoTab order={sampleOrder} loading={false} onRefetch={vi.fn()} />);
 
     expect(screen.getByText("Historial de Trabajo")).toBeInTheDocument();
     expect(screen.getByTestId("mock-datagrid")).toBeInTheDocument();
   });
 
+  it("given order without employees, when rendered, then shows assign action", () => {
+    render(<GeneralInfoTab order={sampleOrder} loading={false} onRefetch={vi.fn()} />);
+
+    expect(screen.getByText("Sin asignar")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /asignar/i })).toBeInTheDocument();
+  });
+
+  it("given order with employees, when rendered, then shows edit action", () => {
+    render(
+      <GeneralInfoTab
+        order={{ ...sampleOrder, employees: [{ id: 1, firstName: "Carlos", lastName: "Lopez" }] }}
+        loading={false}
+        onRefetch={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /editar/i })).toBeInTheDocument();
+  });
+
   it("given null order, when rendered, then shows not found message", () => {
-    render(<GeneralInfoTab order={null} loading={false} />);
+    render(<GeneralInfoTab order={null} loading={false} onRefetch={vi.fn()} />);
 
     expect(screen.getByText("No se encontró la orden de trabajo")).toBeInTheDocument();
   });
 
   it("given loading state, when rendered, then shows spinner", () => {
-    const { container } = render(<GeneralInfoTab order={null} loading={true} />);
+    const { container } = render(<GeneralInfoTab order={null} loading={true} onRefetch={vi.fn()} />);
 
     expect(container.querySelector(".MuiCircularProgress-root")).toBeInTheDocument();
   });

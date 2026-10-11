@@ -4,6 +4,9 @@ import { vi, describe, it, expect } from "vitest";
 
 import { EstimateSummary } from "./EstimateSummary";
 
+const money = (value: number) =>
+  value.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 describe("EstimateSummary", () => {
   const defaultProps = {
     servicesSubtotal: 500,
@@ -17,29 +20,31 @@ describe("EstimateSummary", () => {
   it("given subtotals, when rendered, then displays correct total", () => {
     render(<EstimateSummary {...defaultProps} />);
 
-    expect(screen.getByText("Total (servicios + productos): $800.00")).toBeInTheDocument();
-    expect(screen.getByText("Precio final: $800.00")).toBeInTheDocument();
+    expect(screen.getByText("Subtotal servicios")).toBeInTheDocument();
+    expect(screen.getByText(`$ ${money(500)}`)).toBeInTheDocument();
+    expect(screen.getByText(`$ ${money(300)}`)).toBeInTheDocument();
+    expect(screen.getAllByText(`$ ${money(800)}`)).toHaveLength(2);
   });
 
   it("given discount, when rendered, then displays correct final price", () => {
     render(<EstimateSummary {...defaultProps} discountPercentage={10} />);
 
     // subtotal=800, discount=80, afterDiscount=720, final=720
-    expect(screen.getByText("Precio final: $720.00")).toBeInTheDocument();
+    expect(screen.getByText(`$ ${money(720)}`)).toBeInTheDocument();
   });
 
   it("given tax, when rendered, then displays correct final price", () => {
     render(<EstimateSummary {...defaultProps} taxPercentage={21} />);
 
     // subtotal=800, tax=168, final=968
-    expect(screen.getByText("Precio final: $968.00")).toBeInTheDocument();
+    expect(screen.getByText(`$ ${money(968)}`)).toBeInTheDocument();
   });
 
   it("given discount and tax, when rendered, then applies both correctly", () => {
     render(<EstimateSummary {...defaultProps} discountPercentage={10} taxPercentage={21} />);
 
     // subtotal=800, discount=80, afterDiscount=720, tax=151.2, final=871.2
-    expect(screen.getByText("Precio final: $871.20")).toBeInTheDocument();
+    expect(screen.getByText(`$ ${money(871.2)}`)).toBeInTheDocument();
   });
 
   it("given readonly mode, when rendered, then disables discount and tax fields", () => {

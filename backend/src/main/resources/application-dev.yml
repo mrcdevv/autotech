@@ -6,7 +6,7 @@ spring:
     driver-class-name: org.postgresql.Driver
 
   jpa:
-    show-sql: true
+    show-sql: false
     hibernate:
       ddl-auto: validate
 
@@ -15,7 +15,8 @@ spring:
 
 logging:
   level:
-    com.autotech: DEBUG
+    com.autotech: INFO
     org.springframework.web: INFO
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: WARN

@@ -1,8 +1,10 @@
-import { Box, IconButton, Chip, Typography } from "@mui/material";
+import { Box, IconButton, Typography } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 import { AppDataGrid } from "@/components/AppDataGrid";
+import { MonoText } from "@/components/MonoText";
+import { StatusBadge } from "@/components/StatusBadge";
 
 import type { GridColDef } from "@mui/x-data-grid";
 import type { PaymentResponse } from "@/types/payment";
@@ -25,11 +27,14 @@ export function PaymentHistoryGrid({
       field: "createdAt",
       headerName: "Fecha y hora",
       width: 180,
-      valueFormatter: (value: string) =>
-        new Date(value).toLocaleString("es-AR", {
-          dateStyle: "short",
-          timeStyle: "short",
-        }),
+      renderCell: (params) => (
+        <MonoText>
+          {new Date(params.value).toLocaleString("es-AR", {
+            dateStyle: "short",
+            timeStyle: "short",
+          })}
+        </MonoText>
+      ),
     },
     {
       field: "payerName",
@@ -47,19 +52,22 @@ export function PaymentHistoryGrid({
       field: "amount",
       headerName: "Monto",
       width: 130,
-      valueFormatter: (value: number) => `$${Number(value).toFixed(2)}`,
+      align: "right",
+      headerAlign: "right",
+      renderCell: (params) => (
+        <MonoText sx={{ display: "block", width: "100%", textAlign: "right" }}>
+          {params.value != null ? `$${Number(params.value).toFixed(2)}` : "—"}
+        </MonoText>
+      ),
     },
     {
       field: "paymentType",
       headerName: "Tipo de pago",
       width: 170,
       renderCell: (params) => (
-        <Chip
-          label={
-            params.value === "EFECTIVO" ? "Efectivo" : "Cuenta bancaria"
-          }
-          color={params.value === "EFECTIVO" ? "default" : "primary"}
-          size="small"
+        <StatusBadge
+          label={params.value === "EFECTIVO" ? "Efectivo" : "Cuenta bancaria"}
+          tone={params.value === "EFECTIVO" ? "neutral" : "info"}
         />
       ),
     },
