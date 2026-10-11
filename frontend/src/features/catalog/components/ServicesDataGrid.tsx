@@ -3,7 +3,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 import { AppDataGrid } from "@/components/AppDataGrid";
-import { MonoText } from "@/components/MonoText";
+import { moneyColumn } from "@/utils/gridColumns";
 
 import type { GridColDef } from "@mui/x-data-grid";
 import type { CatalogServiceResponse } from "@/types/catalog";
@@ -34,19 +34,11 @@ export function ServicesDataGrid({
   const columns: GridColDef[] = [
     { field: "name", headerName: "Nombre", flex: 1 },
     { field: "description", headerName: "Descripción", flex: 2 },
-    {
+    moneyColumn({
       field: "price",
       headerName: "Precio",
-      width: 150,
-      type: "number",
-      align: "right",
-      headerAlign: "right",
-      renderCell: (params) => (
-        <MonoText sx={{ display: "block", width: "100%", textAlign: "right" }}>
-          {params.value != null ? `$${Number(params.value).toFixed(2)}` : "—"}
-        </MonoText>
-      ),
-    },
+      overrides: { width: 150 },
+    }),
     {
       field: "actions",
       type: "actions",
