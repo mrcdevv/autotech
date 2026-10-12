@@ -49,3 +49,8 @@ ehthumbs.db
 .env
 .env.*
 !.env.example
+
+# ========================
+# ODD working notes
+# ========================
+odd/
