@@ -1,8 +1,11 @@
 import { useState } from "react";
 
 import {
+  Avatar,
+  AvatarGroup,
   Card,
   CardContent,
+  Tooltip,
   Typography,
   Box,
   IconButton,
@@ -17,7 +20,6 @@ import { useNavigate } from "react-router";
 
 import { MonoText } from "@/components/MonoText";
 import { StatusBadge } from "@/components/StatusBadge";
-import { initials } from "@/utils/initials";
 
 import { AssignMechanicsDialog } from "./AssignMechanicsDialog";
 import { StatusUpdateDialog } from "./StatusUpdateDialog";
@@ -160,41 +162,16 @@ export function RepairOrderCard({ order, onUpdateStatus, onRefetch }: RepairOrde
             </InfoRow>
             <InfoRow label={employeeLabel}>
               {order.employees.length > 0 ? (
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    justifyContent: "flex-end",
-                    alignItems: "center",
-                    columnGap: 1.5,
-                    rowGap: 0.5,
-                  }}
-                >
+                <AvatarGroup max={4} sx={{ justifyContent: "flex-end" }}>
                   {order.employees.map((employee) => (
-                    <Box key={employee.id} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                      <Box
-                        sx={{
-                          width: 22,
-                          height: 22,
-                          flex: "none",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          borderRadius: "50%",
-                          bgcolor: "shell.avatarBg",
-                          color: "text.primary",
-                          fontSize: "0.5625rem",
-                          fontWeight: 700,
-                        }}
-                      >
-                        {initials(employee.firstName, employee.lastName)}
-                      </Box>
-                      <Typography sx={{ fontSize: "0.8125rem", color: "text.muted" }}>
-                        {employee.firstName} {employee.lastName}
-                      </Typography>
-                    </Box>
+                    <Tooltip key={employee.id} title={`${employee.firstName} ${employee.lastName}`}>
+                      <Avatar sx={{ width: 28, height: 28, fontSize: 12, bgcolor: "primary.main" }}>
+                        {employee.firstName[0]}
+                        {employee.lastName[0]}
+                      </Avatar>
+                    </Tooltip>
                   ))}
-                </Box>
+                </AvatarGroup>
               ) : (
                 <Typography sx={{ fontSize: "0.8125rem", color: "text.disabled" }}>
                   Sin asignar

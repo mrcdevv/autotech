@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect } from "vitest";
 import { MemoryRouter } from "react-router";
@@ -80,26 +80,58 @@ describe("RepairOrderCard", () => {
     expect(screen.getAllByText(/ABC123/).length).toBeGreaterThan(0);
   });
 
-  it("given order with employees, when rendered, then shows employee chips", () => {
+  it("given order with one mechanic, when rendered, then shows initials avatar and reveals the full name on hover", async () => {
+    const user = userEvent.setup();
     render(
       <MemoryRouter>
         <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Carlos Lopez")).toBeInTheDocument();
+    expect(screen.getByText("CL")).toBeInTheDocument();
+    expect(screen.queryByText("Carlos Lopez")).not.toBeInTheDocument();
+
+    await user.hover(screen.getByText("CL"));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Carlos Lopez");
   });
 
-  it("given order with three mechanics, when rendered, then shows every mechanic with avatar and name", () => {
+  it("given order with three mechanics, when rendered, then shows one initials avatar per mechanic and no visible full name", () => {
     render(
       <MemoryRouter>
         <RepairOrderCard order={multiMechanicOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Carlos Lopez")).toBeInTheDocument();
-    expect(screen.getByText("Ana Garcia")).toBeInTheDocument();
-    expect(screen.getByText("Luis Martinez")).toBeInTheDocument();
+    expect(screen.getByText("CL")).toBeInTheDocument();
+    expect(screen.getByText("AG")).toBeInTheDocument();
+    expect(screen.getByText("LM")).toBeInTheDocument();
+    expect(screen.queryByText("Carlos Lopez")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ana Garcia")).not.toBeInTheDocument();
+    expect(screen.queryByText("Luis Martinez")).not.toBeInTheDocument();
+  });
+
+  it("given order with three mechanics, when hovering each avatar, then each tooltip reveals its own mechanic", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <RepairOrderCard order={multiMechanicOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    await user.hover(screen.getByText("CL"));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Carlos Lopez");
+
+    await user.unhover(screen.getByText("CL"));
+    await waitFor(() => expect(screen.queryByText("Carlos Lopez")).not.toBeInTheDocument());
+
+    await user.hover(screen.getByText("AG"));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Ana Garcia");
+
+    await user.unhover(screen.getByText("AG"));
+    await waitFor(() => expect(screen.queryByText("Ana Garcia")).not.toBeInTheDocument());
+
+    await user.hover(screen.getByText("LM"));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Luis Martinez");
   });
 
   it("given order with three mechanics, when rendered, then row label reads Mecánicos", () => {
