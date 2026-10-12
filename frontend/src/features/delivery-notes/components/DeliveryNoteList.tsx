@@ -34,6 +34,15 @@ export function DeliveryNoteList({
 }: DeliveryNoteListProps) {
   const columns: GridColDef[] = [
     {
+      field: "number",
+      headerName: "Nº",
+      flex: 0.6,
+      minWidth: 90,
+      renderCell: (params) => (
+        <MonoText>{params.value != null ? String(params.value).padStart(8, "0") : "—"}</MonoText>
+      ),
+    },
+    {
       field: "createdAt",
       headerName: "Fecha de creación",
       flex: 1,

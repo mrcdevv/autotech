@@ -386,7 +386,7 @@ export function DeliveryNoteDetail({ deliveryNoteId, repairOrderId, estimateId, 
           </Box>
           <Box textAlign="right">
             <Typography variant="h5" fontWeight="bold">REMITO</Typography>
-            <Typography variant="body1">Nº: {deliveryNote?.id?.toString().padStart(8, "0") || "PROVISORIA"}</Typography>
+            <Typography variant="body1">Nº: {deliveryNote?.number?.toString().padStart(8, "0") || "PROVISORIA"}</Typography>
             <Typography variant="body1">Fecha: {deliveryNote?.createdAt ? new Date(deliveryNote.createdAt).toLocaleDateString() : new Date().toLocaleDateString()}</Typography>
           </Box>
         </Box>
@@ -406,7 +406,7 @@ export function DeliveryNoteDetail({ deliveryNoteId, repairOrderId, estimateId, 
             </IconButton>
           )}
           <Typography variant="h6" noWrap sx={{ fontSize: "1.25rem", fontWeight: 600 }}>
-            {displayId ? `Remito #${displayId}` : "Nueva remito"}
+            {displayId ? `Remito #${deliveryNote?.number ?? displayId}` : "Nueva remito"}
           </Typography>
           {deliveryNote?.status && (
             <Chip
