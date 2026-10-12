@@ -6,6 +6,8 @@ import com.autotech.bankaccount.dto.BankResponse;
 import com.autotech.bankaccount.service.BankAccountService;
 import com.autotech.common.exception.GlobalExceptionHandler;
 import com.autotech.common.exception.ResourceNotFoundException;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +46,12 @@ class BankAccountControllerTest {
 
     @MockitoBean
     private BankAccountService bankAccountService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     private final BankAccountResponse sampleResponse = new BankAccountResponse(
             1L, 1L, "Banco Test", "Mi Cuenta", "123456", LocalDateTime.now());

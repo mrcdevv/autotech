@@ -8,6 +8,8 @@ import com.autotech.payment.dto.PaymentResponse;
 import com.autotech.payment.dto.PaymentSummaryResponse;
 import com.autotech.payment.model.PaymentType;
 import com.autotech.payment.service.PaymentService;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +51,12 @@ class PaymentControllerTest {
 
     @MockitoBean
     private PaymentService paymentService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     private final PaymentResponse sampleResponse = new PaymentResponse(
             1L, 10L, LocalDate.now(), LocalDateTime.now(),

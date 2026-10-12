@@ -4,6 +4,8 @@ import com.autotech.common.exception.GlobalExceptionHandler;
 import com.autotech.vehicle.dto.BrandRequest;
 import com.autotech.vehicle.dto.BrandResponse;
 import com.autotech.vehicle.service.BrandService;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +38,12 @@ class BrandControllerTest {
 
     @MockitoBean
     private BrandService brandService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     private final BrandResponse sampleResponse = new BrandResponse(1L, "Toyota", LocalDateTime.now());
 

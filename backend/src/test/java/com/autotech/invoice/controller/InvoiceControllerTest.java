@@ -8,6 +8,8 @@ import com.autotech.invoice.dto.InvoiceRequest;
 import com.autotech.invoice.dto.InvoiceResponse;
 import com.autotech.invoice.model.InvoiceStatus;
 import com.autotech.invoice.service.InvoiceService;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +52,12 @@ class InvoiceControllerTest {
 
     @MockitoBean
     private InvoiceService invoiceService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     private final InvoiceResponse sampleResponse = new InvoiceResponse(
             1L, 1L, "Juan Perez", 2L, "ABC123", "Corolla", null, null,

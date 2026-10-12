@@ -7,6 +7,8 @@ import com.autotech.catalog.dto.CannedJobResponse;
 import com.autotech.catalog.dto.CannedJobServiceResponse;
 import com.autotech.catalog.service.CannedJobService;
 import com.autotech.common.exception.GlobalExceptionHandler;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +49,12 @@ class CannedJobControllerTest {
 
     @MockitoBean
     private CannedJobService cannedJobService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     private final CannedJobResponse sampleResponse = new CannedJobResponse(
             1L, "Full Service", "Complete vehicle service",

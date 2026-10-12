@@ -4,6 +4,8 @@ import com.autotech.common.exception.GlobalExceptionHandler;
 import com.autotech.vehicle.dto.VehicleRequest;
 import com.autotech.vehicle.dto.VehicleResponse;
 import com.autotech.vehicle.service.VehicleService;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +42,12 @@ class VehicleControllerTest {
 
     @MockitoBean
     private VehicleService vehicleService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     private final VehicleResponse sampleResponse = new VehicleResponse(
             1L, 1L, "Juan", "Perez", "12345678", "ABC123",

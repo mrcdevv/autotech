@@ -8,6 +8,8 @@ import com.autotech.estimate.dto.EstimateRequest;
 import com.autotech.estimate.dto.EstimateResponse;
 import com.autotech.estimate.model.EstimateStatus;
 import com.autotech.estimate.service.EstimateService;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +54,12 @@ class EstimateControllerTest {
 
     @MockitoBean
     private EstimateService estimateService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     private final EstimateResponse sampleResponse = new EstimateResponse(
             1L, 1L, "Juan Perez", 2L, "ABC123", "Corolla", null,

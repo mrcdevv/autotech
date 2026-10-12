@@ -8,6 +8,8 @@ import com.autotech.dashboard.dto.DashboardSummaryResponse;
 import com.autotech.dashboard.model.DashboardConfig;
 import com.autotech.dashboard.service.DashboardExportService;
 import com.autotech.dashboard.service.DashboardService;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +48,12 @@ class DashboardControllerTest {
 
     @MockitoBean
     private DashboardExportService dashboardExportService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     @Test
     void givenData_whenGetSummary_thenReturn200() throws Exception {
