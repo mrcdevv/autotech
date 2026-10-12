@@ -10,9 +10,22 @@ interface StatCardProps {
   hint?: string;
   valueColor?: string;
   icon?: ReactNode;
+  /** Opt-in right alignment for the value. Money amounts only — counts stay left.
+   *  The alignment is applied on a BLOCK carrier (a Box div) wrapping the value,
+   *  never on the inline MonoText span, where text-align does nothing. */
+  alignValue?: "left" | "right";
 }
 
-export function StatCard({ label, value, hint, valueColor = "text.primary", icon }: StatCardProps) {
+const VALUE_SX = {
+  display: "block",
+  fontSize: "1.625rem",
+  fontWeight: 500,
+  lineHeight: 1.2,
+  mt: "8px",
+  mb: "3px",
+} as const;
+
+export function StatCard({ label, value, hint, valueColor = "text.primary", icon, alignValue = "left" }: StatCardProps) {
   return (
     <Box sx={{ bgcolor: "background.paper", p: "16px 18px", minWidth: 0 }}>
       <Box
@@ -36,19 +49,13 @@ export function StatCard({ label, value, hint, valueColor = "text.primary", icon
         </Typography>
         {icon}
       </Box>
-      <MonoText
-        sx={{
-          display: "block",
-          fontSize: "1.625rem",
-          fontWeight: 500,
-          lineHeight: 1.2,
-          color: valueColor,
-          mt: "8px",
-          mb: "3px",
-        }}
-      >
-        {value}
-      </MonoText>
+      {alignValue === "right" ? (
+        <Box sx={{ textAlign: "right" }}>
+          <MonoText sx={{ ...VALUE_SX, color: valueColor }}>{value}</MonoText>
+        </Box>
+      ) : (
+        <MonoText sx={{ ...VALUE_SX, color: valueColor }}>{value}</MonoText>
+      )}
       {hint && (
         <Typography
           sx={{

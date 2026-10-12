@@ -47,6 +47,8 @@ export function ServiceRevenueChart({ data }: ServiceRevenueChartProps) {
             data: values,
             label: "Ingresos",
             color: CHART_COLORS.graphite.base,
+            // Whole numbers on purpose (decision D2): chart tooltips/axes stay readable
+            // without cents. Do NOT switch to formatCurrency here.
             valueFormatter: (value) =>
               value == null ? "" : formatCurrencyWhole(value),
           },

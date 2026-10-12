@@ -6,7 +6,7 @@ import type { StatusTone } from "@/theme/tokens";
 
 import { STATUS_META } from "@/features/repair-orders/statusMeta";
 import { dot } from "@/theme/tokens";
-import { formatCurrencyWhole } from "@/utils/formatCurrency";
+import { formatCurrency } from "@/utils/formatCurrency";
 import { initials } from "@/utils/initials";
 
 export const WORKSHOP_BAY_CAPACITY = 6;
@@ -146,7 +146,7 @@ export function buildKpis(
     {
       label: "Presup. sin respuesta",
       value: pad(summary.pendingEstimateCount),
-      hint: `${formatCurrencyWhole(pendingTotal)} esperando OK`,
+      hint: `${formatCurrency(pendingTotal)} esperando OK`,
       valueColor: dot.warn,
     },
   ];
@@ -226,10 +226,10 @@ export function buildDailyCash(invoices: InvoiceResponse[]): DailyCashView {
   const grandTotal = paidTotal + pendingTotal;
 
   return {
-    total: formatCurrencyWhole(paidTotal),
+    total: formatCurrency(paidTotal),
     paidCount: paid.length,
     pendingCount: pending.length,
-    pendingTotal: formatCurrencyWhole(pendingTotal),
+    pendingTotal: formatCurrency(pendingTotal),
     paidRatio: grandTotal > 0 ? (paidTotal / grandTotal) * 100 : 0,
   };
 }

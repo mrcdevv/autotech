@@ -53,6 +53,8 @@ export function MonthlyBillingChart({ data, from, to }: MonthlyBillingChartProps
             data: values,
             label: "Facturación",
             color: CHART_COLORS.graphite.base,
+            // Whole numbers on purpose (decision D2): chart tooltips/axes stay readable
+            // without cents. Do NOT switch to formatCurrency here.
             valueFormatter: (value) =>
               value == null ? "" : formatCurrencyWhole(value),
           },
