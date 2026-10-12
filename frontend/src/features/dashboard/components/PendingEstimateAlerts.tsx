@@ -22,7 +22,11 @@ export function PendingEstimateAlerts({ alerts, thresholdDays }: PendingEstimate
         </Typography>
       ) : (
         alerts.map((alert) => (
-          <PanelRow key={alert.estimateId}>
+          <PanelRow
+            key={alert.estimateId}
+            to={`/presupuestos/${alert.estimateId}`}
+            ariaLabel={`Ir al presupuesto #${alert.estimateId} · ${alert.clientFullName} · ${alert.vehiclePlate} · ${alert.daysPending} días pendiente`}
+          >
             <RowText
               primary={alert.clientFullName}
               secondary={
