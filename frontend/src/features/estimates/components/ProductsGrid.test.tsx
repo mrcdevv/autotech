@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect } from "vitest";
 
 import { ProductsGrid } from "./ProductsGrid";
+import { CURRENCY_SYMBOL } from "@/components/MoneyInput";
 import { formatCurrency } from "@/utils/formatCurrency";
 
 import type { EstimateProductRequest } from "@/types/estimate";
@@ -65,7 +66,7 @@ describe("ProductsGrid", () => {
     expect(screen.getByText("Productos")).toBeInTheDocument();
   });
 
-  it("given a unit price input, when not focused it shows the shared 2-decimal currency value and when focused the plain number (decision D14, supersedes the D5 raw-value rule)", async () => {
+  it("given a unit price input, when not focused it shows the shared 2-decimal currency value and when focused the symbol followed by the plain number (decision D15, supersedes the D14 symbol-less focus state)", async () => {
     const user = userEvent.setup();
     render(
       <ProductsGrid
@@ -82,8 +83,8 @@ describe("ProductsGrid", () => {
     expect(getComputedStyle(priceInput).textAlign).toBe("right");
 
     await user.click(priceInput);
-    // D14: while focused the field shows the plain number being edited — no symbol,
-    // no thousands separator, because a formatted string breaks typing.
-    expect(priceInput).toHaveValue("1234.5");
+    // D15: while focused the symbol STAYS, adjacent to the plain number being
+    // edited — only the thousands separator and decimal separator are dropped.
+    expect(priceInput).toHaveValue(CURRENCY_SYMBOL + "1234.5");
   });
 });

@@ -268,6 +268,7 @@ export function CannedJobFormDialog({ open, onClose, onSave, initialData }: Cann
                 <Box sx={{ flex: 1, display: "flex" }}>
                   <MoneyInput
                     label="Precio"
+                    layout="adornment"
                     value={svc.price}
                     onChange={(v) => handleServiceFieldChange(index, "price", v ?? 0)}
                     size="small"
@@ -357,6 +358,7 @@ export function CannedJobFormDialog({ open, onClose, onSave, initialData }: Cann
                 <Box sx={{ flex: 1, display: "flex" }}>
                   <MoneyInput
                     label="Precio unitario"
+                    layout="adornment"
                     value={prod.unitPrice}
                     onChange={(v) => handleProductFieldChange(index, "unitPrice", v ?? 0)}
                     size="small"

@@ -3,7 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
 import { BankPaymentDialog } from "./BankPaymentDialog";
-import { formatCurrency } from "@/utils/formatCurrency";
+import { CURRENCY_SYMBOL } from "@/components/MoneyInput";
+import {
+  formatCurrency,
+  formatCurrencyWithoutSymbol,
+} from "@/utils/formatCurrency";
 
 import type {
   PaymentResponse,
@@ -126,19 +130,27 @@ describe("BankPaymentDialog", () => {
     expect(getComputedStyle(remainingInput).textAlign).toBe("right");
   });
 
-  it("given open dialog, when rendered, then the amount shows the shared currency format when not focused and the plain number when focused (decision D14, supersedes the D5 raw-value rule)", async () => {
+  it("given open dialog, when rendered, then the amount shows the symbol-less shared amount when not focused and the plain number when focused, with the adornment carrying the symbol in BOTH states (decision D16)", async () => {
     const user = userEvent.setup();
     render(<BankPaymentDialog {...defaultProps} />);
 
-    const amountInput = screen.getByLabelText("Monto a pagar");
-    // Not focused: the shared 2-decimal es-AR currency string.
+    const amountInput = screen.getByLabelText<HTMLInputElement>("Monto a pagar");
+    // Not focused: the symbol-less 2-decimal es-AR amount; the adornment
+    // carries the symbol instead of the input text.
     expect(getComputedStyle(amountInput).textAlign).toBe("right");
-    expect(amountInput).toHaveValue(formatCurrency(0));
+    expect(amountInput).toHaveValue(formatCurrencyWithoutSymbol(0));
+    expect(amountInput.value).not.toContain(CURRENCY_SYMBOL);
+    expect(
+      amountInput
+        .closest(".MuiInputBase-root")
+        ?.querySelector(".MuiInputAdornment-root"),
+    ).toHaveTextContent(CURRENCY_SYMBOL);
 
     await user.click(amountInput);
-    // D14: while focused the field shows the plain number being typed — no symbol,
-    // no thousands separator, because a formatted string breaks typing.
+    // D16: focused the input text is just the plain number being typed; the
+    // symbol stays in the adornment, never in the text.
     expect(amountInput).toHaveValue("0");
+    expect(amountInput.value).not.toContain(CURRENCY_SYMBOL);
   });
 
   it("given remaining field, when clicked, then fills amount", async () => {
@@ -148,8 +160,8 @@ describe("BankPaymentDialog", () => {
     await user.click(screen.getByDisplayValue(money(800)));
 
     const amountInput = screen.getByLabelText("Monto a pagar");
-    // Not focused: exactly the shared formatter output (2 decimals, single "$").
-    expect(amountInput).toHaveValue(formatCurrency(800));
+    // Not focused: the symbol-less shared amount — the adornment carries the symbol.
+    expect(amountInput).toHaveValue(formatCurrencyWithoutSymbol(800));
   });
 
   it("given bank account autocomplete, when rendered, then shows options", async () => {
@@ -231,8 +243,8 @@ describe("BankPaymentDialog", () => {
     ).toBeInTheDocument();
 
     expect(screen.getByLabelText("Fecha de pago")).toHaveValue("2025-04-15");
-    // Not focused: the shared 2-decimal es-AR currency string.
-    expect(screen.getByLabelText("Monto a pagar")).toHaveValue(formatCurrency(300));
+    // Not focused: the symbol-less 2-decimal es-AR amount.
+    expect(screen.getByLabelText("Monto a pagar")).toHaveValue(formatCurrencyWithoutSymbol(300));
   });
 
   it("given edit mode, when rendered, then pre-selects bank account", () => {

@@ -3,7 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect } from "vitest";
 
 import { CannedJobFormDialog } from "./CannedJobFormDialog";
-import { formatCurrency } from "@/utils/formatCurrency";
+import { CURRENCY_SYMBOL } from "@/components/MoneyInput";
+import {
+  formatCurrency,
+  formatCurrencyWithoutSymbol,
+} from "@/utils/formatCurrency";
 
 import type { CannedJobDetailResponse } from "@/types/catalog";
 
@@ -131,7 +135,7 @@ describe("CannedJobFormDialog", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it("given a service price input, when focused it shows the plain number and when blurred the shared 2-decimal currency format (decision D14, supersedes the D5 raw-value rule)", async () => {
+  it("given a service price input, when focused it shows the plain number with the symbol in the adornment and when blurred the symbol-less shared 2-decimal amount (decision D16)", async () => {
     const user = userEvent.setup();
     render(<CannedJobFormDialog {...defaultProps} />);
 
@@ -142,16 +146,22 @@ describe("CannedJobFormDialog", () => {
 
     // Positive assertion: the inline style is reflected in jsdom's getComputedStyle.
     expect(getComputedStyle(priceInput).textAlign).toBe("right");
-    // D14: while focused the field shows the plain number being typed — no symbol,
-    // no thousands separator, because a formatted string breaks typing.
+    // D16: focused the input text is the plain number being typed — the symbol
+    // lives in the startAdornment, never in the text.
     expect(priceInput).toHaveValue("1234.5");
+    expect(
+      priceInput
+        .closest(".MuiInputBase-root")
+        ?.querySelector(".MuiInputAdornment-root"),
+    ).toHaveTextContent(CURRENCY_SYMBOL);
 
     await user.tab();
-    // Not focused: exactly the shared formatter output (2 decimals, single "$").
-    expect(priceInput).toHaveValue(formatCurrency(1234.5));
+    // Not focused: the symbol-less shared amount (2 decimals, thousands
+    // grouping); the adornment still carries the symbol.
+    expect(priceInput).toHaveValue(formatCurrencyWithoutSymbol(1234.5));
   });
 
-  it("given a product unit price input, when focused it shows the plain number and when blurred the shared 2-decimal currency format (decision D14, supersedes the D5 raw-value rule)", async () => {
+  it("given a product unit price input, when focused it shows the plain number with the symbol in the adornment and when blurred the symbol-less shared 2-decimal amount (decision D16)", async () => {
     const user = userEvent.setup();
     render(<CannedJobFormDialog {...defaultProps} />);
 
@@ -162,9 +172,14 @@ describe("CannedJobFormDialog", () => {
 
     expect(getComputedStyle(priceInput).textAlign).toBe("right");
     expect(priceInput).toHaveValue("1234.5");
+    expect(
+      priceInput
+        .closest(".MuiInputBase-root")
+        ?.querySelector(".MuiInputAdornment-root"),
+    ).toHaveTextContent(CURRENCY_SYMBOL);
 
     await user.tab();
-    expect(priceInput).toHaveValue(formatCurrency(1234.5));
+    expect(priceInput).toHaveValue(formatCurrencyWithoutSymbol(1234.5));
   });
 
   it("given catalog services, when the service dropdown opens, then the option price shows the shared 2-decimal format with a single symbol", async () => {

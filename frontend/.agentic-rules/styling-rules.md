@@ -45,14 +45,32 @@
    a flex row (`Box` with `display: "flex"` and `justifyContent: "space-between"`) so only
    the amount carries the alignment.
 4. Editable money fields use the shared `MoneyInput` component
-   (`src/components/MoneyInput.tsx`) — never a bare `type="number"` input and never a
-   manual `$` `InputAdornment`. A money input has TWO states (decision D14): while
-   FOCUSED it shows the plain number being typed — no symbol, no thousands separator,
-   because a formatted string breaks typing — and while NOT focused it shows the shared
-   `formatCurrency` value exactly like any other amount, rounding to 2 decimals on blur.
-   `type="number"` cannot render a formatted value at all, and a manual dollar adornment
-   would double the symbol the formatter already emits while the field is not focused.
-   Right alignment stays explicit on the input element itself.
+   (`src/components/MoneyInput.tsx`) — never a bare `type="number"` input. `MoneyInput`
+   takes a `layout` prop with TWO values (decision D16 extends D15); both keep TWO
+   display states — while NOT focused they show the shared amount with thousands
+   separators and exactly 2 decimals, while FOCUSED they show the plain number being
+   typed with no thousands separator (a formatted string breaks typing) — and both
+   round to 2 decimals on blur and keep right alignment explicit on the input
+   element itself. They differ only in where the symbol lives:
+   - `layout="prefix"` (the default): the symbol is a fixed, non-deletable prefix
+     INSIDE the input text, in both states — deleting it brings it straight back
+     with the caret right after it, so the field can never be left symbol-less.
+     Used by the four item-table price inputs (estimates and invoices
+     `ServicesGrid` and `ProductsGrid`): inside a narrow grid cell an
+     `InputAdornment` pinned to the left edge would visually detach the symbol
+     from the right-aligned digits.
+   - `layout="adornment"`: the symbol renders as a `slotProps.input.startAdornment`
+     with an `InputAdornment position="start"`, pinned to the left edge of the
+     field and always visible in BOTH states, while the input text carries only
+     the symbol-less amount from `formatCurrencyWithoutSymbol` (never a second
+     formatting implementation). Because the symbol is not part of the text, no
+     prefix or caret logic runs — it can never be deleted. Used by the six dialog
+     money fields: catalog `ProductFormDialog` ("Precio unitario"),
+     `ServiceFormDialog` ("Precio"), `CannedJobFormDialog` ("Precio" and
+     "Precio unitario") and payments `CashPaymentDialog` / `BankPaymentDialog`
+     ("Monto a pagar") — in a dialog there is room for the adornment, and a
+     prefix inside the text would pay caret-surgery cost for no benefit.
+   `type="number"` cannot render a formatted value at all.
 5. Tests: an alignment assertion must target a block-level element, and a NEGATIVE
    assertion on a computed style is suspect in jsdom — `getComputedStyle(el).display`
    returns an EMPTY STRING when no author rule sets the property, so `display !== "inline"`

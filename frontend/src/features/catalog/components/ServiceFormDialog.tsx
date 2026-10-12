@@ -113,6 +113,7 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
             <MoneyInput
               fullWidth
               label="Precio"
+              layout="adornment"
               placeholder="Ej: 5000.00"
               value={form.price}
               onChange={(v) => handleChange("price", v)}

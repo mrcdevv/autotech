@@ -138,6 +138,7 @@ export function ProductFormDialog({ open, onClose, onSave, initialData }: Produc
             <MoneyInput
               fullWidth
               label="Precio unitario"
+              layout="adornment"
               value={form.unitPrice}
               onChange={(v) => handleChange("unitPrice", v)}
               error={!!errors.unitPrice}

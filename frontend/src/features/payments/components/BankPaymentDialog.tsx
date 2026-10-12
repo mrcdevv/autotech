@@ -142,6 +142,7 @@ export function BankPaymentDialog({
           />
           <MoneyInput
             label="Monto a pagar"
+            layout="adornment"
             value={amount}
             onChange={(v) => setAmount(v ?? 0)}
             fullWidth

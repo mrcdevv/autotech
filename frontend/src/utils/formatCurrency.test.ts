@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 
-import { formatCurrency, formatCurrencyWhole } from "./formatCurrency";
+import {
+  CURRENCY_SYMBOL,
+  formatCurrency,
+  formatCurrencyWithoutSymbol,
+  formatCurrencyWhole,
+} from "./formatCurrency";
 
 // Contract test: expectations are written as explicit literals/regexes on the expected
 // digits. They are deliberately NOT derived by calling the helpers, so a regression in
@@ -28,6 +33,33 @@ describe("formatCurrency contract", () => {
 
   it("renders zero with exactly 2 decimals", () => {
     expect(formatCurrency(0)).toMatch(/^\$\u00A00,00$/);
+  });
+});
+
+// Contract for the symbol-less amount used by MoneyInput's "adornment" layout
+// (decision D16): it must be DERIVED from formatCurrency — the single es-AR
+// source — never a second implementation of the grouping rules.
+describe("formatCurrencyWithoutSymbol contract", () => {
+  it("is derived from formatCurrency: removing the symbol and its spacing yields exactly the symbol-less amount", () => {
+    for (const value of [0, 42, 226.8, 1234.5, 1234567.89]) {
+      expect(formatCurrencyWithoutSymbol(value)).toBe(
+        formatCurrency(value)
+          .replace(CURRENCY_SYMBOL, "")
+          .replace(/^[\s\u00a0]+/, ""),
+      );
+    }
+  });
+
+  it("pins the es-AR output for zero, a plain value and a value with thousands", () => {
+    expect(formatCurrencyWithoutSymbol(0)).toMatch(/^0,00$/);
+    expect(formatCurrencyWithoutSymbol(1234.5)).toMatch(/^1\.234,50$/);
+    expect(formatCurrencyWithoutSymbol(1234567.89)).toMatch(/^1\.234\.567,89$/);
+  });
+
+  it("never contains the currency symbol", () => {
+    for (const value of [0, 1234.5, 1234567.89]) {
+      expect(formatCurrencyWithoutSymbol(value)).not.toContain(CURRENCY_SYMBOL);
+    }
   });
 });
 
