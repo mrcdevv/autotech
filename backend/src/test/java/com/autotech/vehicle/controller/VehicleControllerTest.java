@@ -1,6 +1,8 @@
 package com.autotech.vehicle.controller;
 
 import com.autotech.common.exception.GlobalExceptionHandler;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.autotech.vehicle.dto.VehicleRequest;
 import com.autotech.vehicle.dto.VehicleResponse;
 import com.autotech.vehicle.service.VehicleService;
@@ -40,6 +42,12 @@ class VehicleControllerTest {
 
     @MockitoBean
     private VehicleService vehicleService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     private final VehicleResponse sampleResponse = new VehicleResponse(
             1L, 1L, "Juan", "Perez", "12345678", "ABC123",

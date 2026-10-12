@@ -4,6 +4,8 @@ import com.autotech.catalog.dto.CatalogServiceRequest;
 import com.autotech.catalog.dto.CatalogServiceResponse;
 import com.autotech.catalog.service.CatalogServiceService;
 import com.autotech.common.exception.GlobalExceptionHandler;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +46,12 @@ class CatalogServiceControllerTest {
 
     @MockitoBean
     private CatalogServiceService catalogServiceService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     private final CatalogServiceResponse sampleResponse = new CatalogServiceResponse(
             1L, "Oil Change", "Full oil change", new BigDecimal("50.00"),

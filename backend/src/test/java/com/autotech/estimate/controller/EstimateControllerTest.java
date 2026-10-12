@@ -1,6 +1,8 @@
 package com.autotech.estimate.controller;
 
 import com.autotech.common.exception.GlobalExceptionHandler;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.estimate.dto.EstimateDetailResponse;
 import com.autotech.estimate.dto.EstimateInvoiceDataResponse;
@@ -52,6 +54,12 @@ class EstimateControllerTest {
 
     @MockitoBean
     private EstimateService estimateService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     private final EstimateResponse sampleResponse = new EstimateResponse(
             1L, 1L, "Juan Perez", 2L, "ABC123", "Corolla", null,

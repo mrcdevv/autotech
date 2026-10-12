@@ -2,6 +2,9 @@ package com.autotech.invoice.controller;
 
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.GlobalExceptionHandler;
+import com.autotech.invoice.service.InvoicePdfService;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.invoice.dto.InvoiceDetailResponse;
 import com.autotech.invoice.dto.InvoiceRequest;
@@ -50,6 +53,15 @@ class InvoiceControllerTest {
 
     @MockitoBean
     private InvoiceService invoiceService;
+
+    @MockitoBean
+    private InvoicePdfService invoicePdfService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     private final InvoiceResponse sampleResponse = new InvoiceResponse(
             1L, 1L, "Juan Perez", 2L, "ABC123", "Corolla", null, null,
