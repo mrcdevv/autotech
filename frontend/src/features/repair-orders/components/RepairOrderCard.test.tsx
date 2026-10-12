@@ -80,6 +80,22 @@ describe("RepairOrderCard", () => {
     expect(screen.getAllByText(/ABC123/).length).toBeGreaterThan(0);
   });
 
+  it("given order, when rendered, then separates the vehicle model from the plate with a real space in the DOM text", () => {
+    render(
+      <MemoryRouter>
+        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    const vehicleText = screen.getByText(/2020 Toyota Corolla/);
+    // Positive control: the model and the plate are separated by a real space,
+    // so screen readers and clipboard copies get a correctly separated value.
+    expect(vehicleText.textContent).toContain("2020 Toyota Corolla ABC123");
+    // Negative control: guards against the glued form the user reported
+    // ("...Polo HighlineAD789GH"), which is how this defect survived unnoticed.
+    expect(vehicleText.textContent).not.toContain("CorollaABC123");
+  });
+
   it("given order with one mechanic, when rendered, then shows initials avatar and reveals the full name on hover", async () => {
     const user = userEvent.setup();
     render(

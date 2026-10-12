@@ -148,12 +148,16 @@ export function RepairOrderCard({ order, onUpdateStatus, onRefetch }: RepairOrde
             sx={{ mb: 1.5 }}
           >
             <InfoRow label="Vehículo">
+              {/* Model and plate must be one inline text flow inside a single
+                  flex child: as siblings, the whitespace between them is
+                  discarded by the flex container and the texts visually collide
+                  (e.g. "Polo HighlineAD789GH"). */}
               <Typography component="span" sx={{ fontSize: "0.8125rem", color: "text.muted" }}>
                 {vehicleLabel}{" "}
+                <MonoText sx={{ fontSize: "0.75rem", color: "text.secondary" }}>
+                  {order.vehiclePlate}
+                </MonoText>
               </Typography>
-              <MonoText sx={{ fontSize: "0.75rem", color: "text.secondary" }}>
-                {order.vehiclePlate}
-              </MonoText>
             </InfoRow>
             <InfoRow label="Teléfono">
               <MonoText sx={{ fontSize: "0.75rem", color: "text.muted" }}>
