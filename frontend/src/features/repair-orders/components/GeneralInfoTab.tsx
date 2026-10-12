@@ -16,8 +16,10 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 
 import { AssignMechanicsDialog } from "./AssignMechanicsDialog";
+import { EditRepairOrderDialog } from "./EditRepairOrderDialog";
 import { estimatesApi } from "@/api/estimates";
 import { invoicesApi } from "@/api/invoices";
 import { paymentsApi } from "@/api/payments";
@@ -43,6 +45,7 @@ interface GeneralInfoTabProps {
 
 export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProps) {
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [estimates, setEstimates] = useState<EstimateResponse[]>([]);
   const [invoice, setInvoice] = useState<InvoiceDetailResponse | null>(null);
   const [paymentSummary, setPaymentSummary] = useState<PaymentSummaryResponse | null>(null);
@@ -140,7 +143,18 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
     <>
       <Stack spacing={2} sx={{ py: 3 }}>
       {/* Estado y seguimiento */}
-      <Panel title="Estado y seguimiento">
+      <Panel
+        title="Estado y seguimiento"
+        action={
+          <Button
+            size="small"
+            startIcon={<EditOutlinedIcon />}
+            onClick={() => setEditDialogOpen(true)}
+          >
+            Editar orden de trabajo
+          </Button>
+        }
+      >
         <Stack direction="row" flexWrap="wrap" useFlexGap spacing={{ xs: 2, sm: 3.5 }}>
           <InfoBlock label="Estado">
             <StatusBadge tone={meta.tone} label={meta.label} />
@@ -392,6 +406,15 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
           orderId={order.id}
           assigned={order.employees}
           onClose={() => setAssignDialogOpen(false)}
+          onSuccess={onRefetch}
+        />
+      )}
+
+      {order && (
+        <EditRepairOrderDialog
+          open={editDialogOpen}
+          order={order}
+          onClose={() => setEditDialogOpen(false)}
           onSuccess={onRefetch}
         />
       )}

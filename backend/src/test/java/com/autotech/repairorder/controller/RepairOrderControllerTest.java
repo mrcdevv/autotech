@@ -114,7 +114,7 @@ class RepairOrderControllerTest {
 
     @Test
     void create_validRequest_returns201() throws Exception {
-        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Engine noise", null, null, null);
+        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Engine noise", null, null, null, null);
         when(repairOrderService.create(any(RepairOrderRequest.class))).thenReturn(sampleResponse);
 
         mockMvc.perform(post("/api/repair-orders")
@@ -127,7 +127,7 @@ class RepairOrderControllerTest {
 
     @Test
     void create_missingClientId_returns400() throws Exception {
-        RepairOrderRequest request = new RepairOrderRequest(null, 1L, null, null, null, null, null);
+        RepairOrderRequest request = new RepairOrderRequest(null, 1L, null, null, null, null, null, null);
 
         mockMvc.perform(post("/api/repair-orders")
                         .with(csrf())
@@ -138,7 +138,7 @@ class RepairOrderControllerTest {
 
     @Test
     void create_missingVehicleId_returns400() throws Exception {
-        RepairOrderRequest request = new RepairOrderRequest(1L, null, null, null, null, null, null);
+        RepairOrderRequest request = new RepairOrderRequest(1L, null, null, null, null, null, null, null);
 
         mockMvc.perform(post("/api/repair-orders")
                         .with(csrf())
@@ -149,7 +149,7 @@ class RepairOrderControllerTest {
 
     @Test
     void update_validRequest_returns200() throws Exception {
-        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Updated", null, null, null);
+        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Updated", null, null, null, null);
         when(repairOrderService.update(eq(1L), any(RepairOrderRequest.class))).thenReturn(sampleResponse);
 
         mockMvc.perform(put("/api/repair-orders/1")

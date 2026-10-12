@@ -141,6 +141,7 @@ export interface RepairOrderRequest {
   appointmentId?: number | null;
   reason?: string | null;
   clientSource?: string | null;
+  mechanicNotes?: string | null;
   employeeIds?: number[];
   tagIds?: number[];
 }

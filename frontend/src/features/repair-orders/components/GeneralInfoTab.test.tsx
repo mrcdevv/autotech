@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect } from "vitest";
 
 import { GeneralInfoTab } from "./GeneralInfoTab";
@@ -7,6 +8,11 @@ import type { RepairOrderDetailResponse } from "../types";
 
 vi.mock("@mui/x-data-grid", () => ({
   DataGrid: () => <div data-testid="mock-datagrid" />,
+}));
+
+vi.mock("./EditRepairOrderDialog", () => ({
+  EditRepairOrderDialog: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="edit-repair-order-dialog" /> : null,
 }));
 
 const sampleOrder: RepairOrderDetailResponse = {
@@ -76,7 +82,24 @@ describe("GeneralInfoTab", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: /editar/i })).toBeInTheDocument();
+    // Exact name: only the mechanics action is bare "Editar"; the order edit
+    // button is labelled "Editar orden de trabajo".
+    expect(screen.getByRole("button", { name: "Editar" })).toBeInTheDocument();
+  });
+
+  it("given order, when rendered, then shows edit action for the order details", () => {
+    render(<GeneralInfoTab order={sampleOrder} loading={false} onRefetch={vi.fn()} />);
+
+    expect(screen.getByRole("button", { name: "Editar orden de trabajo" })).toBeInTheDocument();
+  });
+
+  it("given edit action clicked, then opens the edit dialog", async () => {
+    const user = userEvent.setup();
+    render(<GeneralInfoTab order={sampleOrder} loading={false} onRefetch={vi.fn()} />);
+
+    await user.click(screen.getByRole("button", { name: "Editar orden de trabajo" }));
+
+    expect(screen.getByTestId("edit-repair-order-dialog")).toBeInTheDocument();
   });
 
   it("given null order, when rendered, then shows not found message", () => {
