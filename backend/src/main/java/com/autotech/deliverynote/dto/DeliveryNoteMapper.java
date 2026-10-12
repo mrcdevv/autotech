@@ -15,6 +15,7 @@ public class DeliveryNoteMapper {
         if (entity == null) return null;
         return new DeliveryNoteResponse(
                 entity.getId(),
+                entity.getNumber(),
                 entity.getClient().getId(),
                 entity.getClient().getFirstName() + " " + entity.getClient().getLastName(),
                 entity.getVehicle() != null ? entity.getVehicle().getId() : null,
@@ -24,7 +25,6 @@ public class DeliveryNoteMapper {
                 entity.getEstimate() != null ? entity.getEstimate().getId() : null,
                 entity.getStatus(),
                 entity.getDiscountPercentage(),
-                entity.getTaxPercentage(),
                 entity.getTotal(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
@@ -35,6 +35,7 @@ public class DeliveryNoteMapper {
         if (entity == null) return null;
         return new DeliveryNoteDetailResponse(
                 entity.getId(),
+                entity.getNumber(),
                 entity.getClient().getId(),
                 entity.getClient().getFirstName() + " " + entity.getClient().getLastName(),
                 entity.getClient().getDni(),
@@ -51,7 +52,6 @@ public class DeliveryNoteMapper {
                 entity.getEstimate() != null ? entity.getEstimate().getId() : null,
                 entity.getStatus(),
                 entity.getDiscountPercentage(),
-                entity.getTaxPercentage(),
                 entity.getTotal(),
                 entity.getServices() != null
                         ? entity.getServices().stream().map(this::toServiceItemResponse).toList()
@@ -88,7 +88,6 @@ public class DeliveryNoteMapper {
         if (request == null) return null;
         return DeliveryNote.builder()
                 .discountPercentage(request.discountPercentage() != null ? request.discountPercentage() : BigDecimal.ZERO)
-                .taxPercentage(request.taxPercentage() != null ? request.taxPercentage() : BigDecimal.ZERO)
                 .build();
     }
 }

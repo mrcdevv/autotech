@@ -22,8 +22,6 @@ import com.autotech.deliverynote.repository.DeliveryNoteRepository;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.model.RepairOrderStatus;
 import com.autotech.repairorder.repository.RepairOrderRepository;
-import com.autotech.tax.model.TaxConfig;
-import com.autotech.tax.service.TaxConfigService;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
 import org.junit.jupiter.api.Test;
@@ -73,8 +71,6 @@ class DeliveryNoteServiceImplTest {
     @Mock
     private EmailNotificationService emailNotificationService;
 
-    @Mock
-    private TaxConfigService taxConfigService;
 
     @InjectMocks
     private DeliveryNoteServiceImpl deliveryNoteService;
@@ -182,13 +178,12 @@ class DeliveryNoteServiceImplTest {
         Client client = buildClient(1L, ClientType.PERSONAL);
         Vehicle vehicle = buildVehicle(2L, client);
         DeliveryNoteRequest request = new DeliveryNoteRequest(1L, 2L, null, null,
-                BigDecimal.ZERO, BigDecimal.ZERO,
+                BigDecimal.ZERO,
                 List.of(new DeliveryNoteServiceItemRequest("Service A", BigDecimal.valueOf(100))),
                 List.of(new DeliveryNoteProductRequest("Product A", 2, BigDecimal.valueOf(50))));
 
         DeliveryNote mappedEntity = DeliveryNote.builder()
                 .discountPercentage(BigDecimal.ZERO)
-                .taxPercentage(BigDecimal.ZERO)
                 .build();
         DeliveryNote savedEntity = buildDeliveryNote(1L);
         DeliveryNoteDetailResponse detailResponse = buildDetailResponse(1L);
@@ -196,6 +191,7 @@ class DeliveryNoteServiceImplTest {
         when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
         when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
         when(deliveryNoteMapper.toEntity(request)).thenReturn(mappedEntity);
+        when(deliveryNoteRepository.nextNumber()).thenReturn(1L);
         when(deliveryNoteRepository.save(any(DeliveryNote.class))).thenReturn(savedEntity);
         when(deliveryNoteRepository.findWithDetailsById(1L)).thenReturn(Optional.of(savedEntity));
         when(deliveryNoteMapper.toDetailResponse(savedEntity)).thenReturn(detailResponse);
@@ -203,77 +199,15 @@ class DeliveryNoteServiceImplTest {
         DeliveryNoteDetailResponse result = deliveryNoteService.create(request);
 
         assertThat(result.id()).isEqualTo(1L);
+        assertThat(mappedEntity.getNumber()).isEqualTo(1L);
         verify(deliveryNoteRepository).save(any(DeliveryNote.class));
-    }
-
-    @Test
-    void givenRequestWithoutTaxPercentage_whenCreate_thenUsesDefaultTax21() {
-        Client client = buildClient(1L, ClientType.PERSONAL);
-        Vehicle vehicle = buildVehicle(2L, client);
-        DeliveryNoteRequest request = new DeliveryNoteRequest(1L, 2L, null, null,
-                BigDecimal.ZERO, null,
-                List.of(new DeliveryNoteServiceItemRequest("Service A", BigDecimal.valueOf(100))),
-                Collections.emptyList());
-
-        DeliveryNote mappedEntity = DeliveryNote.builder()
-                .discountPercentage(BigDecimal.ZERO)
-                .taxPercentage(BigDecimal.ZERO)
-                .build();
-        DeliveryNote savedEntity = buildDeliveryNote(1L);
-        DeliveryNoteDetailResponse detailResponse = buildDetailResponse(1L);
-        TaxConfig taxConfig = buildTaxConfig(BigDecimal.valueOf(21));
-
-        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
-        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
-        when(taxConfigService.getConfig()).thenReturn(taxConfig);
-        when(deliveryNoteMapper.toEntity(request)).thenReturn(mappedEntity);
-        when(deliveryNoteRepository.save(any(DeliveryNote.class))).thenReturn(savedEntity);
-        when(deliveryNoteRepository.findWithDetailsById(1L)).thenReturn(Optional.of(savedEntity));
-        when(deliveryNoteMapper.toDetailResponse(savedEntity)).thenReturn(detailResponse);
-
-        DeliveryNoteDetailResponse result = deliveryNoteService.create(request);
-
-        assertThat(result).isNotNull();
-        assertThat(mappedEntity.getTaxPercentage()).isEqualByComparingTo(BigDecimal.valueOf(21));
-        assertThat(mappedEntity.getTotal()).isEqualByComparingTo(BigDecimal.valueOf(121));
-        verify(taxConfigService).getConfig();
-    }
-
-    @Test
-    void givenRequestWithTaxPercentage_whenCreate_thenUsesRequestTax() {
-        Client client = buildClient(1L, ClientType.PERSONAL);
-        Vehicle vehicle = buildVehicle(2L, client);
-        DeliveryNoteRequest request = new DeliveryNoteRequest(1L, 2L, null, null,
-                BigDecimal.ZERO, BigDecimal.valueOf(10),
-                List.of(new DeliveryNoteServiceItemRequest("Service A", BigDecimal.valueOf(100))),
-                Collections.emptyList());
-
-        DeliveryNote mappedEntity = DeliveryNote.builder()
-                .discountPercentage(BigDecimal.ZERO)
-                .taxPercentage(BigDecimal.ZERO)
-                .build();
-        DeliveryNote savedEntity = buildDeliveryNote(1L);
-        DeliveryNoteDetailResponse detailResponse = buildDetailResponse(1L);
-
-        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
-        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
-        when(deliveryNoteMapper.toEntity(request)).thenReturn(mappedEntity);
-        when(deliveryNoteRepository.save(any(DeliveryNote.class))).thenReturn(savedEntity);
-        when(deliveryNoteRepository.findWithDetailsById(1L)).thenReturn(Optional.of(savedEntity));
-        when(deliveryNoteMapper.toDetailResponse(savedEntity)).thenReturn(detailResponse);
-
-        DeliveryNoteDetailResponse result = deliveryNoteService.create(request);
-
-        assertThat(result).isNotNull();
-        assertThat(mappedEntity.getTaxPercentage()).isEqualByComparingTo(BigDecimal.valueOf(10));
-        assertThat(mappedEntity.getTotal()).isEqualByComparingTo(BigDecimal.valueOf(110));
-        verify(taxConfigService, never()).getConfig();
+        verify(deliveryNoteRepository).nextNumber();
     }
 
     @Test
     void givenClientNotFound_whenCreate_thenThrowResourceNotFoundException() {
         DeliveryNoteRequest request = new DeliveryNoteRequest(99L, null, null, null,
-                BigDecimal.ZERO, BigDecimal.ZERO, Collections.emptyList(), Collections.emptyList());
+                BigDecimal.ZERO, Collections.emptyList(), Collections.emptyList());
         when(clientRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> deliveryNoteService.create(request))
@@ -284,7 +218,7 @@ class DeliveryNoteServiceImplTest {
     void givenTemporalClientWithServices_whenCreate_thenThrowBusinessException() {
         Client client = buildClient(1L, ClientType.TEMPORAL);
         DeliveryNoteRequest request = new DeliveryNoteRequest(1L, null, null, null,
-                BigDecimal.ZERO, BigDecimal.ZERO,
+                BigDecimal.ZERO,
                 List.of(new DeliveryNoteServiceItemRequest("Service A", BigDecimal.valueOf(100))),
                 Collections.emptyList());
         when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
@@ -298,13 +232,12 @@ class DeliveryNoteServiceImplTest {
     void givenTemporalClientWithProductsOnly_whenCreate_thenSuccess() {
         Client client = buildClient(1L, ClientType.TEMPORAL);
         DeliveryNoteRequest request = new DeliveryNoteRequest(1L, null, null, null,
-                BigDecimal.ZERO, BigDecimal.ZERO,
+                BigDecimal.ZERO,
                 Collections.emptyList(),
                 List.of(new DeliveryNoteProductRequest("Product A", 2, BigDecimal.valueOf(50))));
 
         DeliveryNote mappedEntity = DeliveryNote.builder()
                 .discountPercentage(BigDecimal.ZERO)
-                .taxPercentage(BigDecimal.ZERO)
                 .build();
         DeliveryNote savedEntity = buildDeliveryNote(1L);
         DeliveryNoteDetailResponse detailResponse = buildDetailResponse(1L);
@@ -324,13 +257,12 @@ class DeliveryNoteServiceImplTest {
     void givenTemporalClientWithNullVehicle_whenCreate_thenSuccess() {
         Client client = buildClient(1L, ClientType.TEMPORAL);
         DeliveryNoteRequest request = new DeliveryNoteRequest(1L, null, null, null,
-                BigDecimal.ZERO, BigDecimal.ZERO,
+                BigDecimal.ZERO,
                 null,
                 List.of(new DeliveryNoteProductRequest("Product A", 1, BigDecimal.valueOf(100))));
 
         DeliveryNote mappedEntity = DeliveryNote.builder()
                 .discountPercentage(BigDecimal.ZERO)
-                .taxPercentage(BigDecimal.ZERO)
                 .build();
         DeliveryNote savedEntity = buildDeliveryNote(1L);
         DeliveryNoteDetailResponse detailResponse = buildDetailResponse(1L);
@@ -351,11 +283,10 @@ class DeliveryNoteServiceImplTest {
         Client client = buildClient(1L, ClientType.PERSONAL);
         Vehicle vehicle = buildVehicle(2L, client);
         DeliveryNoteRequest request = new DeliveryNoteRequest(1L, 2L, null, 5L,
-                BigDecimal.ZERO, BigDecimal.ZERO, Collections.emptyList(), Collections.emptyList());
+                BigDecimal.ZERO, Collections.emptyList(), Collections.emptyList());
 
         DeliveryNote mappedEntity = DeliveryNote.builder()
                 .discountPercentage(BigDecimal.ZERO)
-                .taxPercentage(BigDecimal.ZERO)
                 .build();
         DeliveryNote savedEntity = buildDeliveryNote(1L);
         DeliveryNoteDetailResponse detailResponse = buildDetailResponse(1L);
@@ -393,7 +324,6 @@ class DeliveryNoteServiceImplTest {
 
         DeliveryNote mappedEntity = DeliveryNote.builder()
                 .discountPercentage(BigDecimal.valueOf(10))
-                .taxPercentage(BigDecimal.valueOf(21))
                 .build();
         DeliveryNote savedEntity = buildDeliveryNote(1L);
         DeliveryNoteDetailResponse detailResponse = buildDetailResponse(1L);
@@ -481,7 +411,7 @@ class DeliveryNoteServiceImplTest {
         List<DeliveryNoteProductRequest> products = List.of(
                 new DeliveryNoteProductRequest("Product A", 2, BigDecimal.valueOf(50)));
 
-        BigDecimal total = deliveryNoteService.calculateTotal(services, products, BigDecimal.ZERO, BigDecimal.ZERO);
+        BigDecimal total = deliveryNoteService.calculateTotal(services, products, BigDecimal.ZERO);
 
         assertThat(total).isEqualByComparingTo(BigDecimal.valueOf(400));
     }
@@ -492,7 +422,7 @@ class DeliveryNoteServiceImplTest {
                 new DeliveryNoteServiceItemRequest("Service A", BigDecimal.valueOf(200)));
 
         BigDecimal total = deliveryNoteService.calculateTotal(services, Collections.emptyList(),
-                BigDecimal.ZERO, BigDecimal.ZERO);
+                BigDecimal.ZERO);
 
         assertThat(total).isEqualByComparingTo(BigDecimal.valueOf(200));
     }
@@ -503,7 +433,7 @@ class DeliveryNoteServiceImplTest {
                 new DeliveryNoteProductRequest("Product A", 3, BigDecimal.valueOf(100)));
 
         BigDecimal total = deliveryNoteService.calculateTotal(Collections.emptyList(), products,
-                BigDecimal.ZERO, BigDecimal.ZERO);
+                BigDecimal.ZERO);
 
         assertThat(total).isEqualByComparingTo(BigDecimal.valueOf(300));
     }
@@ -514,21 +444,21 @@ class DeliveryNoteServiceImplTest {
                 new DeliveryNoteServiceItemRequest("Service A", BigDecimal.valueOf(150)));
 
         BigDecimal total = deliveryNoteService.calculateTotal(services, Collections.emptyList(),
-                BigDecimal.ZERO, BigDecimal.ZERO);
+                BigDecimal.ZERO);
 
         assertThat(total).isEqualByComparingTo(BigDecimal.valueOf(150));
     }
 
     @Test
-    void givenDiscountAndTax_whenCalculateTotal_thenAppliesBoth() {
+    void givenDiscount_whenCalculateTotal_thenAppliesDiscount() {
         List<DeliveryNoteServiceItemRequest> services = List.of(
                 new DeliveryNoteServiceItemRequest("Service A", BigDecimal.valueOf(1000)));
 
         BigDecimal total = deliveryNoteService.calculateTotal(services, Collections.emptyList(),
-                BigDecimal.valueOf(10), BigDecimal.valueOf(21));
+                BigDecimal.valueOf(10));
 
-        // subtotal=1000, discount=100, after=900, tax=189, total=1089
-        assertThat(total).isEqualByComparingTo(BigDecimal.valueOf(1089));
+        // subtotal=1000, discount=100, total=900
+        assertThat(total).isEqualByComparingTo(BigDecimal.valueOf(900));
     }
 
     @Test
@@ -585,12 +515,6 @@ class DeliveryNoteServiceImplTest {
         return order;
     }
 
-    private TaxConfig buildTaxConfig(BigDecimal taxPercentage) {
-        TaxConfig config = TaxConfig.builder().taxPercentage(taxPercentage).build();
-        config.setId(1L);
-        return config;
-    }
-
     private DeliveryNote buildDeliveryNote(Long id) {
         Client client = buildClient(1L, ClientType.PERSONAL);
         Vehicle vehicle = buildVehicle(2L, client);
@@ -599,7 +523,6 @@ class DeliveryNoteServiceImplTest {
                 .vehicle(vehicle)
                 .status(DeliveryNoteStatus.PENDIENTE)
                 .discountPercentage(BigDecimal.ZERO)
-                .taxPercentage(BigDecimal.ZERO)
                 .total(BigDecimal.valueOf(400))
                 .build();
         deliveryNote.setId(id);
@@ -610,16 +533,16 @@ class DeliveryNoteServiceImplTest {
 
     private DeliveryNoteResponse buildDeliveryNoteResponse(Long id) {
         return new DeliveryNoteResponse(
-                id, 1L, "Juan Perez", 2L, "ABC123", "Corolla", null, null,
-                DeliveryNoteStatus.PENDIENTE, BigDecimal.ZERO, BigDecimal.ZERO,
+                id, 1L, 1L, "Juan Perez", 2L, "ABC123", "Corolla", null, null,
+                DeliveryNoteStatus.PENDIENTE, BigDecimal.ZERO,
                 BigDecimal.valueOf(400), LocalDateTime.now(), LocalDateTime.now());
     }
 
     private DeliveryNoteDetailResponse buildDetailResponse(Long id) {
         return new DeliveryNoteDetailResponse(
-                id, 1L, "Juan Perez", "12345678", "1234567890", null, "PERSONAL",
+                id, 1L, 1L, "Juan Perez", "12345678", "1234567890", null, "PERSONAL",
                 2L, "ABC123", null, "Corolla", 2020, null, null,
-                DeliveryNoteStatus.PENDIENTE, BigDecimal.ZERO, BigDecimal.ZERO,
+                DeliveryNoteStatus.PENDIENTE, BigDecimal.ZERO,
                 BigDecimal.valueOf(400), Collections.emptyList(), Collections.emptyList(),
                 LocalDateTime.now(), LocalDateTime.now());
     }

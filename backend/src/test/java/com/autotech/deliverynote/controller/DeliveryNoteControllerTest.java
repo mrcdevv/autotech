@@ -64,14 +64,14 @@ class DeliveryNoteControllerTest {
     private CustomUserDetailsService customUserDetailsService;
 
     private final DeliveryNoteResponse sampleResponse = new DeliveryNoteResponse(
-            1L, 1L, "Juan Perez", 2L, "ABC123", "Corolla", null, null,
-            DeliveryNoteStatus.PENDIENTE, BigDecimal.ZERO, BigDecimal.ZERO,
+            1L, 1L, 1L, "Juan Perez", 2L, "ABC123", "Corolla", null, null,
+            DeliveryNoteStatus.PENDIENTE, BigDecimal.ZERO,
             BigDecimal.valueOf(400), LocalDateTime.now(), LocalDateTime.now());
 
     private final DeliveryNoteDetailResponse sampleDetailResponse = new DeliveryNoteDetailResponse(
-            1L, 1L, "Juan Perez", "12345678", "1234567890", null, "PERSONAL",
+            1L, 1L, 1L, "Juan Perez", "12345678", "1234567890", null, "PERSONAL",
             2L, "ABC123", null, "Corolla", 2020, null, null,
-            DeliveryNoteStatus.PENDIENTE, BigDecimal.ZERO, BigDecimal.ZERO,
+            DeliveryNoteStatus.PENDIENTE, BigDecimal.ZERO,
             BigDecimal.valueOf(400), Collections.emptyList(), Collections.emptyList(),
             LocalDateTime.now(), LocalDateTime.now());
 
@@ -115,7 +115,7 @@ class DeliveryNoteControllerTest {
     @Test
     void givenValidRequest_whenCreate_thenReturn201() throws Exception {
         DeliveryNoteRequest request = new DeliveryNoteRequest(1L, 2L, null, null,
-                BigDecimal.ZERO, BigDecimal.ZERO, Collections.emptyList(), Collections.emptyList());
+                BigDecimal.ZERO, Collections.emptyList(), Collections.emptyList());
         when(deliveryNoteService.create(any(DeliveryNoteRequest.class))).thenReturn(sampleDetailResponse);
 
         mockMvc.perform(post("/api/delivery-notes")
@@ -128,7 +128,7 @@ class DeliveryNoteControllerTest {
 
     @Test
     void givenInvalidRequest_whenCreate_thenReturn400() throws Exception {
-        DeliveryNoteRequest request = new DeliveryNoteRequest(null, null, null, null, null, null, null, null);
+        DeliveryNoteRequest request = new DeliveryNoteRequest(null, null, null, null, null, null, null);
 
         mockMvc.perform(post("/api/delivery-notes")
                         .with(csrf())

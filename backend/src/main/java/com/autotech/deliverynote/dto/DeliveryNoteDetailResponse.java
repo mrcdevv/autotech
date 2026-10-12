@@ -8,6 +8,7 @@ import java.util.List;
 
 public record DeliveryNoteDetailResponse(
         Long id,
+        Long number,
         Long clientId,
         String clientFullName,
         String clientDni,
@@ -23,7 +24,6 @@ public record DeliveryNoteDetailResponse(
         Long estimateId,
         DeliveryNoteStatus status,
         BigDecimal discountPercentage,
-        BigDecimal taxPercentage,
         BigDecimal total,
         List<DeliveryNoteServiceItemResponse> services,
         List<DeliveryNoteProductResponse> products,

@@ -21,7 +21,6 @@ import com.autotech.deliverynote.model.DeliveryNoteStatus;
 import com.autotech.deliverynote.repository.DeliveryNoteRepository;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.repository.RepairOrderRepository;
-import com.autotech.tax.service.TaxConfigService;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +46,6 @@ public class DeliveryNoteServiceImpl implements DeliveryNoteService {
     private final RepairOrderRepository repairOrderRepository;
     private final EstimateService estimateService;
     private final EmailNotificationService emailNotificationService;
-    private final TaxConfigService taxConfigService;
 
     @Override
     @Transactional(readOnly = true)
@@ -114,16 +112,12 @@ public class DeliveryNoteServiceImpl implements DeliveryNoteService {
             estimateService.getById(request.estimateId());
         }
 
-        BigDecimal taxPercentage = request.taxPercentage() != null
-                ? request.taxPercentage()
-                : taxConfigService.getConfig().getTaxPercentage();
-
         DeliveryNote entity = deliveryNoteMapper.toEntity(request);
         entity.setClient(client);
         entity.setVehicle(vehicle);
         entity.setRepairOrder(repairOrder);
         entity.setStatus(DeliveryNoteStatus.PENDIENTE);
-        entity.setTaxPercentage(taxPercentage);
+        entity.setNumber(deliveryNoteRepository.nextNumber());
 
         if (request.estimateId() != null) {
             com.autotech.estimate.model.Estimate estimateRef = com.autotech.estimate.model.Estimate.builder().build();
@@ -134,7 +128,7 @@ public class DeliveryNoteServiceImpl implements DeliveryNoteService {
         addChildEntities(entity, request);
 
         BigDecimal total = calculateTotal(request.services(), request.products(),
-                request.discountPercentage(), taxPercentage);
+                request.discountPercentage());
         entity.setTotal(total);
 
         DeliveryNote saved = deliveryNoteRepository.save(entity);
@@ -163,7 +157,6 @@ public class DeliveryNoteServiceImpl implements DeliveryNoteService {
                 estimateData.repairOrderId(),
                 estimateId,
                 estimateData.discountPercentage(),
-                estimateData.taxPercentage(),
                 services,
                 products
         );
@@ -193,8 +186,7 @@ public class DeliveryNoteServiceImpl implements DeliveryNoteService {
     @Override
     public BigDecimal calculateTotal(List<DeliveryNoteServiceItemRequest> services,
                                      List<DeliveryNoteProductRequest> products,
-                                     BigDecimal discountPercentage,
-                                     BigDecimal taxPercentage) {
+                                     BigDecimal discountPercentage) {
         BigDecimal servicesTotal = BigDecimal.ZERO;
         if (services != null) {
             for (DeliveryNoteServiceItemRequest svc : services) {
@@ -211,11 +203,7 @@ public class DeliveryNoteServiceImpl implements DeliveryNoteService {
         BigDecimal discount = discountPercentage != null
                 ? subtotal.multiply(discountPercentage).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
-        BigDecimal afterDiscount = subtotal.subtract(discount);
-        BigDecimal tax = taxPercentage != null
-                ? afterDiscount.multiply(taxPercentage).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
-                : BigDecimal.ZERO;
-        return afterDiscount.add(tax);
+        return subtotal.subtract(discount);
     }
 
     @Override

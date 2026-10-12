@@ -35,7 +35,7 @@ class DeliveryNoteMapperTest {
         assertThat(result.estimateId()).isNull();
         assertThat(result.status()).isEqualTo(DeliveryNoteStatus.PENDIENTE);
         assertThat(result.discountPercentage()).isEqualByComparingTo(BigDecimal.valueOf(10));
-        assertThat(result.taxPercentage()).isEqualByComparingTo(BigDecimal.valueOf(21));
+        assertThat(result.number()).isEqualTo(1L);
         assertThat(result.total()).isEqualByComparingTo(BigDecimal.valueOf(500));
     }
 
@@ -109,14 +109,13 @@ class DeliveryNoteMapperTest {
     @Test
     void givenDeliveryNoteRequest_whenToEntity_thenIgnoresChildCollections() {
         DeliveryNoteRequest request = new DeliveryNoteRequest(
-                10L, 20L, null, null, BigDecimal.valueOf(5), BigDecimal.valueOf(21),
+                10L, 20L, null, null, BigDecimal.valueOf(5),
                 null, null);
 
         DeliveryNote result = mapper.toEntity(request);
 
         assertThat(result).isNotNull();
         assertThat(result.getDiscountPercentage()).isEqualByComparingTo(BigDecimal.valueOf(5));
-        assertThat(result.getTaxPercentage()).isEqualByComparingTo(BigDecimal.valueOf(21));
         assertThat(result.getServices()).isEmpty();
         assertThat(result.getProducts()).isEmpty();
         assertThat(result.getClient()).isNull();
@@ -166,7 +165,7 @@ class DeliveryNoteMapperTest {
                 .vehicle(vehicle)
                 .status(DeliveryNoteStatus.PENDIENTE)
                 .discountPercentage(BigDecimal.valueOf(10))
-                .taxPercentage(BigDecimal.valueOf(21))
+                .number(1L)
                 .total(BigDecimal.valueOf(500))
                 .build();
         deliveryNote.setId(1L);

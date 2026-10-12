@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 
 public record DeliveryNoteResponse(
         Long id,
+        Long number,
         Long clientId,
         String clientFullName,
         Long vehicleId,
@@ -16,7 +17,6 @@ public record DeliveryNoteResponse(
         Long estimateId,
         DeliveryNoteStatus status,
         BigDecimal discountPercentage,
-        BigDecimal taxPercentage,
         BigDecimal total,
         LocalDateTime createdAt,
         LocalDateTime updatedAt

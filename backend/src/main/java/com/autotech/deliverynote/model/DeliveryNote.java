@@ -55,9 +55,8 @@ public class DeliveryNote extends BaseEntity {
     @Builder.Default
     private BigDecimal discountPercentage = BigDecimal.ZERO;
 
-    @Column(name = "tax_percentage", nullable = false, precision = 5, scale = 2)
-    @Builder.Default
-    private BigDecimal taxPercentage = BigDecimal.ZERO;
+    @Column(name = "number", nullable = false, unique = true)
+    private Long number;
 
     @Column(name = "total", precision = 12, scale = 2)
     private BigDecimal total;

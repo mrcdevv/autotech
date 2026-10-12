@@ -132,4 +132,7 @@ public interface DeliveryNoteRepository extends JpaRepository<DeliveryNote, Long
     List<Object[]> sumServiceRevenue(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end);
+
+    @Query(value = "SELECT nextval('delivery_note_number_seq')", nativeQuery = true)
+    Long nextNumber();
 }

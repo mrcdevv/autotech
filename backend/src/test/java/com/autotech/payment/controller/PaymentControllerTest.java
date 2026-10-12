@@ -65,9 +65,9 @@ class PaymentControllerTest {
 
     private final PaymentSummaryResponse sampleSummary = new PaymentSummaryResponse(
             BigDecimal.valueOf(1000), BigDecimal.valueOf(200),
-            new BigDecimal("226.80"), BigDecimal.valueOf(120),
-            new BigDecimal("1306.80"), BigDecimal.valueOf(500),
-            new BigDecimal("806.80"));
+            BigDecimal.valueOf(120),
+            new BigDecimal("1080.00"), BigDecimal.valueOf(500),
+            new BigDecimal("580.00"));
 
     @Test
     void givenPaymentsExist_whenGetByDeliveryNote_thenReturn200() throws Exception {

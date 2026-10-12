@@ -98,7 +98,7 @@ public class DeliveryNotePdfServiceImpl implements DeliveryNotePdfService {
 
         PdfPCell right = borderlessCell();
         right.addElement(rightAligned("REMITO", FONT_DOC_TITLE));
-        String number = deliveryNote.id() != null ? String.format("%08d", deliveryNote.id()) : "PROVISORIA";
+        String number = deliveryNote.number() != null ? String.format("%08d", deliveryNote.number()) : "PROVISORIA";
         right.addElement(rightAligned("Nº: " + number, FONT_NORMAL));
         String date = deliveryNote.createdAt() != null ? deliveryNote.createdAt().format(DATE_FMT) : "—";
         right.addElement(rightAligned("Fecha: " + date, FONT_NORMAL));
@@ -166,11 +166,8 @@ public class DeliveryNotePdfServiceImpl implements DeliveryNotePdfService {
         BigDecimal productsSubtotal = sumProducts(deliveryNote.products());
         BigDecimal subtotal = servicesSubtotal.add(productsSubtotal);
         BigDecimal discountPct = defaultZero(deliveryNote.discountPercentage());
-        BigDecimal taxPct = defaultZero(deliveryNote.taxPercentage());
         BigDecimal discount = applyPercent(subtotal, discountPct);
-        BigDecimal afterDiscount = subtotal.subtract(discount);
-        BigDecimal tax = applyPercent(afterDiscount, taxPct);
-        BigDecimal total = afterDiscount.add(tax);
+        BigDecimal total = subtotal.subtract(discount);
 
         PdfPTable table = new PdfPTable(new float[]{3f, 1.6f});
         table.setWidthPercentage(48);
@@ -181,9 +178,6 @@ public class DeliveryNotePdfServiceImpl implements DeliveryNotePdfService {
         addTotalRow(table, "Subtotal", money(subtotal), false);
         if (discountPct.compareTo(BigDecimal.ZERO) > 0) {
             addTotalRow(table, "Descuento (" + stripZeros(discountPct) + "%)", "- " + money(discount), false);
-        }
-        if (taxPct.compareTo(BigDecimal.ZERO) > 0) {
-            addTotalRow(table, "Impuesto (" + stripZeros(taxPct) + "%)", "+ " + money(tax), false);
         }
         addTotalRow(table, "TOTAL", money(total), true);
         return table;

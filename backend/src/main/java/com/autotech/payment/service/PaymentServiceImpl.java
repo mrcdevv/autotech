@@ -86,13 +86,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .multiply(deliveryNote.discountPercentage())
                 .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
 
-        BigDecimal afterDiscount = subtotal.subtract(discountAmount);
-
-        BigDecimal taxAmount = afterDiscount
-                .multiply(deliveryNote.taxPercentage())
-                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-
-        BigDecimal total = afterDiscount.add(taxAmount);
+        BigDecimal total = subtotal.subtract(discountAmount);
 
         BigDecimal totalPaid = paymentRepository.sumAmountByDeliveryNoteId(deliveryNoteId);
 
@@ -101,7 +95,6 @@ public class PaymentServiceImpl implements PaymentService {
         return new PaymentSummaryResponse(
                 totalServices,
                 totalProducts,
-                taxAmount,
                 discountAmount,
                 total,
                 totalPaid,

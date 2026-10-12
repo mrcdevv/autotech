@@ -129,14 +129,13 @@ class PaymentServiceImplTest {
 
         PaymentSummaryResponse result = paymentService.getSummary(10L);
 
-        // services=1000, products=200, subtotal=1200, discount(10%)=120, after=1080, tax(21%)=226.80, total=1306.80
+        // services=1000, products=200, subtotal=1200, discount(10%)=120, total=1080
         assertThat(result.totalServices()).isEqualByComparingTo(BigDecimal.valueOf(1000));
         assertThat(result.totalProducts()).isEqualByComparingTo(BigDecimal.valueOf(200));
         assertThat(result.discountAmount()).isEqualByComparingTo(BigDecimal.valueOf(120));
-        assertThat(result.taxAmount()).isEqualByComparingTo(new BigDecimal("226.80"));
-        assertThat(result.total()).isEqualByComparingTo(new BigDecimal("1306.80"));
+        assertThat(result.total()).isEqualByComparingTo(new BigDecimal("1080.00"));
         assertThat(result.totalPaid()).isEqualByComparingTo(BigDecimal.valueOf(500));
-        assertThat(result.remaining()).isEqualByComparingTo(new BigDecimal("806.80"));
+        assertThat(result.remaining()).isEqualByComparingTo(new BigDecimal("580.00"));
     }
 
     @Test
@@ -154,7 +153,7 @@ class PaymentServiceImplTest {
     void givenFullyPaid_whenGetSummary_thenRemainingIsZero() {
         DeliveryNoteDetailResponse deliveryNote = buildDeliveryNoteDetailResponse();
         when(deliveryNoteService.getById(10L)).thenReturn(deliveryNote);
-        when(paymentRepository.sumAmountByDeliveryNoteId(10L)).thenReturn(new BigDecimal("1306.80"));
+        when(paymentRepository.sumAmountByDeliveryNoteId(10L)).thenReturn(new BigDecimal("1080.00"));
 
         PaymentSummaryResponse result = paymentService.getSummary(10L);
 
@@ -216,7 +215,7 @@ class PaymentServiceImplTest {
                 LocalDate.now(), BigDecimal.valueOf(100), null, PaymentType.EFECTIVO, null, null);
         DeliveryNoteDetailResponse deliveryNote = buildDeliveryNoteDetailResponse();
         when(deliveryNoteService.getById(10L)).thenReturn(deliveryNote);
-        when(paymentRepository.sumAmountByDeliveryNoteId(10L)).thenReturn(new BigDecimal("1306.80"));
+        when(paymentRepository.sumAmountByDeliveryNoteId(10L)).thenReturn(new BigDecimal("1080.00"));
 
         assertThatThrownBy(() -> paymentService.create(10L, request))
                 .isInstanceOf(BusinessException.class)
@@ -241,12 +240,12 @@ class PaymentServiceImplTest {
     @Test
     void givenPaymentFullyPaysDeliveryNote_whenCreate_thenUpdatesStatusToPagada() {
         PaymentRequest request = new PaymentRequest(
-                LocalDate.now(), new BigDecimal("1306.80"), null, PaymentType.EFECTIVO, null, null);
+                LocalDate.now(), new BigDecimal("1080.00"), null, PaymentType.EFECTIVO, null, null);
         DeliveryNoteDetailResponse deliveryNote = buildDeliveryNoteDetailResponse();
         when(deliveryNoteService.getById(10L)).thenReturn(deliveryNote);
         when(paymentRepository.sumAmountByDeliveryNoteId(10L))
                 .thenReturn(BigDecimal.ZERO)
-                .thenReturn(new BigDecimal("1306.80"));
+                .thenReturn(new BigDecimal("1080.00"));
 
         DeliveryNote deliveryNoteEntity = buildDeliveryNoteEntity(10L);
         when(deliveryNoteRepository.findById(10L)).thenReturn(Optional.of(deliveryNoteEntity));
@@ -433,8 +432,7 @@ class PaymentServiceImplTest {
         DeliveryNote deliveryNote = DeliveryNote.builder()
                 .status(DeliveryNoteStatus.PENDIENTE)
                 .discountPercentage(BigDecimal.valueOf(10))
-                .taxPercentage(BigDecimal.valueOf(21))
-                .total(new BigDecimal("1306.80"))
+                .total(new BigDecimal("1080.00"))
                 .build();
         deliveryNote.setId(id);
         return deliveryNote;
@@ -449,10 +447,10 @@ class PaymentServiceImplTest {
 
     private DeliveryNoteDetailResponse buildDeliveryNoteDetailResponse() {
         return new DeliveryNoteDetailResponse(
-                10L, 1L, "Juan Perez", "12345678", "1234567890", null, "PERSONAL",
+                10L, 1L, 1L, "Juan Perez", "12345678", "1234567890", null, "PERSONAL",
                 2L, "ABC123", null, "Corolla", 2020, null, null,
-                DeliveryNoteStatus.PENDIENTE, BigDecimal.valueOf(10), BigDecimal.valueOf(21),
-                new BigDecimal("1306.80"),
+                DeliveryNoteStatus.PENDIENTE, BigDecimal.valueOf(10),
+                new BigDecimal("1080.00"),
                 List.of(new DeliveryNoteServiceItemResponse(1L, "Service A", BigDecimal.valueOf(1000))),
                 List.of(new DeliveryNoteProductResponse(1L, "Product A", 2, BigDecimal.valueOf(100), BigDecimal.valueOf(200))),
                 LocalDateTime.now(), LocalDateTime.now());
