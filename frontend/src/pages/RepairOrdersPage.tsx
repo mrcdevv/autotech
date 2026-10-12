@@ -19,6 +19,7 @@ import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
 import { employeesApi } from "@/api/employees";
 import { tagsApi } from "@/api/tags";
+import { BoardTruncationNotice } from "@/features/repair-orders/components/BoardTruncationNotice";
 import { KanbanBoard } from "@/features/repair-orders/components/KanbanBoard";
 import { RepairOrderHistory } from "@/features/repair-orders/components/RepairOrderHistory";
 import { useRepairOrders } from "@/features/repair-orders/hooks/useRepairOrders";
@@ -107,6 +108,12 @@ export default function RepairOrdersPage() {
     ? [...active.orders, ...recentClosed.orders]
     : active.orders;
   const boardLoading = active.loading || recentClosed.loading;
+  // The board caps each query at BOARD_LIMIT; totalElements says how many the
+  // filters actually match. When the total exceeds what was loaded, the board
+  // is silently truncated, so we tell the user instead of hiding it.
+  const boardTotal = showFinished
+    ? active.totalElements + recentClosed.totalElements
+    : active.totalElements;
 
   const refetchBoard = () => {
     active.refetch();
@@ -225,12 +232,15 @@ export default function RepairOrdersPage() {
       </Box>
 
       {tab === "kanban" ? (
-        <KanbanBoard
-          orders={boardOrders}
-          loading={boardLoading}
-          onUpdateStatus={updateBoardStatus}
-          onRefetch={refetchBoard}
-        />
+        <>
+          <BoardTruncationNotice shown={boardOrders.length} total={boardTotal} />
+          <KanbanBoard
+            orders={boardOrders}
+            loading={boardLoading}
+            onUpdateStatus={updateBoardStatus}
+            onRefetch={refetchBoard}
+          />
+        </>
       ) : (
         <RepairOrderHistory
           rows={history.orders}
