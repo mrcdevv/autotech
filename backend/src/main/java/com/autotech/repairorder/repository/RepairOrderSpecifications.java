@@ -61,7 +61,11 @@ public final class RepairOrderSpecifications {
                         cb.like(cb.lower(clientJoin.get("lastName")), like),
                         cb.like(cb.lower(vehicleJoin.get("plate")), like),
                         cb.like(cb.lower(brandJoin.get("name")), like),
-                        cb.like(cb.lower(vehicleJoin.get("model")), like)
+                        cb.like(cb.lower(vehicleJoin.get("model")), like),
+                        cb.like(cb.lower(clientJoin.get("phone")), like),
+                        cb.like(cb.lower(clientJoin.get("dni")), like),
+                        cb.like(cb.lower(vehicleJoin.get("chassisNumber")), like),
+                        cb.like(cb.lower(vehicleJoin.get("engineNumber")), like)
                 ));
             }
 

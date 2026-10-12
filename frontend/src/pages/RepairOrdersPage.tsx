@@ -128,7 +128,7 @@ export default function RepairOrdersPage() {
         filters={
           <>
             <AppSearchField
-              placeholder="Buscar por título, nombre, patente, marca, modelo..."
+              placeholder="Buscar por título, nombre, patente, marca, modelo, teléfono, DNI, chasis o motor..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
