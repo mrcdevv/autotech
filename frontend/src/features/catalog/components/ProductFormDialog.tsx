@@ -146,7 +146,7 @@ export function ProductFormDialog({ open, onClose, onSave, initialData }: Produc
               error={!!errors.unitPrice}
               helperText={errors.unitPrice}
               required
-              slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
+              slotProps={{ htmlInput: { min: 0, step: "0.01", style: { textAlign: "right" } } }}
             />
           </Grid>
         </Grid>

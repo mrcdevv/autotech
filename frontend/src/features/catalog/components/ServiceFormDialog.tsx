@@ -124,7 +124,7 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
               helperText={errors.price}
               required
               slotProps={{
-                htmlInput: { min: 0, step: "0.01" },
+                htmlInput: { min: 0, step: "0.01", style: { textAlign: "right" } },
                 input: {
                   startAdornment: <InputAdornment position="start">$</InputAdornment>,
                 },

@@ -64,4 +64,20 @@ describe("ProductsGrid", () => {
 
     expect(screen.getByText("Productos")).toBeInTheDocument();
   });
+
+  it("given a unit price input, when rendered, then the input is right-aligned but its value stays the raw editable number (decision D5)", () => {
+    render(
+      <ProductsGrid
+        products={[{ productName: "Align check", quantity: 2, unitPrice: 1234.5 }]}
+        onChange={vi.fn()}
+      />,
+    );
+
+    const priceInput = screen.getByLabelText("Precio unitario");
+    // Positive assertion: the inline style is reflected in jsdom's getComputedStyle.
+    expect(getComputedStyle(priceInput).textAlign).toBe("right");
+    // D5 guard: the value must be the raw number the user is typing, never a
+    // currency string like "$ 1.234,50".
+    expect(priceInput).toHaveValue(1234.5);
+  });
 });

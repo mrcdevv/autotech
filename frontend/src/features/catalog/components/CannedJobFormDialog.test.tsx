@@ -3,18 +3,40 @@ import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect } from "vitest";
 
 import { CannedJobFormDialog } from "./CannedJobFormDialog";
+import { formatCurrency } from "@/utils/formatCurrency";
 
 import type { CannedJobDetailResponse } from "@/types/catalog";
 
+// formatCurrency emits a non-breaking space (U+00A0) after the "$" symbol, which the
+// testing-library normalizer collapses to a plain space in the DOM text. Normalize the
+// expectation the same way so exact string matching works.
+const money = (value: number) => formatCurrency(value).replace(/\u00A0/g, " ");
+
 vi.mock("@/api/catalogServices", () => ({
   catalogServicesApi: {
-    search: vi.fn().mockResolvedValue({ data: { data: { content: [] } } }),
+    search: vi.fn().mockResolvedValue({
+      data: {
+        data: {
+          content: [
+            { id: 1, name: "Oil Change", description: null, price: 1234.5, createdAt: "", updatedAt: "" },
+          ],
+        },
+      },
+    }),
   },
 }));
 
 vi.mock("@/api/products", () => ({
   productsApi: {
-    search: vi.fn().mockResolvedValue({ data: { data: { content: [] } } }),
+    search: vi.fn().mockResolvedValue({
+      data: {
+        data: {
+          content: [
+            { id: 2, name: "Oil Filter", description: null, quantity: 7, unitPrice: 1234.5, createdAt: "", updatedAt: "" },
+          ],
+        },
+      },
+    }),
   },
 }));
 
@@ -107,5 +129,58 @@ describe("CannedJobFormDialog", () => {
     await user.click(screen.getByRole("button", { name: /cancelar/i }));
 
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("given a service price input, when a price is typed, then the input is right-aligned but its value stays the raw editable number (decision D5)", async () => {
+    const user = userEvent.setup();
+    render(<CannedJobFormDialog {...defaultProps} />);
+
+    await user.click(screen.getByRole("button", { name: /agregar servicio/i }));
+    const priceInput = screen.getByLabelText("Precio");
+    await user.type(priceInput, "1234.5");
+
+    // Positive assertion: the inline style is reflected in jsdom's getComputedStyle.
+    expect(getComputedStyle(priceInput).textAlign).toBe("right");
+    // D5 guard: the value must be the raw number the user is typing, never a
+    // currency string like "$ 1.234,50".
+    expect(priceInput).toHaveValue(1234.5);
+  });
+
+  it("given a product unit price input, when a price is typed, then the input is right-aligned but its value stays the raw editable number (decision D5)", async () => {
+    const user = userEvent.setup();
+    render(<CannedJobFormDialog {...defaultProps} />);
+
+    await user.click(screen.getByRole("button", { name: /agregar producto/i }));
+    const priceInput = screen.getByLabelText("Precio unitario");
+    await user.type(priceInput, "1234.5");
+
+    expect(getComputedStyle(priceInput).textAlign).toBe("right");
+    expect(priceInput).toHaveValue(1234.5);
+  });
+
+  it("given catalog services, when the service dropdown opens, then the option price shows the shared 2-decimal format with a single symbol", async () => {
+    const user = userEvent.setup();
+    render(<CannedJobFormDialog {...defaultProps} />);
+
+    await user.click(screen.getByRole("button", { name: /agregar servicio/i }));
+    // Typing opens the freeSolo popup in jsdom (a bare click does not) and the
+    // debounced search populates the options.
+    await user.type(screen.getByLabelText("Nombre del servicio"), "Oil");
+
+    // 1234.5 must render as the shared "$ 1.234,50" (exactly 2 decimals, one "$"),
+    // not the old inline "$1234.50".
+    expect(await screen.findByText(money(1234.5))).toBeInTheDocument();
+  });
+
+  it("given catalog products, when the product dropdown opens, then the option price shows the shared 2-decimal format with a single symbol", async () => {
+    const user = userEvent.setup();
+    render(<CannedJobFormDialog {...defaultProps} />);
+
+    await user.click(screen.getByRole("button", { name: /agregar producto/i }));
+    await user.type(screen.getByLabelText("Nombre del producto"), "Oil");
+
+    expect(
+      await screen.findByText(`${money(1234.5)} — Stock: 7`),
+    ).toBeInTheDocument();
   });
 });

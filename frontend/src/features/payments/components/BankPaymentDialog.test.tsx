@@ -3,11 +3,17 @@ import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
 import { BankPaymentDialog } from "./BankPaymentDialog";
+import { formatCurrency } from "@/utils/formatCurrency";
 
 import type {
   PaymentResponse,
   BankAccountResponse,
 } from "@/types/payment";
+
+// formatCurrency emits a non-breaking space (U+00A0) after the "$" symbol, which the
+// testing-library normalizer collapses to a plain space in the DOM text. Normalize the
+// expectation the same way so exact string matching works.
+const money = (value: number) => formatCurrency(value).replace(/\u00A0/g, " ");
 
 const mockCreatePayment = vi.fn();
 const mockUpdatePayment = vi.fn();
@@ -106,14 +112,25 @@ describe("BankPaymentDialog", () => {
   it("given open dialog, when rendered, then shows remaining value", () => {
     render(<BankPaymentDialog {...defaultProps} />);
 
-    expect(screen.getByDisplayValue("$800.00")).toBeInTheDocument();
+    expect(screen.getByDisplayValue(money(800))).toBeInTheDocument();
+  });
+
+  it("given open dialog, when rendered, then shows the remaining balance in the shared 2-decimal format, right-aligned", () => {
+    render(<BankPaymentDialog {...defaultProps} remaining={1234.5} />);
+
+    const remainingInput = screen.getByDisplayValue(money(1234.5));
+    // Exact raw-value match (no normalization): proves exactly 2 decimals and a single
+    // "$" symbol, with the U+00A0 the helper emits.
+    expect(remainingInput).toHaveValue(formatCurrency(1234.5));
+    // Positive assertion: the inline style is reflected in jsdom's getComputedStyle.
+    expect(getComputedStyle(remainingInput).textAlign).toBe("right");
   });
 
   it("given remaining field, when clicked, then fills amount", async () => {
     const user = userEvent.setup();
     render(<BankPaymentDialog {...defaultProps} />);
 
-    await user.click(screen.getByDisplayValue("$800.00"));
+    await user.click(screen.getByDisplayValue(money(800)));
 
     const amountInput = screen.getByLabelText("Monto a pagar");
     expect(amountInput).toHaveValue(800);
@@ -136,7 +153,7 @@ describe("BankPaymentDialog", () => {
     const user = userEvent.setup();
     render(<BankPaymentDialog {...defaultProps} />);
 
-    await user.click(screen.getByDisplayValue("$800.00"));
+    await user.click(screen.getByDisplayValue(money(800)));
 
     expect(screen.getByRole("button", { name: "Aceptar" })).toBeDisabled();
   });
@@ -145,7 +162,7 @@ describe("BankPaymentDialog", () => {
     const user = userEvent.setup();
     render(<BankPaymentDialog {...defaultProps} />);
 
-    await user.click(screen.getByDisplayValue("$800.00"));
+    await user.click(screen.getByDisplayValue(money(800)));
 
     const autocompleteInput = screen.getByLabelText("Cuenta bancaria *");
     await user.click(autocompleteInput);
@@ -165,7 +182,7 @@ describe("BankPaymentDialog", () => {
     mockCreatePayment.mockResolvedValue(undefined);
     render(<BankPaymentDialog {...defaultProps} />);
 
-    await user.click(screen.getByDisplayValue("$800.00"));
+    await user.click(screen.getByDisplayValue(money(800)));
 
     const autocompleteInput = screen.getByLabelText("Cuenta bancaria *");
     await user.click(autocompleteInput);

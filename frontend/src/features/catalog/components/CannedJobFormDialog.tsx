@@ -15,6 +15,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 
 import { AppDialog } from "@/components/AppDialog";
+import { formatCurrency } from "@/utils/formatCurrency";
 import { catalogServicesApi } from "@/api/catalogServices";
 import { productsApi } from "@/api/products";
 
@@ -254,8 +255,8 @@ export function CannedJobFormDialog({ open, onClose, onSave, initialData }: Cann
                       <Box>
                         <Typography variant="body2">{option.name}</Typography>
                         {option.price != null && (
-                          <Typography variant="caption" color="text.secondary">
-                            ${option.price.toFixed(2)}
+                          <Typography variant="caption" color="text.secondary" sx={{ textAlign: "right" }}>
+                            {formatCurrency(option.price)}
                           </Typography>
                         )}
                       </Box>
@@ -276,7 +277,7 @@ export function CannedJobFormDialog({ open, onClose, onSave, initialData }: Cann
                   }}
                   size="small"
                   sx={{ flex: 1 }}
-                  slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
+                  slotProps={{ htmlInput: { min: 0, step: "0.01", style: { textAlign: "right" } } }}
                 />
                 <IconButton onClick={() => handleRemoveService(index)} color="error" size="small">
                   <DeleteIcon />
@@ -334,8 +335,8 @@ export function CannedJobFormDialog({ open, onClose, onSave, initialData }: Cann
                       <Box>
                         <Typography variant="body2">{option.name}</Typography>
                         {option.unitPrice != null && (
-                          <Typography variant="caption" color="text.secondary">
-                            ${option.unitPrice.toFixed(2)} — Stock: {option.quantity}
+                          <Typography variant="caption" color="text.secondary" sx={{ textAlign: "right" }}>
+                            {formatCurrency(option.unitPrice)} — Stock: {option.quantity}
                           </Typography>
                         )}
                       </Box>
@@ -371,7 +372,7 @@ export function CannedJobFormDialog({ open, onClose, onSave, initialData }: Cann
                   }}
                   size="small"
                   sx={{ flex: 1 }}
-                  slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
+                  slotProps={{ htmlInput: { min: 0, step: "0.01", style: { textAlign: "right" } } }}
                 />
                 <IconButton onClick={() => handleRemoveProduct(index)} color="error" size="small">
                   <DeleteIcon />

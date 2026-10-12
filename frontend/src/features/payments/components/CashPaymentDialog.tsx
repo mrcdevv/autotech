@@ -9,6 +9,7 @@ import {
 import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
 
 import { AppDialog } from "@/components/AppDialog";
+import { formatCurrency } from "@/utils/formatCurrency";
 import { usePayments } from "../hooks/usePayments";
 
 import type { PaymentRequest, PaymentResponse } from "@/types/payment";
@@ -115,8 +116,11 @@ export function CashPaymentDialog({
           />
           <TextField
             label="Restante por pagar"
-            value={`$${displayRemaining.toFixed(2)}`}
-            slotProps={{ input: { readOnly: true } }}
+            value={formatCurrency(displayRemaining)}
+            slotProps={{
+              input: { readOnly: true },
+              htmlInput: { style: { textAlign: "right" } },
+            }}
             onClick={handleRemainingClick}
             sx={{ cursor: "pointer" }}
             fullWidth

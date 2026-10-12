@@ -199,7 +199,7 @@ export function ServicesGrid({ services, onChange, readonly = false, showErrors 
                   }}
                   onKeyDown={(e) => blockNonNumeric(e)}
                   slotProps={{
-                    htmlInput: { min: 0, step: "0.01" },
+                    htmlInput: { min: 0, step: "0.01", style: { textAlign: "right" } },
                   }}
                   disabled={readonly}
                   size="small"
