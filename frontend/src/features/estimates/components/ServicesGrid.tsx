@@ -6,27 +6,17 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import BuildIcon from "@mui/icons-material/Build";
 
 import { catalogServicesApi } from "@/api/catalogServices";
+import { MoneyInput } from "@/components/MoneyInput";
+import { formatCurrency } from "@/utils/formatCurrency";
 
 import type { EstimateServiceItemRequest } from "@/types/estimate";
 import type { CatalogServiceResponse } from "@/types/catalog";
-
-const allowedDecimalKeys = new Set(["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight", "Home", "End"]);
-function blockNonNumeric(e: React.KeyboardEvent, allowDecimal = true) {
-  if (allowedDecimalKeys.has(e.key) || e.ctrlKey || e.metaKey) return;
-  if (/^[0-9]$/.test(e.key)) return;
-  if (allowDecimal && (e.key === "." || e.key === ",")) return;
-  e.preventDefault();
-}
 
 interface ServicesGridProps {
   services: EstimateServiceItemRequest[];
   onChange: (services: EstimateServiceItemRequest[]) => void;
   readonly?: boolean;
   showErrors?: boolean;
-}
-
-function formatCurrency(value: number): string {
-  return value.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 export function ServicesGrid({ services, onChange, readonly = false, showErrors = false }: ServicesGridProps) {
@@ -191,24 +181,18 @@ export function ServicesGrid({ services, onChange, readonly = false, showErrors 
                   disabled={readonly}
                   sx={{ flex: 2 }}
                 />
-                <TextField
-                  type="number"
-                  label="Precio"
-                  value={svc.price === 0 ? "" : svc.price}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    updateService(index, "price", val === "" ? 0 : Number(val));
-                  }}
-                  onKeyDown={(e) => blockNonNumeric(e)}
-                  slotProps={{
-                    htmlInput: { min: 0, step: "0.01" },
-                  }}
-                  disabled={readonly}
-                  size="small"
-                  sx={{ flex: 1 }}
-                  error={showErrors && svc.price < 0}
-                  helperText={showErrors && svc.price < 0 ? "No puede ser negativo" : undefined}
-                />
+                <Box sx={{ flex: 1, display: "flex" }}>
+                  <MoneyInput
+                    label="Precio"
+                    value={svc.price}
+                    onChange={(v) => updateService(index, "price", v ?? 0)}
+                    disabled={readonly}
+                    size="small"
+                    fullWidth
+                    error={showErrors && svc.price < 0}
+                    helperText={showErrors && svc.price < 0 ? "No puede ser negativo" : undefined}
+                  />
+                </Box>
                 {!readonly && (
                   <IconButton onClick={() => removeService(index)} color="error" size="small" sx={{ "&:hover": { bgcolor: "error.light", color: "white" } }}>
                     <DeleteIcon fontSize="small" />
@@ -226,7 +210,6 @@ export function ServicesGrid({ services, onChange, readonly = false, showErrors 
             px: 3,
             py: 1.5,
             display: "flex",
-            justifyContent: "flex-end",
             alignItems: "center",
             borderTop: 1,
             borderColor: "divider",
@@ -236,8 +219,8 @@ export function ServicesGrid({ services, onChange, readonly = false, showErrors 
           <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
             Subtotal servicios:
           </Typography>
-          <Typography variant="subtitle2" sx={{ fontSize: "0.9rem" }}>
-            $ {formatCurrency(servicesSubtotal)}
+          <Typography variant="subtitle2" sx={{ flex: 1, textAlign: "right", fontSize: "0.9rem" }}>
+            {formatCurrency(servicesSubtotal)}
           </Typography>
         </Box>
       )}
