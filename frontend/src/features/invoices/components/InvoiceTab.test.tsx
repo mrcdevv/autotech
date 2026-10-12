@@ -127,4 +127,20 @@ describe("InvoiceTab estimate summary card amounts", () => {
       expectRightAlignedInBlock(element);
     }
   });
+
+  it("given a pending estimate, when rendered, then the Total amount's aligned block actually spans the row's available space", async () => {
+    render(<InvoiceTab repairOrderId={42} />);
+
+    const total = await screen.findByText(money(2000.123));
+    expectRightAlignedInBlock(total);
+    // text-align only has a visual effect when the aligned block is wider than its
+    // content. The amount's <p> fills its parent Box exactly, and that Box is a
+    // content-sized flex item of the row Stack, so the alignment is decorative unless
+    // the Box grows into the Stack's leftover space. Decision D13: assert the positive
+    // inline flexGrow (jsdom reflects inline styles) instead of a negative rule check.
+    const box = total.parentElement;
+    expect(box).not.toBeNull();
+    expect(box!.tagName).toBe("DIV");
+    expect(getComputedStyle(box!).flexGrow).toBe("1");
+  });
 });

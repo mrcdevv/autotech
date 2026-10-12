@@ -94,6 +94,16 @@ describe("CashPaymentDialog", () => {
     expect(getComputedStyle(remainingInput).textAlign).toBe("right");
   });
 
+  it("given open dialog, when rendered, then the editable amount input is right-aligned but not currency-formatted", () => {
+    render(<CashPaymentDialog {...defaultProps} />);
+
+    const amountInput = screen.getByLabelText("Monto a pagar");
+    // Positive inline-style assertion: jsdom reflects inline styles in getComputedStyle.
+    expect(getComputedStyle(amountInput).textAlign).toBe("right");
+    // Decision D5: the editable amount stays a raw number, never currency-formatted.
+    expect(amountInput).toHaveValue(0);
+  });
+
   it("given remaining field, when clicked, then fills amount with remaining", async () => {
     const user = userEvent.setup();
     render(<CashPaymentDialog {...defaultProps} />);

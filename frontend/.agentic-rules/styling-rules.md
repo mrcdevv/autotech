@@ -36,9 +36,12 @@
 2. Exactly 2 decimals for every displayed amount. `formatCurrencyWhole` is permitted ONLY
    for chart axes and tooltips, where cents hurt readability.
 3. Right alignment must be explicit (`textAlign: "right"`) and must live on a BLOCK-level
-   element: a `Typography` (renders `<p>`) or a flex row. NEVER put `textAlign` on
-   `MonoText` — it renders an inline `<span>`, where `text-align` does nothing, and the
-   bug is invisible in tests. If a label and an amount share one block, restructure into
+   element: a `Typography` (renders `<p>`) or a flex row. A bare
+   `<MonoText sx={{ textAlign: "right" }}>` is a silent no-op: `MonoText` renders an
+   inline `<span>`, where `text-align` does nothing, and the bug is invisible in tests.
+   If you must align inside a `MonoText`, give it a block display as well, exactly as
+   `src/utils/gridColumns.ts` does:
+   `sx={{ display: "block", width: "100%", textAlign: "right" }}`. If a label and an amount share one block, restructure into
    a flex row (`Box` with `display: "flex"` and `justifyContent: "space-between"`) so only
    the amount carries the alignment.
 4. Editable price inputs are right-aligned but never currency-formatted while the user is

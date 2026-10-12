@@ -260,7 +260,7 @@ function EstimateSummaryCard({ estimate }: { estimate: EstimateDetailResponse })
             {productCount} ítem{productCount !== 1 ? "s" : ""}
           </Typography>
         </Box>
-        <Box>
+        <Box sx={{ flexGrow: 1 }}>
           <Typography variant="caption" color="text.secondary">
             Total
           </Typography>

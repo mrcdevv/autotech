@@ -131,7 +131,7 @@ export function CashPaymentDialog({
             value={amount}
             onChange={(e) => setAmount(Number(e.target.value))}
             slotProps={{
-              htmlInput: { min: 0.01, max: displayRemaining, step: 0.01 },
+              htmlInput: { min: 0.01, max: displayRemaining, step: 0.01, style: { textAlign: "right" } },
             }}
             fullWidth
           />

@@ -47,7 +47,18 @@ export function MonthlyBillingChart({ data, from, to }: MonthlyBillingChartProps
             tickLabelStyle: AXIS_TICK_LABEL,
           },
         ]}
-        yAxis={[{ disableLine: true, disableTicks: true, tickLabelStyle: AXIS_TICK_LABEL }]}
+        yAxis={[
+          {
+            disableLine: true,
+            disableTicks: true,
+            tickLabelStyle: AXIS_TICK_LABEL,
+            // Whole numbers on purpose (decision D2): the series valueFormatter feeds
+            // tooltips/legend only; tick labels need the axis-level formatter.
+            // null/undefined stay empty.
+            valueFormatter: (value: number | null | undefined) =>
+              value == null ? "" : formatCurrencyWhole(value),
+          },
+        ]}
         series={[
           {
             data: values,
