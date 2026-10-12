@@ -89,9 +89,9 @@ public class EstimateMapper {
                 .build();
     }
 
-    public EstimateInvoiceDataResponse toInvoiceDataResponse(Estimate entity) {
+    public EstimateDeliveryNoteDataResponse toDeliveryNoteDataResponse(Estimate entity) {
         if (entity == null) return null;
-        return new EstimateInvoiceDataResponse(
+        return new EstimateDeliveryNoteDataResponse(
                 entity.getId(),
                 entity.getClient().getId(),
                 entity.getVehicle().getId(),

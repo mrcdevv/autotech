@@ -3,8 +3,8 @@ package com.autotech.payment.dto;
 import com.autotech.bankaccount.model.Bank;
 import com.autotech.bankaccount.model.BankAccount;
 import com.autotech.employee.model.Employee;
-import com.autotech.invoice.model.Invoice;
-import com.autotech.invoice.model.InvoiceStatus;
+import com.autotech.deliverynote.model.DeliveryNote;
+import com.autotech.deliverynote.model.DeliveryNoteStatus;
 import com.autotech.payment.model.Payment;
 import com.autotech.payment.model.PaymentType;
 import org.junit.jupiter.api.Test;
@@ -21,8 +21,8 @@ class PaymentMapperTest {
 
     @Test
     void givenPaymentWithAllFields_whenToResponse_thenMapsAllFieldsIncludingEmployeeFullName() {
-        Invoice invoice = Invoice.builder().status(InvoiceStatus.PENDIENTE).build();
-        invoice.setId(10L);
+        DeliveryNote deliveryNote = DeliveryNote.builder().status(DeliveryNoteStatus.PENDIENTE).build();
+        deliveryNote.setId(10L);
 
         Bank bank = Bank.builder().name("Banco Galicia").build();
         bank.setId(1L);
@@ -34,7 +34,7 @@ class PaymentMapperTest {
         employee.setId(3L);
 
         Payment payment = Payment.builder()
-                .invoice(invoice)
+                .deliveryNote(deliveryNote)
                 .paymentDate(LocalDate.of(2025, 1, 15))
                 .amount(BigDecimal.valueOf(500))
                 .payerName("Test Payer")
@@ -48,7 +48,7 @@ class PaymentMapperTest {
         PaymentResponse result = mapper.toResponse(payment);
 
         assertThat(result.id()).isEqualTo(1L);
-        assertThat(result.invoiceId()).isEqualTo(10L);
+        assertThat(result.deliveryNoteId()).isEqualTo(10L);
         assertThat(result.amount()).isEqualByComparingTo(BigDecimal.valueOf(500));
         assertThat(result.bankAccountId()).isEqualTo(2L);
         assertThat(result.bankAccountAlias()).isEqualTo("Mi Cuenta");
@@ -59,11 +59,11 @@ class PaymentMapperTest {
 
     @Test
     void givenPaymentWithNullBankAccount_whenToResponse_thenMapsNulls() {
-        Invoice invoice = Invoice.builder().status(InvoiceStatus.PENDIENTE).build();
-        invoice.setId(10L);
+        DeliveryNote deliveryNote = DeliveryNote.builder().status(DeliveryNoteStatus.PENDIENTE).build();
+        deliveryNote.setId(10L);
 
         Payment payment = Payment.builder()
-                .invoice(invoice)
+                .deliveryNote(deliveryNote)
                 .paymentDate(LocalDate.now())
                 .amount(BigDecimal.valueOf(100))
                 .paymentType(PaymentType.EFECTIVO)
@@ -91,7 +91,7 @@ class PaymentMapperTest {
         assertThat(result.getPaymentDate()).isEqualTo(LocalDate.of(2025, 1, 15));
         assertThat(result.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(500));
         assertThat(result.getPaymentType()).isEqualTo(PaymentType.EFECTIVO);
-        assertThat(result.getInvoice()).isNull();
+        assertThat(result.getDeliveryNote()).isNull();
         assertThat(result.getBankAccount()).isNull();
         assertThat(result.getRegisteredByEmployee()).isNull();
     }

@@ -3,7 +3,7 @@ package com.autotech.repairorder.controller;
 import com.autotech.common.exception.GlobalExceptionHandler;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.estimate.service.EstimateService;
-import com.autotech.invoice.service.InvoiceService;
+import com.autotech.deliverynote.service.DeliveryNoteService;
 import com.autotech.repairorder.dto.RepairOrderDetailResponse;
 import com.autotech.repairorder.dto.RepairOrderFilter;
 import com.autotech.repairorder.dto.RepairOrderRequest;
@@ -59,7 +59,7 @@ class RepairOrderControllerTest {
     private EstimateService estimateService;
 
     @MockitoBean
-    private InvoiceService invoiceService;
+    private DeliveryNoteService deliveryNoteService;
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;

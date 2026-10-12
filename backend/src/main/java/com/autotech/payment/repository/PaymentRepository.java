@@ -15,11 +15,11 @@ import java.util.Optional;
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     @EntityGraph(attributePaths = {"bankAccount", "bankAccount.bank", "registeredByEmployee"})
-    List<Payment> findByInvoiceIdOrderByPaymentDateDesc(Long invoiceId);
+    List<Payment> findByDeliveryNoteIdOrderByPaymentDateDesc(Long deliveryNoteId);
 
     @EntityGraph(attributePaths = {"bankAccount", "bankAccount.bank", "registeredByEmployee"})
     Optional<Payment> findWithDetailsById(Long id);
 
-    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.invoice.id = :invoiceId")
-    BigDecimal sumAmountByInvoiceId(@Param("invoiceId") Long invoiceId);
+    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.deliveryNote.id = :deliveryNoteId")
+    BigDecimal sumAmountByDeliveryNoteId(@Param("deliveryNoteId") Long deliveryNoteId);
 }

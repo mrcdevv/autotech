@@ -5,7 +5,7 @@ import com.autotech.client.repository.ClientRepository;
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.estimate.dto.EstimateDetailResponse;
-import com.autotech.estimate.dto.EstimateInvoiceDataResponse;
+import com.autotech.estimate.dto.EstimateDeliveryNoteDataResponse;
 import com.autotech.estimate.dto.EstimateMapper;
 import com.autotech.estimate.dto.EstimateProductRequest;
 import com.autotech.estimate.dto.EstimateRequest;
@@ -270,13 +270,13 @@ public class EstimateServiceImpl implements EstimateService {
 
     @Override
     @Transactional(readOnly = true)
-    public EstimateInvoiceDataResponse convertToInvoiceData(Long estimateId) {
+    public EstimateDeliveryNoteDataResponse convertToDeliveryNoteData(Long estimateId) {
         Estimate entity = estimateRepository.findWithDetailsById(estimateId)
                 .orElseThrow(() -> new ResourceNotFoundException("Estimate", estimateId));
         if (entity.getStatus() != EstimateStatus.ACEPTADO) {
-            throw new BusinessException("Solo se pueden facturar presupuestos en estado ACEPTADO");
+            throw new BusinessException("Solo se pueden emitir remitos desde presupuestos en estado ACEPTADO");
         }
-        return estimateMapper.toInvoiceDataResponse(entity);
+        return estimateMapper.toDeliveryNoteDataResponse(entity);
     }
 
     @Override

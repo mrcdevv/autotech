@@ -6,7 +6,7 @@ import com.autotech.client.repository.ClientRepository;
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.estimate.dto.EstimateDetailResponse;
-import com.autotech.estimate.dto.EstimateInvoiceDataResponse;
+import com.autotech.estimate.dto.EstimateDeliveryNoteDataResponse;
 import com.autotech.estimate.dto.EstimateMapper;
 import com.autotech.estimate.dto.EstimateProductRequest;
 import com.autotech.estimate.dto.EstimateRequest;
@@ -549,33 +549,33 @@ class EstimateServiceImplTest {
     }
 
     @Test
-    void givenAceptadoEstimate_whenConvertToInvoiceData_thenReturnData() {
+    void givenAceptadoEstimate_whenConvertToDeliveryNoteData_thenReturnData() {
         // Arrange
         Estimate entity = buildEstimate(1L);
         entity.setStatus(EstimateStatus.ACEPTADO);
-        EstimateInvoiceDataResponse invoiceData = new EstimateInvoiceDataResponse(
+        EstimateDeliveryNoteDataResponse deliveryNoteData = new EstimateDeliveryNoteDataResponse(
                 1L, 1L, 2L, null, Collections.emptyList(), Collections.emptyList(),
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.valueOf(400));
 
         when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(entity));
-        when(estimateMapper.toInvoiceDataResponse(entity)).thenReturn(invoiceData);
+        when(estimateMapper.toDeliveryNoteDataResponse(entity)).thenReturn(deliveryNoteData);
 
         // Act
-        EstimateInvoiceDataResponse result = estimateService.convertToInvoiceData(1L);
+        EstimateDeliveryNoteDataResponse result = estimateService.convertToDeliveryNoteData(1L);
 
         // Assert
         assertThat(result.estimateId()).isEqualTo(1L);
     }
 
     @Test
-    void givenNonAceptadoEstimate_whenConvertToInvoiceData_thenThrowBusinessException() {
+    void givenNonAceptadoEstimate_whenConvertToDeliveryNoteData_thenThrowBusinessException() {
         // Arrange
         Estimate entity = buildEstimate(1L);
         entity.setStatus(EstimateStatus.PENDIENTE);
         when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(entity));
 
         // Act & Assert
-        assertThatThrownBy(() -> estimateService.convertToInvoiceData(1L))
+        assertThatThrownBy(() -> estimateService.convertToDeliveryNoteData(1L))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("ACEPTADO");
     }

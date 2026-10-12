@@ -4,8 +4,8 @@ import com.autotech.common.dto.ApiResponse;
 import com.autotech.estimate.dto.EstimateDetailResponse;
 import com.autotech.estimate.dto.EstimateResponse;
 import com.autotech.estimate.service.EstimateService;
-import com.autotech.invoice.dto.InvoiceDetailResponse;
-import com.autotech.invoice.service.InvoiceService;
+import com.autotech.deliverynote.dto.DeliveryNoteDetailResponse;
+import com.autotech.deliverynote.service.DeliveryNoteService;
 import com.autotech.repairorder.dto.NotesUpdateRequest;
 import com.autotech.repairorder.dto.RepairOrderDetailResponse;
 import com.autotech.repairorder.dto.RepairOrderFilter;
@@ -45,7 +45,7 @@ public class RepairOrderController {
 
     private final RepairOrderService repairOrderService;
     private final EstimateService estimateService;
-    private final InvoiceService invoiceService;
+    private final DeliveryNoteService deliveryNoteService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<RepairOrderResponse>>> search(
@@ -137,8 +137,8 @@ public class RepairOrderController {
         return ResponseEntity.ok(ApiResponse.success(estimateService.getAllByRepairOrderId(id)));
     }
 
-    @GetMapping("/{id}/invoice")
-    public ResponseEntity<ApiResponse<InvoiceDetailResponse>> getInvoiceByRepairOrder(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(invoiceService.getByRepairOrderId(id)));
+    @GetMapping("/{id}/delivery-note")
+    public ResponseEntity<ApiResponse<DeliveryNoteDetailResponse>> getDeliveryNoteByRepairOrder(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(deliveryNoteService.getByRepairOrderId(id)));
     }
 }

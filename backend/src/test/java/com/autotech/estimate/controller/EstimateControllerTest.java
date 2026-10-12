@@ -3,7 +3,7 @@ package com.autotech.estimate.controller;
 import com.autotech.common.exception.GlobalExceptionHandler;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.estimate.dto.EstimateDetailResponse;
-import com.autotech.estimate.dto.EstimateInvoiceDataResponse;
+import com.autotech.estimate.dto.EstimateDeliveryNoteDataResponse;
 import com.autotech.estimate.dto.EstimateRequest;
 import com.autotech.estimate.dto.EstimateResponse;
 import com.autotech.estimate.model.EstimateStatus;
@@ -202,14 +202,14 @@ class EstimateControllerTest {
     }
 
     @Test
-    void givenAceptadoEstimate_whenGetInvoiceData_thenReturn200() throws Exception {
-        EstimateInvoiceDataResponse invoiceData = new EstimateInvoiceDataResponse(
+    void givenAceptadoEstimate_whenGetDeliveryNoteData_thenReturn200() throws Exception {
+        EstimateDeliveryNoteDataResponse deliveryNoteData = new EstimateDeliveryNoteDataResponse(
                 1L, 1L, 2L, null, Collections.emptyList(), Collections.emptyList(),
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.valueOf(400)
         );
-        when(estimateService.convertToInvoiceData(1L)).thenReturn(invoiceData);
+        when(estimateService.convertToDeliveryNoteData(1L)).thenReturn(deliveryNoteData);
 
-        mockMvc.perform(get("/api/estimates/1/invoice-data"))
+        mockMvc.perform(get("/api/estimates/1/delivery-note-data"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.estimateId").value(1));
     }

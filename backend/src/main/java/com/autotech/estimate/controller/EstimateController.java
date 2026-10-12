@@ -2,7 +2,7 @@ package com.autotech.estimate.controller;
 
 import com.autotech.common.dto.ApiResponse;
 import com.autotech.estimate.dto.EstimateDetailResponse;
-import com.autotech.estimate.dto.EstimateInvoiceDataResponse;
+import com.autotech.estimate.dto.EstimateDeliveryNoteDataResponse;
 import com.autotech.estimate.dto.EstimateRequest;
 import com.autotech.estimate.dto.EstimateResponse;
 import com.autotech.estimate.model.EstimateStatus;
@@ -79,8 +79,8 @@ public class EstimateController {
         return ResponseEntity.ok(ApiResponse.success("Presupuesto eliminado", null));
     }
 
-    @GetMapping("/{id}/invoice-data")
-    public ResponseEntity<ApiResponse<EstimateInvoiceDataResponse>> getInvoiceData(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(estimateService.convertToInvoiceData(id)));
+    @GetMapping("/{id}/delivery-note-data")
+    public ResponseEntity<ApiResponse<EstimateDeliveryNoteDataResponse>> getDeliveryNoteData(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(estimateService.convertToDeliveryNoteData(id)));
     }
 }
