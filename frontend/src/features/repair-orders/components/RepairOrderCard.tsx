@@ -57,7 +57,7 @@ export function RepairOrderCard({ order, onUpdateStatus, onRefetch }: RepairOrde
   };
 
   const handleCopyTrackingCode = () => {
-    navigator.clipboard.writeText(String(order.id));
+    navigator.clipboard.writeText(`OT-${order.id}`);
     setAnchorEl(null);
   };
 

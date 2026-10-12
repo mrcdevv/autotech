@@ -184,6 +184,29 @@ describe("RepairOrderCard", () => {
     expect(screen.getByText("Asignar mecánico")).toBeInTheDocument();
   });
 
+  it("given card, when clicking copy tracking code, then writes the OT-<id> identifier to the clipboard", async () => {
+    // userEvent.setup() installs its own navigator.clipboard, so the mock must be
+    // defined after setup to remain visible to the component.
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+    render(
+      <MemoryRouter>
+        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByLabelText("Opciones de la orden"));
+    await user.click(await screen.findByText("Copiar código de seguimiento"));
+
+    expect(writeText).toHaveBeenCalledTimes(1);
+    expect(writeText).toHaveBeenCalledWith("OT-1");
+    expect(writeText).not.toHaveBeenCalledWith("1");
+  });
+
   it("given card, when clicking update status button, then opens status dialog", async () => {
     const user = userEvent.setup();
     render(
