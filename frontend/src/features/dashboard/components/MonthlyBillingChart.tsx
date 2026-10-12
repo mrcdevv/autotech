@@ -51,7 +51,7 @@ export function MonthlyBillingChart({ data, from, to }: MonthlyBillingChartProps
         series={[
           {
             data: values,
-            label: "Facturación",
+            label: "Remitos",
             color: CHART_COLORS.graphite.base,
             valueFormatter: (value) =>
               value == null ? "" : formatCurrencyWhole(value),

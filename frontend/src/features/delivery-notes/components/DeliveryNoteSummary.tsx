@@ -9,13 +9,11 @@ function blockNonNumeric(e: React.KeyboardEvent) {
   e.preventDefault();
 }
 
-interface InvoiceSummaryProps {
+interface DeliveryNoteSummaryProps {
   servicesSubtotal: number;
   productsSubtotal: number;
   discountPercentage: number;
-  taxPercentage: number;
   onDiscountChange: (value: number) => void;
-  onTaxChange: (value: number) => void;
   readonly?: boolean;
 }
 
@@ -35,20 +33,16 @@ const percentageLabelSx = {
   whiteSpace: "nowrap",
 };
 
-export function InvoiceSummary({
+export function DeliveryNoteSummary({
   servicesSubtotal,
   productsSubtotal,
   discountPercentage,
-  taxPercentage,
   onDiscountChange,
-  onTaxChange,
   readonly = false,
-}: InvoiceSummaryProps) {
+}: DeliveryNoteSummaryProps) {
   const subtotal = servicesSubtotal + productsSubtotal;
   const discountAmount = subtotal * (discountPercentage / 100);
-  const afterDiscount = subtotal - discountAmount;
-  const taxAmount = afterDiscount * (taxPercentage / 100);
-  const finalPrice = afterDiscount + taxAmount;
+  const finalPrice = subtotal - discountAmount;
 
   return (
     <Paper sx={{ p: 0, overflow: "hidden" }}>
@@ -113,35 +107,6 @@ export function InvoiceSummary({
             {discountPercentage > 0 && (
               <Typography variant="body2" color="error.main" sx={{ ml: "auto" }}>
                 - $ {formatCurrency(discountAmount)}
-              </Typography>
-            )}
-          </Box>
-
-          <Box sx={percentageRowSx}>
-            <Typography variant="body2" color="text.secondary" sx={percentageLabelSx}>
-              Impuesto
-            </Typography>
-            <TextField
-              type="number"
-              value={taxPercentage === 0 ? "" : taxPercentage}
-              onChange={(e) => {
-                const val = e.target.value === "" ? 0 : Math.min(100, Math.max(0, Number(e.target.value)));
-                onTaxChange(val);
-              }}
-              onKeyDown={blockNonNumeric}
-              slotProps={{
-                input: {
-                  endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                },
-                htmlInput: { "aria-label": "Impuesto (%)", min: 0, max: 100, step: "0.01" },
-              }}
-              disabled={readonly}
-              size="small"
-              sx={{ width: 120 }}
-            />
-            {taxPercentage > 0 && (
-              <Typography variant="body2" color="text.secondary" sx={{ ml: "auto" }}>
-                + $ {formatCurrency(taxAmount)}
               </Typography>
             )}
           </Box>

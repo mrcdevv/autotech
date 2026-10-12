@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 
-import { invoicesApi } from "@/api/invoices";
+import { deliveryNotesApi } from "@/api/deliveryNotes";
 
-import type { InvoiceResponse, InvoiceStatus } from "@/types/invoice";
+import type { DeliveryNoteResponse, DeliveryNoteStatus } from "@/types/deliveryNote";
 
-export function useInvoices() {
-  const [invoices, setInvoices] = useState<InvoiceResponse[]>([]);
+export function useDeliveryNotes() {
+  const [deliveryNotes, setDeliveryNotes] = useState<DeliveryNoteResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
@@ -13,39 +13,39 @@ export function useInvoices() {
   const [pageSize, setPageSize] = useState(12);
   const [clientName, setClientName] = useState<string | undefined>(undefined);
   const [plate, setPlate] = useState<string | undefined>(undefined);
-  const [status, setStatus] = useState<InvoiceStatus | undefined>(undefined);
+  const [status, setStatus] = useState<DeliveryNoteStatus | undefined>(undefined);
 
-  const fetchInvoices = useCallback(async () => {
+  const fetchDeliveryNotes = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await invoicesApi.getAll({
+      const res = await deliveryNotesApi.getAll({
         clientName,
         plate,
         status,
         page,
         size: pageSize,
       });
-      setInvoices(res.data.data.content);
+      setDeliveryNotes(res.data.data.content);
       setTotalCount(res.data.data.totalElements);
     } catch {
-      setError("Error al cargar facturas");
+      setError("Error al cargar remitos");
     } finally {
       setLoading(false);
     }
   }, [clientName, plate, status, page, pageSize]);
 
   useEffect(() => {
-    fetchInvoices();
-  }, [fetchInvoices]);
+    fetchDeliveryNotes();
+  }, [fetchDeliveryNotes]);
 
-  const deleteInvoice = async (id: number) => {
-    await invoicesApi.delete(id);
-    fetchInvoices();
+  const deleteDeliveryNote = async (id: number) => {
+    await deliveryNotesApi.delete(id);
+    fetchDeliveryNotes();
   };
 
   return {
-    invoices,
+    deliveryNotes,
     loading,
     error,
     totalCount,
@@ -59,7 +59,7 @@ export function useInvoices() {
     setPlate,
     status,
     setStatus,
-    deleteInvoice,
-    refetch: fetchInvoices,
+    deleteDeliveryNote,
+    refetch: fetchDeliveryNotes,
   };
 }

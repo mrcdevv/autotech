@@ -26,10 +26,6 @@ export function PaymentSummary({ summary }: PaymentSummaryProps) {
           <Typography>{formatCurrency(summary.totalProducts)}</Typography>
         </Box>
         <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Typography>Impuestos:</Typography>
-          <Typography>{formatCurrency(summary.taxAmount)}</Typography>
-        </Box>
-        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
           <Typography>Descuento:</Typography>
           <Typography>-{formatCurrency(summary.discountAmount)}</Typography>
         </Box>

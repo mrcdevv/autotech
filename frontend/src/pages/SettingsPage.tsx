@@ -62,8 +62,8 @@ export default function SettingsPage() {
         </SettingsSection>
 
         <SettingsSection
-          id="facturacion"
-          title="Facturación"
+          id="remitocion"
+          title="Remitos"
           subtitle="Impuestos"
           icon={<ReceiptOutlinedIcon />}
         >

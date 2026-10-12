@@ -52,7 +52,7 @@ describe("SettingsPage", () => {
 
     expect(screen.getByRole("heading", { name: "Taller" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Catálogos" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Facturación" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Remitos" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Accesos" })).toBeInTheDocument();
   });
 

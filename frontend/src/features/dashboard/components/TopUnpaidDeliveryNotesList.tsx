@@ -10,21 +10,21 @@ import {
   TableRow,
 } from "@mui/material";
 import { formatCurrency } from "@/utils/formatCurrency";
-import type { UnpaidInvoiceResponse } from "@/features/dashboard/types";
+import type { UnpaidDeliveryNoteResponse } from "@/features/dashboard/types";
 
-interface TopUnpaidInvoicesListProps {
-  invoices: UnpaidInvoiceResponse[];
+interface TopUnpaidDeliveryNotesListProps {
+  deliveryNotes: UnpaidDeliveryNoteResponse[];
 }
 
-export function TopUnpaidInvoicesList({ invoices }: TopUnpaidInvoicesListProps) {
-  if (invoices.length === 0) {
+export function TopUnpaidDeliveryNotesList({ deliveryNotes }: TopUnpaidDeliveryNotesListProps) {
+  if (deliveryNotes.length === 0) {
     return (
       <Card>
         <CardContent>
           <Typography variant="h6" sx={{ mb: 1 }}>
-            Facturas impagas
+            Remitos impagas
           </Typography>
-          <Typography color="text.secondary">No hay facturas pendientes</Typography>
+          <Typography color="text.secondary">No hay remitos pendientes</Typography>
         </CardContent>
       </Card>
     );
@@ -34,7 +34,7 @@ export function TopUnpaidInvoicesList({ invoices }: TopUnpaidInvoicesListProps) 
     <Card>
       <CardContent>
         <Typography variant="h6" sx={{ mb: 2 }}>
-          Facturas impagas (top 10)
+          Remitos impagas (top 10)
         </Typography>
         <TableContainer>
           <Table size="small">
@@ -46,8 +46,8 @@ export function TopUnpaidInvoicesList({ invoices }: TopUnpaidInvoicesListProps) 
               </TableRow>
             </TableHead>
             <TableBody>
-              {invoices.map((inv) => (
-                <TableRow key={inv.invoiceId}>
+              {deliveryNotes.map((inv) => (
+                <TableRow key={inv.deliveryNoteId}>
                   <TableCell>{inv.clientFullName}</TableCell>
                   <TableCell>{inv.vehiclePlate ?? "—"}</TableCell>
                   <TableCell align="right">{formatCurrency(inv.total)}</TableCell>

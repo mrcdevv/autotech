@@ -69,7 +69,7 @@ const navSections: NavSection[] = [
       { label: "Órdenes de trabajo", path: "/ordenes-trabajo", icon: <HandymanOutlinedIcon /> },
       { label: "Calendario", path: "/calendario", icon: <CalendarMonthOutlinedIcon /> },
       { label: "Presupuestos", path: "/presupuestos", icon: <RequestQuoteOutlinedIcon /> },
-      { label: "Facturas", path: "/facturas", icon: <ReceiptOutlinedIcon /> },
+      { label: "Remitos", path: "/remitos", icon: <ReceiptOutlinedIcon /> },
     ],
   },
   {

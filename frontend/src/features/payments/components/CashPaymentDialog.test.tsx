@@ -24,7 +24,7 @@ vi.mock("../hooks/usePayments", () => ({
 const defaultProps = {
   open: true,
   onClose: vi.fn(),
-  invoiceId: 10,
+  deliveryNoteId: 10,
   remaining: 500,
   clientFullName: "Juan Perez",
   editingPayment: null as PaymentResponse | null,
@@ -36,7 +36,7 @@ const buildEditingPayment = (
   overrides?: Partial<PaymentResponse>,
 ): PaymentResponse => ({
   id: 1,
-  invoiceId: 10,
+  deliveryNoteId: 10,
   paymentDate: "2025-03-10",
   createdAt: "2025-03-10T10:00:00",
   amount: 200,

@@ -8,7 +8,6 @@ import type { PaymentSummaryResponse } from "@/types/payment";
 const mockSummary: PaymentSummaryResponse = {
   totalServices: 1000,
   totalProducts: 200,
-  taxAmount: 226.8,
   discountAmount: 120,
   total: 1306.8,
   totalPaid: 500,
@@ -20,7 +19,7 @@ const mockGetSummary = vi.fn();
 vi.mock("@/api/payments", () => ({
   paymentsApi: {
     getSummary: (...args: unknown[]) => mockGetSummary(...args),
-    getByInvoice: vi.fn(),
+    getByDeliveryNote: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
@@ -35,7 +34,7 @@ describe("usePaymentSummary", () => {
     });
   });
 
-  it("given invoiceId, when mounted, then fetches summary", async () => {
+  it("given deliveryNoteId, when mounted, then fetches summary", async () => {
     const { result } = renderHook(() => usePaymentSummary(10));
 
     await waitFor(() => {

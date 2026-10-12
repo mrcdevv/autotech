@@ -113,7 +113,7 @@ export function PaymentHistoryGrid({
           Historial de pagos
         </Typography>
         <Typography color="text.secondary">
-          No se registraron pagos para esta factura.
+          No se registraron pagos para esta remito.
         </Typography>
       </Box>
     );
@@ -132,7 +132,7 @@ export function PaymentHistoryGrid({
         pageSizeOptions={[5, 10, 20]}
         minHeight={320}
         desktopHeight="360px"
-        emptyMessage="No se registraron pagos para esta factura."
+        emptyMessage="No se registraron pagos para esta remito."
         initialState={{
           pagination: { paginationModel: { pageSize: 10 } },
         }}

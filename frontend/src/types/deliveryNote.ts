@@ -1,23 +1,23 @@
-export type InvoiceStatus = "PENDIENTE" | "PAGADA";
+export type DeliveryNoteStatus = "PENDIENTE" | "PAGADA";
 
-export interface InvoiceServiceItemRequest {
+export interface DeliveryNoteServiceItemRequest {
   serviceName: string;
   price: number;
 }
 
-export interface InvoiceServiceItemResponse {
+export interface DeliveryNoteServiceItemResponse {
   id: number;
   serviceName: string;
   price: number;
 }
 
-export interface InvoiceProductRequest {
+export interface DeliveryNoteProductRequest {
   productName: string;
   quantity: number;
   unitPrice: number;
 }
 
-export interface InvoiceProductResponse {
+export interface DeliveryNoteProductResponse {
   id: number;
   productName: string;
   quantity: number;
@@ -25,19 +25,19 @@ export interface InvoiceProductResponse {
   totalPrice: number;
 }
 
-export interface InvoiceRequest {
+export interface DeliveryNoteRequest {
   clientId: number;
   vehicleId: number | null;
   repairOrderId: number | null;
   estimateId: number | null;
   discountPercentage: number;
-  taxPercentage: number;
-  services: InvoiceServiceItemRequest[];
-  products: InvoiceProductRequest[];
+  services: DeliveryNoteServiceItemRequest[];
+  products: DeliveryNoteProductRequest[];
 }
 
-export interface InvoiceResponse {
+export interface DeliveryNoteResponse {
   id: number;
+  number: number;
   clientId: number;
   clientFullName: string;
   vehicleId: number | null;
@@ -45,16 +45,16 @@ export interface InvoiceResponse {
   vehicleModel: string | null;
   repairOrderId: number | null;
   estimateId: number | null;
-  status: InvoiceStatus;
+  status: DeliveryNoteStatus;
   discountPercentage: number;
-  taxPercentage: number;
   total: number | null;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface InvoiceDetailResponse {
+export interface DeliveryNoteDetailResponse {
   id: number;
+  number: number;
   clientId: number;
   clientFullName: string;
   clientDni: string | null;
@@ -68,12 +68,11 @@ export interface InvoiceDetailResponse {
   vehicleYear: number | null;
   repairOrderId: number | null;
   estimateId: number | null;
-  status: InvoiceStatus;
+  status: DeliveryNoteStatus;
   discountPercentage: number;
-  taxPercentage: number;
   total: number | null;
-  services: InvoiceServiceItemResponse[];
-  products: InvoiceProductResponse[];
+  services: DeliveryNoteServiceItemResponse[];
+  products: DeliveryNoteProductResponse[];
   createdAt: string;
   updatedAt: string;
 }

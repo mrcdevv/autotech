@@ -8,7 +8,7 @@ import type { PaymentResponse } from "@/types/payment";
 const mockPayments: PaymentResponse[] = [
   {
     id: 1,
-    invoiceId: 10,
+    deliveryNoteId: 10,
     paymentDate: "2025-01-15",
     createdAt: "2025-01-15T10:30:00",
     amount: 500,
@@ -22,14 +22,14 @@ const mockPayments: PaymentResponse[] = [
   },
 ];
 
-const mockGetByInvoice = vi.fn();
+const mockGetByDeliveryNote = vi.fn();
 const mockCreate = vi.fn();
 const mockUpdate = vi.fn();
 const mockDelete = vi.fn();
 
 vi.mock("@/api/payments", () => ({
   paymentsApi: {
-    getByInvoice: (...args: unknown[]) => mockGetByInvoice(...args),
+    getByDeliveryNote: (...args: unknown[]) => mockGetByDeliveryNote(...args),
     create: (...args: unknown[]) => mockCreate(...args),
     update: (...args: unknown[]) => mockUpdate(...args),
     delete: (...args: unknown[]) => mockDelete(...args),
@@ -40,25 +40,25 @@ vi.mock("@/api/payments", () => ({
 describe("usePayments", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetByInvoice.mockResolvedValue({
+    mockGetByDeliveryNote.mockResolvedValue({
       data: { data: mockPayments },
     });
   });
 
-  it("given invoiceId, when mounted, then fetches payments", async () => {
+  it("given deliveryNoteId, when mounted, then fetches payments", async () => {
     const { result } = renderHook(() => usePayments(10));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(mockGetByInvoice).toHaveBeenCalledWith(10);
+    expect(mockGetByDeliveryNote).toHaveBeenCalledWith(10);
     expect(result.current.payments).toEqual(mockPayments);
     expect(result.current.error).toBeNull();
   });
 
   it("given API error, when mounted, then sets error state", async () => {
-    mockGetByInvoice.mockRejectedValueOnce(new Error("Network error"));
+    mockGetByDeliveryNote.mockRejectedValueOnce(new Error("Network error"));
 
     const { result } = renderHook(() => usePayments(10));
 
@@ -81,7 +81,7 @@ describe("usePayments", () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const callCountBefore = mockGetByInvoice.mock.calls.length;
+    const callCountBefore = mockGetByDeliveryNote.mock.calls.length;
 
     await act(async () => {
       await result.current.createPayment({
@@ -95,7 +95,7 @@ describe("usePayments", () => {
     });
 
     expect(mockCreate).toHaveBeenCalledWith(10, expect.any(Object));
-    expect(mockGetByInvoice.mock.calls.length).toBeGreaterThan(
+    expect(mockGetByDeliveryNote.mock.calls.length).toBeGreaterThan(
       callCountBefore,
     );
   });
@@ -111,7 +111,7 @@ describe("usePayments", () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const callCountBefore = mockGetByInvoice.mock.calls.length;
+    const callCountBefore = mockGetByDeliveryNote.mock.calls.length;
 
     await act(async () => {
       await result.current.updatePayment(1, {
@@ -125,7 +125,7 @@ describe("usePayments", () => {
     });
 
     expect(mockUpdate).toHaveBeenCalledWith(10, 1, expect.any(Object));
-    expect(mockGetByInvoice.mock.calls.length).toBeGreaterThan(
+    expect(mockGetByDeliveryNote.mock.calls.length).toBeGreaterThan(
       callCountBefore,
     );
   });
@@ -139,20 +139,20 @@ describe("usePayments", () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const callCountBefore = mockGetByInvoice.mock.calls.length;
+    const callCountBefore = mockGetByDeliveryNote.mock.calls.length;
 
     await act(async () => {
       await result.current.deletePayment(1, 2);
     });
 
     expect(mockDelete).toHaveBeenCalledWith(10, 1, 2);
-    expect(mockGetByInvoice.mock.calls.length).toBeGreaterThan(
+    expect(mockGetByDeliveryNote.mock.calls.length).toBeGreaterThan(
       callCountBefore,
     );
   });
 
   it("given hook, when mounted, then loading starts as true", () => {
-    mockGetByInvoice.mockReturnValue(new Promise(() => {}));
+    mockGetByDeliveryNote.mockReturnValue(new Promise(() => {}));
 
     const { result } = renderHook(() => usePayments(10));
 

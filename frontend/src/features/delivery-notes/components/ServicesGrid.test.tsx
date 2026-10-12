@@ -4,7 +4,7 @@ import { vi, describe, it, expect } from "vitest";
 
 import { ServicesGrid } from "./ServicesGrid";
 
-import type { InvoiceServiceItemRequest } from "@/types/invoice";
+import type { DeliveryNoteServiceItemRequest } from "@/types/deliveryNote";
 
 vi.mock("@/api/catalogServices", () => ({
   catalogServicesApi: {
@@ -16,7 +16,7 @@ const money = (value: number) =>
   value.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 describe("ServicesGrid", () => {
-  const defaultServices: InvoiceServiceItemRequest[] = [
+  const defaultServices: DeliveryNoteServiceItemRequest[] = [
     { serviceName: "Oil change", price: 100 },
     { serviceName: "Brake inspection", price: 200 },
   ];

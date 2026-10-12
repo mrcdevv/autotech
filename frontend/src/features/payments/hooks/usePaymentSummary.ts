@@ -4,7 +4,7 @@ import { paymentsApi } from "@/api/payments";
 
 import type { PaymentSummaryResponse } from "@/types/payment";
 
-export function usePaymentSummary(invoiceId: number) {
+export function usePaymentSummary(deliveryNoteId: number) {
   const [summary, setSummary] = useState<PaymentSummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -12,14 +12,14 @@ export function usePaymentSummary(invoiceId: number) {
   const fetchSummary = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await paymentsApi.getSummary(invoiceId);
+      const res = await paymentsApi.getSummary(deliveryNoteId);
       setSummary(res.data.data);
     } catch {
       setError("Error al cargar el resumen de pagos");
     } finally {
       setLoading(false);
     }
-  }, [invoiceId]);
+  }, [deliveryNoteId]);
 
   useEffect(() => {
     fetchSummary();

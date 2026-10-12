@@ -3,12 +3,12 @@ import { useState, useEffect, useCallback } from "react";
 import { Box, Typography, TextField, Button, IconButton, Autocomplete, Paper } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
-import BuildIcon from "@mui/icons-material/Build";
+import Inventory2Icon from "@mui/icons-material/Inventory2";
 
-import { catalogServicesApi } from "@/api/catalogServices";
+import { productsApi } from "@/api/products";
 
-import type { InvoiceServiceItemRequest } from "@/types/invoice";
-import type { CatalogServiceResponse } from "@/types/catalog";
+import type { DeliveryNoteProductRequest } from "@/types/deliveryNote";
+import type { ProductResponse } from "@/types/catalog";
 
 const allowedDecimalKeys = new Set(["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight", "Home", "End"]);
 function blockNonNumeric(e: React.KeyboardEvent, allowDecimal = true) {
@@ -18,9 +18,9 @@ function blockNonNumeric(e: React.KeyboardEvent, allowDecimal = true) {
   e.preventDefault();
 }
 
-interface ServicesGridProps {
-  services: InvoiceServiceItemRequest[];
-  onChange: (services: InvoiceServiceItemRequest[]) => void;
+interface ProductsGridProps {
+  products: DeliveryNoteProductRequest[];
+  onChange: (products: DeliveryNoteProductRequest[]) => void;
   readonly?: boolean;
   showErrors?: boolean;
 }
@@ -29,38 +29,41 @@ function formatCurrency(value: number): string {
   return value.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-export function ServicesGrid({ services, onChange, readonly = false, showErrors = false }: ServicesGridProps) {
-  const [catalogServices, setCatalogServices] = useState<CatalogServiceResponse[]>([]);
+export function ProductsGrid({ products, onChange, readonly = false, showErrors = false }: ProductsGridProps) {
+  const [catalogProducts, setCatalogProducts] = useState<ProductResponse[]>([]);
 
-  const fetchCatalogServices = useCallback(async (query?: string) => {
+  const fetchCatalogProducts = useCallback(async (query?: string) => {
     try {
-      const res = await catalogServicesApi.search(query, 0, 50);
-      setCatalogServices(res.data.data.content);
+      const res = await productsApi.search(query, 0, 50);
+      setCatalogProducts(res.data.data.content);
     } catch {
       // ignore
     }
   }, []);
 
   useEffect(() => {
-    fetchCatalogServices();
-  }, [fetchCatalogServices]);
+    fetchCatalogProducts();
+  }, [fetchCatalogProducts]);
 
-  const addService = () => {
-    onChange([...services, { serviceName: "", price: 0 }]);
+  const addProduct = () => {
+    onChange([...products, { productName: "", quantity: 1, unitPrice: 0 }]);
   };
 
-  const removeService = (index: number) => {
-    const updated = services.filter((_, i) => i !== index);
+  const removeProduct = (index: number) => {
+    const updated = products.filter((_, i) => i !== index);
     onChange(updated);
   };
 
-  const updateService = (index: number, field: keyof InvoiceServiceItemRequest, value: string | number) => {
-    const updated = [...services];
-    updated[index] = { ...updated[index], [field]: value } as InvoiceServiceItemRequest;
+  const updateProduct = (index: number, field: keyof DeliveryNoteProductRequest, value: string | number) => {
+    const updated = [...products];
+    updated[index] = { ...updated[index], [field]: value } as DeliveryNoteProductRequest;
     onChange(updated);
   };
 
-  const servicesSubtotal = services.reduce((sum, svc) => sum + (Number(svc.price) || 0), 0);
+  const productsSubtotal = products.reduce(
+    (sum, prod) => sum + (Number(prod.quantity) || 0) * (Number(prod.unitPrice) || 0),
+    0,
+  );
 
   return (
     <Paper sx={{ p: 0, overflow: "hidden" }}>
@@ -77,31 +80,31 @@ export function ServicesGrid({ services, onChange, readonly = false, showErrors 
         }}
       >
         <Box display="flex" alignItems="center" gap={1.5}>
-          <BuildIcon sx={{ color: "primary.main", fontSize: 20 }} />
+          <Inventory2Icon sx={{ color: "primary.main", fontSize: 20 }} />
           <Typography variant="subtitle2" sx={{ fontSize: "0.9rem" }}>
-            Servicios
+            Productos
           </Typography>
           <Typography variant="caption" sx={{ bgcolor: "primary.main", color: "white", px: 1, py: 0.25, borderRadius: 1, fontSize: "0.7rem", fontWeight: 600 }}>
-            {services.length}
+            {products.length}
           </Typography>
         </Box>
         {!readonly && (
-          <Button onClick={addService} startIcon={<AddIcon />} size="small" variant="outlined">
+          <Button onClick={addProduct} startIcon={<AddIcon />} size="small" variant="outlined">
             Agregar
           </Button>
         )}
       </Box>
 
       <Box sx={{ p: 3 }}>
-        {services.length === 0 ? (
+        {products.length === 0 ? (
           <Box sx={{ py: 4, textAlign: "center" }}>
-            <BuildIcon sx={{ fontSize: 40, color: "grey.300", mb: 1 }} />
+            <Inventory2Icon sx={{ fontSize: 40, color: "grey.300", mb: 1 }} />
             <Typography variant="body2" color="text.secondary">
-              No hay servicios agregados
+              No hay productos agregados
             </Typography>
             {!readonly && (
               <Typography variant="caption" color="text.secondary">
-                Hacé clic en "Agregar" para añadir un servicio
+                Hacé clic en "Agregar" para añadir un producto
               </Typography>
             )}
           </Box>
@@ -120,15 +123,21 @@ export function ServicesGrid({ services, onChange, readonly = false, showErrors 
               }}
             >
               <Typography variant="caption" sx={{ flex: 2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "text.secondary" }}>
-                Servicio
+                Producto
               </Typography>
               <Typography variant="caption" sx={{ flex: 1, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "text.secondary" }}>
-                Precio
+                Cantidad
+              </Typography>
+              <Typography variant="caption" sx={{ flex: 1, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "text.secondary" }}>
+                Precio unit.
+              </Typography>
+              <Typography variant="caption" sx={{ flex: 1, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "text.secondary" }}>
+                Total
               </Typography>
               {!readonly && <Box sx={{ width: 36 }} />}
             </Box>
 
-            {services.map((svc, index) => (
+            {products.map((prod, index) => (
               <Box
                 key={index}
                 sx={{
@@ -144,21 +153,22 @@ export function ServicesGrid({ services, onChange, readonly = false, showErrors 
               >
                 <Autocomplete
                   freeSolo
-                  options={catalogServices}
+                  options={catalogProducts}
                   getOptionLabel={(option) =>
                     typeof option === "string" ? option : option.name
                   }
-                  inputValue={svc.serviceName}
+                  inputValue={prod.productName}
                   onInputChange={(_, value) => {
-                    updateService(index, "serviceName", value);
-                    if (value.length >= 2) fetchCatalogServices(value);
+                    updateProduct(index, "productName", value);
+                    if (value.length >= 2) fetchCatalogProducts(value);
                   }}
                   onChange={(_, value) => {
                     if (value && typeof value !== "string") {
-                      const updated = [...services];
+                      const updated = [...products];
                       updated[index] = {
-                        serviceName: value.name,
-                        price: value.price ?? 0,
+                        productName: value.name,
+                        quantity: prod.quantity,
+                        unitPrice: value.unitPrice ?? 0,
                       };
                       onChange(updated);
                     }
@@ -166,10 +176,10 @@ export function ServicesGrid({ services, onChange, readonly = false, showErrors 
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Servicio"
+                      label="Producto"
                       size="small"
-                      error={showErrors && !svc.serviceName.trim()}
-                      helperText={showErrors && !svc.serviceName.trim() ? "El nombre es obligatorio" : undefined}
+                      error={showErrors && !prod.productName.trim()}
+                      helperText={showErrors && !prod.productName.trim() ? "El nombre es obligatorio" : undefined}
                     />
                   )}
                   disabled={readonly}
@@ -177,11 +187,27 @@ export function ServicesGrid({ services, onChange, readonly = false, showErrors 
                 />
                 <TextField
                   type="number"
-                  label="Precio"
-                  value={svc.price === 0 ? "" : svc.price}
+                  label="Cantidad"
+                  value={prod.quantity === 0 ? "" : prod.quantity}
                   onChange={(e) => {
                     const val = e.target.value;
-                    updateService(index, "price", val === "" ? 0 : Number(val));
+                    updateProduct(index, "quantity", val === "" ? 0 : Number(val));
+                  }}
+                  onKeyDown={(e) => blockNonNumeric(e, false)}
+                  disabled={readonly}
+                  size="small"
+                  sx={{ flex: 1 }}
+                  slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                  error={showErrors && prod.quantity < 1}
+                  helperText={showErrors && prod.quantity < 1 ? "Debe ser al menos 1" : undefined}
+                />
+                <TextField
+                  type="number"
+                  label="Precio unitario"
+                  value={prod.unitPrice === 0 ? "" : prod.unitPrice}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    updateProduct(index, "unitPrice", val === "" ? 0 : Number(val));
                   }}
                   onKeyDown={(e) => blockNonNumeric(e)}
                   slotProps={{
@@ -190,11 +216,20 @@ export function ServicesGrid({ services, onChange, readonly = false, showErrors 
                   disabled={readonly}
                   size="small"
                   sx={{ flex: 1 }}
-                  error={showErrors && svc.price < 0}
-                  helperText={showErrors && svc.price < 0 ? "No puede ser negativo" : undefined}
+                  error={showErrors && prod.unitPrice < 0}
+                  helperText={showErrors && prod.unitPrice < 0 ? "No puede ser negativo" : undefined}
+                />
+                <TextField
+                  label="Total"
+                  value={`$ ${formatCurrency((prod.quantity || 0) * (prod.unitPrice || 0))}`}
+                  size="small"
+                  sx={{ flex: 1 }}
+                  slotProps={{
+                    input: { readOnly: true },
+                  }}
                 />
                 {!readonly && (
-                  <IconButton onClick={() => removeService(index)} color="error" size="small" sx={{ "&:hover": { bgcolor: "error.light", color: "white" } }}>
+                  <IconButton onClick={() => removeProduct(index)} color="error" size="small" sx={{ "&:hover": { bgcolor: "error.light", color: "white" } }}>
                     <DeleteIcon fontSize="small" />
                   </IconButton>
                 )}
@@ -204,7 +239,7 @@ export function ServicesGrid({ services, onChange, readonly = false, showErrors 
         )}
       </Box>
 
-      {services.length > 0 && (
+      {products.length > 0 && (
         <Box
           sx={{
             px: 3,
@@ -218,10 +253,10 @@ export function ServicesGrid({ services, onChange, readonly = false, showErrors 
           }}
         >
           <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-            Subtotal servicios:
+            Subtotal productos:
           </Typography>
           <Typography variant="subtitle2" sx={{ fontSize: "0.9rem" }}>
-            $ {formatCurrency(servicesSubtotal)}
+            $ {formatCurrency(productsSubtotal)}
           </Typography>
         </Box>
       )}

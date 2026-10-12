@@ -16,11 +16,11 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
 import { estimatesApi } from "@/api/estimates";
-import { invoicesApi } from "@/api/invoices";
-import { InvoiceDetail } from "./InvoiceDetail";
+import { deliveryNotesApi } from "@/api/deliveryNotes";
+import { DeliveryNoteDetail } from "./DeliveryNoteDetail";
 
 import type { EstimateDetailResponse } from "@/types/estimate";
-import type { InvoiceDetailResponse } from "@/types/invoice";
+import type { DeliveryNoteDetailResponse } from "@/types/deliveryNote";
 
 type EstimateState =
   | { kind: "loading" }
@@ -29,30 +29,30 @@ type EstimateState =
   | { kind: "approved"; estimate: EstimateDetailResponse }
   | { kind: "all_rejected" };
 
-interface InvoiceTabProps {
+interface DeliveryNoteTabProps {
   repairOrderId: number;
 }
 
-export function InvoiceTab({ repairOrderId }: InvoiceTabProps) {
-  const [invoice, setInvoice] = useState<InvoiceDetailResponse | null>(null);
-  const [invoiceLoading, setInvoiceLoading] = useState(true);
+export function DeliveryNoteTab({ repairOrderId }: DeliveryNoteTabProps) {
+  const [deliveryNote, setDeliveryNote] = useState<DeliveryNoteDetailResponse | null>(null);
+  const [deliveryNoteLoading, setDeliveryNoteLoading] = useState(true);
   const [estimateState, setEstimateState] = useState<EstimateState>({ kind: "loading" });
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    setInvoiceLoading(true);
+    setDeliveryNoteLoading(true);
     setEstimateState({ kind: "loading" });
 
-    const [invoiceRes, estimateRes] = await Promise.allSettled([
-      invoicesApi.getByRepairOrderId(repairOrderId),
+    const [deliveryNoteRes, estimateRes] = await Promise.allSettled([
+      deliveryNotesApi.getByRepairOrderId(repairOrderId),
       estimatesApi.getByRepairOrderId(repairOrderId),
     ]);
 
-    if (invoiceRes.status === "fulfilled") {
-      setInvoice(invoiceRes.value.data.data);
+    if (deliveryNoteRes.status === "fulfilled") {
+      setDeliveryNote(deliveryNoteRes.value.data.data);
     } else {
-      setInvoice(null);
+      setDeliveryNote(null);
     }
 
     if (estimateRes.status === "fulfilled") {
@@ -74,7 +74,7 @@ export function InvoiceTab({ repairOrderId }: InvoiceTabProps) {
       }
     }
 
-    setInvoiceLoading(false);
+    setDeliveryNoteLoading(false);
   }, [repairOrderId]);
 
   useEffect(() => {
@@ -85,16 +85,16 @@ export function InvoiceTab({ repairOrderId }: InvoiceTabProps) {
     setCreating(true);
     setCreateError(null);
     try {
-      const res = await invoicesApi.createFromEstimate(estimateId);
-      setInvoice(res.data.data);
+      const res = await deliveryNotesApi.createFromEstimate(estimateId);
+      setDeliveryNote(res.data.data);
     } catch {
-      setCreateError("Error al generar la factura. Intente nuevamente.");
+      setCreateError("Error al generar la remito. Intente nuevamente.");
     } finally {
       setCreating(false);
     }
   };
 
-  if (invoiceLoading || estimateState.kind === "loading") {
+  if (deliveryNoteLoading || estimateState.kind === "loading") {
     return (
       <Box display="flex" justifyContent="center" mt={4}>
         <CircularProgress />
@@ -102,10 +102,10 @@ export function InvoiceTab({ repairOrderId }: InvoiceTabProps) {
     );
   }
 
-  if (invoice) {
+  if (deliveryNote) {
     return (
       <Box>
-        <InvoiceDetail repairOrderId={repairOrderId} />
+        <DeliveryNoteDetail repairOrderId={repairOrderId} />
       </Box>
     );
   }
@@ -125,10 +125,10 @@ export function InvoiceTab({ repairOrderId }: InvoiceTabProps) {
         >
           <ReceiptLongIcon sx={{ fontSize: 48, color: "text.disabled", mb: 2 }} />
           <Typography variant="h6" sx={{ mb: 1, fontWeight: 500 }}>
-            No se puede generar una factura aún
+            No se puede generar una remito aún
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400, mx: "auto" }}>
-            Para generar una factura dentro de una orden de trabajo, primero debe crear y aprobar un
+            Para generar una remito dentro de una orden de trabajo, primero debe crear y aprobar un
             presupuesto en la solapa "Presupuesto".
           </Typography>
         </Paper>
@@ -145,7 +145,7 @@ export function InvoiceTab({ repairOrderId }: InvoiceTabProps) {
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 440, mx: "auto", mb: 3 }}>
             Existe un presupuesto pendiente. Una vez que el cliente lo apruebe, podrá generar la
-            factura desde aquí.
+            remito desde aquí.
           </Typography>
           <EstimateSummaryCard estimate={estimateState.estimate} />
         </Paper>
@@ -170,7 +170,7 @@ export function InvoiceTab({ repairOrderId }: InvoiceTabProps) {
           >
             <ReceiptLongIcon sx={{ color: "success.main", fontSize: 20 }} />
             <Typography variant="subtitle2" sx={{ fontSize: "0.9rem" }}>
-              Generar factura desde presupuesto aprobado
+              Generar remito desde presupuesto aprobado
             </Typography>
           </Box>
 
@@ -187,7 +187,7 @@ export function InvoiceTab({ repairOrderId }: InvoiceTabProps) {
                 onClick={() => handleCreateFromEstimate(estimateState.estimate.id)}
                 disabled={creating}
               >
-                {creating ? "Generando factura..." : "Generar factura"}
+                {creating ? "Generando remito..." : "Generar remito"}
               </Button>
             </Box>
           </Box>
@@ -205,7 +205,7 @@ export function InvoiceTab({ repairOrderId }: InvoiceTabProps) {
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 440, mx: "auto" }}>
             Todos los presupuestos anteriores fueron rechazados. Cree un nuevo presupuesto y
-            apruébelo para poder generar una factura.
+            apruébelo para poder generar una remito.
           </Typography>
         </Paper>
       )}

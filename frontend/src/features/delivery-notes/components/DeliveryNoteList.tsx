@@ -7,21 +7,21 @@ import { MonoText } from "@/components/MonoText";
 import { StatusBadge } from "@/components/StatusBadge";
 
 import type { GridColDef } from "@mui/x-data-grid";
-import type { InvoiceResponse } from "@/types/invoice";
+import type { DeliveryNoteResponse } from "@/types/deliveryNote";
 
-interface InvoiceListProps {
-  rows: InvoiceResponse[];
+interface DeliveryNoteListProps {
+  rows: DeliveryNoteResponse[];
   loading: boolean;
   totalCount: number;
   page: number;
   pageSize: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
-  onRowClick: (row: InvoiceResponse) => void;
+  onRowClick: (row: DeliveryNoteResponse) => void;
   onDelete: (id: number) => void;
 }
 
-export function InvoiceList({
+export function DeliveryNoteList({
   rows,
   loading,
   totalCount,
@@ -31,7 +31,7 @@ export function InvoiceList({
   onPageSizeChange,
   onRowClick,
   onDelete,
-}: InvoiceListProps) {
+}: DeliveryNoteListProps) {
   const columns: GridColDef[] = [
     {
       field: "createdAt",
@@ -104,9 +104,9 @@ export function InvoiceList({
             <Tooltip
               title={
                 isFromRepairOrder
-                  ? "No se puede eliminar una factura de orden de trabajo"
+                  ? "No se puede eliminar una remito de orden de trabajo"
                   : isPaid
-                    ? "No se puede eliminar una factura pagada"
+                    ? "No se puede eliminar una remito pagada"
                     : "Eliminar"
               }
             >
@@ -144,7 +144,7 @@ export function InvoiceList({
       }}
       pageSizeOptions={[12, 24, 48]}
       onRowClick={(params) => onRowClick(params.row)}
-      emptyMessage="No se encuentra cargada una factura con esos datos."
+      emptyMessage="No se encuentra cargada una remito con esos datos."
     />
   );
 }

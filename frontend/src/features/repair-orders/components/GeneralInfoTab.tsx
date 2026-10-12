@@ -19,7 +19,7 @@ import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
 
 import { AssignMechanicsDialog } from "./AssignMechanicsDialog";
 import { estimatesApi } from "@/api/estimates";
-import { invoicesApi } from "@/api/invoices";
+import { deliveryNotesApi } from "@/api/deliveryNotes";
 import { paymentsApi } from "@/api/payments";
 import { AppDataGrid } from "@/components/AppDataGrid";
 import { MonoText } from "@/components/MonoText";
@@ -31,7 +31,7 @@ import type { GridColDef } from "@mui/x-data-grid";
 import type { ReactNode } from "react";
 import type { RepairOrderDetailResponse } from "../types";
 import type { EstimateResponse } from "@/types/estimate";
-import type { InvoiceDetailResponse } from "@/types/invoice";
+import type { DeliveryNoteDetailResponse } from "@/types/deliveryNote";
 import type { PaymentSummaryResponse } from "@/types/payment";
 import { STATUS_META } from "../statusMeta";
 
@@ -44,7 +44,7 @@ interface GeneralInfoTabProps {
 export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProps) {
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [estimates, setEstimates] = useState<EstimateResponse[]>([]);
-  const [invoice, setInvoice] = useState<InvoiceDetailResponse | null>(null);
+  const [deliveryNote, setDeliveryNote] = useState<DeliveryNoteDetailResponse | null>(null);
   const [paymentSummary, setPaymentSummary] = useState<PaymentSummaryResponse | null>(null);
   const [financialLoading, setFinancialLoading] = useState(false);
 
@@ -56,7 +56,7 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
       try {
         const [estRes, invRes] = await Promise.allSettled([
           estimatesApi.getAllByRepairOrderId(order.id),
-          invoicesApi.getByRepairOrderId(order.id),
+          deliveryNotesApi.getByRepairOrderId(order.id),
         ]);
 
         if (estRes.status === "fulfilled") {
@@ -65,7 +65,7 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
 
         if (invRes.status === "fulfilled") {
           const inv = invRes.value.data.data;
-          setInvoice(inv);
+          setDeliveryNote(inv);
           try {
             const summaryRes = await paymentsApi.getSummary(inv.id);
             setPaymentSummary(summaryRes.data.data);
@@ -257,21 +257,21 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
             <Grid size={{ xs: 12, md: 4 }}>
               <Box sx={{ p: 2, bgcolor: "grey.50", borderRadius: 1.5, border: 1, borderColor: "divider", height: "100%" }}>
                 <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.5 }}>
-                  Factura
+                  Remito
                 </Typography>
-                {invoice ? (
+                {deliveryNote ? (
                   <>
                     <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
-                      <MonoText>{invoice.total != null ? formatCurrency(invoice.total) : "—"}</MonoText>
+                      <MonoText>{deliveryNote.total != null ? formatCurrency(deliveryNote.total) : "—"}</MonoText>
                     </Typography>
                     <StatusBadge
-                      tone={invoice.status === "PAGADA" ? "ok" : "warn"}
-                      label={invoice.status === "PAGADA" ? "Pagada" : "Pendiente"}
+                      tone={deliveryNote.status === "PAGADA" ? "ok" : "warn"}
+                      label={deliveryNote.status === "PAGADA" ? "Pagada" : "Pendiente"}
                     />
                   </>
                 ) : (
                   <Typography variant="body2" color="text.secondary">
-                    Sin factura
+                    Sin remito
                   </Typography>
                 )}
               </Box>
@@ -295,7 +295,7 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
                       <StatusBadge tone="ok" label="Saldado" />
                     )}
                   </>
-                ) : invoice ? (
+                ) : deliveryNote ? (
                   <Typography variant="body2" color="text.secondary">
                     Sin pagos registrados
                   </Typography>

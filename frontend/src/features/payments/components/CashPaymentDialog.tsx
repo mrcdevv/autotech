@@ -16,7 +16,7 @@ import type { PaymentRequest, PaymentResponse } from "@/types/payment";
 interface CashPaymentDialogProps {
   open: boolean;
   onClose: () => void;
-  invoiceId: number;
+  deliveryNoteId: number;
   remaining: number;
   clientFullName: string;
   editingPayment: PaymentResponse | null;
@@ -27,7 +27,7 @@ interface CashPaymentDialogProps {
 export function CashPaymentDialog({
   open,
   onClose,
-  invoiceId,
+  deliveryNoteId,
   remaining,
   clientFullName,
   editingPayment,
@@ -35,7 +35,7 @@ export function CashPaymentDialog({
   onUpdated,
 }: CashPaymentDialogProps) {
   const isEditing = editingPayment !== null;
-  const { createPayment, updatePayment } = usePayments(invoiceId);
+  const { createPayment, updatePayment } = usePayments(deliveryNoteId);
 
   const getToday = () => new Date().toISOString().slice(0, 10);
 

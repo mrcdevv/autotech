@@ -2,15 +2,15 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect } from "vitest";
 
-import { InvoiceList } from "./InvoiceList";
+import { DeliveryNoteList } from "./DeliveryNoteList";
 
-import type { InvoiceResponse } from "@/types/invoice";
+import type { DeliveryNoteResponse } from "@/types/deliveryNote";
 
 vi.mock("@mui/x-data-grid", () => ({
   DataGrid: ({ rows, columns, onRowClick }: {
-    rows: InvoiceResponse[];
+    rows: DeliveryNoteResponse[];
     columns: { field: string; headerName: string }[];
-    onRowClick?: (params: { row: InvoiceResponse }) => void;
+    onRowClick?: (params: { row: DeliveryNoteResponse }) => void;
   }) => (
     <div data-testid="mock-datagrid">
       <table>
@@ -35,9 +35,10 @@ vi.mock("@mui/x-data-grid", () => ({
   ),
 }));
 
-const sampleInvoices: InvoiceResponse[] = [
+const sampleDeliveryNotes: DeliveryNoteResponse[] = [
   {
     id: 1,
+    number: 1,
     clientId: 1,
     clientFullName: "Juan Perez",
     vehicleId: 1,
@@ -47,13 +48,13 @@ const sampleInvoices: InvoiceResponse[] = [
     estimateId: null,
     status: "PENDIENTE",
     discountPercentage: 0,
-    taxPercentage: 0,
     total: 500,
     createdAt: "2025-01-15T10:00:00",
     updatedAt: "2025-01-15T10:00:00",
   },
   {
     id: 2,
+    number: 2,
     clientId: 2,
     clientFullName: "Maria Lopez",
     vehicleId: 2,
@@ -63,16 +64,15 @@ const sampleInvoices: InvoiceResponse[] = [
     estimateId: null,
     status: "PAGADA",
     discountPercentage: 10,
-    taxPercentage: 21,
     total: 1000,
     createdAt: "2025-01-16T10:00:00",
     updatedAt: "2025-01-16T10:00:00",
   },
 ];
 
-describe("InvoiceList", () => {
+describe("DeliveryNoteList", () => {
   const defaultProps = {
-    rows: sampleInvoices,
+    rows: sampleDeliveryNotes,
     loading: false,
     totalCount: 2,
     page: 0,
@@ -83,24 +83,24 @@ describe("InvoiceList", () => {
     onDelete: vi.fn(),
   };
 
-  it("given invoices, when rendered, then shows DataGrid", () => {
-    render(<InvoiceList {...defaultProps} />);
+  it("given deliveryNotes, when rendered, then shows DataGrid", () => {
+    render(<DeliveryNoteList {...defaultProps} />);
     expect(screen.getByTestId("mock-datagrid")).toBeInTheDocument();
   });
 
-  it("given invoices, when rendered, then shows client names", () => {
-    render(<InvoiceList {...defaultProps} />);
+  it("given deliveryNotes, when rendered, then shows client names", () => {
+    render(<DeliveryNoteList {...defaultProps} />);
     expect(screen.getByText("Juan Perez")).toBeInTheDocument();
     expect(screen.getByText("Maria Lopez")).toBeInTheDocument();
   });
 
-  it("given invoices, when clicking row, then calls onRowClick with row", async () => {
+  it("given deliveryNotes, when clicking row, then calls onRowClick with row", async () => {
     const onRowClick = vi.fn();
     const user = userEvent.setup();
-    render(<InvoiceList {...defaultProps} onRowClick={onRowClick} />);
+    render(<DeliveryNoteList {...defaultProps} onRowClick={onRowClick} />);
 
     await user.click(screen.getByText("Juan Perez"));
 
-    expect(onRowClick).toHaveBeenCalledWith(sampleInvoices[0]);
+    expect(onRowClick).toHaveBeenCalledWith(sampleDeliveryNotes[0]);
   });
 });

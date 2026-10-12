@@ -17,7 +17,7 @@ export function DailyCash({ cash }: DailyCashProps) {
         {cash.total}
       </MonoText>
       <Box sx={{ fontSize: "0.78125rem", color: "text.muted", mt: "3px" }}>
-        {cash.paidCount} {cash.paidCount === 1 ? "factura cobrada" : "facturas cobradas"} ·{" "}
+        {cash.paidCount} {cash.paidCount === 1 ? "remito cobrada" : "remitos cobradas"} ·{" "}
         {cash.pendingCount} {cash.pendingCount === 1 ? "pendiente" : "pendientes"} (
         {cash.pendingTotal})
       </Box>

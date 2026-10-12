@@ -13,7 +13,7 @@ vi.mock("@/api/dashboard", () => ({
           estimatesTotal: 10,
           totalPendingBilling: 15000,
           debtAging: [],
-          topUnpaidInvoices: [],
+          topUnpaidDeliveryNotes: [],
         },
       },
     }),

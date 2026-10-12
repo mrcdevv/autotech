@@ -5,7 +5,7 @@ import type {
   EstimateResponse,
   EstimateDetailResponse,
   EstimateRequest,
-  EstimateInvoiceDataResponse,
+  EstimateDeliveryNoteDataResponse,
   EstimateStatus,
 } from "@/types/estimate";
 
@@ -57,8 +57,8 @@ export const estimatesApi = {
   delete: (id: number) =>
     apiClient.delete<ApiResponse<void>>(`/estimates/${id}`),
 
-  getInvoiceData: (id: number) =>
-    apiClient.get<ApiResponse<EstimateInvoiceDataResponse>>(
-      `/estimates/${id}/invoice-data`,
+  getDeliveryNoteData: (id: number) =>
+    apiClient.get<ApiResponse<EstimateDeliveryNoteDataResponse>>(
+      `/estimates/${id}/delivery-note-data`,
     ),
 };

@@ -6,7 +6,7 @@ import { StatCard } from "@/components/StatCard";
 import { useFinanciero } from "@/features/dashboard/hooks/useFinanciero";
 import { MonthlyRevenueChart } from "./MonthlyRevenueChart";
 import { DebtAgingTable } from "./DebtAgingTable";
-import { TopUnpaidInvoicesList } from "./TopUnpaidInvoicesList";
+import { TopUnpaidDeliveryNotesList } from "./TopUnpaidDeliveryNotesList";
 import { formatCurrency } from "@/utils/formatCurrency";
 import PercentIcon from "@mui/icons-material/Percent";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
@@ -54,7 +54,7 @@ export function FinancieroTab() {
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <StatCard
-            label="Facturación pendiente"
+            label="Remitos pendiente"
             value={formatCurrency(data.totalPendingBilling)}
             icon={<AttachMoneyIcon color="warning" fontSize="small" />}
           />
@@ -70,7 +70,7 @@ export function FinancieroTab() {
           </Card>
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
-          <TopUnpaidInvoicesList invoices={data.topUnpaidInvoices} />
+          <TopUnpaidDeliveryNotesList deliveryNotes={data.topUnpaidDeliveryNotes} />
         </Grid>
       </Grid>
     </Box>

@@ -1,25 +1,25 @@
 import { useParams, useNavigate, useSearchParams } from "react-router";
 
 import { PageShell } from "@/components/PageShell";
-import { InvoiceDetail } from "@/features/invoices/components/InvoiceDetail";
+import { DeliveryNoteDetail } from "@/features/delivery-notes/components/DeliveryNoteDetail";
 
-export default function InvoiceDetailPage() {
+export default function DeliveryNoteDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const isNew = id === "nuevo";
-  const invoiceId = isNew ? undefined : Number(id);
+  const deliveryNoteId = isNew ? undefined : Number(id);
   const estimateId = searchParams.get("estimateId")
     ? Number(searchParams.get("estimateId"))
     : undefined;
 
   return (
-    <PageShell title={isNew ? "Nueva factura" : `Factura #${id}`}>
-      <InvoiceDetail
-        invoiceId={invoiceId}
+    <PageShell title={isNew ? "Nueva remito" : `Remito #${id}`}>
+      <DeliveryNoteDetail
+        deliveryNoteId={deliveryNoteId}
         estimateId={estimateId}
-        onBack={() => navigate("/facturas")}
+        onBack={() => navigate("/remitos")}
       />
     </PageShell>
   );

@@ -18,8 +18,8 @@ vi.mock("@/features/estimates/components/EstimateTab", () => ({
   EstimateTab: () => <div data-testid="estimate-tab">EstimateTab</div>,
 }));
 
-vi.mock("@/features/invoices/components/InvoiceTab", () => ({
-  InvoiceTab: () => <div data-testid="invoice-tab">InvoiceTab</div>,
+vi.mock("@/features/delivery-notes/components/DeliveryNoteTab", () => ({
+  DeliveryNoteTab: () => <div data-testid="deliveryNote-tab">DeliveryNoteTab</div>,
 }));
 
 const mockRefetch = vi.fn();
@@ -59,7 +59,7 @@ describe("RepairOrderDetailTabs", () => {
     expect(screen.getByText("Inspecciones")).toBeInTheDocument();
     expect(screen.getByText("Presupuesto")).toBeInTheDocument();
     expect(screen.queryByText("Trabajos")).not.toBeInTheDocument();
-    expect(screen.getByText("Factura")).toBeInTheDocument();
+    expect(screen.getByText("Remito")).toBeInTheDocument();
   });
 
   it("given order, when first tab active, then shows GeneralInfoTab content", () => {
@@ -87,12 +87,12 @@ describe("RepairOrderDetailTabs", () => {
     expect(screen.getByTestId("estimate-tab")).toBeInTheDocument();
   });
 
-  it("given order, when clicking Factura tab, then shows InvoiceTab", async () => {
+  it("given order, when clicking Remito tab, then shows DeliveryNoteTab", async () => {
     const user = userEvent.setup();
     render(<RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />);
 
-    await user.click(screen.getByText("Factura"));
+    await user.click(screen.getByText("Remito"));
 
-    expect(screen.getByTestId("invoice-tab")).toBeInTheDocument();
+    expect(screen.getByTestId("deliveryNote-tab")).toBeInTheDocument();
   });
 });

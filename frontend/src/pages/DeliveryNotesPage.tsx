@@ -15,15 +15,15 @@ import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { AppSearchField } from "@/components/AppSearchField";
 import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
-import { InvoiceList } from "@/features/invoices/components/InvoiceList";
-import { useInvoices } from "@/features/invoices/hooks/useInvoices";
+import { DeliveryNoteList } from "@/features/delivery-notes/components/DeliveryNoteList";
+import { useDeliveryNotes } from "@/features/delivery-notes/hooks/useDeliveryNotes";
 
 import type { SelectChangeEvent } from "@mui/material";
-import type { InvoiceResponse, InvoiceStatus } from "@/types/invoice";
+import type { DeliveryNoteResponse, DeliveryNoteStatus } from "@/types/deliveryNote";
 
-export default function InvoicesPage() {
+export default function DeliveryNotesPage() {
   const {
-    invoices,
+    deliveryNotes,
     loading,
     error,
     totalCount,
@@ -34,8 +34,8 @@ export default function InvoicesPage() {
     setClientName,
     setPlate,
     setStatus,
-    deleteInvoice,
-  } = useInvoices();
+    deleteDeliveryNote,
+  } = useDeliveryNotes();
 
   const navigate = useNavigate();
   const [clientNameInput, setClientNameInput] = useState("");
@@ -67,29 +67,29 @@ export default function InvoicesPage() {
   const handleStatusChange = (e: SelectChangeEvent) => {
     const val = e.target.value;
     setStatusInput(val);
-    setStatus(val ? (val as InvoiceStatus) : undefined);
+    setStatus(val ? (val as DeliveryNoteStatus) : undefined);
     setPage(0);
   };
 
-  const handleRowClick = (row: InvoiceResponse) => {
+  const handleRowClick = (row: DeliveryNoteResponse) => {
     if (row.repairOrderId != null) {
-      navigate(`/ordenes-trabajo/${row.repairOrderId}?tab=factura`);
+      navigate(`/ordenes-trabajo/${row.repairOrderId}?tab=remito`);
     } else {
-      navigate(`/facturas/${row.id}`);
+      navigate(`/remitos/${row.id}`);
     }
   };
 
-  const handleCreate = () => navigate("/facturas/nuevo");
+  const handleCreate = () => navigate("/remitos/nuevo");
 
   const handleDeleteConfirm = async () => {
     if (deleteDialogId != null) {
-      await deleteInvoice(deleteDialogId);
+      await deleteDeliveryNote(deleteDialogId);
       setDeleteDialogId(null);
     }
   };
 
   return (
-    <PageShell title="Facturas">
+    <PageShell title="Remitos">
       <PageToolbar
         filters={
           <>
@@ -116,7 +116,7 @@ export default function InvoicesPage() {
         }
         actions={
           <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-            Crear nueva factura
+            Crear nueva remito
           </Button>
         }
       />
@@ -127,8 +127,8 @@ export default function InvoicesPage() {
         </Alert>
       )}
 
-      <InvoiceList
-        rows={invoices}
+      <DeliveryNoteList
+        rows={deliveryNotes}
         loading={loading}
         totalCount={totalCount}
         page={page}
@@ -141,8 +141,8 @@ export default function InvoicesPage() {
 
       <AppConfirmDialog
         open={deleteDialogId != null}
-        title="Eliminar factura"
-        message="¿Estás seguro de que querés eliminar esta factura? Esta acción no se puede deshacer."
+        title="Eliminar remito"
+        message="¿Estás seguro de que querés eliminar esta remito? Esta acción no se puede deshacer."
         confirmLabel="Eliminar"
         destructive
         onConfirm={handleDeleteConfirm}

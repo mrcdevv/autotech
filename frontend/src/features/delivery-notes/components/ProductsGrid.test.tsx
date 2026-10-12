@@ -4,7 +4,7 @@ import { vi, describe, it, expect } from "vitest";
 
 import { ProductsGrid } from "./ProductsGrid";
 
-import type { InvoiceProductRequest } from "@/types/invoice";
+import type { DeliveryNoteProductRequest } from "@/types/deliveryNote";
 
 vi.mock("@/api/products", () => ({
   productsApi: {
@@ -16,7 +16,7 @@ const money = (value: number) =>
   value.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 describe("ProductsGrid", () => {
-  const defaultProducts: InvoiceProductRequest[] = [
+  const defaultProducts: DeliveryNoteProductRequest[] = [
     { productName: "Brake pad", quantity: 4, unitPrice: 25 },
     { productName: "Oil filter", quantity: 1, unitPrice: 15 },
   ];

@@ -2,13 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 
 import { appointmentsApi } from "@/api/appointments";
 import { dashboardApi } from "@/api/dashboard";
-import { invoicesApi } from "@/api/invoices";
+import { deliveryNotesApi } from "@/api/deliveryNotes";
 import { repairOrdersApi } from "@/api/repairOrders";
 import { ACTIVE_STATUSES } from "@/features/repair-orders/types";
 import type { DashboardSummaryResponse } from "@/features/dashboard/types";
 import type { RepairOrderResponse } from "@/features/repair-orders/types";
 import type { AppointmentResponse } from "@/types/appointment";
-import type { InvoiceResponse } from "@/types/invoice";
+import type { DeliveryNoteResponse } from "@/types/deliveryNote";
 
 const UPCOMING_DAYS = 7;
 const INVOICE_PAGE_SIZE = 100;
@@ -26,7 +26,7 @@ export function useHomeDashboard() {
   const [summary, setSummary] = useState<DashboardSummaryResponse | null>(null);
   const [orders, setOrders] = useState<RepairOrderResponse[]>([]);
   const [appointments, setAppointments] = useState<AppointmentResponse[]>([]);
-  const [invoices, setInvoices] = useState<InvoiceResponse[]>([]);
+  const [deliveryNotes, setDeliveryNotes] = useState<DeliveryNoteResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,17 +39,17 @@ export function useHomeDashboard() {
       const rangeEnd = new Date(rangeStart);
       rangeEnd.setDate(rangeEnd.getDate() + UPCOMING_DAYS);
 
-      const [summaryRes, ordersRes, appointmentsRes, invoicesRes] = await Promise.all([
+      const [summaryRes, ordersRes, appointmentsRes, deliveryNotesRes] = await Promise.all([
         dashboardApi.getSummary(),
         repairOrdersApi.search({ statuses: ACTIVE_STATUSES, size: ACTIVE_ORDERS_LIMIT }),
         appointmentsApi.getByDateRange(toLocalIso(rangeStart), toLocalIso(rangeEnd)),
-        invoicesApi.getAll({ size: INVOICE_PAGE_SIZE, sort: "createdAt,desc" }),
+        deliveryNotesApi.getAll({ size: INVOICE_PAGE_SIZE, sort: "createdAt,desc" }),
       ]);
 
       setSummary(summaryRes.data.data);
       setOrders(ordersRes.data.data.content);
       setAppointments(appointmentsRes.data.data);
-      setInvoices(invoicesRes.data.data.content);
+      setDeliveryNotes(deliveryNotesRes.data.data.content);
     } catch {
       setError("Error al cargar el inicio");
     } finally {
@@ -61,5 +61,5 @@ export function useHomeDashboard() {
     fetchData();
   }, [fetchData]);
 
-  return { summary, orders, appointments, invoices, loading, error, refetch: fetchData };
+  return { summary, orders, appointments, deliveryNotes, loading, error, refetch: fetchData };
 }
