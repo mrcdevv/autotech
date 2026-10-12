@@ -50,8 +50,8 @@ export default function RepairOrdersPage() {
   const [employeeId, setEmployeeId] = useState<number | null>(null);
   const [tagId, setTagId] = useState<number | null>(null);
   const [showFinished, setShowFinished] = useState(true);
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const [createdFrom, setCreatedFrom] = useState("");
+  const [createdTo, setCreatedTo] = useState("");
   const [historyPagination, setHistoryPagination] = useState<GridPaginationModel>({
     page: 0,
     pageSize: 12,
@@ -86,15 +86,15 @@ export default function RepairOrdersPage() {
     q: query,
     employeeId: employeeId ?? undefined,
     tagId: tagId ?? undefined,
-    from: closedSince,
+    updatedFrom: closedSince,
     size: BOARD_LIMIT,
   };
 
   const historyParams: RepairOrderListParams = {
     statuses: CLOSED_STATUSES,
     q: query,
-    from: from || undefined,
-    to: to || undefined,
+    createdFrom: createdFrom || undefined,
+    createdTo: createdTo || undefined,
     page: historyPagination.page,
     size: historyPagination.pageSize,
   };
@@ -176,24 +176,24 @@ export default function RepairOrdersPage() {
             ) : (
               <>
                 <TextField
-                  label="Desde"
+                  label="Ingreso desde"
                   type="date"
                   size="small"
-                  value={from}
+                  value={createdFrom}
                   onChange={(e) => {
-                    setFrom(e.target.value);
+                    setCreatedFrom(e.target.value);
                     setHistoryPagination((prev) => ({ ...prev, page: 0 }));
                   }}
                   slotProps={{ inputLabel: { shrink: true } }}
                   sx={{ minWidth: 170 }}
                 />
                 <TextField
-                  label="Hasta"
+                  label="Ingreso hasta"
                   type="date"
                   size="small"
-                  value={to}
+                  value={createdTo}
                   onChange={(e) => {
-                    setTo(e.target.value);
+                    setCreatedTo(e.target.value);
                     setHistoryPagination((prev) => ({ ...prev, page: 0 }));
                   }}
                   slotProps={{ inputLabel: { shrink: true } }}
