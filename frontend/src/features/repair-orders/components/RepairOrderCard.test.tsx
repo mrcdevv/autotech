@@ -32,6 +32,20 @@ const sampleOrder: RepairOrderResponse = {
   updatedAt: "2025-01-15T10:00:00",
 };
 
+const multiMechanicOrder: RepairOrderResponse = {
+  ...sampleOrder,
+  employees: [
+    { id: 1, firstName: "Carlos", lastName: "Lopez" },
+    { id: 2, firstName: "Ana", lastName: "Garcia" },
+    { id: 3, firstName: "Luis", lastName: "Martinez" },
+  ],
+};
+
+const unassignedOrder: RepairOrderResponse = {
+  ...sampleOrder,
+  employees: [],
+};
+
 describe("RepairOrderCard", () => {
   it("given order, when rendered, then shows status badge and order id", () => {
     render(
@@ -74,6 +88,50 @@ describe("RepairOrderCard", () => {
     );
 
     expect(screen.getByText("Carlos Lopez")).toBeInTheDocument();
+  });
+
+  it("given order with three mechanics, when rendered, then shows every mechanic with avatar and name", () => {
+    render(
+      <MemoryRouter>
+        <RepairOrderCard order={multiMechanicOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Carlos Lopez")).toBeInTheDocument();
+    expect(screen.getByText("Ana Garcia")).toBeInTheDocument();
+    expect(screen.getByText("Luis Martinez")).toBeInTheDocument();
+  });
+
+  it("given order with three mechanics, when rendered, then row label reads Mecánicos", () => {
+    render(
+      <MemoryRouter>
+        <RepairOrderCard order={multiMechanicOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Mecánicos")).toBeInTheDocument();
+  });
+
+  it("given order with one mechanic, when rendered, then row label reads Mecánico", () => {
+    render(
+      <MemoryRouter>
+        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Mecánico")).toBeInTheDocument();
+    expect(screen.queryByText("Mecánicos")).not.toBeInTheDocument();
+  });
+
+  it("given order with no mechanics, when rendered, then shows Sin asignar and no mechanic", () => {
+    render(
+      <MemoryRouter>
+        <RepairOrderCard order={unassignedOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Sin asignar")).toBeInTheDocument();
+    expect(screen.queryByText("Carlos Lopez")).not.toBeInTheDocument();
   });
 
   it("given order with tags, when rendered, then shows tag chips", () => {
