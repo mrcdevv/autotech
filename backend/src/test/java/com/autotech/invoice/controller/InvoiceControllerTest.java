@@ -7,6 +7,7 @@ import com.autotech.invoice.dto.InvoiceDetailResponse;
 import com.autotech.invoice.dto.InvoiceRequest;
 import com.autotech.invoice.dto.InvoiceResponse;
 import com.autotech.invoice.model.InvoiceStatus;
+import com.autotech.invoice.service.InvoicePdfService;
 import com.autotech.invoice.service.InvoiceService;
 import com.autotech.security.CustomUserDetailsService;
 import com.autotech.security.JwtTokenProvider;
@@ -52,6 +53,9 @@ class InvoiceControllerTest {
 
     @MockitoBean
     private InvoiceService invoiceService;
+
+    @MockitoBean
+    private InvoicePdfService invoicePdfService;
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
