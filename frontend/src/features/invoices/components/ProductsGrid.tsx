@@ -6,7 +6,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
 
 import { productsApi } from "@/api/products";
-
+import { MoneyInput } from "@/components/MoneyInput";
 import { formatCurrency } from "@/utils/formatCurrency";
 
 import type { InvoiceProductRequest } from "@/types/invoice";
@@ -199,24 +199,18 @@ export function ProductsGrid({ products, onChange, readonly = false, showErrors 
                   error={showErrors && prod.quantity < 1}
                   helperText={showErrors && prod.quantity < 1 ? "Debe ser al menos 1" : undefined}
                 />
-                <TextField
-                  type="number"
-                  label="Precio unitario"
-                  value={prod.unitPrice === 0 ? "" : prod.unitPrice}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    updateProduct(index, "unitPrice", val === "" ? 0 : Number(val));
-                  }}
-                  onKeyDown={(e) => blockNonNumeric(e)}
-                  slotProps={{
-                    htmlInput: { min: 0, step: "0.01", style: { textAlign: "right" } },
-                  }}
-                  disabled={readonly}
-                  size="small"
-                  sx={{ flex: 1 }}
-                  error={showErrors && prod.unitPrice < 0}
-                  helperText={showErrors && prod.unitPrice < 0 ? "No puede ser negativo" : undefined}
-                />
+                <Box sx={{ flex: 1, display: "flex" }}>
+                  <MoneyInput
+                    label="Precio unitario"
+                    value={prod.unitPrice}
+                    onChange={(v) => updateProduct(index, "unitPrice", v ?? 0)}
+                    disabled={readonly}
+                    size="small"
+                    fullWidth
+                    error={showErrors && prod.unitPrice < 0}
+                    helperText={showErrors && prod.unitPrice < 0 ? "No puede ser negativo" : undefined}
+                  />
+                </Box>
                 <TextField
                   label="Total"
                   value={formatCurrency((prod.quantity || 0) * (prod.unitPrice || 0))}

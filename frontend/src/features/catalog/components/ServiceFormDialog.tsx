@@ -4,12 +4,12 @@ import {
   Button,
   TextField,
   Stack,
-  InputAdornment,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import BuildIcon from "@mui/icons-material/Build";
 
 import { AppDialog } from "@/components/AppDialog";
+import { MoneyInput } from "@/components/MoneyInput";
 
 import type { CatalogServiceResponse, CatalogServiceRequest } from "@/types/catalog";
 
@@ -25,7 +25,7 @@ interface FormErrors {
 }
 
 export function ServiceFormDialog({ open, onClose, onSave, initialData }: ServiceFormDialogProps) {
-  const [form, setForm] = useState<Omit<CatalogServiceRequest, "price"> & { price: number | string | null }>({
+  const [form, setForm] = useState<Omit<CatalogServiceRequest, "price"> & { price: number | null }>({
     name: "",
     description: null,
     price: null,
@@ -41,7 +41,7 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
           price: initialData.price,
         });
       } else {
-        setForm({ name: "", description: null, price: "" });
+        setForm({ name: "", description: null, price: null });
       }
       setErrors({});
     }
@@ -55,7 +55,7 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
     if (!form.name.trim()) newErrors.name = "El nombre del servicio es obligatorio";
-    if (form.price === "" || form.price === null || form.price === undefined) {
+    if (form.price === null || form.price === undefined) {
       newErrors.price = "El precio es obligatorio";
     }
     setErrors(newErrors);
@@ -110,25 +110,15 @@ export function ServiceFormDialog({ open, onClose, onSave, initialData }: Servic
             />
           </Grid>
           <Grid size={{ xs: 12 }}>
-            <TextField
+            <MoneyInput
               fullWidth
               label="Precio"
               placeholder="Ej: 5000.00"
-              type="number"
-              value={form.price ?? ""}
-              onChange={(e) => {
-                const val = e.target.value;
-                handleChange("price", val === "" ? "" : parseFloat(val));
-              }}
+              value={form.price}
+              onChange={(v) => handleChange("price", v)}
               error={!!errors.price}
               helperText={errors.price}
               required
-              slotProps={{
-                htmlInput: { min: 0, step: "0.01", style: { textAlign: "right" } },
-                input: {
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                },
-              }}
             />
           </Grid>
         </Grid>

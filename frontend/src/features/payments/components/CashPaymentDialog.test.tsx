@@ -94,14 +94,19 @@ describe("CashPaymentDialog", () => {
     expect(getComputedStyle(remainingInput).textAlign).toBe("right");
   });
 
-  it("given open dialog, when rendered, then the editable amount input is right-aligned but not currency-formatted", () => {
+  it("given open dialog, when rendered, then the amount shows the shared currency format when not focused and the plain number when focused (decision D14, supersedes the D5 raw-value rule)", async () => {
+    const user = userEvent.setup();
     render(<CashPaymentDialog {...defaultProps} />);
 
     const amountInput = screen.getByLabelText("Monto a pagar");
-    // Positive inline-style assertion: jsdom reflects inline styles in getComputedStyle.
+    // Not focused: the shared 2-decimal es-AR currency string.
     expect(getComputedStyle(amountInput).textAlign).toBe("right");
-    // Decision D5: the editable amount stays a raw number, never currency-formatted.
-    expect(amountInput).toHaveValue(0);
+    expect(amountInput).toHaveValue(formatCurrency(0));
+
+    await user.click(amountInput);
+    // D14: while focused the field shows the plain number being typed — no symbol,
+    // no thousands separator, because a formatted string breaks typing.
+    expect(amountInput).toHaveValue("0");
   });
 
   it("given remaining field, when clicked, then fills amount with remaining", async () => {
@@ -111,7 +116,8 @@ describe("CashPaymentDialog", () => {
     await user.click(screen.getByDisplayValue(money(500)));
 
     const amountInput = screen.getByLabelText("Monto a pagar");
-    expect(amountInput).toHaveValue(500);
+    // Not focused: exactly the shared formatter output (2 decimals, single "$").
+    expect(amountInput).toHaveValue(formatCurrency(500));
   });
 
   it("given payer name field, when rendered, then shows client name as placeholder", () => {
@@ -197,7 +203,8 @@ describe("CashPaymentDialog", () => {
     expect(dateInput).toHaveValue("2025-03-10");
 
     const amountInput = screen.getByLabelText("Monto a pagar");
-    expect(amountInput).toHaveValue(200);
+    // Not focused: the shared 2-decimal es-AR currency string.
+    expect(amountInput).toHaveValue(formatCurrency(200));
   });
 
   it("given edit mode, when confirming, then calls updatePayment", async () => {

@@ -63,7 +63,8 @@ describe("ServicesGrid", () => {
     expect(screen.getByText("Servicios")).toBeInTheDocument();
   });
 
-  it("given a price input, when rendered, then the input is right-aligned but its value stays the raw editable number (decision D5)", () => {
+  it("given a price input, when not focused it shows the shared 2-decimal currency value and when focused the plain number (decision D14, supersedes the D5 raw-value rule)", async () => {
+    const user = userEvent.setup();
     render(
       <ServicesGrid
         services={[{ serviceName: "Align check", price: 1234.5 }]}
@@ -72,10 +73,15 @@ describe("ServicesGrid", () => {
     );
 
     const priceInput = screen.getByLabelText("Precio");
+    // Not focused: exactly the shared formatter output (2 decimals, single "$"),
+    // never a raw "1234.5".
+    expect(priceInput).toHaveValue(formatCurrency(1234.5));
     // Positive assertion: the inline style is reflected in jsdom's getComputedStyle.
     expect(getComputedStyle(priceInput).textAlign).toBe("right");
-    // D5 guard: the value must be the raw number the user is typing, never a
-    // currency string like "$ 1.234,50".
-    expect(priceInput).toHaveValue(1234.5);
+
+    await user.click(priceInput);
+    // D14: while focused the field shows the plain number being edited — no symbol,
+    // no thousands separator, because a formatted string breaks typing.
+    expect(priceInput).toHaveValue("1234.5");
   });
 });

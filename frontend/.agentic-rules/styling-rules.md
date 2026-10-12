@@ -44,8 +44,15 @@
    `sx={{ display: "block", width: "100%", textAlign: "right" }}`. If a label and an amount share one block, restructure into
    a flex row (`Box` with `display: "flex"` and `justifyContent: "space-between"`) so only
    the amount carries the alignment.
-4. Editable price inputs are right-aligned but never currency-formatted while the user is
-   typing.
+4. Editable money fields use the shared `MoneyInput` component
+   (`src/components/MoneyInput.tsx`) — never a bare `type="number"` input and never a
+   manual `$` `InputAdornment`. A money input has TWO states (decision D14): while
+   FOCUSED it shows the plain number being typed — no symbol, no thousands separator,
+   because a formatted string breaks typing — and while NOT focused it shows the shared
+   `formatCurrency` value exactly like any other amount, rounding to 2 decimals on blur.
+   `type="number"` cannot render a formatted value at all, and a manual dollar adornment
+   would double the symbol the formatter already emits while the field is not focused.
+   Right alignment stays explicit on the input element itself.
 5. Tests: an alignment assertion must target a block-level element, and a NEGATIVE
    assertion on a computed style is suspect in jsdom — `getComputedStyle(el).display`
    returns an EMPTY STRING when no author rule sets the property, so `display !== "inline"`

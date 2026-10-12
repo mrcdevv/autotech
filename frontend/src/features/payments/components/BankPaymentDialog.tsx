@@ -10,6 +10,7 @@ import {
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 
 import { AppDialog } from "@/components/AppDialog";
+import { MoneyInput } from "@/components/MoneyInput";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { usePayments } from "../hooks/usePayments";
 import { useBankAccounts } from "../hooks/useBankAccounts";
@@ -139,14 +140,10 @@ export function BankPaymentDialog({
             sx={{ cursor: "pointer" }}
             fullWidth
           />
-          <TextField
-            type="number"
+          <MoneyInput
             label="Monto a pagar"
             value={amount}
-            onChange={(e) => setAmount(Number(e.target.value))}
-            slotProps={{
-              htmlInput: { min: 0.01, max: displayRemaining, step: 0.01, style: { textAlign: "right" } },
-            }}
+            onChange={(v) => setAmount(v ?? 0)}
             fullWidth
           />
           <TextField

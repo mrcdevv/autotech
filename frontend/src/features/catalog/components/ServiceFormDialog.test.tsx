@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect } from "vitest";
 
 import { ServiceFormDialog } from "./ServiceFormDialog";
+import { formatCurrency } from "@/utils/formatCurrency";
 
 const defaultProps = {
   open: true,
@@ -11,8 +12,8 @@ const defaultProps = {
   initialData: null,
 };
 
-describe("ServiceFormDialog (price input alignment)", () => {
-  it("given the dialog, when a price is typed, then the input is right-aligned but its value stays the raw editable number (decision D5)", async () => {
+describe("ServiceFormDialog (money input two states)", () => {
+  it("given the dialog, when a price is typed, then the focused field shows the plain number being typed (decision D14, supersedes the D5 raw-value rule)", async () => {
     const user = userEvent.setup();
     render(<ServiceFormDialog {...defaultProps} />);
 
@@ -21,20 +22,22 @@ describe("ServiceFormDialog (price input alignment)", () => {
 
     // Positive assertion: the inline style is reflected in jsdom's getComputedStyle.
     expect(getComputedStyle(priceInput).textAlign).toBe("right");
-    // D5 guard: the value must be the raw number the user is typing, never a
-    // currency string like "$ 1.234,50".
-    expect(priceInput).toHaveValue(1234.5);
+    // D14: while focused the field shows the plain number being typed — no symbol,
+    // no thousands separator, because a formatted string breaks typing.
+    expect(priceInput).toHaveValue("1234.5");
   });
 
-  it("given the dialog, when a whole price is typed, then the value stays raw and is right-aligned", async () => {
+  it("given the dialog, when the field loses focus, then it shows the shared 2-decimal currency value without a doubled symbol, right-aligned (decision D14)", async () => {
     const user = userEvent.setup();
     render(<ServiceFormDialog {...defaultProps} />);
 
     const priceInput = screen.getByLabelText(/precio/i);
     await user.type(priceInput, "1234");
+    await user.tab();
 
     expect(getComputedStyle(priceInput).textAlign).toBe("right");
-    // A formatted value would render "1.234" or "$ 1.234,00"; the raw value stays "1234".
-    expect(priceInput).toHaveValue(1234);
+    // Not focused: exactly the shared formatter output (2 decimals, single "$"),
+    // never a raw "1234" and never a doubled "$" from a manual adornment.
+    expect(priceInput).toHaveValue(formatCurrency(1234));
   });
 });
