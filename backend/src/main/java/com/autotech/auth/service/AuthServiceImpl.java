@@ -1,6 +1,8 @@
 package com.autotech.auth.service;
 
 import com.autotech.auth.dto.ChangePasswordRequest;
+import com.autotech.auth.dto.CurrentUserMapper;
+import com.autotech.auth.dto.CurrentUserResponse;
 import com.autotech.email.service.EmailNotificationService;
 import com.autotech.employee.model.Employee;
 import com.autotech.employee.repository.EmployeeRepository;
@@ -23,6 +25,7 @@ public class AuthServiceImpl implements AuthService {
     private final EmployeeRepository employeeRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailNotificationService emailNotificationService;
+    private final CurrentUserMapper currentUserMapper;
 
     @Override
     @Transactional
@@ -52,6 +55,14 @@ public class AuthServiceImpl implements AuthService {
             emailNotificationService.notifyPasswordRecovery(employee, tempPassword);
             log.info("Password recovery requested for employee id: {}", employee.getId());
         });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CurrentUserResponse getCurrentUser(String email) {
+        Employee employee = employeeRepository.findWithRolesAndPermissionsByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Empleado no encontrado"));
+        return currentUserMapper.toResponse(employee);
     }
 
     private String generateTempPassword() {
