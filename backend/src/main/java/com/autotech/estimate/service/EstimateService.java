@@ -36,6 +36,8 @@ public interface EstimateService {
 
     EstimateDetailResponse reopen(Long id);
 
+    EstimateDetailResponse attachToRepairOrder(Long id, Long repairOrderId);
+
     void delete(Long id);
 
     BigDecimal calculateTotal(List<EstimateServiceItemRequest> services,

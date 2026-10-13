@@ -249,6 +249,53 @@ public class EstimateServiceImpl implements EstimateService {
 
     @Override
     @Transactional
+    public EstimateDetailResponse attachToRepairOrder(Long id, Long repairOrderId) {
+        Estimate entity = estimateRepository.findWithDetailsById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Estimate", id));
+
+        // The estimate must be PENDIENTE: an ACEPTADO one must be reopened first,
+        // a RECHAZADO one can never be attached
+        if (entity.getStatus() != EstimateStatus.PENDIENTE) {
+            throw new BusinessException("Solo se pueden asociar presupuestos en estado PENDIENTE");
+        }
+
+        // Attaching is a one-time act: there is no detach, so re-attaching (even to the
+        // same order) is refused
+        if (entity.getRepairOrder() != null) {
+            throw new BusinessException("El presupuesto ya está asociado a una orden de trabajo");
+        }
+
+        RepairOrder order = repairOrderRepository.findById(repairOrderId)
+                .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", repairOrderId));
+
+        // The estimate's client and vehicle must match the order's; the estimate's
+        // vehicle is never overwritten to make it fit
+        if (!entity.getClient().getId().equals(order.getClient().getId())) {
+            throw new BusinessException("El cliente del presupuesto no coincide con el cliente de la orden de trabajo");
+        }
+        if (!entity.getVehicle().getId().equals(order.getVehicle().getId())) {
+            throw new BusinessException("El vehículo del presupuesto no coincide con el vehículo de la orden de trabajo");
+        }
+
+        // The OT must be open: not closed by status and without an invoice (D1)
+        repairOrderService.validateOpenForNewDocuments(order);
+
+        // Consistent with the creation rule: no active estimate (PENDIENTE or ACEPTADO) on the order
+        boolean hasActiveEstimate = estimateRepository.findAllByRepairOrderId(repairOrderId).stream()
+                .anyMatch(e -> e.getStatus() == EstimateStatus.PENDIENTE || e.getStatus() == EstimateStatus.ACEPTADO);
+        if (hasActiveEstimate) {
+            throw new BusinessException("Ya existe un presupuesto pendiente o aceptado para esta orden de trabajo");
+        }
+
+        entity.setRepairOrder(order);
+        Estimate saved = estimateRepository.save(entity);
+        recordAssociationAudit(saved.getId(), repairOrderId);
+        log.info("Attached estimate {} to repair order {}", id, repairOrderId);
+        return getById(saved.getId());
+    }
+
+    @Override
+    @Transactional
     public void delete(Long id) {
         if (!estimateRepository.existsById(id)) {
             throw new ResourceNotFoundException("Estimate", id);
@@ -340,6 +387,18 @@ public class EstimateServiceImpl implements EstimateService {
         if (newTotal != null) {
             newValues.put("total", newTotal);
         }
+        auditService.record(AuditEntityType.ESTIMATE, estimateId, AuditAction.MODIFIED, oldValues, newValues);
+    }
+
+    /**
+     * Records an audit row for the association of an estimate to a repair order (T7b):
+     * the before/after shows the association appearing ({"repairOrderId": null} → {"repairOrderId": X}).
+     */
+    private void recordAssociationAudit(Long estimateId, Long repairOrderId) {
+        Map<String, Object> oldValues = new LinkedHashMap<>();
+        oldValues.put("repairOrderId", null);
+        Map<String, Object> newValues = new LinkedHashMap<>();
+        newValues.put("repairOrderId", repairOrderId);
         auditService.record(AuditEntityType.ESTIMATE, estimateId, AuditAction.MODIFIED, oldValues, newValues);
     }
 
