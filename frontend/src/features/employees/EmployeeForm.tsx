@@ -319,6 +319,9 @@ export function EmployeeForm({ open, employee, onClose, onSave }: EmployeeFormPr
                   <MenuItem value="ACTIVO">Activo</MenuItem>
                   <MenuItem value="INACTIVO">Inactivo</MenuItem>
                 </Select>
+                <FormHelperText>
+                  Los empleados no se eliminan: cámbielos a Inactivo para que dejen de aparecer y no puedan iniciar sesión.
+                </FormHelperText>
               </FormControl>
             </Grid>
 

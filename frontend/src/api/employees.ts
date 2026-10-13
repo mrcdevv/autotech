@@ -18,9 +18,6 @@ export const employeesApi = {
   update: (id: number, data: EmployeeRequest) =>
     apiClient.put<ApiResponse<EmployeeResponse>>(`/employees/${id}`, data),
 
-  delete: (id: number) =>
-    apiClient.delete<ApiResponse<void>>(`/employees/${id}`),
-
   searchByDni: (dni: string, page: number, size: number = 12) =>
     apiClient.get<ApiResponse<PageResponse<EmployeeResponse>>>("/employees/search", {
       params: { dni, page, size },
