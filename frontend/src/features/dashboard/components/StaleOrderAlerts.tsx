@@ -20,7 +20,11 @@ export function StaleOrderAlerts({ alerts, thresholdDays }: StaleOrderAlertsProp
         </Typography>
       ) : (
         alerts.map((alert) => (
-          <PanelRow key={alert.repairOrderId}>
+          <PanelRow
+            key={alert.repairOrderId}
+            to={`/ordenes-trabajo/${alert.repairOrderId}`}
+            ariaLabel={`Ir a la orden de trabajo #${alert.repairOrderId} · ${alert.title ?? `Orden #${alert.repairOrderId}`} · ${alert.clientFullName} · ${alert.vehiclePlate} · ${alert.daysSinceLastUpdate} días inactiva`}
+          >
             <RowText
               primary={alert.title ?? `Orden #${alert.repairOrderId}`}
               secondary={`${alert.clientFullName} · ${alert.vehiclePlate}`}

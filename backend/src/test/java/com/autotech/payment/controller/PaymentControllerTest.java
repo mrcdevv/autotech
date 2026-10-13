@@ -2,6 +2,8 @@ package com.autotech.payment.controller;
 
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.GlobalExceptionHandler;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.payment.dto.PaymentRequest;
 import com.autotech.payment.dto.PaymentResponse;
@@ -49,6 +51,12 @@ class PaymentControllerTest {
 
     @MockitoBean
     private PaymentService paymentService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     private final PaymentResponse sampleResponse = new PaymentResponse(
             1L, 10L, LocalDate.now(), LocalDateTime.now(),

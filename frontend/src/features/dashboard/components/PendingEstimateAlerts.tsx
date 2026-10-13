@@ -22,7 +22,11 @@ export function PendingEstimateAlerts({ alerts, thresholdDays }: PendingEstimate
         </Typography>
       ) : (
         alerts.map((alert) => (
-          <PanelRow key={alert.estimateId}>
+          <PanelRow
+            key={alert.estimateId}
+            to={`/presupuestos/${alert.estimateId}`}
+            ariaLabel={`Ir al presupuesto #${alert.estimateId} · ${alert.clientFullName} · ${alert.vehiclePlate} · ${alert.daysPending} días pendiente`}
+          >
             {/* The amount gets its own block (a Typography <p>) carrying the explicit
                 right alignment; the client/plate block keeps its own box, so neither
                 shares a block where alignment would move the label too. */}

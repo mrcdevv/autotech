@@ -4,6 +4,8 @@ import com.autotech.appointment.dto.CalendarConfigRequest;
 import com.autotech.appointment.dto.CalendarConfigResponse;
 import com.autotech.appointment.service.CalendarConfigService;
 import com.autotech.common.exception.GlobalExceptionHandler;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +39,12 @@ class CalendarConfigControllerTest {
 
     @MockitoBean
     private CalendarConfigService calendarConfigService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     private final CalendarConfigResponse sampleResponse = new CalendarConfigResponse(
             1L, 60, LocalTime.of(9, 0), LocalTime.of(17, 0), null, null);

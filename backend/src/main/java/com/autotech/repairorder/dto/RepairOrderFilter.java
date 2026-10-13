@@ -7,8 +7,10 @@ import java.util.List;
 
 public record RepairOrderFilter(
         List<RepairOrderStatus> statuses,
-        LocalDate from,
-        LocalDate to,
+        LocalDate createdFrom,
+        LocalDate createdTo,
+        LocalDate updatedFrom,
+        LocalDate updatedTo,
         Long employeeId,
         Long tagId,
         String query

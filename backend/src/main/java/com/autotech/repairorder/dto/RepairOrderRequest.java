@@ -23,5 +23,8 @@ public record RepairOrderRequest(
 
         List<Long> employeeIds,
 
-        List<Long> tagIds
+        List<Long> tagIds,
+
+        @Size(max = 5000, message = "Las notas del mecánico no pueden superar los 5000 caracteres")
+        String mechanicNotes
 ) {}

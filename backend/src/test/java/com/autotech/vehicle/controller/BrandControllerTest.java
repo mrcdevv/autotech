@@ -1,6 +1,8 @@
 package com.autotech.vehicle.controller;
 
 import com.autotech.common.exception.GlobalExceptionHandler;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.autotech.vehicle.dto.BrandRequest;
 import com.autotech.vehicle.dto.BrandResponse;
 import com.autotech.vehicle.service.BrandService;
@@ -36,6 +38,12 @@ class BrandControllerTest {
 
     @MockitoBean
     private BrandService brandService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     private final BrandResponse sampleResponse = new BrandResponse(1L, "Toyota", LocalDateTime.now());
 

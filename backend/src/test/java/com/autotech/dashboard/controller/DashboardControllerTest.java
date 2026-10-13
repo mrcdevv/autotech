@@ -1,6 +1,8 @@
 package com.autotech.dashboard.controller;
 
 import com.autotech.common.exception.GlobalExceptionHandler;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.autotech.dashboard.dto.DashboardConfigRequest;
 import com.autotech.dashboard.dto.DashboardFinancieroResponse;
 import com.autotech.dashboard.dto.DashboardProductividadResponse;
@@ -46,6 +48,12 @@ class DashboardControllerTest {
 
     @MockitoBean
     private DashboardExportService dashboardExportService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     @Test
     void givenData_whenGetSummary_thenReturn200() throws Exception {

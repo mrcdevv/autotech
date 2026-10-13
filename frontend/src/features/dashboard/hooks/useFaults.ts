@@ -1,30 +1,18 @@
-import { useState, useEffect, useCallback } from "react";
-
 import { dashboardApi } from "@/api/dashboard";
+import { useGuardedRequest } from "@/hooks/useGuardedRequest";
 
 import type { FaultCountResponse } from "@/features/dashboard/types";
 
 export function useFaults(from: string, to: string, brandId: number | null) {
-  const [data, setData] = useState<FaultCountResponse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  const { data, loading, error, refetch } = useGuardedRequest<FaultCountResponse[]>(
+    async () => {
       const res = await dashboardApi.getReportFaults(from, to, brandId);
-      setData(res.data.data);
-    } catch {
-      setError("No se pudieron cargar los datos de este informe.");
-    } finally {
-      setLoading(false);
-    }
-  }, [from, to, brandId]);
+      return res.data.data;
+    },
+    "No se pudieron cargar los datos de este informe.",
+    [from, to, brandId],
+  );
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  return { data, loading, error, refetch: fetchData };
+  // Preserve the public type: this hook's data has always been a (possibly empty) array.
+  return { data: data ?? [], loading, error, refetch };
 }

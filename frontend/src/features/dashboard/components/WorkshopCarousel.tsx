@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { Box, IconButton, Typography } from "@mui/material";
+import { Avatar, AvatarGroup, Box, IconButton, Typography } from "@mui/material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 
@@ -190,23 +190,27 @@ export function WorkshopCarousel({ items, onOpen }: WorkshopCarouselProps) {
               {item.client}
             </Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: "10px", mt: "14px" }}>
-              <Box
-                sx={{
-                  width: 26,
-                  height: 26,
-                  flex: "none",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "50%",
-                  bgcolor: "shell.avatarBg",
-                  color: "text.primary",
-                  fontSize: "0.625rem",
-                  fontWeight: 700,
-                }}
-              >
-                {item.initials}
-              </Box>
+              {item.mechanics.length > 0 ? (
+                <AvatarGroup
+                  max={4}
+                  sx={{ justifyContent: "flex-start", "& .MuiAvatar-root": { flex: "none" } }}
+                >
+                  {item.mechanics.map((mechanic) => (
+                    <Avatar
+                      key={mechanic.id}
+                      sx={{
+                        width: 26,
+                        height: 26,
+                        fontSize: "0.625rem",
+                        fontWeight: 700,
+                        bgcolor: "primary.main",
+                      }}
+                    >
+                      {mechanic.initials}
+                    </Avatar>
+                  ))}
+                </AvatarGroup>
+              ) : null}
               <Box sx={{ minWidth: 0 }}>
                 <MonoText sx={{ display: "block", fontSize: "0.625rem", color: "text.secondary" }}>
                   {item.ot}
@@ -220,7 +224,9 @@ export function WorkshopCarousel({ items, onOpen }: WorkshopCarouselProps) {
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {item.mechanic}
+                  {item.mechanics.length > 0
+                    ? item.mechanics.map((mechanic) => mechanic.fullName).join(", ")
+                    : "Sin asignar"}
                 </Typography>
               </Box>
             </Box>

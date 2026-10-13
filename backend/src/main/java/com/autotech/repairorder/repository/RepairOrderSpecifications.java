@@ -24,14 +24,24 @@ public final class RepairOrderSpecifications {
                 predicates.add(root.get("status").in(filter.statuses()));
             }
 
-            if (filter.from() != null) {
+            if (filter.createdFrom() != null) {
                 predicates.add(cb.greaterThanOrEqualTo(
-                        root.get("updatedAt"), filter.from().atStartOfDay()));
+                        root.get("createdAt"), filter.createdFrom().atStartOfDay()));
             }
 
-            if (filter.to() != null) {
+            if (filter.createdTo() != null) {
                 predicates.add(cb.lessThan(
-                        root.get("updatedAt"), filter.to().plusDays(1).atStartOfDay()));
+                        root.get("createdAt"), filter.createdTo().plusDays(1).atStartOfDay()));
+            }
+
+            if (filter.updatedFrom() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(
+                        root.get("updatedAt"), filter.updatedFrom().atStartOfDay()));
+            }
+
+            if (filter.updatedTo() != null) {
+                predicates.add(cb.lessThan(
+                        root.get("updatedAt"), filter.updatedTo().plusDays(1).atStartOfDay()));
             }
 
             if (filter.employeeId() != null) {
@@ -61,7 +71,11 @@ public final class RepairOrderSpecifications {
                         cb.like(cb.lower(clientJoin.get("lastName")), like),
                         cb.like(cb.lower(vehicleJoin.get("plate")), like),
                         cb.like(cb.lower(brandJoin.get("name")), like),
-                        cb.like(cb.lower(vehicleJoin.get("model")), like)
+                        cb.like(cb.lower(vehicleJoin.get("model")), like),
+                        cb.like(cb.lower(clientJoin.get("phone")), like),
+                        cb.like(cb.lower(clientJoin.get("dni")), like),
+                        cb.like(cb.lower(vehicleJoin.get("chassisNumber")), like),
+                        cb.like(cb.lower(vehicleJoin.get("engineNumber")), like)
                 ));
             }
 

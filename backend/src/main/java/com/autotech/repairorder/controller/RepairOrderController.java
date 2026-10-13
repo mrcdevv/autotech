@@ -50,13 +50,16 @@ public class RepairOrderController {
     @GetMapping
     public ResponseEntity<ApiResponse<Page<RepairOrderResponse>>> search(
             @RequestParam(required = false) List<RepairOrderStatus> statuses,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdTo,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate updatedFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate updatedTo,
             @RequestParam(required = false) Long employeeId,
             @RequestParam(required = false) Long tagId,
             @RequestParam(required = false) String q,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        RepairOrderFilter filter = new RepairOrderFilter(statuses, from, to, employeeId, tagId, q);
+        RepairOrderFilter filter = new RepairOrderFilter(
+                statuses, createdFrom, createdTo, updatedFrom, updatedTo, employeeId, tagId, q);
         return ResponseEntity.ok(ApiResponse.success(repairOrderService.search(filter, pageable)));
     }
 

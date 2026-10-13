@@ -6,6 +6,8 @@ import com.autotech.appointment.dto.AppointmentUpdateRequest;
 import com.autotech.appointment.model.AppointmentStatus;
 import com.autotech.appointment.service.AppointmentService;
 import com.autotech.common.exception.GlobalExceptionHandler;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +48,12 @@ class AppointmentControllerTest {
 
     @MockitoBean
     private AppointmentService appointmentService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     private final LocalDateTime startTime = LocalDateTime.of(2025, 3, 15, 10, 0);
     private final LocalDateTime endTime = LocalDateTime.of(2025, 3, 15, 11, 0);

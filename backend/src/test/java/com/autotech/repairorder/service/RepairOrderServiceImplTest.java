@@ -80,7 +80,7 @@ class RepairOrderServiceImplTest {
         // Arrange
         Client client = buildClient(1L);
         Vehicle vehicle = buildVehicle(1L, client);
-        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Engine noise", null, null, null);
+        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Engine noise", null, null, null, null);
         RepairOrder saved = buildRepairOrder(1L, client, vehicle);
         RepairOrderResponse response = buildResponse(1L);
 
@@ -100,7 +100,7 @@ class RepairOrderServiceImplTest {
     @Test
     void givenNonExistentClient_whenCreate_thenThrowResourceNotFoundException() {
         // Arrange
-        RepairOrderRequest request = new RepairOrderRequest(99L, 1L, null, null, null, null, null);
+        RepairOrderRequest request = new RepairOrderRequest(99L, 1L, null, null, null, null, null, null);
         when(clientRepository.findById(99L)).thenReturn(Optional.empty());
 
         // Act & Assert
@@ -113,7 +113,7 @@ class RepairOrderServiceImplTest {
     void givenNonExistentVehicle_whenCreate_thenThrowResourceNotFoundException() {
         // Arrange
         Client client = buildClient(1L);
-        RepairOrderRequest request = new RepairOrderRequest(1L, 99L, null, null, null, null, null);
+        RepairOrderRequest request = new RepairOrderRequest(1L, 99L, null, null, null, null, null, null);
         when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
         when(vehicleRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -129,7 +129,7 @@ class RepairOrderServiceImplTest {
         Client client1 = buildClient(1L);
         Client client2 = buildClient(2L);
         Vehicle vehicle = buildVehicle(1L, client2);
-        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, null, null, null, null);
+        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, null, null, null, null, null);
 
         when(clientRepository.findById(1L)).thenReturn(Optional.of(client1));
         when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
@@ -181,7 +181,7 @@ class RepairOrderServiceImplTest {
         Client client = buildClient(1L);
         Vehicle vehicle = buildVehicle(1L, client);
         RepairOrder existing = buildRepairOrder(1L, client, vehicle);
-        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Updated reason", null, null, null);
+        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Updated reason", null, null, null, null);
         RepairOrderResponse response = buildResponse(1L);
 
         when(repairOrderRepository.findWithDetailsById(1L)).thenReturn(Optional.of(existing));
@@ -403,7 +403,7 @@ class RepairOrderServiceImplTest {
         RepairOrder order = buildRepairOrder(1L, client, vehicle);
         RepairOrderResponse response = buildResponse(1L);
         RepairOrderFilter filter = new RepairOrderFilter(
-                List.of(RepairOrderStatus.REPARACION), null, null, null, null, "Perez");
+                List.of(RepairOrderStatus.REPARACION), null, null, null, null, null, null, "Perez");
         Pageable pageable = PageRequest.of(0, 20);
 
         when(repairOrderRepository.findAll(any(Specification.class), eq(pageable)))
@@ -423,7 +423,7 @@ class RepairOrderServiceImplTest {
     @Test
     void givenFilterMatchingNothing_whenSearch_thenReturnEmptyPage() {
         // Arrange
-        RepairOrderFilter filter = new RepairOrderFilter(null, null, null, null, null, null);
+        RepairOrderFilter filter = new RepairOrderFilter(null, null, null, null, null, null, null, null);
         Pageable pageable = PageRequest.of(0, 20);
 
         when(repairOrderRepository.findAll(any(Specification.class), eq(pageable)))
