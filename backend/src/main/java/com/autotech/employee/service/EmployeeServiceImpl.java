@@ -132,16 +132,6 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    @Transactional
-    public void delete(Long id) {
-        log.info("Deleting employee with id: {}", id);
-        Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Empleado", id));
-        employeeRepository.delete(employee);
-        log.info("Employee deleted with id: {}", id);
-    }
-
-    @Override
     @Transactional(readOnly = true)
     public Page<EmployeeResponse> searchByDni(String dni, Pageable pageable) {
         log.debug("Searching employees by DNI: {}", dni);

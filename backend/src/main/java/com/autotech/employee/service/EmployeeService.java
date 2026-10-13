@@ -18,8 +18,6 @@ public interface EmployeeService {
 
     EmployeeResponse update(Long id, EmployeeRequest request);
 
-    void delete(Long id);
-
     Page<EmployeeResponse> searchByDni(String dni, Pageable pageable);
 
     Page<EmployeeResponse> filterByStatus(EmployeeStatus status, Pageable pageable);
