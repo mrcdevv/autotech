@@ -2,6 +2,9 @@ package com.autotech.estimate.service;
 
 import com.autotech.client.model.Client;
 import com.autotech.client.repository.ClientRepository;
+import com.autotech.common.audit.AuditAction;
+import com.autotech.common.audit.AuditEntityType;
+import com.autotech.common.audit.AuditService;
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.estimate.dto.EstimateDetailResponse;
@@ -37,7 +40,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -52,6 +57,7 @@ public class EstimateServiceImpl implements EstimateService {
     private final RepairOrderService repairOrderService;
     private final InspectionRepository inspectionRepository;
     private final EmailNotificationService emailNotificationService;
+    private final AuditService auditService;
 
     @Override
     @Transactional(readOnly = true)
@@ -163,6 +169,9 @@ public class EstimateServiceImpl implements EstimateService {
             throw new BusinessException("Solo se pueden editar presupuestos en estado PENDIENTE");
         }
 
+        EstimateStatus previousStatus = entity.getStatus();
+        BigDecimal previousTotal = entity.getTotal();
+
         Client client = clientRepository.findById(request.clientId())
                 .orElseThrow(() -> new ResourceNotFoundException("Client", request.clientId()));
         Vehicle vehicle = vehicleRepository.findById(request.vehicleId())
@@ -182,6 +191,7 @@ public class EstimateServiceImpl implements EstimateService {
         entity.setTotal(total);
 
         Estimate saved = estimateRepository.save(entity);
+        recordEstimateAudit(saved.getId(), previousStatus, previousTotal, saved.getStatus(), saved.getTotal());
         log.info("Updated estimate with id {}", saved.getId());
         return getById(saved.getId());
     }
@@ -216,6 +226,25 @@ public class EstimateServiceImpl implements EstimateService {
         EstimateDetailResponse response = getById(id);
         emailNotificationService.notifyEstimateStatusChanged(response);
         return response;
+    }
+
+    @Override
+    @Transactional
+    public EstimateDetailResponse reopen(Long id) {
+        Estimate entity = estimateRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Estimate", id));
+        if (entity.getStatus() != EstimateStatus.ACEPTADO) {
+            throw new BusinessException("Solo se pueden reabrir presupuestos en estado ACEPTADO");
+        }
+        if (entity.getRepairOrder() != null) {
+            // The OT must be open: not closed by status and without an invoice (D1)
+            repairOrderService.validateOpenForNewDocuments(entity.getRepairOrder());
+        }
+        entity.setStatus(EstimateStatus.PENDIENTE);
+        estimateRepository.save(entity);
+        recordEstimateAudit(id, EstimateStatus.ACEPTADO, null, EstimateStatus.PENDIENTE, null);
+        log.info("Reopened estimate with id {}", id);
+        return getById(id);
     }
 
     @Override
@@ -292,6 +321,26 @@ public class EstimateServiceImpl implements EstimateService {
             }
         }
         return issues;
+    }
+
+    /**
+     * Records an audit row for an estimate status/amount change. Totals are
+     * omitted when null (e.g. a status-only reopen), so the whitelist stays
+     * minimal and no entity is ever serialized.
+     */
+    private void recordEstimateAudit(Long estimateId, EstimateStatus oldStatus, BigDecimal oldTotal,
+                                     EstimateStatus newStatus, BigDecimal newTotal) {
+        Map<String, Object> oldValues = new LinkedHashMap<>();
+        oldValues.put("status", oldStatus.name());
+        if (oldTotal != null) {
+            oldValues.put("total", oldTotal);
+        }
+        Map<String, Object> newValues = new LinkedHashMap<>();
+        newValues.put("status", newStatus.name());
+        if (newTotal != null) {
+            newValues.put("total", newTotal);
+        }
+        auditService.record(AuditEntityType.ESTIMATE, estimateId, AuditAction.MODIFIED, oldValues, newValues);
     }
 
     private void addChildEntities(Estimate entity, EstimateRequest request) {

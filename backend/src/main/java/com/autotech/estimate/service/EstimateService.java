@@ -34,6 +34,8 @@ public interface EstimateService {
 
     EstimateDetailResponse reject(Long id);
 
+    EstimateDetailResponse reopen(Long id);
+
     void delete(Long id);
 
     BigDecimal calculateTotal(List<EstimateServiceItemRequest> services,

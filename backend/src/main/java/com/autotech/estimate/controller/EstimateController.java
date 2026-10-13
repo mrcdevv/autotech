@@ -73,6 +73,11 @@ public class EstimateController {
         return ResponseEntity.ok(ApiResponse.success("Presupuesto rechazado", estimateService.reject(id)));
     }
 
+    @PutMapping("/{id}/reopen")
+    public ResponseEntity<ApiResponse<EstimateDetailResponse>> reopen(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success("Presupuesto reabierto", estimateService.reopen(id)));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         estimateService.delete(id);
