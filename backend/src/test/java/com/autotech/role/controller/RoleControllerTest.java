@@ -8,12 +8,15 @@ import com.autotech.role.dto.RoleResponse;
 import com.autotech.role.service.RoleService;
 import com.autotech.security.CustomUserDetailsService;
 import com.autotech.security.JwtTokenProvider;
+import com.autotech.security.SecurityConfig;
+import com.autotech.security.WithAllPermissions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -26,6 +29,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -36,8 +40,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(RoleController.class)
-@Import(GlobalExceptionHandler.class)
-@WithMockUser
+@Import({GlobalExceptionHandler.class, SecurityConfig.class})
+@WithAllPermissions
 class RoleControllerTest {
 
     @Autowired
@@ -62,6 +66,33 @@ class RoleControllerTest {
             Set.of(new PermissionResponse(1L, "read_client", "Ver clientes")),
             LocalDateTime.now(),
             LocalDateTime.now());
+
+    @Test
+    @WithMockUser(authorities = {"read_employee", "update_employee"})
+    void givenUserWithoutManageRoles_whenCreateRole_thenReturn403() throws Exception {
+        RoleRequest request = new RoleRequest("ROL_NUEVO", "Descripción", Set.of(1L));
+
+        mockMvc.perform(post("/api/roles")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value("error"))
+                .andExpect(jsonPath("$.message").value("No tiene permisos para realizar esta acción"));
+
+        verifyNoInteractions(roleService);
+    }
+
+    @Test
+    @WithAnonymousUser
+    void givenAnonymousUser_whenGetAll_thenReturn401() throws Exception {
+        mockMvc.perform(get("/api/roles"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value("error"))
+                .andExpect(jsonPath("$.message").value("No autenticado. Inicie sesión para continuar"));
+
+        verifyNoInteractions(roleService);
+    }
 
     @Test
     void givenRolesExist_whenGetAll_thenReturn200() throws Exception {

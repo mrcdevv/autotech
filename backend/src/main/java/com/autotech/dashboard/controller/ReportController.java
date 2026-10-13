@@ -7,6 +7,7 @@ import com.autotech.dashboard.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,6 +23,7 @@ public class ReportController {
 
     private final ReportService reportService;
 
+    @PreAuthorize("hasAuthority('view_reports')")
     @GetMapping("/summary")
     public ResponseEntity<ApiResponse<DashboardReportsResponse>> getSummary(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -29,6 +31,7 @@ public class ReportController {
         return ResponseEntity.ok(ApiResponse.success(reportService.getReports(from, to)));
     }
 
+    @PreAuthorize("hasAuthority('view_reports')")
     @GetMapping("/faults")
     public ResponseEntity<ApiResponse<List<FaultCountResponse>>> getFaults(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,

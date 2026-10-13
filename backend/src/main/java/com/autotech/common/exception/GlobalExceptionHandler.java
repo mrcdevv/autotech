@@ -5,10 +5,16 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -58,14 +64,40 @@ public class GlobalExceptionHandler {
                 .body(new ApiResponse<>("error", "Validation failed", errors));
     }
 
+    // DisabledException is raised before the password check, so it gets the same
+    // generic message to avoid revealing whether an account exists and is inactive.
     @ExceptionHandler({
-            org.springframework.security.authentication.BadCredentialsException.class,
-            org.springframework.security.core.userdetails.UsernameNotFoundException.class
+            BadCredentialsException.class,
+            UsernameNotFoundException.class,
+            DisabledException.class
     })
-    public ResponseEntity<ApiResponse<Void>> handleAuthenticationException(Exception ex) {
+    public ResponseEntity<ApiResponse<Void>> handleBadCredentials(Exception ex) {
         log.warn("Authentication failed: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(ApiResponse.error("Credenciales inválidas"));
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthenticationException(AuthenticationException ex) {
+        log.warn("Authentication required: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("No autenticado. Inicie sesión para continuar"));
+    }
+
+    // @PreAuthorize denials are thrown inside the dispatcher, so they land here
+    // instead of the security filter chain's AccessDeniedHandler.
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
+        log.warn("Access denied: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error("No tiene permisos para realizar esta acción"));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoResourceFound(NoResourceFoundException ex) {
+        log.warn("No resource found: {}", ex.getResourcePath());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("Recurso no encontrado"));
     }
 
     @ExceptionHandler(Exception.class)

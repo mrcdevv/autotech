@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,12 +28,14 @@ public class InspectionController {
 
     private final InspectionService inspectionService;
 
+    @PreAuthorize("hasAuthority('read_inspection')")
     @GetMapping
     public ResponseEntity<ApiResponse<List<InspectionResponse>>> getByRepairOrder(
             @PathVariable Long repairOrderId) {
         return ResponseEntity.ok(ApiResponse.success(inspectionService.getByRepairOrder(repairOrderId)));
     }
 
+    @PreAuthorize("hasAuthority('create_inspection')")
     @PostMapping
     public ResponseEntity<ApiResponse<InspectionResponse>> create(
             @PathVariable Long repairOrderId,
@@ -42,6 +45,7 @@ public class InspectionController {
                 .body(ApiResponse.success("Inspección creada", created));
     }
 
+    @PreAuthorize("hasAuthority('read_inspection')")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<InspectionResponse>> getById(
             @PathVariable Long repairOrderId,
@@ -49,6 +53,7 @@ public class InspectionController {
         return ResponseEntity.ok(ApiResponse.success(inspectionService.getById(id)));
     }
 
+    @PreAuthorize("hasAuthority('update_inspection')")
     @PutMapping("/{id}/items")
     public ResponseEntity<ApiResponse<InspectionResponse>> saveItems(
             @PathVariable Long repairOrderId,
@@ -58,6 +63,7 @@ public class InspectionController {
                 inspectionService.saveItems(id, request)));
     }
 
+    @PreAuthorize("hasAuthority('delete_inspection')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable Long repairOrderId,

@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,18 +29,21 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
+    @PreAuthorize("hasAuthority('read_payment')")
     @GetMapping
     public ResponseEntity<ApiResponse<List<PaymentResponse>>> getByDeliveryNote(
             @PathVariable Long deliveryNoteId) {
         return ResponseEntity.ok(ApiResponse.success(paymentService.getByDeliveryNoteId(deliveryNoteId)));
     }
 
+    @PreAuthorize("hasAuthority('read_payment')")
     @GetMapping("/summary")
     public ResponseEntity<ApiResponse<PaymentSummaryResponse>> getSummary(
             @PathVariable Long deliveryNoteId) {
         return ResponseEntity.ok(ApiResponse.success(paymentService.getSummary(deliveryNoteId)));
     }
 
+    @PreAuthorize("hasAuthority('create_payment')")
     @PostMapping
     public ResponseEntity<ApiResponse<PaymentResponse>> create(
             @PathVariable Long deliveryNoteId,
@@ -49,6 +53,7 @@ public class PaymentController {
                 .body(ApiResponse.success("Pago registrado", created));
     }
 
+    @PreAuthorize("hasAuthority('update_payment')")
     @PutMapping("/{paymentId}")
     public ResponseEntity<ApiResponse<PaymentResponse>> update(
             @PathVariable Long deliveryNoteId,
@@ -57,6 +62,7 @@ public class PaymentController {
         return ResponseEntity.ok(ApiResponse.success("Pago actualizado", paymentService.update(paymentId, request)));
     }
 
+    @PreAuthorize("hasAuthority('delete_payment')")
     @DeleteMapping("/{paymentId}")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable Long deliveryNoteId,

@@ -8,6 +8,8 @@ import com.autotech.vehicle.dto.VehicleResponse;
 import com.autotech.vehicle.service.VehicleService;
 import com.autotech.security.CustomUserDetailsService;
 import com.autotech.security.JwtTokenProvider;
+import com.autotech.security.SecurityConfig;
+import com.autotech.security.WithAllPermissions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +18,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -32,8 +33,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(VehicleController.class)
-@Import(GlobalExceptionHandler.class)
-@WithMockUser
+@Import({GlobalExceptionHandler.class, SecurityConfig.class})
+@WithAllPermissions
 class VehicleControllerTest {
 
     @Autowired
