@@ -253,6 +253,7 @@ export function RepairOrderCard({ order, onUpdateStatus, onRefetch }: RepairOrde
       <StatusUpdateDialog
         open={statusDialogOpen}
         currentStatus={order.status}
+        repairOrderId={order.id}
         onClose={() => setStatusDialogOpen(false)}
         onConfirm={(newStatus) => {
           onUpdateStatus(order.id, { newStatus });

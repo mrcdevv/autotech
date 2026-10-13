@@ -13,6 +13,13 @@ vi.mock("react-router", async () => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
+const mockGetInvoiceByRepairOrderId = vi.fn();
+vi.mock("@/api/invoices", () => ({
+  invoicesApi: {
+    getByRepairOrderId: (...args: unknown[]) => mockGetInvoiceByRepairOrderId(...args),
+  },
+}));
+
 const sampleOrder: RepairOrderResponse = {
   id: 1,
   title: "OT-1 Perez - ABC123",
@@ -150,5 +157,22 @@ describe("RepairOrderCard", () => {
     await user.click(screen.getByRole("button", { name: "Ver detalle" }));
 
     expect(mockNavigate).toHaveBeenCalledWith("/ordenes-trabajo/1");
+  });
+
+  it("given card, when confirming delivery, then invoice lookup uses the order id", async () => {
+    const user = userEvent.setup();
+    mockGetInvoiceByRepairOrderId.mockRejectedValue(new Error("404"));
+    render(
+      <MemoryRouter>
+        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Actualizar estado" }));
+    await user.click(screen.getByLabelText("Entregado"));
+    await user.click(screen.getByText("Aceptar"));
+
+    expect(mockGetInvoiceByRepairOrderId).toHaveBeenCalledWith(1);
+    expect(screen.getByText(/no tiene una factura asociada/i)).toBeInTheDocument();
   });
 });
