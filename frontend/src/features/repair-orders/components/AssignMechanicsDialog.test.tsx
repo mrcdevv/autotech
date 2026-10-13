@@ -14,7 +14,12 @@ vi.mock("@/api/repairOrders", () => ({
   },
 }));
 
-function buildMechanic(id: number, firstName: string, lastName: string): EmployeeResponse {
+function buildMechanic(
+  id: number,
+  firstName: string,
+  lastName: string,
+  status: "ACTIVO" | "INACTIVO" = "ACTIVO",
+): EmployeeResponse {
   return {
     id,
     firstName,
@@ -29,7 +34,7 @@ function buildMechanic(id: number, firstName: string, lastName: string): Employe
     maritalStatus: null,
     childrenCount: 0,
     entryDate: null,
-    status: "ACTIVO",
+    status,
     roles: [{ id: 3, name: "MECANICO", description: "" }],
     createdAt: "",
     updatedAt: "",
@@ -41,8 +46,10 @@ const mechanics = [
   buildMechanic(2, "Ana", "Diaz"),
 ];
 
+const mockUseMechanics = vi.fn();
+
 vi.mock("../hooks/useMechanics", () => ({
-  useMechanics: () => ({ mechanics, loading: false, error: null, refetch: vi.fn() }),
+  useMechanics: (...args: unknown[]) => mockUseMechanics(...args),
 }));
 
 const defaultProps = {
@@ -57,6 +64,7 @@ describe("AssignMechanicsDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAssign.mockResolvedValue({ data: { data: {} } });
+    mockUseMechanics.mockReturnValue({ mechanics, loading: false, error: null, refetch: vi.fn() });
   });
 
   it("given assigned mechanics, when opened, then shows them selected", () => {
@@ -79,6 +87,27 @@ describe("AssignMechanicsDialog", () => {
     });
     expect(onSuccess).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("given an assigned mechanic who became inactive, when opened, then keeps them selected instead of dropping them", async () => {
+    // The hook only offers active candidates, so the inactive mechanic appears
+    // solely because they are already assigned to the order. The dialog must
+    // still show and preserve that existing assignment.
+    mockUseMechanics.mockReturnValue({
+      mechanics: [buildMechanic(2, "Ana", "Diaz")],
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    const user = userEvent.setup();
+    render(<AssignMechanicsDialog {...defaultProps} />); // assigned: [{ id: 1, Carlos Lopez }]
+
+    expect(screen.getByText("Carlos Lopez")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /guardar/i }));
+    await waitFor(() => {
+      expect(mockAssign).toHaveBeenCalledWith(5, [1]);
+    });
   });
 
   it("given API error, when clicking guardar, then shows error and keeps dialog open", async () => {

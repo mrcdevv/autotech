@@ -77,7 +77,9 @@ export function AppointmentFormDialog({
 
   const fetchEmployees = useCallback(async () => {
     try {
-      const res = await employeesApi.getAll(0, 100);
+      // Assignment candidates: active employees only, filtered server-side so a
+      // fixed-size page cannot starve active employees behind inactive ones.
+      const res = await employeesApi.filterByStatus("ACTIVO", 0, 100);
       setEmployees(res.data.data.content);
     } catch { /* ignored */ }
   }, []);
