@@ -29,6 +29,7 @@ import com.autotech.inspection.repository.InspectionRepository;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.model.RepairOrderStatus;
 import com.autotech.repairorder.repository.RepairOrderRepository;
+import com.autotech.repairorder.service.RepairOrderService;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
 import org.junit.jupiter.api.Test;
@@ -54,6 +55,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -80,6 +83,9 @@ class EstimateServiceImplTest {
 
     @Mock
     private EmailNotificationService emailNotificationService;
+
+    @Mock
+    private RepairOrderService repairOrderService;
 
     @InjectMocks
     private EstimateServiceImpl estimateService;
@@ -234,6 +240,80 @@ class EstimateServiceImplTest {
 
         // Assert
         assertThat(result.repairOrderId()).isEqualTo(10L);
+        verify(repairOrderService).validateOpenForNewDocuments(repairOrder);
+    }
+
+    @Test
+    void givenClosedRepairOrder_whenCreate_thenThrowBusinessException() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        RepairOrder repairOrder = buildRepairOrder(10L, client, vehicle);
+        repairOrder.setStatus(RepairOrderStatus.ENTREGADO);
+        EstimateRequest request = new EstimateRequest(1L, 2L, 10L, BigDecimal.ZERO, BigDecimal.ZERO,
+                Collections.emptyList(), Collections.emptyList());
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(repairOrder));
+        doThrow(new BusinessException("La orden de trabajo está cerrada"))
+                .when(repairOrderService).validateOpenForNewDocuments(repairOrder);
+
+        // Act & Assert
+        assertThatThrownBy(() -> estimateService.create(request))
+                .isInstanceOf(BusinessException.class);
+        verify(estimateRepository, never()).save(any(Estimate.class));
+    }
+
+    @Test
+    void givenRepairOrderWithInvoice_whenCreate_thenThrowBusinessException() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        RepairOrder repairOrder = buildRepairOrder(10L, client, vehicle);
+        EstimateRequest request = new EstimateRequest(1L, 2L, 10L, BigDecimal.ZERO, BigDecimal.ZERO,
+                Collections.emptyList(), Collections.emptyList());
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(repairOrder));
+        doThrow(new BusinessException("La orden de trabajo ya tiene una factura asociada"))
+                .when(repairOrderService).validateOpenForNewDocuments(repairOrder);
+
+        // Act & Assert
+        assertThatThrownBy(() -> estimateService.create(request))
+                .isInstanceOf(BusinessException.class);
+        verify(estimateRepository, never()).save(any(Estimate.class));
+    }
+
+    @Test
+    void givenStandaloneEstimate_whenCreate_thenDoesNotInvokeRepairOrderGuard() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        EstimateRequest request = new EstimateRequest(1L, 2L, null, BigDecimal.ZERO, BigDecimal.ZERO,
+                Collections.emptyList(), Collections.emptyList());
+
+        Estimate mappedEntity = Estimate.builder()
+                .discountPercentage(BigDecimal.ZERO)
+                .taxPercentage(BigDecimal.ZERO)
+                .build();
+        Estimate savedEntity = buildEstimate(1L);
+        EstimateDetailResponse detailResponse = buildDetailResponse(1L);
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(estimateMapper.toEntity(request)).thenReturn(mappedEntity);
+        when(estimateRepository.save(any(Estimate.class))).thenReturn(savedEntity);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(savedEntity));
+        when(estimateMapper.toDetailResponse(savedEntity)).thenReturn(detailResponse);
+
+        // Act
+        EstimateDetailResponse result = estimateService.create(request);
+
+        // Assert
+        assertThat(result.id()).isEqualTo(1L);
+        verify(repairOrderService, never()).validateOpenForNewDocuments(any());
     }
 
     @Test

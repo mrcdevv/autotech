@@ -4,7 +4,9 @@ import com.autotech.appointment.model.Appointment;
 import com.autotech.appointment.repository.AppointmentRepository;
 import com.autotech.client.model.Client;
 import com.autotech.client.repository.ClientRepository;
+import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
+import com.autotech.invoice.repository.InvoiceRepository;
 import com.autotech.employee.model.Employee;
 import com.autotech.employee.repository.EmployeeRepository;
 import com.autotech.email.service.EmailNotificationService;
@@ -51,6 +53,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
     private final AppointmentRepository appointmentRepository;
     private final EmployeeRepository employeeRepository;
     private final TagRepository tagRepository;
+    private final InvoiceRepository invoiceRepository;
     private final EmailNotificationService emailNotificationService;
 
     @Override
@@ -318,5 +321,30 @@ public class RepairOrderServiceImpl implements RepairOrderService {
             tags.add(tag);
         }
         return tags;
+    }
+
+    @Override
+    public void validateOpenForNewDocuments(RepairOrder repairOrder) {
+        if (repairOrder == null) {
+            return;
+        }
+        validateNotClosedByStatus(repairOrder);
+        if (invoiceRepository.findByRepairOrderId(repairOrder.getId()).isPresent()) {
+            throw new BusinessException(
+                    "No se pueden agregar más documentos a la orden de trabajo porque ya tiene una factura asociada");
+        }
+    }
+
+    @Override
+    public void validateNotClosedByStatus(RepairOrder repairOrder) {
+        if (repairOrder == null) {
+            return;
+        }
+        RepairOrderStatus status = repairOrder.getStatus();
+        if (status == RepairOrderStatus.ENTREGADO || status == RepairOrderStatus.CANCELADO) {
+            throw new BusinessException(
+                    "No se pueden agregar más documentos a la orden de trabajo porque está cerrada (estado "
+                    + status + ")");
+        }
     }
 }

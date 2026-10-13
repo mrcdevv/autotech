@@ -21,6 +21,7 @@ import com.autotech.invoice.model.InvoiceStatus;
 import com.autotech.invoice.repository.InvoiceRepository;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.repository.RepairOrderRepository;
+import com.autotech.repairorder.service.RepairOrderService;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +45,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final ClientRepository clientRepository;
     private final VehicleRepository vehicleRepository;
     private final RepairOrderRepository repairOrderRepository;
+    private final RepairOrderService repairOrderService;
     private final EstimateService estimateService;
     private final EmailNotificationService emailNotificationService;
 
@@ -105,6 +107,9 @@ public class InvoiceServiceImpl implements InvoiceService {
         if (request.repairOrderId() != null) {
             repairOrder = repairOrderRepository.findById(request.repairOrderId())
                     .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", request.repairOrderId()));
+
+            // The OT must not be closed by status; the one-invoice rule is enforced below (D1)
+            repairOrderService.validateNotClosedByStatus(repairOrder);
 
             // One invoice per repair order: covers both create and createFromEstimate (which delegates here)
             if (invoiceRepository.findByRepairOrderId(request.repairOrderId()).isPresent()) {

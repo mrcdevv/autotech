@@ -22,6 +22,7 @@ import com.autotech.invoice.repository.InvoiceRepository;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.model.RepairOrderStatus;
 import com.autotech.repairorder.repository.RepairOrderRepository;
+import com.autotech.repairorder.service.RepairOrderService;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -67,6 +69,9 @@ class InvoiceServiceImplTest {
 
     @Mock
     private EstimateService estimateService;
+
+    @Mock
+    private RepairOrderService repairOrderService;
 
     @Mock
     private EmailNotificationService emailNotificationService;
@@ -469,6 +474,59 @@ class InvoiceServiceImplTest {
         InvoiceDetailResponse result = invoiceService.create(request);
 
         assertThat(result.id()).isEqualTo(1L);
+        verify(repairOrderService).validateNotClosedByStatus(repairOrder);
+    }
+
+    @Test
+    void givenEntregadoRepairOrder_whenCreate_thenThrowBusinessException() {
+        // Arrange
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        RepairOrder repairOrder = buildRepairOrder(10L);
+        repairOrder.setStatus(RepairOrderStatus.ENTREGADO);
+        InvoiceRequest request = new InvoiceRequest(1L, 2L, 10L, null,
+                BigDecimal.ZERO, BigDecimal.ZERO, Collections.emptyList(), Collections.emptyList());
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(repairOrder));
+        doThrow(new BusinessException("La orden de trabajo está cerrada"))
+                .when(repairOrderService).validateNotClosedByStatus(repairOrder);
+
+        // Act & Assert
+        assertThatThrownBy(() -> invoiceService.create(request))
+                .isInstanceOf(BusinessException.class);
+        verify(invoiceRepository, never()).save(any(Invoice.class));
+    }
+
+    @Test
+    void givenStandaloneInvoice_whenCreate_thenDoesNotInvokeRepairOrderGuard() {
+        // Arrange
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        InvoiceRequest request = new InvoiceRequest(1L, 2L, null, null,
+                BigDecimal.ZERO, BigDecimal.ZERO, Collections.emptyList(), Collections.emptyList());
+
+        Invoice mappedEntity = Invoice.builder()
+                .discountPercentage(BigDecimal.ZERO)
+                .taxPercentage(BigDecimal.ZERO)
+                .build();
+        Invoice savedEntity = buildInvoice(1L);
+        InvoiceDetailResponse detailResponse = buildDetailResponse(1L);
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(invoiceMapper.toEntity(request)).thenReturn(mappedEntity);
+        when(invoiceRepository.save(any(Invoice.class))).thenReturn(savedEntity);
+        when(invoiceRepository.findWithDetailsById(1L)).thenReturn(Optional.of(savedEntity));
+        when(invoiceMapper.toDetailResponse(savedEntity)).thenReturn(detailResponse);
+
+        // Act
+        InvoiceDetailResponse result = invoiceService.create(request);
+
+        // Assert
+        assertThat(result.id()).isEqualTo(1L);
+        verify(repairOrderService, never()).validateNotClosedByStatus(any());
     }
 
     @Test

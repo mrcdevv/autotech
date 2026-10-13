@@ -4,10 +4,13 @@ import com.autotech.appointment.repository.AppointmentRepository;
 import com.autotech.client.model.Client;
 import com.autotech.client.model.ClientType;
 import com.autotech.client.repository.ClientRepository;
+import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.email.service.EmailNotificationService;
 import com.autotech.employee.model.Employee;
 import com.autotech.employee.repository.EmployeeRepository;
+import com.autotech.invoice.model.Invoice;
+import com.autotech.invoice.repository.InvoiceRepository;
 import com.autotech.repairorder.dto.RepairOrderDetailResponse;
 import com.autotech.repairorder.dto.RepairOrderFilter;
 import com.autotech.repairorder.dto.RepairOrderMapper;
@@ -39,10 +42,12 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -71,6 +76,9 @@ class RepairOrderServiceImplTest {
 
     @Mock
     private EmailNotificationService emailNotificationService;
+
+    @Mock
+    private InvoiceRepository invoiceRepository;
 
     @InjectMocks
     private RepairOrderServiceImpl repairOrderService;
@@ -435,6 +443,86 @@ class RepairOrderServiceImplTest {
         // Assert
         assertThat(result.getTotalElements()).isZero();
         assertThat(result.getContent()).isEmpty();
+    }
+
+    @Test
+    void givenEntregadoRepairOrder_whenValidateOpenForNewDocuments_thenThrowBusinessException() {
+        // Arrange
+        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
+        order.setStatus(RepairOrderStatus.ENTREGADO);
+
+        // Act & Assert
+        assertThatThrownBy(() -> repairOrderService.validateOpenForNewDocuments(order))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("cerrada")
+                .hasMessageContaining("ENTREGADO");
+    }
+
+    @Test
+    void givenCanceladoRepairOrder_whenValidateOpenForNewDocuments_thenThrowBusinessException() {
+        // Arrange
+        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
+        order.setStatus(RepairOrderStatus.CANCELADO);
+
+        // Act & Assert
+        assertThatThrownBy(() -> repairOrderService.validateOpenForNewDocuments(order))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("cerrada")
+                .hasMessageContaining("CANCELADO");
+    }
+
+    @Test
+    void givenRepairOrderWithInvoice_whenValidateOpenForNewDocuments_thenThrowBusinessException() {
+        // Arrange
+        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
+        when(invoiceRepository.findByRepairOrderId(1L)).thenReturn(Optional.of(Invoice.builder().build()));
+
+        // Act & Assert
+        assertThatThrownBy(() -> repairOrderService.validateOpenForNewDocuments(order))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("factura");
+    }
+
+    @Test
+    void givenOpenRepairOrderWithoutInvoice_whenValidateOpenForNewDocuments_thenDoesNotThrow() {
+        // Arrange
+        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
+        when(invoiceRepository.findByRepairOrderId(1L)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatCode(() -> repairOrderService.validateOpenForNewDocuments(order))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void givenNullRepairOrder_whenValidateOpenForNewDocuments_thenDoesNotThrow() {
+        // Act & Assert
+        assertThatCode(() -> repairOrderService.validateOpenForNewDocuments(null))
+                .doesNotThrowAnyException();
+        verifyNoInteractions(invoiceRepository);
+    }
+
+    @Test
+    void givenEntregadoRepairOrder_whenValidateNotClosedByStatus_thenThrowBusinessException() {
+        // Arrange
+        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
+        order.setStatus(RepairOrderStatus.ENTREGADO);
+
+        // Act & Assert
+        assertThatThrownBy(() -> repairOrderService.validateNotClosedByStatus(order))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("cerrada");
+    }
+
+    @Test
+    void givenOpenRepairOrder_whenValidateNotClosedByStatus_thenDoesNotThrowAndDoesNotQueryInvoices() {
+        // Arrange
+        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
+
+        // Act & Assert
+        assertThatCode(() -> repairOrderService.validateNotClosedByStatus(order))
+                .doesNotThrowAnyException();
+        verifyNoInteractions(invoiceRepository);
     }
 
     // --- Helpers ---

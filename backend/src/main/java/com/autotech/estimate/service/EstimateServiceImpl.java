@@ -24,6 +24,7 @@ import com.autotech.inspection.model.InspectionItemStatus;
 import com.autotech.inspection.repository.InspectionRepository;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.repository.RepairOrderRepository;
+import com.autotech.repairorder.service.RepairOrderService;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +49,7 @@ public class EstimateServiceImpl implements EstimateService {
     private final ClientRepository clientRepository;
     private final VehicleRepository vehicleRepository;
     private final RepairOrderRepository repairOrderRepository;
+    private final RepairOrderService repairOrderService;
     private final InspectionRepository inspectionRepository;
     private final EmailNotificationService emailNotificationService;
 
@@ -121,6 +123,9 @@ public class EstimateServiceImpl implements EstimateService {
         if (request.repairOrderId() != null) {
             repairOrder = repairOrderRepository.findById(request.repairOrderId())
                     .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", request.repairOrderId()));
+
+            // The OT must be open: not closed by status and without an invoice (D1)
+            repairOrderService.validateOpenForNewDocuments(repairOrder);
 
             boolean hasActiveEstimate = estimateRepository.findAllByRepairOrderId(request.repairOrderId()).stream()
                     .anyMatch(e -> e.getStatus() == EstimateStatus.PENDIENTE || e.getStatus() == EstimateStatus.ACEPTADO);
