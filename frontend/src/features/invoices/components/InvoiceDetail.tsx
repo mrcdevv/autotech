@@ -93,12 +93,37 @@ interface InvoiceDetailProps {
   invoiceId?: number;
   repairOrderId?: number;
   estimateId?: number;
+  /** Repair-order client/vehicle, used to prefill and lock both fields when creating from an order. */
+  orderClientId?: number;
+  orderClientFirstName?: string;
+  orderClientLastName?: string;
+  orderClientDni?: string | null;
+  orderVehicleId?: number;
+  orderVehiclePlate?: string;
+  orderVehicleBrandName?: string | null;
+  orderVehicleModel?: string | null;
+  orderVehicleYear?: number | null;
   onBack?: () => void;
   /** Invoked after an invoice is successfully created (used by hosts to refetch). */
   onCreated?: () => void;
 }
 
-export function InvoiceDetail({ invoiceId, repairOrderId, estimateId, onBack, onCreated }: InvoiceDetailProps) {
+export function InvoiceDetail({
+  invoiceId,
+  repairOrderId,
+  estimateId,
+  orderClientId,
+  orderClientFirstName,
+  orderClientLastName,
+  orderClientDni,
+  orderVehicleId,
+  orderVehiclePlate,
+  orderVehicleBrandName,
+  orderVehicleModel,
+  orderVehicleYear,
+  onBack,
+  onCreated,
+}: InvoiceDetailProps) {
   const navigate = useNavigate();
   const { invoice, loading, error, clearError, createInvoice } = useInvoice(invoiceId, repairOrderId);
 
@@ -128,6 +153,59 @@ export function InvoiceDetail({ invoiceId, repairOrderId, estimateId, onBack, on
   const isReadonly = !isCreateMode;
   const fromRepairOrder = repairOrderId != null;
   const displayId = invoice?.id ?? invoiceId;
+
+  // Repair-order client/vehicle prefilled from props (same construction the estimate
+  // preloaded path uses). Locking is tied to these objects actually being present.
+  const orderClient: ClientAutocompleteResponse | null =
+    orderClientId != null && orderClientFirstName != null
+      ? {
+          id: orderClientId,
+          firstName: orderClientFirstName,
+          lastName: orderClientLastName ?? "",
+          dni: orderClientDni ?? null,
+          phone: null,
+          email: null,
+          clientType: null,
+        }
+      : null;
+  const orderVehicle: VehicleResponse | null =
+    orderVehicleId != null && orderVehiclePlate != null
+      ? {
+          id: orderVehicleId,
+          clientId: orderClientId ?? 0,
+          clientFirstName: "",
+          clientLastName: "",
+          clientDni: null,
+          plate: orderVehiclePlate,
+          chassisNumber: null,
+          engineNumber: null,
+          brandId: null,
+          brandName: orderVehicleBrandName ?? null,
+          model: orderVehicleModel ?? null,
+          year: orderVehicleYear ?? null,
+          vehicleTypeId: null,
+          vehicleTypeName: null,
+          observations: null,
+          inRepair: false,
+          createdAt: "",
+        }
+      : null;
+
+  const [orderDataPrefilled, setOrderDataPrefilled] = useState(false);
+
+  useEffect(() => {
+    if (!loading && isCreateMode && fromRepairOrder && !orderDataPrefilled && orderClient) {
+      setSelectedClient(orderClient);
+      setClientInputValue(`${orderClient.firstName} ${orderClient.lastName}`);
+      if (orderVehicle) {
+        setSelectedVehicle(orderVehicle);
+        setVehicleInputValue(
+          `${orderVehicle.plate}${orderVehicle.model ? ` - ${orderVehicle.model}` : ""}`,
+        );
+      }
+      setOrderDataPrefilled(true);
+    }
+  }, [loading, isCreateMode, fromRepairOrder, orderDataPrefilled, orderClient, orderVehicle]);
 
   useEffect(() => {
     if (invoice) {
@@ -260,6 +338,17 @@ export function InvoiceDetail({ invoiceId, repairOrderId, estimateId, onBack, on
       fetchVehicles(selectedClient.id);
     }
   }, [selectedClient, fetchVehicles, isCreateMode]);
+
+  // Keep the prefilled order client/vehicle present in the options list: a MUI
+  // Autocomplete value that is not in `options` warns and can render as empty.
+  const clientOptions =
+    orderClient && !clients.some((c) => c.id === orderClient.id)
+      ? [orderClient, ...clients]
+      : clients;
+  const vehicleOptions =
+    orderVehicle && !vehicles.some((v) => v.id === orderVehicle.id)
+      ? [orderVehicle, ...vehicles]
+      : vehicles;
 
   const servicesSubtotal = services.reduce((sum, svc) => sum + (Number(svc.price) || 0), 0);
   const productsSubtotal = products.reduce(
@@ -515,7 +604,7 @@ export function InvoiceDetail({ invoiceId, repairOrderId, estimateId, onBack, on
           >
               <Box display="flex" gap={2} flexWrap="wrap">
                 <Autocomplete
-                  options={clients}
+                  options={clientOptions}
                   getOptionLabel={(option) =>
                     `${option.firstName} ${option.lastName}${option.dni ? ` (${option.dni})` : ""}`
                   }
@@ -529,12 +618,12 @@ export function InvoiceDetail({ invoiceId, repairOrderId, estimateId, onBack, on
                   renderInput={(params) => (
                     <TextField {...params} label="Cliente" size="small" />
                   )}
-                  disabled={isReadonly}
+                  disabled={isReadonly || (fromRepairOrder && orderClient != null)}
                   sx={{ minWidth: 300, flex: 1 }}
                   isOptionEqualToValue={(option, value) => option.id === value.id}
                 />
                 <Autocomplete
-                  options={vehicles}
+                  options={vehicleOptions}
                   getOptionLabel={(option) =>
                     `${option.plate}${option.model ? ` - ${option.model}` : ""}`
                   }
@@ -550,7 +639,7 @@ export function InvoiceDetail({ invoiceId, repairOrderId, estimateId, onBack, on
                   renderInput={(params) => (
                     <TextField {...params} label="Vehículo" size="small" />
                   )}
-                  disabled={isReadonly || fromRepairOrder || !selectedClient}
+                  disabled={isReadonly || (fromRepairOrder && orderVehicle != null) || !selectedClient}
                   sx={{ minWidth: 300, flex: 1 }}
                   isOptionEqualToValue={(option, value) => option.id === value.id}
                 />

@@ -34,9 +34,29 @@ type EstimateState =
 
 interface InvoiceTabProps {
   repairOrderId: number;
+  clientId: number;
+  clientFirstName: string;
+  clientLastName: string;
+  clientDni: string | null;
+  vehicleId: number;
+  vehiclePlate: string;
+  vehicleBrandName: string | null;
+  vehicleModel: string | null;
+  vehicleYear: number | null;
 }
 
-export function InvoiceTab({ repairOrderId }: InvoiceTabProps) {
+export function InvoiceTab({
+  repairOrderId,
+  clientId,
+  clientFirstName,
+  clientLastName,
+  clientDni,
+  vehicleId,
+  vehiclePlate,
+  vehicleBrandName,
+  vehicleModel,
+  vehicleYear,
+}: InvoiceTabProps) {
   const [invoice, setInvoice] = useState<InvoiceDetailResponse | null>(null);
   const [invoiceLoading, setInvoiceLoading] = useState(true);
   const [estimateState, setEstimateState] = useState<EstimateState>({ kind: "loading" });
@@ -110,7 +130,18 @@ export function InvoiceTab({ repairOrderId }: InvoiceTabProps) {
   if (invoice) {
     return (
       <Box>
-        <InvoiceDetail repairOrderId={repairOrderId} />
+        <InvoiceDetail
+          repairOrderId={repairOrderId}
+          orderClientId={clientId}
+          orderClientFirstName={clientFirstName}
+          orderClientLastName={clientLastName}
+          orderClientDni={clientDni}
+          orderVehicleId={vehicleId}
+          orderVehiclePlate={vehiclePlate}
+          orderVehicleBrandName={vehicleBrandName}
+          orderVehicleModel={vehicleModel}
+          orderVehicleYear={vehicleYear}
+        />
       </Box>
     );
   }
@@ -122,6 +153,15 @@ export function InvoiceTab({ repairOrderId }: InvoiceTabProps) {
       <Box>
         <InvoiceDetail
           repairOrderId={repairOrderId}
+          orderClientId={clientId}
+          orderClientFirstName={clientFirstName}
+          orderClientLastName={clientLastName}
+          orderClientDni={clientDni}
+          orderVehicleId={vehicleId}
+          orderVehiclePlate={vehiclePlate}
+          orderVehicleBrandName={vehicleBrandName}
+          orderVehicleModel={vehicleModel}
+          orderVehicleYear={vehicleYear}
           onBack={() => setCreatingWithoutEstimate(false)}
           onCreated={() => fetchData()}
         />

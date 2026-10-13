@@ -19,7 +19,11 @@ vi.mock("@/features/estimates/components/EstimateTab", () => ({
 }));
 
 vi.mock("@/features/invoices/components/InvoiceTab", () => ({
-  InvoiceTab: () => <div data-testid="invoice-tab">InvoiceTab</div>,
+  InvoiceTab: (props: Record<string, unknown>) => (
+    <div data-testid="invoice-tab" data-props={JSON.stringify(props)}>
+      InvoiceTab
+    </div>
+  ),
 }));
 
 const mockRefetch = vi.fn();
@@ -94,5 +98,28 @@ describe("RepairOrderDetailTabs", () => {
     await user.click(screen.getByText("Factura"));
 
     expect(screen.getByTestId("invoice-tab")).toBeInTheDocument();
+  });
+
+  it("given order, when clicking Factura tab, then InvoiceTab receives the order's client and vehicle", async () => {
+    const user = userEvent.setup();
+    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />);
+
+    await user.click(screen.getByText("Factura"));
+
+    const props = JSON.parse(
+      screen.getByTestId("invoice-tab").getAttribute("data-props") ?? "{}",
+    ) as Record<string, unknown>;
+    expect(props).toMatchObject({
+      repairOrderId: 1,
+      clientId: 1,
+      clientFirstName: "Juan",
+      clientLastName: "Perez",
+      clientDni: "12345678",
+      vehicleId: 1,
+      vehiclePlate: "ABC123",
+      vehicleBrandName: "Toyota",
+      vehicleModel: "Corolla",
+      vehicleYear: 2020,
+    });
   });
 });

@@ -66,7 +66,18 @@ export function RepairOrderDetailTabs({ order, loading, onRefetch }: RepairOrder
         />
       )}
       {activeTab === 3 && order && (
-        <InvoiceTab repairOrderId={order.id} />
+        <InvoiceTab
+          repairOrderId={order.id}
+          clientId={order.clientId}
+          clientFirstName={order.clientFirstName}
+          clientLastName={order.clientLastName}
+          clientDni={order.clientDni}
+          vehicleId={order.vehicleId}
+          vehiclePlate={order.vehiclePlate}
+          vehicleBrandName={order.vehicleBrandName}
+          vehicleModel={order.vehicleModel}
+          vehicleYear={order.vehicleYear}
+        />
       )}
     </Box>
   );

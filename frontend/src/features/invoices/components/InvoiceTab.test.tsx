@@ -38,23 +38,22 @@ const mockGetInvoiceByRepairOrderId = vi.fn();
 const mockGetEstimateByRepairOrderId = vi.fn();
 const mockGetAllEstimatesByRepairOrderId = vi.fn();
 
+let lastInvoiceDetailProps: Record<string, unknown> | null = null;
+
 vi.mock("./InvoiceDetail", () => ({
-  InvoiceDetail: ({
-    repairOrderId,
-    onCreated,
-  }: {
-    repairOrderId: number;
-    onCreated?: () => void;
-  }) => (
-    <div data-testid="invoice-detail">
-      InvoiceDetail for RO #{repairOrderId}
-      {onCreated && (
-        <button type="button" onClick={onCreated}>
-          mock-invoice-created
-        </button>
-      )}
-    </div>
-  ),
+  InvoiceDetail: (props: Record<string, unknown>) => {
+    lastInvoiceDetailProps = props;
+    return (
+      <div data-testid="invoice-detail">
+        InvoiceDetail for RO #{String(props.repairOrderId)}
+        {typeof props.onCreated === "function" && (
+          <button type="button" onClick={props.onCreated as () => void}>
+            mock-invoice-created
+          </button>
+        )}
+      </div>
+    );
+  },
 }));
 
 vi.mock("@/api/invoices", () => ({
@@ -106,12 +105,39 @@ const pendingEstimate: EstimateDetailResponse = {
   updatedAt: "2025-01-15T10:00:00",
 };
 
+// Client/vehicle from the repair order, mirroring the prop set EstimateTab uses.
+const orderPropsForTab = {
+  clientId: 1,
+  clientFirstName: "Juan",
+  clientLastName: "Perez",
+  clientDni: "12345678" as const,
+  vehicleId: 5,
+  vehiclePlate: "ABC123",
+  vehicleBrandName: "Toyota" as const,
+  vehicleModel: "Corolla",
+  vehicleYear: 2020,
+};
+
 describe("InvoiceTab", () => {
   it("given repairOrderId, when rendered, then passes it to InvoiceDetail", async () => {
-    render(<InvoiceTab repairOrderId={42} />);
+    render(<InvoiceTab repairOrderId={42} {...orderPropsForTab} />);
 
     expect(await screen.findByTestId("invoice-detail")).toBeInTheDocument();
     expect(screen.getByText("InvoiceDetail for RO #42")).toBeInTheDocument();
+  });
+
+  it("given repairOrderId, when rendered, then passes the order's client and vehicle to InvoiceDetail", async () => {
+    render(<InvoiceTab repairOrderId={42} {...orderPropsForTab} />);
+
+    expect(await screen.findByTestId("invoice-detail")).toBeInTheDocument();
+    expect(lastInvoiceDetailProps).toMatchObject({
+      repairOrderId: 42,
+      orderClientId: 1,
+      orderClientFirstName: "Juan",
+      orderClientLastName: "Perez",
+      orderVehicleId: 5,
+      orderVehiclePlate: "ABC123",
+    });
   });
 });
 
@@ -124,7 +150,7 @@ describe("InvoiceTab creating an invoice without an estimate", () => {
   });
 
   it("given an OT with no estimate and no invoice, when the Factura tab renders, then it offers to create an invoice without an estimate", async () => {
-    render(<InvoiceTab repairOrderId={42} />);
+    render(<InvoiceTab repairOrderId={42} {...orderPropsForTab} />);
 
     expect(
       await screen.findByRole("button", { name: /crear factura sin presupuesto/i }),
@@ -133,7 +159,7 @@ describe("InvoiceTab creating an invoice without an estimate", () => {
 
   it("given the no-estimate empty state, when clicking create, then the confirmation states that the order has no estimate", async () => {
     const user = userEvent.setup();
-    render(<InvoiceTab repairOrderId={42} />);
+    render(<InvoiceTab repairOrderId={42} {...orderPropsForTab} />);
 
     await user.click(
       await screen.findByRole("button", { name: /crear factura sin presupuesto/i }),
@@ -142,12 +168,32 @@ describe("InvoiceTab creating an invoice without an estimate", () => {
     expect(await screen.findByText(/no tiene un presupuesto/i)).toBeInTheDocument();
   });
 
+  it("given the no-estimate flow, when creating without an estimate, then InvoiceDetail receives the order's client and vehicle", async () => {
+    const user = userEvent.setup();
+    render(<InvoiceTab repairOrderId={42} {...orderPropsForTab} />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /crear factura sin presupuesto/i }),
+    );
+    await user.click(await screen.findByRole("button", { name: "Crear factura" }));
+
+    expect(await screen.findByTestId("invoice-detail")).toBeInTheDocument();
+    expect(lastInvoiceDetailProps).toMatchObject({
+      repairOrderId: 42,
+      orderClientId: 1,
+      orderClientFirstName: "Juan",
+      orderClientLastName: "Perez",
+      orderVehicleId: 5,
+      orderVehiclePlate: "ABC123",
+    });
+  });
+
   it("given confirmation, when confirmed and the invoice is created, then the tab renders it linked to the OT after refetching", async () => {
     mockGetInvoiceByRepairOrderId
       .mockRejectedValueOnce(new Error("no invoice"))
       .mockResolvedValue({ data: { data: { id: 9 } } });
     const user = userEvent.setup();
-    render(<InvoiceTab repairOrderId={42} />);
+    render(<InvoiceTab repairOrderId={42} {...orderPropsForTab} />);
 
     await user.click(
       await screen.findByRole("button", { name: /crear factura sin presupuesto/i }),
@@ -175,7 +221,7 @@ describe("InvoiceTab estimate summary card amounts", () => {
   });
 
   it("given a pending estimate with values beyond two decimals, when rendered, then amounts render with exactly two decimals", async () => {
-    render(<InvoiceTab repairOrderId={42} />);
+    render(<InvoiceTab repairOrderId={42} {...orderPropsForTab} />);
 
     // The total, the service price and the product line total each carried three
     // decimals under the legacy inline formatting; the shared formatter rounds to two.
@@ -185,7 +231,7 @@ describe("InvoiceTab estimate summary card amounts", () => {
   });
 
   it("given a pending estimate, when rendered, then the three amounts are right-aligned inside block-level containers", async () => {
-    render(<InvoiceTab repairOrderId={42} />);
+    render(<InvoiceTab repairOrderId={42} {...orderPropsForTab} />);
 
     const amounts = [money(2000.123), money(500.678), money(1234.567)];
     for (const amount of amounts) {
@@ -195,7 +241,7 @@ describe("InvoiceTab estimate summary card amounts", () => {
   });
 
   it("given a pending estimate, when rendered, then the Total amount's aligned block actually spans the row's available space", async () => {
-    render(<InvoiceTab repairOrderId={42} />);
+    render(<InvoiceTab repairOrderId={42} {...orderPropsForTab} />);
 
     const total = await screen.findByText(money(2000.123));
     expectRightAlignedInBlock(total);
