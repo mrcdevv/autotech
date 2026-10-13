@@ -4,6 +4,9 @@ import com.autotech.appointment.repository.AppointmentRepository;
 import com.autotech.client.model.Client;
 import com.autotech.client.model.ClientType;
 import com.autotech.client.repository.ClientRepository;
+import com.autotech.common.audit.AuditAction;
+import com.autotech.common.audit.AuditEntityType;
+import com.autotech.common.audit.AuditService;
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.email.service.EmailNotificationService;
@@ -28,6 +31,8 @@ import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -39,6 +44,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -79,6 +85,15 @@ class RepairOrderServiceImplTest {
 
     @Mock
     private InvoiceRepository invoiceRepository;
+
+    @Mock
+    private AuditService auditService;
+
+    @Captor
+    private ArgumentCaptor<Map<String, Object>> oldValuesCaptor;
+
+    @Captor
+    private ArgumentCaptor<Map<String, Object>> newValuesCaptor;
 
     @InjectMocks
     private RepairOrderServiceImpl repairOrderService;
@@ -336,6 +351,48 @@ class RepairOrderServiceImplTest {
         assertThatThrownBy(() -> repairOrderService.updateStatus(1L, request))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("entregada");
+    }
+
+    @Test
+    void givenValidStatusChange_whenUpdateStatus_thenRecordsAuditWithPreviousAndNewStatus() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(1L, client);
+        RepairOrder order = buildRepairOrder(1L, client, vehicle);
+        order.setStatus(RepairOrderStatus.REPARACION);
+        StatusUpdateRequest request = new StatusUpdateRequest(RepairOrderStatus.ENTREGADO);
+        RepairOrderResponse response = buildResponse(1L);
+
+        when(repairOrderRepository.findWithDetailsById(1L)).thenReturn(Optional.of(order));
+        when(repairOrderRepository.save(order)).thenReturn(order);
+        when(repairOrderMapper.toResponse(order)).thenReturn(response);
+
+        // Act
+        repairOrderService.updateStatus(1L, request);
+
+        // Assert
+        verify(auditService).record(eq(AuditEntityType.REPAIR_ORDER), eq(1L), eq(AuditAction.MODIFIED),
+                oldValuesCaptor.capture(), newValuesCaptor.capture());
+        assertThat(oldValuesCaptor.getValue()).containsEntry("status", "REPARACION");
+        assertThat(newValuesCaptor.getValue()).containsEntry("status", "ENTREGADO");
+    }
+
+    @Test
+    void givenRejectedStatusChange_whenUpdateStatus_thenNoAuditRecorded() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(1L, client);
+        RepairOrder order = buildRepairOrder(1L, client, vehicle);
+        order.setStatus(RepairOrderStatus.CANCELADO);
+        StatusUpdateRequest request = new StatusUpdateRequest(RepairOrderStatus.REPARACION);
+
+        when(repairOrderRepository.findWithDetailsById(1L)).thenReturn(Optional.of(order));
+
+        // Act & Assert
+        assertThatThrownBy(() -> repairOrderService.updateStatus(1L, request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("terminal");
+        verifyNoInteractions(auditService);
     }
 
     @Test

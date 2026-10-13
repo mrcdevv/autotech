@@ -4,6 +4,9 @@ import com.autotech.appointment.model.Appointment;
 import com.autotech.appointment.repository.AppointmentRepository;
 import com.autotech.client.model.Client;
 import com.autotech.client.repository.ClientRepository;
+import com.autotech.common.audit.AuditAction;
+import com.autotech.common.audit.AuditEntityType;
+import com.autotech.common.audit.AuditService;
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.invoice.repository.InvoiceRepository;
@@ -35,6 +38,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -55,6 +59,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
     private final TagRepository tagRepository;
     private final InvoiceRepository invoiceRepository;
     private final EmailNotificationService emailNotificationService;
+    private final AuditService auditService;
 
     @Override
     @Transactional(readOnly = true)
@@ -240,10 +245,19 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         log.info("Updating repair order {} status from {} to {}", id, currentStatus, newStatus);
         order.setStatus(newStatus);
         RepairOrder saved = repairOrderRepository.save(order);
+        recordStatusAudit(id, currentStatus, newStatus);
         if (newStatus == RepairOrderStatus.LISTO_PARA_ENTREGAR) {
             emailNotificationService.notifyVehicleReadyForPickup(saved);
         }
         return repairOrderMapper.toResponse(saved);
+    }
+
+    private void recordStatusAudit(Long repairOrderId, RepairOrderStatus previousStatus, RepairOrderStatus newStatus) {
+        Map<String, Object> oldValues = new LinkedHashMap<>();
+        oldValues.put("status", previousStatus.name());
+        Map<String, Object> newValues = new LinkedHashMap<>();
+        newValues.put("status", newStatus.name());
+        auditService.record(AuditEntityType.REPAIR_ORDER, repairOrderId, AuditAction.MODIFIED, oldValues, newValues);
     }
 
     @Override
