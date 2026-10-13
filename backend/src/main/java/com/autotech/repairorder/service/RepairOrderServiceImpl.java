@@ -177,6 +177,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         existing.setAppointment(appointment);
         existing.setReason(request.reason());
         existing.setClientSource(request.clientSource());
+        existing.setMechanicNotes(request.mechanicNotes());
 
         if (request.employeeIds() != null) {
             existing.getEmployees().clear();

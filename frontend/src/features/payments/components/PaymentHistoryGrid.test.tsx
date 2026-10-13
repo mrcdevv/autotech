@@ -50,7 +50,9 @@ describe("PaymentHistoryGrid", () => {
 
     expect(screen.getByText("Historial de pagos")).toBeInTheDocument();
     expect(screen.getByText("Juan Perez")).toBeInTheDocument();
-    expect(screen.getByText("$500.00")).toBeInTheDocument();
+    // Rendered text is "$\u00A0500,00" (NBSP after symbol); testing-library's
+    // default normalizer collapses it to a plain space on the element side.
+    expect(screen.getByText("$ 500,00")).toBeInTheDocument();
     expect(screen.getByText("Efectivo")).toBeInTheDocument();
   });
 

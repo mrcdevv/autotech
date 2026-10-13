@@ -1,6 +1,8 @@
 package com.autotech.vehicle.controller;
 
 import com.autotech.common.exception.GlobalExceptionHandler;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.autotech.vehicle.dto.BrandRequest;
 import com.autotech.vehicle.dto.BrandResponse;
 import com.autotech.vehicle.service.BrandService;

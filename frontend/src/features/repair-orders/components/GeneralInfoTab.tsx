@@ -16,8 +16,10 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 
 import { AssignMechanicsDialog } from "./AssignMechanicsDialog";
+import { EditRepairOrderDialog } from "./EditRepairOrderDialog";
 import { estimatesApi } from "@/api/estimates";
 import { deliveryNotesApi } from "@/api/deliveryNotes";
 import { paymentsApi } from "@/api/payments";
@@ -43,6 +45,7 @@ interface GeneralInfoTabProps {
 
 export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProps) {
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [estimates, setEstimates] = useState<EstimateResponse[]>([]);
   const [deliveryNote, setDeliveryNote] = useState<DeliveryNoteDetailResponse | null>(null);
   const [paymentSummary, setPaymentSummary] = useState<PaymentSummaryResponse | null>(null);
@@ -140,7 +143,18 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
     <>
       <Stack spacing={2} sx={{ py: 3 }}>
       {/* Estado y seguimiento */}
-      <Panel title="Estado y seguimiento">
+      <Panel
+        title="Estado y seguimiento"
+        action={
+          <Button
+            size="small"
+            startIcon={<EditOutlinedIcon />}
+            onClick={() => setEditDialogOpen(true)}
+          >
+            Editar orden de trabajo
+          </Button>
+        }
+      >
         <Stack direction="row" flexWrap="wrap" useFlexGap spacing={{ xs: 2, sm: 3.5 }}>
           <InfoBlock label="Estado">
             <StatusBadge tone={meta.tone} label={meta.label} />
@@ -221,7 +235,7 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
                 </Typography>
                 {activeEstimate ? (
                   <>
-                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5, textAlign: "right" }}>
                       <MonoText>
                         {activeEstimate.total != null ? formatCurrency(activeEstimate.total) : "—"}
                       </MonoText>
@@ -261,7 +275,7 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
                 </Typography>
                 {deliveryNote ? (
                   <>
-                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5, textAlign: "right" }}>
                       <MonoText>{deliveryNote.total != null ? formatCurrency(deliveryNote.total) : "—"}</MonoText>
                     </Typography>
                     <StatusBadge
@@ -284,13 +298,18 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
                 </Typography>
                 {paymentSummary ? (
                   <>
-                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5, textAlign: "right" }}>
                       <MonoText>{formatCurrency(paymentSummary.totalPaid)}</MonoText>
                     </Typography>
                     {paymentSummary.remaining > 0 ? (
-                      <Typography variant="body2" sx={{ color: "status.bad.fg", fontWeight: 500 }}>
-                        Saldo: <MonoText>{formatCurrency(paymentSummary.remaining)}</MonoText>
-                      </Typography>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <Typography variant="body2" sx={{ color: "status.bad.fg", fontWeight: 500 }}>
+                          Saldo:
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "status.bad.fg", fontWeight: 500, textAlign: "right" }}>
+                          <MonoText>{formatCurrency(paymentSummary.remaining)}</MonoText>
+                        </Typography>
+                      </Box>
                     ) : (
                       <StatusBadge tone="ok" label="Saldado" />
                     )}
@@ -392,6 +411,15 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
           orderId={order.id}
           assigned={order.employees}
           onClose={() => setAssignDialogOpen(false)}
+          onSuccess={onRefetch}
+        />
+      )}
+
+      {order && (
+        <EditRepairOrderDialog
+          open={editDialogOpen}
+          order={order}
+          onClose={() => setEditDialogOpen(false)}
           onSuccess={onRefetch}
         />
       )}

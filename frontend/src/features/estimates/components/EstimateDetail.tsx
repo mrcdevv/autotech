@@ -28,6 +28,7 @@ import axios from "axios";
 import { FormPageLayout } from "@/components/FormPageLayout";
 import { FormSection } from "@/components/FormSection";
 import { InfoList } from "@/components/InfoList";
+import { formatCurrency } from "@/utils/formatCurrency";
 import { clientAutocompleteApi } from "@/api/clientAutocomplete";
 import { vehiclesApi } from "@/api/vehicles";
 import { inspectionsApi } from "@/api/inspections";
@@ -503,9 +504,12 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
                   }}
                 >
                   <Chip label="Rechazado" color="error" size="small" />
-                  <Typography variant="body2">
-                    #{est.id} — ${est.total?.toLocaleString("es-AR") ?? "—"}
-                  </Typography>
+                  <Box sx={{ flex: 1, display: "flex", alignItems: "baseline", gap: 1, minWidth: 0 }}>
+                    <Typography variant="body2">#{est.id} —</Typography>
+                    <Typography variant="body2" sx={{ flex: 1, textAlign: "right" }}>
+                      {est.total != null ? formatCurrency(est.total) : "—"}
+                    </Typography>
+                  </Box>
                   <Typography variant="caption" color="text.secondary">
                     {new Date(est.createdAt).toLocaleDateString("es-AR")}
                   </Typography>

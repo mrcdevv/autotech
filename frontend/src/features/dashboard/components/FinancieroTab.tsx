@@ -56,6 +56,7 @@ export function FinancieroTab() {
           <StatCard
             label="Remitos pendiente"
             value={formatCurrency(data.totalPendingBilling)}
+            alignValue="right"
             icon={<AttachMoneyIcon color="warning" fontSize="small" />}
           />
         </Grid>

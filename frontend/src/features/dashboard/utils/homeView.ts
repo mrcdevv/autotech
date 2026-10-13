@@ -6,7 +6,7 @@ import type { StatusTone } from "@/theme/tokens";
 
 import { STATUS_META } from "@/features/repair-orders/statusMeta";
 import { dot } from "@/theme/tokens";
-import { formatCurrencyWhole } from "@/utils/formatCurrency";
+import { formatCurrency } from "@/utils/formatCurrency";
 import { initials } from "@/utils/initials";
 
 export const WORKSHOP_BAY_CAPACITY = 6;
@@ -18,6 +18,12 @@ export interface KpiView {
   value: string;
   hint: string;
   valueColor: string;
+}
+
+export interface WorkshopMechanic {
+  id: number;
+  initials: string;
+  fullName: string;
 }
 
 export interface WorkshopCarouselItem {
@@ -33,8 +39,7 @@ export interface WorkshopCarouselItem {
   tone: StatusTone;
   color: string;
   progress: number;
-  mechanic: string;
-  initials: string;
+  mechanics: WorkshopMechanic[];
 }
 
 export interface QueueItemView {
@@ -146,7 +151,7 @@ export function buildKpis(
     {
       label: "Presup. sin respuesta",
       value: pad(summary.pendingEstimateCount),
-      hint: `${formatCurrencyWhole(pendingTotal)} esperando OK`,
+      hint: `${formatCurrency(pendingTotal)} esperando OK`,
       valueColor: dot.warn,
     },
   ];
@@ -158,7 +163,11 @@ export function buildWorkshopCarousel(
 ): WorkshopCarouselItem[] {
   return openOrders(orders).map((order, index) => {
     const meta = STATUS_META[order.status];
-    const employee = order.employees[0];
+    const mechanics = order.employees.map((employee) => ({
+      id: employee.id,
+      initials: initials(employee.firstName, employee.lastName),
+      fullName: `${employee.firstName} ${employee.lastName}`.trim(),
+    }));
 
     return {
       id: order.id,
@@ -173,8 +182,7 @@ export function buildWorkshopCarousel(
       tone: meta.tone,
       color: meta.color,
       progress: meta.progress,
-      mechanic: employee ? `${employee.firstName} ${employee.lastName}` : "Sin asignar",
-      initials: employee ? initials(employee.firstName, employee.lastName) : "—",
+      mechanics,
     };
   });
 }
@@ -226,10 +234,10 @@ export function buildDailyCash(deliveryNotes: DeliveryNoteResponse[]): DailyCash
   const grandTotal = paidTotal + pendingTotal;
 
   return {
-    total: formatCurrencyWhole(paidTotal),
+    total: formatCurrency(paidTotal),
     paidCount: paid.length,
     pendingCount: pending.length,
-    pendingTotal: formatCurrencyWhole(pendingTotal),
+    pendingTotal: formatCurrency(pendingTotal),
     paidRatio: grandTotal > 0 ? (paidTotal / grandTotal) * 100 : 0,
   };
 }

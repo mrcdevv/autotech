@@ -4,6 +4,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 
 import { AppDataGrid } from "@/components/AppDataGrid";
 import { MonoText } from "@/components/MonoText";
+import { moneyColumn } from "@/utils/gridColumns";
 import { StatusBadge } from "@/components/StatusBadge";
 
 import type { GridColDef } from "@mui/x-data-grid";
@@ -78,19 +79,11 @@ export function DeliveryNoteList({
         <MonoText>{params.value != null ? `#${params.value}` : "—"}</MonoText>
       ),
     },
-    {
+    moneyColumn({
       field: "total",
       headerName: "Total",
-      flex: 0.75,
-      minWidth: 120,
-      align: "right",
-      headerAlign: "right",
-      renderCell: (params) => (
-        <MonoText sx={{ display: "block", width: "100%", textAlign: "right" }}>
-          {params.value != null ? `$${Number(params.value).toFixed(2)}` : "—"}
-        </MonoText>
-      ),
-    },
+      overrides: { flex: 0.75, minWidth: 120 },
+    }),
     {
       field: "actions",
       headerName: "Acciones",
