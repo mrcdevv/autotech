@@ -127,6 +127,8 @@ General rule: each controller maps the HTTP verb to its entity's code — `GET` 
 | `PUT /api/auth/change-password` | authenticated (removed from `permitAll`; previously threw an NPE → 500 without a token) |
 | `GET /api/auth/me` | authenticated |
 
+> **Known behavior**: Spring resolves and validates `@Valid` request bodies before `@PreAuthorize` runs. A caller without permission who sends an *invalid* body therefore gets `400` (validation messages only) instead of `403`; the service is never invoked. A valid body is always denied with `403`.
+
 > "Any authenticated" endpoints use `@PreAuthorize("isAuthenticated()")` so every controller method is annotated explicitly; the URL-level `anyRequest().authenticated()` remains as a safety net.
 
 ---
@@ -235,7 +237,8 @@ public record CurrentUserResponse(
   - Inactive employee login → 401; unknown URL → 404.
   - `mustChangePassword` employee → 403 `PASSWORD_CHANGE_REQUIRED` on business endpoints, 200 on `/api/auth/me`.
   - Login and `/me` include roles and permissions.
-- **Unit tests**: `CustomUserDetailsService` authorities, `AuthServiceImpl.getCurrentUser`.
+- Run with `./mvnw clean verify`. Without Docker, point the `test` profile to a local PostgreSQL by overriding the datasource with environment variables (`SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/autotech_test`, `SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`).
+- **Unit tests**: `CustomUserDetailsService` authorities, `JwtAuthenticationFilter` (forced password change, disabled/deleted employees), `AuthServiceImpl.getCurrentUser`.
 - Existing `@WebMvcTest` controller tests run with a mock user holding every permission (`@WithMockUser(authorities = ...)`).
 
 ### 8.2 Frontend
