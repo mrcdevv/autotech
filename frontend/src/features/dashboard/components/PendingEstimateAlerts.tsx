@@ -27,14 +27,13 @@ export function PendingEstimateAlerts({ alerts, thresholdDays }: PendingEstimate
             to={`/presupuestos/${alert.estimateId}`}
             ariaLabel={`Ir al presupuesto #${alert.estimateId} · ${alert.clientFullName} · ${alert.vehiclePlate} · ${alert.daysPending} días pendiente`}
           >
-            <RowText
-              primary={alert.clientFullName}
-              secondary={
-                <>
-                  {alert.vehiclePlate} · <MonoText>{formatCurrency(alert.total)}</MonoText>
-                </>
-              }
-            />
+            {/* The amount gets its own block (a Typography <p>) carrying the explicit
+                right alignment; the client/plate block keeps its own box, so neither
+                shares a block where alignment would move the label too. */}
+            <RowText primary={alert.clientFullName} secondary={alert.vehiclePlate} />
+            <Typography sx={{ textAlign: "right", flex: 1, minWidth: 0 }}>
+              <MonoText>{formatCurrency(alert.total)}</MonoText>
+            </Typography>
             <StatusBadge tone="info" label={`${alert.daysPending} días`} />
           </PanelRow>
         ))

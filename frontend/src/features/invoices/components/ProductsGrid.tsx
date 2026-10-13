@@ -6,6 +6,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
 
 import { productsApi } from "@/api/products";
+import { MoneyInput } from "@/components/MoneyInput";
+import { formatCurrency } from "@/utils/formatCurrency";
 
 import type { InvoiceProductRequest } from "@/types/invoice";
 import type { ProductResponse } from "@/types/catalog";
@@ -23,10 +25,6 @@ interface ProductsGridProps {
   onChange: (products: InvoiceProductRequest[]) => void;
   readonly?: boolean;
   showErrors?: boolean;
-}
-
-function formatCurrency(value: number): string {
-  return value.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 export function ProductsGrid({ products, onChange, readonly = false, showErrors = false }: ProductsGridProps) {
@@ -201,27 +199,21 @@ export function ProductsGrid({ products, onChange, readonly = false, showErrors 
                   error={showErrors && prod.quantity < 1}
                   helperText={showErrors && prod.quantity < 1 ? "Debe ser al menos 1" : undefined}
                 />
-                <TextField
-                  type="number"
-                  label="Precio unitario"
-                  value={prod.unitPrice === 0 ? "" : prod.unitPrice}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    updateProduct(index, "unitPrice", val === "" ? 0 : Number(val));
-                  }}
-                  onKeyDown={(e) => blockNonNumeric(e)}
-                  slotProps={{
-                    htmlInput: { min: 0, step: "0.01" },
-                  }}
-                  disabled={readonly}
-                  size="small"
-                  sx={{ flex: 1 }}
-                  error={showErrors && prod.unitPrice < 0}
-                  helperText={showErrors && prod.unitPrice < 0 ? "No puede ser negativo" : undefined}
-                />
+                <Box sx={{ flex: 1, display: "flex" }}>
+                  <MoneyInput
+                    label="Precio unitario"
+                    value={prod.unitPrice}
+                    onChange={(v) => updateProduct(index, "unitPrice", v ?? 0)}
+                    disabled={readonly}
+                    size="small"
+                    fullWidth
+                    error={showErrors && prod.unitPrice < 0}
+                    helperText={showErrors && prod.unitPrice < 0 ? "No puede ser negativo" : undefined}
+                  />
+                </Box>
                 <TextField
                   label="Total"
-                  value={`$ ${formatCurrency((prod.quantity || 0) * (prod.unitPrice || 0))}`}
+                  value={formatCurrency((prod.quantity || 0) * (prod.unitPrice || 0))}
                   size="small"
                   sx={{ flex: 1 }}
                   slotProps={{
@@ -245,7 +237,6 @@ export function ProductsGrid({ products, onChange, readonly = false, showErrors 
             px: 3,
             py: 1.5,
             display: "flex",
-            justifyContent: "flex-end",
             alignItems: "center",
             borderTop: 1,
             borderColor: "divider",
@@ -255,8 +246,8 @@ export function ProductsGrid({ products, onChange, readonly = false, showErrors 
           <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
             Subtotal productos:
           </Typography>
-          <Typography variant="subtitle2" sx={{ fontSize: "0.9rem" }}>
-            $ {formatCurrency(productsSubtotal)}
+          <Typography variant="subtitle2" sx={{ flex: 1, textAlign: "right", fontSize: "0.9rem" }}>
+            {formatCurrency(productsSubtotal)}
           </Typography>
         </Box>
       )}

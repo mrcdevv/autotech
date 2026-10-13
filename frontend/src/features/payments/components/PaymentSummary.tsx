@@ -1,12 +1,11 @@
 import { Box, Typography, Divider, Paper } from "@mui/material";
 
+import { formatCurrency } from "@/utils/formatCurrency";
 import type { PaymentSummaryResponse } from "@/types/payment";
 
 interface PaymentSummaryProps {
   summary: PaymentSummaryResponse | null;
 }
-
-const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
 
 export function PaymentSummary({ summary }: PaymentSummaryProps) {
   if (!summary) return null;
@@ -19,32 +18,32 @@ export function PaymentSummary({ summary }: PaymentSummaryProps) {
       <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
         <Box sx={{ display: "flex", justifyContent: "space-between" }}>
           <Typography>Total en servicios:</Typography>
-          <Typography>{formatCurrency(summary.totalServices)}</Typography>
+          <Typography sx={{ textAlign: "right" }}>{formatCurrency(summary.totalServices)}</Typography>
         </Box>
         <Box sx={{ display: "flex", justifyContent: "space-between" }}>
           <Typography>Total en partes:</Typography>
-          <Typography>{formatCurrency(summary.totalProducts)}</Typography>
+          <Typography sx={{ textAlign: "right" }}>{formatCurrency(summary.totalProducts)}</Typography>
         </Box>
         <Box sx={{ display: "flex", justifyContent: "space-between" }}>
           <Typography>Impuestos:</Typography>
-          <Typography>{formatCurrency(summary.taxAmount)}</Typography>
+          <Typography sx={{ textAlign: "right" }}>{formatCurrency(summary.taxAmount)}</Typography>
         </Box>
         <Box sx={{ display: "flex", justifyContent: "space-between" }}>
           <Typography>Descuento:</Typography>
-          <Typography>-{formatCurrency(summary.discountAmount)}</Typography>
+          <Typography sx={{ textAlign: "right" }}>-{formatCurrency(summary.discountAmount)}</Typography>
         </Box>
         <Divider sx={{ my: 1 }} />
         <Box sx={{ display: "flex", justifyContent: "space-between" }}>
           <Typography variant="subtitle1" fontWeight="bold">
             Total:
           </Typography>
-          <Typography variant="subtitle1" fontWeight="bold">
+          <Typography variant="subtitle1" fontWeight="bold" sx={{ textAlign: "right" }}>
             {formatCurrency(summary.total)}
           </Typography>
         </Box>
         <Box sx={{ display: "flex", justifyContent: "space-between" }}>
           <Typography>Total pagado a la fecha:</Typography>
-          <Typography color="success.main">
+          <Typography color="success.main" sx={{ textAlign: "right" }}>
             {formatCurrency(summary.totalPaid)}
           </Typography>
         </Box>
@@ -56,6 +55,7 @@ export function PaymentSummary({ summary }: PaymentSummaryProps) {
             variant="subtitle1"
             fontWeight="bold"
             color={summary.remaining > 0 ? "error.main" : "success.main"}
+            sx={{ textAlign: "right" }}
           >
             {formatCurrency(summary.remaining)}
           </Typography>

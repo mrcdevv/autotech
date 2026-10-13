@@ -235,7 +235,7 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
                 </Typography>
                 {activeEstimate ? (
                   <>
-                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5, textAlign: "right" }}>
                       <MonoText>
                         {activeEstimate.total != null ? formatCurrency(activeEstimate.total) : "—"}
                       </MonoText>
@@ -275,7 +275,7 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
                 </Typography>
                 {invoice ? (
                   <>
-                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5, textAlign: "right" }}>
                       <MonoText>{invoice.total != null ? formatCurrency(invoice.total) : "—"}</MonoText>
                     </Typography>
                     <StatusBadge
@@ -298,13 +298,18 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
                 </Typography>
                 {paymentSummary ? (
                   <>
-                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5, textAlign: "right" }}>
                       <MonoText>{formatCurrency(paymentSummary.totalPaid)}</MonoText>
                     </Typography>
                     {paymentSummary.remaining > 0 ? (
-                      <Typography variant="body2" sx={{ color: "status.bad.fg", fontWeight: 500 }}>
-                        Saldo: <MonoText>{formatCurrency(paymentSummary.remaining)}</MonoText>
-                      </Typography>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <Typography variant="body2" sx={{ color: "status.bad.fg", fontWeight: 500 }}>
+                          Saldo:
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "status.bad.fg", fontWeight: 500, textAlign: "right" }}>
+                          <MonoText>{formatCurrency(paymentSummary.remaining)}</MonoText>
+                        </Typography>
+                      </Box>
                     ) : (
                       <StatusBadge tone="ok" label="Saldado" />
                     )}

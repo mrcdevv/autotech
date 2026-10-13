@@ -19,6 +19,8 @@ import { estimatesApi } from "@/api/estimates";
 import { invoicesApi } from "@/api/invoices";
 import { InvoiceDetail } from "./InvoiceDetail";
 
+import { formatCurrency } from "@/utils/formatCurrency";
+
 import type { EstimateDetailResponse } from "@/types/estimate";
 import type { InvoiceDetailResponse } from "@/types/invoice";
 
@@ -258,12 +260,17 @@ function EstimateSummaryCard({ estimate }: { estimate: EstimateDetailResponse })
             {productCount} ítem{productCount !== 1 ? "s" : ""}
           </Typography>
         </Box>
-        <Box>
+        <Box sx={{ flexGrow: 1 }}>
           <Typography variant="caption" color="text.secondary">
             Total
           </Typography>
-          <Typography variant="body1" fontWeight={700} color="primary.main">
-            ${estimate.total?.toLocaleString("es-AR", { minimumFractionDigits: 2 }) ?? "—"}
+          <Typography
+            variant="body1"
+            fontWeight={700}
+            color="primary.main"
+            sx={{ textAlign: "right" }}
+          >
+            {estimate.total != null ? formatCurrency(estimate.total) : "—"}
           </Typography>
         </Box>
       </Stack>
@@ -278,8 +285,8 @@ function EstimateSummaryCard({ estimate }: { estimate: EstimateDetailResponse })
               <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>
                 {svc.serviceName}
               </Typography>
-              <Typography variant="body2" sx={{ fontSize: "0.8rem", fontWeight: 500 }}>
-                ${svc.price.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+              <Typography variant="body2" sx={{ fontSize: "0.8rem", fontWeight: 500, textAlign: "right" }}>
+                {formatCurrency(svc.price)}
               </Typography>
             </Box>
           ))}
@@ -296,8 +303,8 @@ function EstimateSummaryCard({ estimate }: { estimate: EstimateDetailResponse })
               <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>
                 {prod.productName} x{prod.quantity}
               </Typography>
-              <Typography variant="body2" sx={{ fontSize: "0.8rem", fontWeight: 500 }}>
-                ${prod.totalPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+              <Typography variant="body2" sx={{ fontSize: "0.8rem", fontWeight: 500, textAlign: "right" }}>
+                {formatCurrency(prod.totalPrice)}
               </Typography>
             </Box>
           ))}

@@ -1,6 +1,7 @@
 import { Box, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import { BarChart } from "@mui/x-charts/BarChart";
 import type { MonthlyRevenueResponse } from "@/features/dashboard/types";
+import { formatCurrencyWhole } from "@/utils/formatCurrency";
 
 interface MonthlyRevenueChartProps {
   data: MonthlyRevenueResponse[];
@@ -60,7 +61,25 @@ export function MonthlyRevenueChart({ data, months, onMonthsChange }: MonthlyRev
       ) : (
         <BarChart
           xAxis={[{ scaleType: "band", data: labels }]}
-          series={[{ data: values, label: "Ingresos ($)", color: "#1976d2" }]}
+          yAxis={[
+            {
+              // Whole numbers on purpose (decision D2): axis ticks are money, not cents.
+              // In @mui/x-charts the series valueFormatter feeds tooltips/legend only;
+              // tick labels need the axis-level formatter. null/undefined stay empty.
+              valueFormatter: (value: number | null | undefined) =>
+                value == null ? "" : formatCurrencyWhole(value),
+            },
+          ]}
+          series={[
+            {
+              data: values,
+              label: "Ingresos ($)",
+              color: "#1976d2",
+              // Whole numbers on purpose (decision D2): chart axes and tooltips stay
+              // readable without cents.
+              valueFormatter: (value) => (value == null ? "" : formatCurrencyWhole(value)),
+            },
+          ]}
           height={300}
         />
       )}
