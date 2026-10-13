@@ -43,6 +43,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -357,6 +358,117 @@ class InvoiceServiceImplTest {
         assertThatThrownBy(() -> invoiceService.createFromEstimate(5L))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("ACEPTADO");
+    }
+
+    @Test
+    void givenRepairOrderAlreadyHasInvoice_whenCreate_thenThrowBusinessException() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        RepairOrder repairOrder = buildRepairOrder(10L);
+        Invoice existingInvoice = buildInvoice(99L);
+        InvoiceRequest request = new InvoiceRequest(1L, 2L, 10L, null,
+                BigDecimal.ZERO, BigDecimal.ZERO, Collections.emptyList(), Collections.emptyList());
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(repairOrder));
+        when(invoiceRepository.findByRepairOrderId(10L)).thenReturn(Optional.of(existingInvoice));
+
+        assertThatThrownBy(() -> invoiceService.create(request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("orden de trabajo");
+        verify(invoiceRepository, never()).save(any(Invoice.class));
+    }
+
+    @Test
+    void givenRepairOrderAlreadyHasInvoice_whenCreateFromEstimate_thenThrowBusinessException() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        RepairOrder repairOrder = buildRepairOrder(10L);
+        Invoice existingInvoice = buildInvoice(99L);
+        EstimateInvoiceDataResponse estimateData = new EstimateInvoiceDataResponse(
+                5L, 1L, 2L, 10L,
+                Collections.emptyList(), Collections.emptyList(),
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.valueOf(300));
+
+        when(estimateService.convertToInvoiceData(5L)).thenReturn(estimateData);
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(repairOrder));
+        when(invoiceRepository.findByRepairOrderId(10L)).thenReturn(Optional.of(existingInvoice));
+
+        assertThatThrownBy(() -> invoiceService.createFromEstimate(5L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("orden de trabajo");
+        verify(invoiceRepository, never()).save(any(Invoice.class));
+    }
+
+    @Test
+    void givenEstimateAlreadyInvoiced_whenCreate_thenThrowBusinessException() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        Invoice existingInvoice = buildInvoice(99L);
+        InvoiceRequest request = new InvoiceRequest(1L, 2L, null, 5L,
+                BigDecimal.ZERO, BigDecimal.ZERO, Collections.emptyList(), Collections.emptyList());
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(invoiceRepository.findByEstimateId(5L)).thenReturn(Optional.of(existingInvoice));
+
+        assertThatThrownBy(() -> invoiceService.create(request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("presupuesto");
+        verify(invoiceRepository, never()).save(any(Invoice.class));
+    }
+
+    @Test
+    void givenEstimateAlreadyInvoiced_whenCreateFromEstimate_thenThrowBusinessException() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        Invoice existingInvoice = buildInvoice(99L);
+        EstimateInvoiceDataResponse estimateData = new EstimateInvoiceDataResponse(
+                5L, 1L, 2L, null,
+                Collections.emptyList(), Collections.emptyList(),
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.valueOf(300));
+
+        when(estimateService.convertToInvoiceData(5L)).thenReturn(estimateData);
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(invoiceRepository.findByEstimateId(5L)).thenReturn(Optional.of(existingInvoice));
+
+        assertThatThrownBy(() -> invoiceService.createFromEstimate(5L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("presupuesto");
+        verify(invoiceRepository, never()).save(any(Invoice.class));
+    }
+
+    @Test
+    void givenRepairOrderWithoutInvoice_whenCreate_thenSucceeds() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        RepairOrder repairOrder = buildRepairOrder(10L);
+        InvoiceRequest request = new InvoiceRequest(1L, 2L, 10L, null,
+                BigDecimal.ZERO, BigDecimal.ZERO, Collections.emptyList(), Collections.emptyList());
+
+        Invoice mappedEntity = Invoice.builder()
+                .discountPercentage(BigDecimal.ZERO)
+                .taxPercentage(BigDecimal.ZERO)
+                .build();
+        Invoice savedEntity = buildInvoice(1L);
+        InvoiceDetailResponse detailResponse = buildDetailResponse(1L);
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(repairOrder));
+        when(invoiceRepository.findByRepairOrderId(10L)).thenReturn(Optional.empty());
+        when(invoiceMapper.toEntity(request)).thenReturn(mappedEntity);
+        when(invoiceRepository.save(any(Invoice.class))).thenReturn(savedEntity);
+        when(invoiceRepository.findWithDetailsById(1L)).thenReturn(Optional.of(savedEntity));
+        when(invoiceMapper.toDetailResponse(savedEntity)).thenReturn(detailResponse);
+
+        InvoiceDetailResponse result = invoiceService.create(request);
+
+        assertThat(result.id()).isEqualTo(1L);
     }
 
     @Test

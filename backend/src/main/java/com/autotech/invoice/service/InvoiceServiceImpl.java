@@ -105,10 +105,19 @@ public class InvoiceServiceImpl implements InvoiceService {
         if (request.repairOrderId() != null) {
             repairOrder = repairOrderRepository.findById(request.repairOrderId())
                     .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", request.repairOrderId()));
+
+            // One invoice per repair order: covers both create and createFromEstimate (which delegates here)
+            if (invoiceRepository.findByRepairOrderId(request.repairOrderId()).isPresent()) {
+                throw new BusinessException("La orden de trabajo ya tiene una factura asociada");
+            }
         }
 
         // Validate estimate existence via EstimateService (cross-module boundary)
         if (request.estimateId() != null) {
+            // One invoice per estimate: covers both create and createFromEstimate (which delegates here)
+            if (invoiceRepository.findByEstimateId(request.estimateId()).isPresent()) {
+                throw new BusinessException("El presupuesto ya tiene una factura asociada");
+            }
             estimateService.getById(request.estimateId());
         }
 
