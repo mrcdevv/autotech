@@ -20,7 +20,7 @@ const DEFAULT_FINANCIERO = {
   estimatesTotal: 10,
   totalPendingBilling: 15000,
   debtAging: [],
-  topUnpaidInvoices: [],
+  topUnpaidDeliveryNotes: [],
 };
 
 function makeResponse(payload: unknown) {

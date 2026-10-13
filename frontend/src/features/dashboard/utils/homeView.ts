@@ -1,6 +1,6 @@
 import type { RepairOrderResponse } from "@/features/repair-orders/types";
 import type { AppointmentResponse } from "@/types/appointment";
-import type { InvoiceResponse } from "@/types/invoice";
+import type { DeliveryNoteResponse } from "@/types/deliveryNote";
 import type { DashboardSummaryResponse } from "@/features/dashboard/types";
 import type { StatusTone } from "@/theme/tokens";
 
@@ -223,14 +223,14 @@ export function buildUpcomingAppointments(
     });
 }
 
-export function buildDailyCash(invoices: InvoiceResponse[]): DailyCashView {
-  const today = invoices.filter((invoice) => isCreatedToday(invoice.createdAt));
+export function buildDailyCash(deliveryNotes: DeliveryNoteResponse[]): DailyCashView {
+  const today = deliveryNotes.filter((deliveryNote) => isCreatedToday(deliveryNote.createdAt));
 
-  const paid = today.filter((invoice) => invoice.status === "PAGADA");
-  const pending = today.filter((invoice) => invoice.status === "PENDIENTE");
+  const paid = today.filter((deliveryNote) => deliveryNote.status === "PAGADA");
+  const pending = today.filter((deliveryNote) => deliveryNote.status === "PENDIENTE");
 
-  const paidTotal = paid.reduce((sum, invoice) => sum + (invoice.total ?? 0), 0);
-  const pendingTotal = pending.reduce((sum, invoice) => sum + (invoice.total ?? 0), 0);
+  const paidTotal = paid.reduce((sum, deliveryNote) => sum + (deliveryNote.total ?? 0), 0);
+  const pendingTotal = pending.reduce((sum, deliveryNote) => sum + (deliveryNote.total ?? 0), 0);
   const grandTotal = paidTotal + pendingTotal;
 
   return {

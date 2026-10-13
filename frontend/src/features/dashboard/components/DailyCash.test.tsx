@@ -5,7 +5,7 @@ import { DailyCash } from "./DailyCash";
 import { buildDailyCash } from "../utils/homeView";
 import { formatCurrency } from "@/utils/formatCurrency";
 
-import type { InvoiceResponse } from "@/types/invoice";
+import type { DeliveryNoteResponse } from "@/types/deliveryNote";
 
 // formatCurrency emits a non-breaking space (U+00A0) after the "$" symbol, which the
 // testing-library normalizer collapses to a plain space in the DOM text. Normalize the
@@ -36,8 +36,9 @@ function expectRightAlignedInBlock(element: HTMLElement): void {
 
 const todayIso = () => new Date().toISOString();
 
-const invoice = (id: number, status: InvoiceResponse["status"], total: number): InvoiceResponse => ({
+const deliveryNote = (id: number, status: DeliveryNoteResponse["status"], total: number): DeliveryNoteResponse => ({
   id,
+  number: id,
   clientId: 1,
   clientFullName: "Juan Perez",
   vehicleId: null,
@@ -47,7 +48,6 @@ const invoice = (id: number, status: InvoiceResponse["status"], total: number): 
   estimateId: null,
   status,
   discountPercentage: 0,
-  taxPercentage: 0,
   total,
   createdAt: todayIso(),
   updatedAt: todayIso(),
@@ -56,7 +56,7 @@ const invoice = (id: number, status: InvoiceResponse["status"], total: number): 
 // The view is built with the real buildDailyCash so the rendered decimals are
 // discriminated end to end: 1234.5 renders "$ 1.234,50" (2 decimals, D3), not the
 // chart-axis "$ 1.235" that formatCurrencyWhole would produce.
-const cash = buildDailyCash([invoice(1, "PAGADA", 1234.5), invoice(2, "PENDIENTE", 226.8)]);
+const cash = buildDailyCash([deliveryNote(1, "PAGADA", 1234.5), deliveryNote(2, "PENDIENTE", 226.8)]);
 
 describe("DailyCash", () => {
   it("given today's cash, when rendered, then the total carries exactly 2 decimals", () => {
@@ -80,7 +80,7 @@ describe("DailyCash", () => {
   it("given today's cash, when rendered, then the pending amounts line is right-aligned on a block container", () => {
     render(<DailyCash cash={cash} />);
 
-    const line = screen.getByText(/facturas cobradas|factura cobrada/);
+    const line = screen.getByText(/remitos cobradas|remito cobrada/);
     expect(getComputedStyle(line).textAlign).toBe("right");
     expect(INLINE_TAGS.has(line.tagName)).toBe(false);
   });

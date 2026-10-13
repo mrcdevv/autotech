@@ -1,7 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
-import { vi, describe, it, expect } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import SettingsPage from "./SettingsPage";
 
@@ -17,16 +16,20 @@ vi.mock("@/features/settings/components/CalendarSettingsTab", () => ({
   CalendarSettingsTab: () => <div data-testid="calendar-settings-tab">CalendarSettingsTab</div>,
 }));
 
-vi.mock("@/features/settings/components/RepairOrderSettingsTab", () => ({
-  RepairOrderSettingsTab: () => <div data-testid="repair-order-settings-tab">RepairOrderSettingsTab</div>,
-}));
-
 vi.mock("@/features/settings/components/TagsSettingsTab", () => ({
   TagsSettingsTab: () => <div data-testid="tags-settings-tab">TagsSettingsTab</div>,
 }));
 
 vi.mock("@/features/settings/components/DashboardSettingsTab", () => ({
   DashboardSettingsTab: () => <div data-testid="dashboard-settings-tab">DashboardSettingsTab</div>,
+}));
+
+vi.mock("@/features/settings/components/RolesSettings", () => ({
+  RolesSettings: () => <div data-testid="roles-settings">RolesSettings</div>,
+}));
+
+vi.mock("@/features/settings/components/TaxSettings", () => ({
+  TaxSettings: () => <div data-testid="tax-settings">TaxSettings</div>,
 }));
 
 function renderSettingsPage() {
@@ -38,65 +41,37 @@ function renderSettingsPage() {
 }
 
 describe("SettingsPage", () => {
-  it("given page, when rendered, then shows settings tabs", () => {
+  it("given page, when rendered, then shows subtitle", () => {
     renderSettingsPage();
 
-    expect(screen.getByText("Pagos / Cuentas bancarias")).toBeInTheDocument();
-    expect(screen.getByText("Fichas técnicas")).toBeInTheDocument();
-    expect(screen.getByText("Calendario")).toBeInTheDocument();
-    expect(screen.getByText("Órdenes de trabajo")).toBeInTheDocument();
-    expect(screen.getByText("Etiquetas")).toBeInTheDocument();
-    expect(screen.getByText("Panel de inicio")).toBeInTheDocument();
+    expect(screen.getByText("Gestioná los ajustes generales del taller")).toBeInTheDocument();
   });
 
-  it("given page, when rendered, then shows first tab by default", () => {
+  it("given page, when rendered, then shows all sections", () => {
     renderSettingsPage();
 
-    expect(screen.getByTestId("bank-accounts-tab")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Taller" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Catálogos" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Remitos" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Accesos" })).toBeInTheDocument();
   });
 
-  it("given tabs, when clicking second tab, then shows inspection templates", async () => {
-    const user = userEvent.setup();
+  it("given page, when rendered, then shows billing and access cards", () => {
     renderSettingsPage();
 
-    await user.click(screen.getByText("Fichas técnicas"));
-
-    expect(screen.getByTestId("inspection-templates-tab")).toBeInTheDocument();
+    expect(screen.getAllByText("Impuestos")).toHaveLength(2);
+    expect(screen.getAllByText("Roles y permisos")).toHaveLength(2);
   });
 
-  it("given tabs, when clicking third tab, then shows calendar settings", async () => {
-    const user = userEvent.setup();
+  it("given page, when rendered, then renders all settings config components", () => {
     renderSettingsPage();
-
-    await user.click(screen.getByText("Calendario"));
 
     expect(screen.getByTestId("calendar-settings-tab")).toBeInTheDocument();
-  });
-
-  it("given tabs, when clicking fourth tab, then shows repair order settings", async () => {
-    const user = userEvent.setup();
-    renderSettingsPage();
-
-    await user.click(screen.getByText("Órdenes de trabajo"));
-
-    expect(screen.getByTestId("repair-order-settings-tab")).toBeInTheDocument();
-  });
-
-  it("given tabs, when clicking tags tab, then shows tag settings", async () => {
-    const user = userEvent.setup();
-    renderSettingsPage();
-
-    await user.click(screen.getByText("Etiquetas"));
-
-    expect(screen.getByTestId("tags-settings-tab")).toBeInTheDocument();
-  });
-
-  it("given tabs, when clicking dashboard tab, then shows dashboard settings", async () => {
-    const user = userEvent.setup();
-    renderSettingsPage();
-
-    await user.click(screen.getByText("Panel de inicio"));
-
     expect(screen.getByTestId("dashboard-settings-tab")).toBeInTheDocument();
+    expect(screen.getByTestId("bank-accounts-tab")).toBeInTheDocument();
+    expect(screen.getByTestId("inspection-templates-tab")).toBeInTheDocument();
+    expect(screen.getByTestId("tags-settings-tab")).toBeInTheDocument();
+    expect(screen.getByTestId("tax-settings")).toBeInTheDocument();
+    expect(screen.getByTestId("roles-settings")).toBeInTheDocument();
   });
 });

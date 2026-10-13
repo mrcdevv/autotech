@@ -22,36 +22,36 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/invoices/{invoiceId}/payments")
+@RequestMapping("/api/delivery-notes/{deliveryNoteId}/payments")
 @RequiredArgsConstructor
 public class PaymentController {
 
     private final PaymentService paymentService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<PaymentResponse>>> getByInvoice(
-            @PathVariable Long invoiceId) {
-        return ResponseEntity.ok(ApiResponse.success(paymentService.getByInvoiceId(invoiceId)));
+    public ResponseEntity<ApiResponse<List<PaymentResponse>>> getByDeliveryNote(
+            @PathVariable Long deliveryNoteId) {
+        return ResponseEntity.ok(ApiResponse.success(paymentService.getByDeliveryNoteId(deliveryNoteId)));
     }
 
     @GetMapping("/summary")
     public ResponseEntity<ApiResponse<PaymentSummaryResponse>> getSummary(
-            @PathVariable Long invoiceId) {
-        return ResponseEntity.ok(ApiResponse.success(paymentService.getSummary(invoiceId)));
+            @PathVariable Long deliveryNoteId) {
+        return ResponseEntity.ok(ApiResponse.success(paymentService.getSummary(deliveryNoteId)));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<PaymentResponse>> create(
-            @PathVariable Long invoiceId,
+            @PathVariable Long deliveryNoteId,
             @Valid @RequestBody PaymentRequest request) {
-        PaymentResponse created = paymentService.create(invoiceId, request);
+        PaymentResponse created = paymentService.create(deliveryNoteId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Pago registrado", created));
     }
 
     @PutMapping("/{paymentId}")
     public ResponseEntity<ApiResponse<PaymentResponse>> update(
-            @PathVariable Long invoiceId,
+            @PathVariable Long deliveryNoteId,
             @PathVariable Long paymentId,
             @Valid @RequestBody PaymentRequest request) {
         return ResponseEntity.ok(ApiResponse.success("Pago actualizado", paymentService.update(paymentId, request)));
@@ -59,7 +59,7 @@ public class PaymentController {
 
     @DeleteMapping("/{paymentId}")
     public ResponseEntity<ApiResponse<Void>> delete(
-            @PathVariable Long invoiceId,
+            @PathVariable Long deliveryNoteId,
             @PathVariable Long paymentId,
             @RequestParam Long performedBy) {
         paymentService.delete(paymentId, performedBy);

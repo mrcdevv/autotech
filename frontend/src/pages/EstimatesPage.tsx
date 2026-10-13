@@ -73,7 +73,7 @@ export default function EstimatesPage() {
 
   const handleRowClick = (id: number) => navigate(`/presupuestos/${id}`);
   const handleCreate = () => navigate("/presupuestos/nuevo");
-  const handleInvoice = (id: number) => navigate(`/facturas/nuevo?estimateId=${id}`);
+  const handleDeliveryNote = (id: number) => navigate(`/remitos/nuevo?estimateId=${id}`);
 
   const handleDeleteConfirm = async () => {
     if (deleteDialogId != null) {
@@ -132,7 +132,7 @@ export default function EstimatesPage() {
         onPageSizeChange={setPageSize}
         onRowClick={handleRowClick}
         onDelete={(id) => setDeleteDialogId(id)}
-        onInvoice={handleInvoice}
+        onDeliveryNote={handleDeliveryNote}
       />
 
       <AppConfirmDialog

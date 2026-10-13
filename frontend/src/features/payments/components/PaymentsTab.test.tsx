@@ -9,7 +9,6 @@ import type { PaymentResponse, PaymentSummaryResponse } from "@/types/payment";
 const mockSummary: PaymentSummaryResponse = {
   totalServices: 1000,
   totalProducts: 200,
-  taxAmount: 226.8,
   discountAmount: 120,
   total: 1306.8,
   totalPaid: 500,
@@ -19,7 +18,7 @@ const mockSummary: PaymentSummaryResponse = {
 const mockPayments: PaymentResponse[] = [
   {
     id: 1,
-    invoiceId: 10,
+    deliveryNoteId: 10,
     paymentDate: "2025-01-15",
     createdAt: "2025-01-15T10:30:00",
     amount: 500,
@@ -73,15 +72,15 @@ describe("PaymentsTab", () => {
     vi.clearAllMocks();
   });
 
-  it("given invoice with payments, when rendered, then shows summary and history", () => {
-    render(<PaymentsTab invoiceId={10} clientFullName="Juan Perez" />);
+  it("given deliveryNote with payments, when rendered, then shows summary and history", () => {
+    render(<PaymentsTab deliveryNoteId={10} clientFullName="Juan Perez" />);
 
     expect(screen.getByText("Resumen de pagos")).toBeInTheDocument();
     expect(screen.getByText("Historial de pagos")).toBeInTheDocument();
   });
 
   it("given remaining > 0, when rendered, then buttons are enabled", () => {
-    render(<PaymentsTab invoiceId={10} clientFullName="Juan Perez" />);
+    render(<PaymentsTab deliveryNoteId={10} clientFullName="Juan Perez" />);
 
     const cashBtn = screen.getByRole("button", { name: /efectivo/i });
     const bankBtn = screen.getByRole("button", { name: /cuenta bancaria/i });
@@ -91,7 +90,7 @@ describe("PaymentsTab", () => {
 
   it("given cash button clicked, when rendered, then opens cash dialog", async () => {
     const user = userEvent.setup();
-    render(<PaymentsTab invoiceId={10} clientFullName="Juan Perez" />);
+    render(<PaymentsTab deliveryNoteId={10} clientFullName="Juan Perez" />);
 
     await user.click(screen.getByRole("button", { name: /efectivo/i }));
 
@@ -100,7 +99,7 @@ describe("PaymentsTab", () => {
 
   it("given bank button clicked, when rendered, then opens bank dialog", async () => {
     const user = userEvent.setup();
-    render(<PaymentsTab invoiceId={10} clientFullName="Juan Perez" />);
+    render(<PaymentsTab deliveryNoteId={10} clientFullName="Juan Perez" />);
 
     await user.click(screen.getByRole("button", { name: /cuenta bancaria/i }));
 

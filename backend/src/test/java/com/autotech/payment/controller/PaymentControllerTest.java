@@ -10,6 +10,8 @@ import com.autotech.payment.dto.PaymentResponse;
 import com.autotech.payment.dto.PaymentSummaryResponse;
 import com.autotech.payment.model.PaymentType;
 import com.autotech.payment.service.PaymentService;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,24 +67,24 @@ class PaymentControllerTest {
 
     private final PaymentSummaryResponse sampleSummary = new PaymentSummaryResponse(
             BigDecimal.valueOf(1000), BigDecimal.valueOf(200),
-            new BigDecimal("226.80"), BigDecimal.valueOf(120),
-            new BigDecimal("1306.80"), BigDecimal.valueOf(500),
-            new BigDecimal("806.80"));
+            BigDecimal.valueOf(120),
+            new BigDecimal("1080.00"), BigDecimal.valueOf(500),
+            new BigDecimal("580.00"));
 
     @Test
-    void givenPaymentsExist_whenGetByInvoice_thenReturn200() throws Exception {
-        when(paymentService.getByInvoiceId(10L)).thenReturn(List.of(sampleResponse));
+    void givenPaymentsExist_whenGetByDeliveryNote_thenReturn200() throws Exception {
+        when(paymentService.getByDeliveryNoteId(10L)).thenReturn(List.of(sampleResponse));
 
-        mockMvc.perform(get("/api/invoices/10/payments"))
+        mockMvc.perform(get("/api/delivery-notes/10/payments"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].id").value(1));
     }
 
     @Test
-    void givenInvoiceExists_whenGetSummary_thenReturn200() throws Exception {
+    void givenDeliveryNoteExists_whenGetSummary_thenReturn200() throws Exception {
         when(paymentService.getSummary(10L)).thenReturn(sampleSummary);
 
-        mockMvc.perform(get("/api/invoices/10/payments/summary"))
+        mockMvc.perform(get("/api/delivery-notes/10/payments/summary"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.totalServices").value(1000));
     }
@@ -93,7 +95,7 @@ class PaymentControllerTest {
                 LocalDate.now(), BigDecimal.valueOf(500), "Juan", PaymentType.EFECTIVO, null, null);
         when(paymentService.create(eq(10L), any(PaymentRequest.class))).thenReturn(sampleResponse);
 
-        mockMvc.perform(post("/api/invoices/10/payments")
+        mockMvc.perform(post("/api/delivery-notes/10/payments")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -106,7 +108,7 @@ class PaymentControllerTest {
     void givenInvalidRequest_whenCreate_thenReturn400() throws Exception {
         PaymentRequest request = new PaymentRequest(null, null, null, null, null, null);
 
-        mockMvc.perform(post("/api/invoices/10/payments")
+        mockMvc.perform(post("/api/delivery-notes/10/payments")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -120,7 +122,7 @@ class PaymentControllerTest {
         when(paymentService.create(eq(10L), any(PaymentRequest.class)))
                 .thenThrow(new BusinessException("El monto del pago no puede superar el restante por pagar"));
 
-        mockMvc.perform(post("/api/invoices/10/payments")
+        mockMvc.perform(post("/api/delivery-notes/10/payments")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -133,7 +135,7 @@ class PaymentControllerTest {
                 LocalDate.now(), BigDecimal.valueOf(300), "Updated", PaymentType.EFECTIVO, null, null);
         when(paymentService.update(eq(1L), any(PaymentRequest.class))).thenReturn(sampleResponse);
 
-        mockMvc.perform(put("/api/invoices/10/payments/1")
+        mockMvc.perform(put("/api/delivery-notes/10/payments/1")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -148,7 +150,7 @@ class PaymentControllerTest {
         when(paymentService.update(eq(99L), any(PaymentRequest.class)))
                 .thenThrow(new ResourceNotFoundException("Payment", 99L));
 
-        mockMvc.perform(put("/api/invoices/10/payments/99")
+        mockMvc.perform(put("/api/delivery-notes/10/payments/99")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -159,7 +161,7 @@ class PaymentControllerTest {
     void givenExistingPayment_whenDelete_thenReturn200() throws Exception {
         doNothing().when(paymentService).delete(1L, 5L);
 
-        mockMvc.perform(delete("/api/invoices/10/payments/1")
+        mockMvc.perform(delete("/api/delivery-notes/10/payments/1")
                         .param("performedBy", "5")
                         .with(csrf()))
                 .andExpect(status().isOk())
@@ -170,7 +172,7 @@ class PaymentControllerTest {
     void givenNonExistentPayment_whenDelete_thenReturn404() throws Exception {
         doThrow(new ResourceNotFoundException("Payment", 99L)).when(paymentService).delete(99L, 5L);
 
-        mockMvc.perform(delete("/api/invoices/10/payments/99")
+        mockMvc.perform(delete("/api/delivery-notes/10/payments/99")
                         .param("performedBy", "5")
                         .with(csrf()))
                 .andExpect(status().isNotFound());

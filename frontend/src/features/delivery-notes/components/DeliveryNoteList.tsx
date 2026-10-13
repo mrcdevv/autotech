@@ -1,0 +1,152 @@
+import { IconButton, Tooltip } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+
+import { AppDataGrid } from "@/components/AppDataGrid";
+import { MonoText } from "@/components/MonoText";
+import { moneyColumn } from "@/utils/gridColumns";
+import { StatusBadge } from "@/components/StatusBadge";
+
+import type { GridColDef } from "@mui/x-data-grid";
+import type { DeliveryNoteResponse } from "@/types/deliveryNote";
+
+interface DeliveryNoteListProps {
+  rows: DeliveryNoteResponse[];
+  loading: boolean;
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
+  onRowClick: (row: DeliveryNoteResponse) => void;
+  onDelete: (id: number) => void;
+}
+
+export function DeliveryNoteList({
+  rows,
+  loading,
+  totalCount,
+  page,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+  onRowClick,
+  onDelete,
+}: DeliveryNoteListProps) {
+  const columns: GridColDef[] = [
+    {
+      field: "number",
+      headerName: "Nº",
+      flex: 0.6,
+      minWidth: 90,
+      renderCell: (params) => (
+        <MonoText>{params.value != null ? String(params.value).padStart(8, "0") : "—"}</MonoText>
+      ),
+    },
+    {
+      field: "createdAt",
+      headerName: "Fecha de creación",
+      flex: 1,
+      minWidth: 170,
+      valueFormatter: (value: string) => new Date(value).toLocaleDateString("es-AR"),
+    },
+    { field: "clientFullName", headerName: "Cliente", flex: 1.4, minWidth: 190 },
+    {
+      field: "vehiclePlate",
+      headerName: "Patente",
+      flex: 0.75,
+      minWidth: 120,
+      renderCell: (params) => <MonoText>{params.value ?? "—"}</MonoText>,
+    },
+    {
+      field: "status",
+      headerName: "Estado",
+      flex: 0.8,
+      minWidth: 140,
+      renderCell: (params) => (
+        <StatusBadge
+          label={params.value === "PAGADA" ? "Pagada" : "Pendiente"}
+          tone={params.value === "PAGADA" ? "ok" : "warn"}
+        />
+      ),
+    },
+    {
+      field: "repairOrderId",
+      headerName: "Orden de trabajo",
+      flex: 1,
+      minWidth: 160,
+      renderCell: (params) => (
+        <MonoText>{params.value != null ? `#${params.value}` : "—"}</MonoText>
+      ),
+    },
+    moneyColumn({
+      field: "total",
+      headerName: "Total",
+      overrides: { flex: 0.75, minWidth: 120 },
+    }),
+    {
+      field: "actions",
+      headerName: "Acciones",
+      width: 140,
+      sortable: false,
+      renderCell: (params) => {
+        const isFromRepairOrder = params.row.repairOrderId != null;
+        const isPaid = params.row.status === "PAGADA";
+        return (
+          <>
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                onRowClick(params.row);
+              }}
+              size="small"
+            >
+              <VisibilityIcon />
+            </IconButton>
+            <Tooltip
+              title={
+                isFromRepairOrder
+                  ? "No se puede eliminar una remito de orden de trabajo"
+                  : isPaid
+                    ? "No se puede eliminar una remito pagada"
+                    : "Eliminar"
+              }
+            >
+              <span>
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(params.row.id);
+                  }}
+                  color="error"
+                  size="small"
+                  disabled={isFromRepairOrder || isPaid}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </>
+        );
+      },
+    },
+  ];
+
+  return (
+    <AppDataGrid
+      rows={rows}
+      columns={columns}
+      loading={loading}
+      rowCount={totalCount}
+      paginationMode="server"
+      paginationModel={{ page, pageSize }}
+      onPaginationModelChange={(model) => {
+        onPageChange(model.page);
+        onPageSizeChange(model.pageSize);
+      }}
+      pageSizeOptions={[12, 24, 48]}
+      onRowClick={(params) => onRowClick(params.row)}
+      emptyMessage="No se encuentra cargada una remito con esos datos."
+    />
+  );
+}

@@ -21,23 +21,23 @@ import { PaymentHistoryGrid } from "./PaymentHistoryGrid";
 import type { PaymentResponse } from "@/types/payment";
 
 interface PaymentsTabProps {
-  invoiceId: number;
+  deliveryNoteId: number;
   clientFullName: string;
 }
 
-export function PaymentsTab({ invoiceId, clientFullName }: PaymentsTabProps) {
+export function PaymentsTab({ deliveryNoteId, clientFullName }: PaymentsTabProps) {
   const {
     payments,
     loading,
     error,
     deletePayment,
     refetch,
-  } = usePayments(invoiceId);
+  } = usePayments(deliveryNoteId);
   const {
     summary,
     loading: summaryLoading,
     refetch: refetchSummary,
-  } = usePaymentSummary(invoiceId);
+  } = usePaymentSummary(deliveryNoteId);
 
   const [cashDialogOpen, setCashDialogOpen] = useState(false);
   const [bankDialogOpen, setBankDialogOpen] = useState(false);
@@ -96,7 +96,7 @@ export function PaymentsTab({ invoiceId, clientFullName }: PaymentsTabProps) {
           startIcon={<PrintIcon />}
           onClick={() => window.print()}
         >
-          Imprimir factura
+          Imprimir remito
         </Button>
       </Stack>
 
@@ -116,7 +116,7 @@ export function PaymentsTab({ invoiceId, clientFullName }: PaymentsTabProps) {
           setCashDialogOpen(false);
           setEditingPayment(null);
         }}
-        invoiceId={invoiceId}
+        deliveryNoteId={deliveryNoteId}
         remaining={summary?.remaining ?? 0}
         clientFullName={clientFullName}
         editingPayment={
@@ -137,7 +137,7 @@ export function PaymentsTab({ invoiceId, clientFullName }: PaymentsTabProps) {
           setBankDialogOpen(false);
           setEditingPayment(null);
         }}
-        invoiceId={invoiceId}
+        deliveryNoteId={deliveryNoteId}
         remaining={summary?.remaining ?? 0}
         clientFullName={clientFullName}
         editingPayment={

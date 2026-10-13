@@ -2,7 +2,7 @@ package com.autotech.email.service;
 
 import com.autotech.employee.model.Employee;
 import com.autotech.estimate.dto.EstimateDetailResponse;
-import com.autotech.invoice.dto.InvoiceDetailResponse;
+import com.autotech.deliverynote.dto.DeliveryNoteDetailResponse;
 import com.autotech.payment.model.Payment;
 import com.autotech.repairorder.model.RepairOrder;
 
@@ -18,7 +18,7 @@ public interface EmailNotificationService {
 
     void notifyEstimateStatusChanged(EstimateDetailResponse estimate);
 
-    void notifyInvoiceCreated(InvoiceDetailResponse invoice);
+    void notifyDeliveryNoteCreated(DeliveryNoteDetailResponse deliveryNote);
 
     void notifyPaymentRegistered(Payment payment);
 

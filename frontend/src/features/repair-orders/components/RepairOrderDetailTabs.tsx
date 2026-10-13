@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router";
 import { GeneralInfoTab } from "./GeneralInfoTab";
 import { InspectionsTab } from "@/features/inspections/InspectionsTab";
 import { EstimateTab } from "@/features/estimates/components/EstimateTab";
-import { InvoiceTab } from "@/features/invoices/components/InvoiceTab";
+import { DeliveryNoteTab } from "@/features/delivery-notes/components/DeliveryNoteTab";
 
 import type { RepairOrderDetailResponse } from "../types";
 
@@ -18,7 +18,7 @@ const TAB_LABELS = [
   "Información General",
   "Inspecciones",
   "Presupuesto",
-  "Factura",
+  "Remito",
 ];
 
 const TAB_SLUGS = ["general", "inspecciones", "presupuesto", "factura"] as const;
@@ -81,7 +81,7 @@ export function RepairOrderDetailTabs({ order, loading, onRefetch }: RepairOrder
         />
       )}
       {activeTab === 3 && order && (
-        <InvoiceTab repairOrderId={order.id} />
+        <DeliveryNoteTab repairOrderId={order.id} />
       )}
     </Box>
   );

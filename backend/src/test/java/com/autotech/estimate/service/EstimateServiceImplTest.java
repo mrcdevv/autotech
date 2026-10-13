@@ -6,7 +6,7 @@ import com.autotech.client.repository.ClientRepository;
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.estimate.dto.EstimateDetailResponse;
-import com.autotech.estimate.dto.EstimateInvoiceDataResponse;
+import com.autotech.estimate.dto.EstimateDeliveryNoteDataResponse;
 import com.autotech.estimate.dto.EstimateMapper;
 import com.autotech.estimate.dto.EstimateProductRequest;
 import com.autotech.estimate.dto.EstimateRequest;
@@ -29,6 +29,8 @@ import com.autotech.inspection.repository.InspectionRepository;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.model.RepairOrderStatus;
 import com.autotech.repairorder.repository.RepairOrderRepository;
+import com.autotech.tax.model.TaxConfig;
+import com.autotech.tax.service.TaxConfigService;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
 import org.junit.jupiter.api.Test;
@@ -54,6 +56,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -80,6 +83,9 @@ class EstimateServiceImplTest {
 
     @Mock
     private EmailNotificationService emailNotificationService;
+
+    @Mock
+    private TaxConfigService taxConfigService;
 
     @InjectMocks
     private EstimateServiceImpl estimateService;
@@ -204,6 +210,74 @@ class EstimateServiceImplTest {
     }
 
     @Test
+    void givenRequestWithoutTaxPercentage_whenCreate_thenUsesDefaultTax21() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        EstimateRequest request = new EstimateRequest(1L, 2L, null, BigDecimal.ZERO, null,
+                List.of(new EstimateServiceItemRequest("Service A", BigDecimal.valueOf(100))),
+                Collections.emptyList());
+
+        Estimate mappedEntity = Estimate.builder()
+                .discountPercentage(BigDecimal.ZERO)
+                .taxPercentage(BigDecimal.ZERO)
+                .build();
+        Estimate savedEntity = buildEstimate(1L);
+        EstimateDetailResponse detailResponse = buildDetailResponse(1L);
+        TaxConfig taxConfig = buildTaxConfig(BigDecimal.valueOf(21));
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(taxConfigService.getConfig()).thenReturn(taxConfig);
+        when(estimateMapper.toEntity(request)).thenReturn(mappedEntity);
+        when(estimateRepository.save(any(Estimate.class))).thenReturn(savedEntity);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(savedEntity));
+        when(estimateMapper.toDetailResponse(savedEntity)).thenReturn(detailResponse);
+
+        // Act
+        EstimateDetailResponse result = estimateService.create(request);
+
+        // Assert
+        assertThat(result.id()).isEqualTo(1L);
+        assertThat(mappedEntity.getTaxPercentage()).isEqualByComparingTo(BigDecimal.valueOf(21));
+        assertThat(mappedEntity.getTotal()).isEqualByComparingTo(BigDecimal.valueOf(121));
+        verify(taxConfigService).getConfig();
+    }
+
+    @Test
+    void givenRequestWithTaxPercentage_whenCreate_thenUsesRequestTax() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        EstimateRequest request = new EstimateRequest(1L, 2L, null, BigDecimal.ZERO, BigDecimal.valueOf(10),
+                List.of(new EstimateServiceItemRequest("Service A", BigDecimal.valueOf(100))),
+                Collections.emptyList());
+
+        Estimate mappedEntity = Estimate.builder()
+                .discountPercentage(BigDecimal.ZERO)
+                .taxPercentage(BigDecimal.ZERO)
+                .build();
+        Estimate savedEntity = buildEstimate(1L);
+        EstimateDetailResponse detailResponse = buildDetailResponse(1L);
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(estimateMapper.toEntity(request)).thenReturn(mappedEntity);
+        when(estimateRepository.save(any(Estimate.class))).thenReturn(savedEntity);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(savedEntity));
+        when(estimateMapper.toDetailResponse(savedEntity)).thenReturn(detailResponse);
+
+        // Act
+        EstimateDetailResponse result = estimateService.create(request);
+
+        // Assert
+        assertThat(result.id()).isEqualTo(1L);
+        assertThat(mappedEntity.getTaxPercentage()).isEqualByComparingTo(BigDecimal.valueOf(10));
+        assertThat(mappedEntity.getTotal()).isEqualByComparingTo(BigDecimal.valueOf(110));
+        verify(taxConfigService, never()).getConfig();
+    }
+
+    @Test
     void givenValidRequestWithRepairOrder_whenCreate_thenSetsRepairOrderRelation() {
         // Arrange
         Client client = buildClient(1L);
@@ -261,6 +335,38 @@ class EstimateServiceImplTest {
         // Assert
         assertThat(result.id()).isEqualTo(1L);
         verify(estimateRepository).save(any(Estimate.class));
+    }
+
+    @Test
+    void givenRequestWithoutTaxPercentage_whenUpdate_thenUsesDefaultTax21() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        Estimate existing = buildEstimate(1L);
+        existing.setStatus(EstimateStatus.PENDIENTE);
+
+        EstimateRequest request = new EstimateRequest(1L, 2L, null, BigDecimal.ZERO, null,
+                List.of(new EstimateServiceItemRequest("Service A", BigDecimal.valueOf(100))),
+                Collections.emptyList());
+
+        EstimateDetailResponse detailResponse = buildDetailResponse(1L);
+        TaxConfig taxConfig = buildTaxConfig(BigDecimal.valueOf(21));
+
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(existing));
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(taxConfigService.getConfig()).thenReturn(taxConfig);
+        when(estimateRepository.save(any(Estimate.class))).thenReturn(existing);
+        when(estimateMapper.toDetailResponse(existing)).thenReturn(detailResponse);
+
+        // Act
+        EstimateDetailResponse result = estimateService.update(1L, request);
+
+        // Assert
+        assertThat(result.id()).isEqualTo(1L);
+        assertThat(existing.getTaxPercentage()).isEqualByComparingTo(BigDecimal.valueOf(21));
+        assertThat(existing.getTotal()).isEqualByComparingTo(BigDecimal.valueOf(121));
+        verify(taxConfigService).getConfig();
     }
 
     @Test
@@ -443,33 +549,33 @@ class EstimateServiceImplTest {
     }
 
     @Test
-    void givenAceptadoEstimate_whenConvertToInvoiceData_thenReturnData() {
+    void givenAceptadoEstimate_whenConvertToDeliveryNoteData_thenReturnData() {
         // Arrange
         Estimate entity = buildEstimate(1L);
         entity.setStatus(EstimateStatus.ACEPTADO);
-        EstimateInvoiceDataResponse invoiceData = new EstimateInvoiceDataResponse(
+        EstimateDeliveryNoteDataResponse deliveryNoteData = new EstimateDeliveryNoteDataResponse(
                 1L, 1L, 2L, null, Collections.emptyList(), Collections.emptyList(),
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.valueOf(400));
 
         when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(entity));
-        when(estimateMapper.toInvoiceDataResponse(entity)).thenReturn(invoiceData);
+        when(estimateMapper.toDeliveryNoteDataResponse(entity)).thenReturn(deliveryNoteData);
 
         // Act
-        EstimateInvoiceDataResponse result = estimateService.convertToInvoiceData(1L);
+        EstimateDeliveryNoteDataResponse result = estimateService.convertToDeliveryNoteData(1L);
 
         // Assert
         assertThat(result.estimateId()).isEqualTo(1L);
     }
 
     @Test
-    void givenNonAceptadoEstimate_whenConvertToInvoiceData_thenThrowBusinessException() {
+    void givenNonAceptadoEstimate_whenConvertToDeliveryNoteData_thenThrowBusinessException() {
         // Arrange
         Estimate entity = buildEstimate(1L);
         entity.setStatus(EstimateStatus.PENDIENTE);
         when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(entity));
 
         // Act & Assert
-        assertThatThrownBy(() -> estimateService.convertToInvoiceData(1L))
+        assertThatThrownBy(() -> estimateService.convertToDeliveryNoteData(1L))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("ACEPTADO");
     }
@@ -595,6 +701,12 @@ class EstimateServiceImplTest {
                 .build();
         order.setId(id);
         return order;
+    }
+
+    private TaxConfig buildTaxConfig(BigDecimal taxPercentage) {
+        TaxConfig config = TaxConfig.builder().taxPercentage(taxPercentage).build();
+        config.setId(1L);
+        return config;
     }
 
     private Estimate buildEstimate(Long id) {

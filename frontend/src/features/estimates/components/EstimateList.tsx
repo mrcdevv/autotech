@@ -21,7 +21,7 @@ interface EstimateListProps {
   onPageSizeChange: (pageSize: number) => void;
   onRowClick: (id: number) => void;
   onDelete: (id: number) => void;
-  onInvoice: (id: number) => void;
+  onDeliveryNote: (id: number) => void;
 }
 
 export function EstimateList({
@@ -34,7 +34,7 @@ export function EstimateList({
   onPageSizeChange,
   onRowClick,
   onDelete,
-  onInvoice,
+  onDeliveryNote,
 }: EstimateListProps) {
   const columns: GridColDef[] = [
     {
@@ -113,15 +113,15 @@ export function EstimateList({
           <Tooltip
             title={
               params.row.status !== "ACEPTADO"
-                ? "Solo se pueden facturar presupuestos aceptados"
-                : "Facturar"
+                ? "Solo se pueden remitor presupuestos aceptados"
+                : "Remitor"
             }
           >
             <span>
               <IconButton
                 onClick={(e) => {
                   e.stopPropagation();
-                  onInvoice(params.row.id);
+                  onDeliveryNote(params.row.id);
                 }}
                 size="small"
                 disabled={params.row.status !== "ACEPTADO"}

@@ -20,7 +20,7 @@ import type { PaymentRequest, PaymentResponse } from "@/types/payment";
 interface BankPaymentDialogProps {
   open: boolean;
   onClose: () => void;
-  invoiceId: number;
+  deliveryNoteId: number;
   remaining: number;
   clientFullName: string;
   editingPayment: PaymentResponse | null;
@@ -31,7 +31,7 @@ interface BankPaymentDialogProps {
 export function BankPaymentDialog({
   open,
   onClose,
-  invoiceId,
+  deliveryNoteId,
   remaining,
   clientFullName,
   editingPayment,
@@ -39,7 +39,7 @@ export function BankPaymentDialog({
   onUpdated,
 }: BankPaymentDialogProps) {
   const isEditing = editingPayment !== null;
-  const { createPayment, updatePayment } = usePayments(invoiceId);
+  const { createPayment, updatePayment } = usePayments(deliveryNoteId);
   const { bankAccounts, loading: bankAccountsLoading } = useBankAccounts();
 
   const getToday = () => new Date().toISOString().slice(0, 10);

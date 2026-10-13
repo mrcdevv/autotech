@@ -1,7 +1,7 @@
 package com.autotech.estimate.service;
 
 import com.autotech.estimate.dto.EstimateDetailResponse;
-import com.autotech.estimate.dto.EstimateInvoiceDataResponse;
+import com.autotech.estimate.dto.EstimateDeliveryNoteDataResponse;
 import com.autotech.estimate.dto.EstimateProductRequest;
 import com.autotech.estimate.dto.EstimateRequest;
 import com.autotech.estimate.dto.EstimateResponse;
@@ -41,7 +41,7 @@ public interface EstimateService {
                               BigDecimal discountPercentage,
                               BigDecimal taxPercentage);
 
-    EstimateInvoiceDataResponse convertToInvoiceData(Long estimateId);
+    EstimateDeliveryNoteDataResponse convertToDeliveryNoteData(Long estimateId);
 
     List<InspectionIssueResponse> getInspectionIssues(Long repairOrderId);
 }

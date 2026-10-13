@@ -89,7 +89,7 @@ export interface InspectionIssueResponse {
   comment: string | null;
 }
 
-export interface EstimateInvoiceDataResponse {
+export interface EstimateDeliveryNoteDataResponse {
   estimateId: number;
   clientId: number;
   vehicleId: number;

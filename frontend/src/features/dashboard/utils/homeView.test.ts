@@ -5,7 +5,7 @@ import { STATUS_META } from "@/features/repair-orders/statusMeta";
 import { dot } from "@/theme/tokens";
 
 import type { DashboardSummaryResponse } from "../types";
-import type { InvoiceResponse } from "@/types/invoice";
+import type { DeliveryNoteResponse } from "@/types/deliveryNote";
 import type { AppointmentResponse } from "@/types/appointment";
 import type { RepairOrderResponse } from "@/features/repair-orders/types";
 
@@ -113,8 +113,9 @@ const summary: DashboardSummaryResponse = {
 
 const todayIso = () => new Date().toISOString();
 
-const invoice = (id: number, status: InvoiceResponse["status"], total: number): InvoiceResponse => ({
+const deliveryNote = (id: number, status: DeliveryNoteResponse["status"], total: number): DeliveryNoteResponse => ({
   id,
+  number: id,
   clientId: 1,
   clientFullName: "Juan Perez",
   vehicleId: null,
@@ -124,7 +125,6 @@ const invoice = (id: number, status: InvoiceResponse["status"], total: number): 
   estimateId: null,
   status,
   discountPercentage: 0,
-  taxPercentage: 0,
   total,
   createdAt: todayIso(),
   updatedAt: todayIso(),
@@ -142,7 +142,7 @@ describe("buildKpis", () => {
 
 describe("buildDailyCash", () => {
   it("given today's invoices with cents, when built, then the totals render exactly 2 decimals", () => {
-    const cash = buildDailyCash([invoice(1, "PAGADA", 1234.5), invoice(2, "PENDIENTE", 226.8)]);
+    const cash = buildDailyCash([deliveryNote(1, "PAGADA", 1234.5), deliveryNote(2, "PENDIENTE", 226.8)]);
 
     expect(cash.total).toMatch(/^\$\u00A01\.234,50$/);
     expect(cash.pendingTotal).toMatch(/^\$\u00A0226,80$/);

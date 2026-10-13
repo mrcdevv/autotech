@@ -33,7 +33,7 @@ export function DebtAgingTable({ data }: DebtAgingTableProps) {
             {data.map((row) => (
               <TableRow key={row.range}>
                 <TableCell>{row.range}</TableCell>
-                <TableCell align="right">{row.invoiceCount}</TableCell>
+                <TableCell align="right">{row.deliveryNoteCount}</TableCell>
                 <TableCell align="right">{formatCurrency(row.totalAmount)}</TableCell>
               </TableRow>
             ))}

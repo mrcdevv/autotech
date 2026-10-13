@@ -19,8 +19,8 @@ vi.mock("@/features/estimates/components/EstimateTab", () => ({
   EstimateTab: () => <div data-testid="estimate-tab">EstimateTab</div>,
 }));
 
-vi.mock("@/features/invoices/components/InvoiceTab", () => ({
-  InvoiceTab: () => <div data-testid="invoice-tab">InvoiceTab</div>,
+vi.mock("@/features/delivery-notes/components/DeliveryNoteTab", () => ({
+  DeliveryNoteTab: () => <div data-testid="deliveryNote-tab">DeliveryNoteTab</div>,
 }));
 
 const mockRefetch = vi.fn();
@@ -77,7 +77,7 @@ describe("RepairOrderDetailTabs", () => {
     expect(screen.getByText("Inspecciones")).toBeInTheDocument();
     expect(screen.getByText("Presupuesto")).toBeInTheDocument();
     expect(screen.queryByText("Trabajos")).not.toBeInTheDocument();
-    expect(screen.getByText("Factura")).toBeInTheDocument();
+    expect(screen.getByText("Remito")).toBeInTheDocument();
   });
 
   it("given order and no tab param, when rendered, then shows GeneralInfoTab content", () => {
@@ -105,19 +105,19 @@ describe("RepairOrderDetailTabs", () => {
     expect(screen.getByTestId("estimate-tab")).toBeInTheDocument();
   });
 
-  it("given order, when clicking Factura tab, then shows InvoiceTab", async () => {
+  it("given order, when clicking Remito tab, then shows DeliveryNoteTab", async () => {
     const user = userEvent.setup();
     renderTabs();
 
-    await user.click(screen.getByText("Factura"));
+    await user.click(screen.getByText("Remito"));
 
-    expect(screen.getByTestId("invoice-tab")).toBeInTheDocument();
+    expect(screen.getByTestId("deliveryNote-tab")).toBeInTheDocument();
   });
 
   it("given deep link with ?tab=factura, when rendered, then shows the invoice tab on first render", () => {
     renderTabs("?tab=factura");
 
-    expect(screen.getByTestId("invoice-tab")).toBeInTheDocument();
+    expect(screen.getByTestId("deliveryNote-tab")).toBeInTheDocument();
     expect(screen.queryByText("Resumen Financiero")).not.toBeInTheDocument();
   });
 
@@ -137,7 +137,7 @@ describe("RepairOrderDetailTabs", () => {
     const user = userEvent.setup();
     const { record } = renderTabs();
 
-    await user.click(screen.getByText("Factura"));
+    await user.click(screen.getByText("Remito"));
 
     expect(record.search).toBe("?tab=factura");
   });
@@ -155,7 +155,7 @@ describe("RepairOrderDetailTabs", () => {
     renderTabs("?tab=banana");
 
     expect(screen.getByText("Resumen Financiero")).toBeInTheDocument();
-    expect(screen.queryByTestId("invoice-tab")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("deliveryNote-tab")).not.toBeInTheDocument();
     expect(screen.queryByTestId("inspections-tab")).not.toBeInTheDocument();
   });
 
@@ -163,6 +163,6 @@ describe("RepairOrderDetailTabs", () => {
     renderTabs("?tab=99");
 
     expect(screen.getByText("Resumen Financiero")).toBeInTheDocument();
-    expect(screen.queryByTestId("invoice-tab")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("deliveryNote-tab")).not.toBeInTheDocument();
   });
 });

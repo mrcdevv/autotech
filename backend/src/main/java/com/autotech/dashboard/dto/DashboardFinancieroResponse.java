@@ -10,5 +10,5 @@ public record DashboardFinancieroResponse(
         Long estimatesTotal,
         BigDecimal totalPendingBilling,
         List<DebtAgingResponse> debtAging,
-        List<UnpaidInvoiceResponse> topUnpaidInvoices
+        List<UnpaidDeliveryNoteResponse> topUnpaidDeliveryNotes
 ) {}

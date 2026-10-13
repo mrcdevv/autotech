@@ -8,9 +8,9 @@ import com.autotech.estimate.dto.EstimateDetailResponse;
 import com.autotech.estimate.dto.EstimateProductResponse;
 import com.autotech.estimate.dto.EstimateServiceItemResponse;
 import com.autotech.estimate.dto.InspectionIssueResponse;
-import com.autotech.invoice.dto.InvoiceDetailResponse;
-import com.autotech.invoice.dto.InvoiceProductResponse;
-import com.autotech.invoice.dto.InvoiceServiceItemResponse;
+import com.autotech.deliverynote.dto.DeliveryNoteDetailResponse;
+import com.autotech.deliverynote.dto.DeliveryNoteProductResponse;
+import com.autotech.deliverynote.dto.DeliveryNoteServiceItemResponse;
 import com.autotech.payment.model.Payment;
 import com.autotech.repairorder.model.RepairOrder;
 import lombok.RequiredArgsConstructor;
@@ -133,16 +133,16 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
     }
 
     @Override
-    public void notifyInvoiceCreated(InvoiceDetailResponse invoice) {
-        if (invoice.clientEmail() == null || invoice.clientEmail().isBlank()) {
+    public void notifyDeliveryNoteCreated(DeliveryNoteDetailResponse deliveryNote) {
+        if (deliveryNote.clientEmail() == null || deliveryNote.clientEmail().isBlank()) {
             return;
         }
 
-        String subject = "Factura #" + invoice.id() + " - " + properties.getWorkshopName();
+        String subject = "Remito #" + deliveryNote.id() + " - " + properties.getWorkshopName();
         String body = """
                 Hola %s,
 
-                Se emitió la factura #%d.
+                Se emitió el remito #%d.
 
                 Vehículo: %s
                 Total: %s
@@ -156,31 +156,31 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
                 Saludos,
                 %s
                 """.formatted(
-                invoice.clientFullName(),
-                invoice.id(),
-                vehicleLabel(invoice.vehicleBrand(), invoice.vehicleModel(), invoice.vehiclePlate()),
-                money(invoice.total()),
-                invoiceServices(invoice.services()),
-                invoiceProducts(invoice.products()),
+                deliveryNote.clientFullName(),
+                deliveryNote.id(),
+                vehicleLabel(deliveryNote.vehicleBrand(), deliveryNote.vehicleModel(), deliveryNote.vehiclePlate()),
+                money(deliveryNote.total()),
+                deliveryNoteServices(deliveryNote.services()),
+                deliveryNoteProducts(deliveryNote.products()),
                 properties.getWorkshopName());
 
-        emailService.send(invoice.clientEmail(), subject, body);
+        emailService.send(deliveryNote.clientEmail(), subject, body);
     }
 
     @Override
     public void notifyPaymentRegistered(Payment payment) {
-        if (payment.getInvoice() == null
-                || payment.getInvoice().getClient() == null
-                || payment.getInvoice().getClient().getEmail() == null
-                || payment.getInvoice().getClient().getEmail().isBlank()) {
+        if (payment.getDeliveryNote() == null
+                || payment.getDeliveryNote().getClient() == null
+                || payment.getDeliveryNote().getClient().getEmail() == null
+                || payment.getDeliveryNote().getClient().getEmail().isBlank()) {
             return;
         }
 
-        String subject = "Pago registrado - Factura #" + payment.getInvoice().getId();
+        String subject = "Pago registrado - Remito #" + payment.getDeliveryNote().getId();
         String body = """
                 Hola %s,
 
-                Registramos un nuevo pago para la factura #%d.
+                Registramos un nuevo pago para el remito #%d.
 
                 Fecha: %s
                 Monto: %s
@@ -190,13 +190,13 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
                 %s
                 """.formatted(
                 clientFullName(payment),
-                payment.getInvoice().getId(),
+                payment.getDeliveryNote().getId(),
                 payment.getPaymentDate(),
                 money(payment.getAmount()),
                 payment.getPaymentType(),
                 properties.getWorkshopName());
 
-        emailService.send(payment.getInvoice().getClient().getEmail(), subject, body);
+        emailService.send(payment.getDeliveryNote().getClient().getEmail(), subject, body);
     }
 
     @Override
@@ -262,7 +262,7 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
     }
 
     private String clientFullName(Payment payment) {
-        return payment.getInvoice().getClient().getFirstName() + " " + payment.getInvoice().getClient().getLastName();
+        return payment.getDeliveryNote().getClient().getFirstName() + " " + payment.getDeliveryNote().getClient().getLastName();
     }
 
     private String money(BigDecimal value) {
@@ -304,7 +304,7 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
                 .orElse("- Sin productos cargados");
     }
 
-    private String invoiceServices(List<InvoiceServiceItemResponse> services) {
+    private String deliveryNoteServices(List<DeliveryNoteServiceItemResponse> services) {
         if (services == null || services.isEmpty()) {
             return "- Sin servicios cargados";
         }
@@ -314,7 +314,7 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
                 .orElse("- Sin servicios cargados");
     }
 
-    private String invoiceProducts(List<InvoiceProductResponse> products) {
+    private String deliveryNoteProducts(List<DeliveryNoteProductResponse> products) {
         if (products == null || products.isEmpty()) {
             return "- Sin productos cargados";
         }

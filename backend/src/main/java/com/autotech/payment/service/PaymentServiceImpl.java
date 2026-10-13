@@ -7,10 +7,10 @@ import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.employee.model.Employee;
 import com.autotech.employee.repository.EmployeeRepository;
 import com.autotech.email.service.EmailNotificationService;
-import com.autotech.invoice.dto.InvoiceDetailResponse;
-import com.autotech.invoice.model.Invoice;
-import com.autotech.invoice.repository.InvoiceRepository;
-import com.autotech.invoice.service.InvoiceService;
+import com.autotech.deliverynote.dto.DeliveryNoteDetailResponse;
+import com.autotech.deliverynote.model.DeliveryNote;
+import com.autotech.deliverynote.repository.DeliveryNoteRepository;
+import com.autotech.deliverynote.service.DeliveryNoteService;
 import com.autotech.payment.dto.PaymentMapper;
 import com.autotech.payment.dto.PaymentRequest;
 import com.autotech.payment.dto.PaymentResponse;
@@ -41,8 +41,8 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final PaymentAuditLogRepository auditLogRepository;
     private final PaymentMapper paymentMapper;
-    private final InvoiceService invoiceService;
-    private final InvoiceRepository invoiceRepository;
+    private final DeliveryNoteService deliveryNoteService;
+    private final DeliveryNoteRepository deliveryNoteRepository;
     private final EmployeeRepository employeeRepository;
     private final BankAccountService bankAccountService;
     private final ObjectMapper objectMapper;
@@ -50,9 +50,9 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<PaymentResponse> getByInvoiceId(Long invoiceId) {
-        log.debug("Fetching payments for invoice {}", invoiceId);
-        return paymentRepository.findByInvoiceIdOrderByPaymentDateDesc(invoiceId).stream()
+    public List<PaymentResponse> getByDeliveryNoteId(Long deliveryNoteId) {
+        log.debug("Fetching payments for delivery note {}", deliveryNoteId);
+        return paymentRepository.findByDeliveryNoteIdOrderByPaymentDateDesc(deliveryNoteId).stream()
                 .map(paymentMapper::toResponse)
                 .toList();
     }
@@ -68,40 +68,33 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional(readOnly = true)
-    public PaymentSummaryResponse getSummary(Long invoiceId) {
-        log.debug("Calculating payment summary for invoice {}", invoiceId);
-        InvoiceDetailResponse invoice = invoiceService.getById(invoiceId);
+    public PaymentSummaryResponse getSummary(Long deliveryNoteId) {
+        log.debug("Calculating payment summary for delivery note {}", deliveryNoteId);
+        DeliveryNoteDetailResponse deliveryNote = deliveryNoteService.getById(deliveryNoteId);
 
-        BigDecimal totalServices = invoice.services().stream()
+        BigDecimal totalServices = deliveryNote.services().stream()
                 .map(s -> s.price())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal totalProducts = invoice.products().stream()
+        BigDecimal totalProducts = deliveryNote.products().stream()
                 .map(p -> p.totalPrice())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal subtotal = totalServices.add(totalProducts);
 
         BigDecimal discountAmount = subtotal
-                .multiply(invoice.discountPercentage())
+                .multiply(deliveryNote.discountPercentage())
                 .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
 
-        BigDecimal afterDiscount = subtotal.subtract(discountAmount);
+        BigDecimal total = subtotal.subtract(discountAmount);
 
-        BigDecimal taxAmount = afterDiscount
-                .multiply(invoice.taxPercentage())
-                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-
-        BigDecimal total = afterDiscount.add(taxAmount);
-
-        BigDecimal totalPaid = paymentRepository.sumAmountByInvoiceId(invoiceId);
+        BigDecimal totalPaid = paymentRepository.sumAmountByDeliveryNoteId(deliveryNoteId);
 
         BigDecimal remaining = total.subtract(totalPaid).max(BigDecimal.ZERO);
 
         return new PaymentSummaryResponse(
                 totalServices,
                 totalProducts,
-                taxAmount,
                 discountAmount,
                 total,
                 totalPaid,
@@ -111,12 +104,12 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional
-    public PaymentResponse create(Long invoiceId, PaymentRequest request) {
-        invoiceService.getById(invoiceId);
+    public PaymentResponse create(Long deliveryNoteId, PaymentRequest request) {
+        deliveryNoteService.getById(deliveryNoteId);
 
-        PaymentSummaryResponse summary = getSummary(invoiceId);
+        PaymentSummaryResponse summary = getSummary(deliveryNoteId);
         if (summary.remaining().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessException("La factura ya se encuentra completamente pagada");
+            throw new BusinessException("El remito ya se encuentra completamente pagado");
         }
 
         if (request.amount().compareTo(summary.remaining()) > 0) {
@@ -127,9 +120,9 @@ public class PaymentServiceImpl implements PaymentService {
 
         Payment payment = paymentMapper.toEntity(request);
 
-        Invoice invoice = invoiceRepository.findById(invoiceId)
-                .orElseThrow(() -> new ResourceNotFoundException("Invoice", invoiceId));
-        payment.setInvoice(invoice);
+        DeliveryNote deliveryNote = deliveryNoteRepository.findById(deliveryNoteId)
+                .orElseThrow(() -> new ResourceNotFoundException("DeliveryNote", deliveryNoteId));
+        payment.setDeliveryNote(deliveryNote);
 
         if (request.paymentType() == PaymentType.CUENTA_BANCARIA && request.bankAccountId() != null) {
             BankAccount bankAccount = bankAccountService.findEntityById(request.bankAccountId());
@@ -143,14 +136,14 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         Payment saved = paymentRepository.save(payment);
-        log.info("Created payment with id {} for invoice {}", saved.getId(), invoiceId);
+        log.info("Created payment with id {} for delivery note {}", saved.getId(), deliveryNoteId);
 
         createAuditLog(saved, AuditAction.CREATED, null, saved, request.registeredByEmployeeId());
 
-        BigDecimal newTotalPaid = paymentRepository.sumAmountByInvoiceId(invoiceId);
+        BigDecimal newTotalPaid = paymentRepository.sumAmountByDeliveryNoteId(deliveryNoteId);
         if (newTotalPaid.compareTo(summary.total()) >= 0) {
-            invoiceService.updateStatusToPagada(invoiceId);
-            log.info("Invoice {} auto-updated to PAGADA (fully paid)", invoiceId);
+            deliveryNoteService.updateStatusToPagada(deliveryNoteId);
+            log.info("Delivery note {} auto-updated to PAGADA (fully paid)", deliveryNoteId);
         }
 
         Payment savedWithDetails = paymentRepository.findWithDetailsById(saved.getId()).orElse(saved);
@@ -164,11 +157,11 @@ public class PaymentServiceImpl implements PaymentService {
         Payment existing = paymentRepository.findWithDetailsById(paymentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment", paymentId));
 
-        Long invoiceId = existing.getInvoice().getId();
+        Long deliveryNoteId = existing.getDeliveryNote().getId();
 
         Payment oldSnapshot = snapshotPayment(existing);
 
-        PaymentSummaryResponse summary = getSummary(invoiceId);
+        PaymentSummaryResponse summary = getSummary(deliveryNoteId);
         BigDecimal remainingWithoutThis = summary.remaining().add(existing.getAmount());
 
         if (request.amount().compareTo(remainingWithoutThis) > 0) {
@@ -194,7 +187,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         createAuditLog(saved, AuditAction.MODIFIED, oldSnapshot, saved, request.registeredByEmployeeId());
 
-        updateInvoicePaidStatus(invoiceId);
+        updateDeliveryNotePaidStatus(deliveryNoteId);
 
         return paymentMapper.toResponse(
                 paymentRepository.findWithDetailsById(saved.getId()).orElse(saved)
@@ -207,14 +200,14 @@ public class PaymentServiceImpl implements PaymentService {
         Payment existing = paymentRepository.findWithDetailsById(paymentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment", paymentId));
 
-        Long invoiceId = existing.getInvoice().getId();
+        Long deliveryNoteId = existing.getDeliveryNote().getId();
 
         createAuditLog(existing, AuditAction.DELETED, existing, null, performedByEmployeeId);
 
         paymentRepository.delete(existing);
         log.info("Deleted payment with id {}", paymentId);
 
-        updateInvoicePaidStatus(invoiceId);
+        updateDeliveryNotePaidStatus(deliveryNoteId);
     }
 
     private void validateBankAccountRequirement(PaymentRequest request) {
@@ -265,12 +258,12 @@ public class PaymentServiceImpl implements PaymentService {
                 .build();
     }
 
-    private void updateInvoicePaidStatus(Long invoiceId) {
-        PaymentSummaryResponse summary = getSummary(invoiceId);
+    private void updateDeliveryNotePaidStatus(Long deliveryNoteId) {
+        PaymentSummaryResponse summary = getSummary(deliveryNoteId);
         if (summary.remaining().compareTo(BigDecimal.ZERO) <= 0) {
-            invoiceService.updateStatusToPagada(invoiceId);
+            deliveryNoteService.updateStatusToPagada(deliveryNoteId);
         } else {
-            invoiceService.updateStatusToPendiente(invoiceId);
+            deliveryNoteService.updateStatusToPendiente(deliveryNoteId);
         }
     }
 }
