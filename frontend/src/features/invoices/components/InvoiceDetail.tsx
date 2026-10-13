@@ -94,9 +94,11 @@ interface InvoiceDetailProps {
   repairOrderId?: number;
   estimateId?: number;
   onBack?: () => void;
+  /** Invoked after an invoice is successfully created (used by hosts to refetch). */
+  onCreated?: () => void;
 }
 
-export function InvoiceDetail({ invoiceId, repairOrderId, estimateId, onBack }: InvoiceDetailProps) {
+export function InvoiceDetail({ invoiceId, repairOrderId, estimateId, onBack, onCreated }: InvoiceDetailProps) {
   const navigate = useNavigate();
   const { invoice, loading, error, clearError, createInvoice } = useInvoice(invoiceId, repairOrderId);
 
@@ -248,10 +250,10 @@ export function InvoiceDetail({ invoiceId, repairOrderId, estimateId, onBack }: 
   }, []);
 
   useEffect(() => {
-    if (isCreateMode && !fromRepairOrder) {
+    if (isCreateMode) {
       fetchClients();
     }
-  }, [fetchClients, isCreateMode, fromRepairOrder]);
+  }, [fetchClients, isCreateMode]);
 
   useEffect(() => {
     if (selectedClient && isCreateMode) {
@@ -298,6 +300,7 @@ export function InvoiceDetail({ invoiceId, repairOrderId, estimateId, onBack }: 
         products,
       };
       await createInvoice(data);
+      onCreated?.();
       if (!fromRepairOrder) {
         navigate("/facturas");
       }
@@ -526,7 +529,7 @@ export function InvoiceDetail({ invoiceId, repairOrderId, estimateId, onBack }: 
                   renderInput={(params) => (
                     <TextField {...params} label="Cliente" size="small" />
                   )}
-                  disabled={isReadonly || fromRepairOrder}
+                  disabled={isReadonly}
                   sx={{ minWidth: 300, flex: 1 }}
                   isOptionEqualToValue={(option, value) => option.id === value.id}
                 />

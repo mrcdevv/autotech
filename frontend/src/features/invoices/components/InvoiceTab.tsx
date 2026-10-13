@@ -17,6 +17,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
 import { estimatesApi } from "@/api/estimates";
 import { invoicesApi } from "@/api/invoices";
+import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { InvoiceDetail } from "./InvoiceDetail";
 
 import { formatCurrency } from "@/utils/formatCurrency";
@@ -41,6 +42,8 @@ export function InvoiceTab({ repairOrderId }: InvoiceTabProps) {
   const [estimateState, setEstimateState] = useState<EstimateState>({ kind: "loading" });
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [confirmNoEstimateOpen, setConfirmNoEstimateOpen] = useState(false);
+  const [creatingWithoutEstimate, setCreatingWithoutEstimate] = useState(false);
 
   const fetchData = useCallback(async () => {
     setInvoiceLoading(true);
@@ -112,6 +115,20 @@ export function InvoiceTab({ repairOrderId }: InvoiceTabProps) {
     );
   }
 
+  // Create mode is handled by InvoiceDetail itself: with no invoiceId and no loaded
+  // invoice it renders its create form and sends repairOrderId in the payload.
+  if (creatingWithoutEstimate) {
+    return (
+      <Box>
+        <InvoiceDetail
+          repairOrderId={repairOrderId}
+          onBack={() => setCreatingWithoutEstimate(false)}
+          onCreated={() => fetchData()}
+        />
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ mt: 2 }}>
       {createError && (
@@ -127,12 +144,15 @@ export function InvoiceTab({ repairOrderId }: InvoiceTabProps) {
         >
           <ReceiptLongIcon sx={{ fontSize: 48, color: "text.disabled", mb: 2 }} />
           <Typography variant="h6" sx={{ mb: 1, fontWeight: 500 }}>
-            No se puede generar una factura aún
+            Aún no hay factura para esta orden
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400, mx: "auto" }}>
             Para generar una factura dentro de una orden de trabajo, primero debe crear y aprobar un
             presupuesto en la solapa "Presupuesto".
           </Typography>
+          <Button variant="contained" sx={{ mt: 3 }} onClick={() => setConfirmNoEstimateOpen(true)}>
+            Crear factura sin presupuesto
+          </Button>
         </Paper>
       )}
 
@@ -211,6 +231,18 @@ export function InvoiceTab({ repairOrderId }: InvoiceTabProps) {
           </Typography>
         </Paper>
       )}
+
+      <AppConfirmDialog
+        open={confirmNoEstimateOpen}
+        title="Crear factura sin presupuesto"
+        message="Esta orden de trabajo no tiene un presupuesto. La factura se creará sin presupuesto y quedará vinculada a esta orden."
+        confirmLabel="Crear factura"
+        onConfirm={() => {
+          setConfirmNoEstimateOpen(false);
+          setCreatingWithoutEstimate(true);
+        }}
+        onCancel={() => setConfirmNoEstimateOpen(false)}
+      />
     </Box>
   );
 }

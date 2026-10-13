@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
 import { InvoiceTab } from "./InvoiceTab";
@@ -38,8 +39,21 @@ const mockGetEstimateByRepairOrderId = vi.fn();
 const mockGetAllEstimatesByRepairOrderId = vi.fn();
 
 vi.mock("./InvoiceDetail", () => ({
-  InvoiceDetail: ({ repairOrderId }: { repairOrderId: number }) => (
-    <div data-testid="invoice-detail">InvoiceDetail for RO #{repairOrderId}</div>
+  InvoiceDetail: ({
+    repairOrderId,
+    onCreated,
+  }: {
+    repairOrderId: number;
+    onCreated?: () => void;
+  }) => (
+    <div data-testid="invoice-detail">
+      InvoiceDetail for RO #{repairOrderId}
+      {onCreated && (
+        <button type="button" onClick={onCreated}>
+          mock-invoice-created
+        </button>
+      )}
+    </div>
   ),
 }));
 
@@ -98,6 +112,58 @@ describe("InvoiceTab", () => {
 
     expect(await screen.findByTestId("invoice-detail")).toBeInTheDocument();
     expect(screen.getByText("InvoiceDetail for RO #42")).toBeInTheDocument();
+  });
+});
+
+describe("InvoiceTab creating an invoice without an estimate", () => {
+  beforeEach(() => {
+    mockGetInvoiceByRepairOrderId.mockClear();
+    mockGetInvoiceByRepairOrderId.mockRejectedValue(new Error("no invoice"));
+    mockGetEstimateByRepairOrderId.mockRejectedValue(new Error("no estimate"));
+    mockGetAllEstimatesByRepairOrderId.mockResolvedValue({ data: { data: [] } });
+  });
+
+  it("given an OT with no estimate and no invoice, when the Factura tab renders, then it offers to create an invoice without an estimate", async () => {
+    render(<InvoiceTab repairOrderId={42} />);
+
+    expect(
+      await screen.findByRole("button", { name: /crear factura sin presupuesto/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("given the no-estimate empty state, when clicking create, then the confirmation states that the order has no estimate", async () => {
+    const user = userEvent.setup();
+    render(<InvoiceTab repairOrderId={42} />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /crear factura sin presupuesto/i }),
+    );
+
+    expect(await screen.findByText(/no tiene un presupuesto/i)).toBeInTheDocument();
+  });
+
+  it("given confirmation, when confirmed and the invoice is created, then the tab renders it linked to the OT after refetching", async () => {
+    mockGetInvoiceByRepairOrderId
+      .mockRejectedValueOnce(new Error("no invoice"))
+      .mockResolvedValue({ data: { data: { id: 9 } } });
+    const user = userEvent.setup();
+    render(<InvoiceTab repairOrderId={42} />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /crear factura sin presupuesto/i }),
+    );
+    await user.click(await screen.findByRole("button", { name: "Crear factura" }));
+
+    // Create mode opens inside the tab, bound to the current OT.
+    expect(await screen.findByTestId("invoice-detail")).toHaveTextContent(
+      "InvoiceDetail for RO #42",
+    );
+
+    // The creation happened inside InvoiceDetail; once it reports the invoice was
+    // created, the tab refetches and shows the created invoice.
+    await user.click(screen.getByRole("button", { name: "mock-invoice-created" }));
+    expect(mockGetInvoiceByRepairOrderId).toHaveBeenCalledTimes(2);
+    expect(await screen.findByTestId("invoice-detail")).toBeInTheDocument();
   });
 });
 
