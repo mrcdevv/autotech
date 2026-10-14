@@ -33,6 +33,8 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { SETTINGS_PERMISSIONS } from "@/features/auth/permissions";
+import type { PermissionCode } from "@/features/auth/permissions";
 import { initials } from "@/utils/initials";
 import type { ReactNode } from "react";
 import type { SxProps, Theme } from "@mui/material";
@@ -51,6 +53,8 @@ interface NavItem {
   label: string;
   path: string;
   icon: ReactNode;
+  /** Any of these codes shows the item; omitted means every authenticated user. */
+  permissions?: PermissionCode[];
 }
 
 interface NavSection {
@@ -66,10 +70,10 @@ const navSections: NavSection[] = [
   {
     title: "Taller",
     items: [
-      { label: "Órdenes de trabajo", path: "/ordenes-trabajo", icon: <HandymanOutlinedIcon /> },
-      { label: "Calendario", path: "/calendario", icon: <CalendarMonthOutlinedIcon /> },
-      { label: "Presupuestos", path: "/presupuestos", icon: <RequestQuoteOutlinedIcon /> },
-      { label: "Remitos", path: "/remitos", icon: <ReceiptOutlinedIcon /> },
+      { label: "Órdenes de trabajo", path: "/ordenes-trabajo", icon: <HandymanOutlinedIcon />, permissions: ["read_order"] },
+      { label: "Calendario", path: "/calendario", icon: <CalendarMonthOutlinedIcon />, permissions: ["read_appointment"] },
+      { label: "Presupuestos", path: "/presupuestos", icon: <RequestQuoteOutlinedIcon />, permissions: ["read_estimate"] },
+      { label: "Remitos", path: "/remitos", icon: <ReceiptOutlinedIcon />, permissions: ["read_delivery_note"] },
     ],
   },
   {
@@ -83,10 +87,10 @@ const navSections: NavSection[] = [
   {
     title: "Administración",
     items: [
-      { label: "Clientes", path: "/clientes", icon: <PeopleOutlinedIcon /> },
-      { label: "Vehículos", path: "/vehiculos", icon: <DirectionsCarOutlinedIcon /> },
-      { label: "Empleados", path: "/empleados", icon: <BadgeOutlinedIcon /> },
-      { label: "Reportes", path: "/reportes", icon: <BarChartOutlinedIcon /> },
+      { label: "Clientes", path: "/clientes", icon: <PeopleOutlinedIcon />, permissions: ["read_client"] },
+      { label: "Vehículos", path: "/vehiculos", icon: <DirectionsCarOutlinedIcon />, permissions: ["read_vehicle"] },
+      { label: "Empleados", path: "/empleados", icon: <BadgeOutlinedIcon />, permissions: ["read_employee"] },
+      { label: "Reportes", path: "/reportes", icon: <BarChartOutlinedIcon />, permissions: ["view_reports"] },
     ],
   },
 ];
@@ -95,6 +99,7 @@ const bottomNavItem: NavItem = {
   label: "Configuración",
   path: "/configuracion",
   icon: <SettingsOutlinedIcon />,
+  permissions: SETTINGS_PERMISSIONS,
 };
 
 const CASCADE_STEP_MS = 20;
@@ -155,7 +160,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, hasAnyPermission } = useAuth();
 
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -299,6 +304,12 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
     </Box>
   );
 
+  const canSee = (item: NavItem) => !item.permissions || hasAnyPermission(item.permissions);
+
+  const visibleSections = navSections
+    .map((section) => ({ ...section, items: section.items.filter(canSee) }))
+    .filter((section) => section.items.length > 0);
+
   const userInitials = user ? initials(user.firstName, user.lastName) : "U";
 
   const content = (
@@ -380,11 +391,11 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           scrollbarWidth: "thin",
         }}
       >
-        {navSections.map(renderSection)}
+        {visibleSections.map(renderSection)}
       </Box>
 
       <List disablePadding sx={{ flex: "none" }}>
-        {renderNavItem(bottomNavItem)}
+        {canSee(bottomNavItem) && renderNavItem(bottomNavItem)}
       </List>
 
       <Box

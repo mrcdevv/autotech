@@ -202,15 +202,19 @@ public record CurrentUserResponse(
 
 ## 7. Frontend
 
-- `AuthContext` stores `roles` and `permissions` (from login, refreshed with `GET /api/auth/me` on app load) and exposes `hasPermission(code)` / `hasAnyPermission(codes)`.
-- `PrivateRoute` accepts an optional `permission` (or list) and renders a "Sin permisos" page (`No tiene permisos para acceder a esta sección`) when missing.
-- `Sidebar` items declare the permission needed and are hidden otherwise (e.g. Reportes → `view_reports`, Empleados → `read_employee`, Configuración → `manage_config`).
-- Create/edit/delete buttons are hidden without the matching `create_*`/`update_*`/`delete_*` (or `manage_*`) code.
-- `api/client.ts` handles `403`: `PASSWORD_CHANGE_REQUIRED` redirects to `/change-password`; otherwise a global notification `No tiene permisos para realizar esta acción` is shown.
+- `features/auth/permissions.ts` defines the `PermissionCode` type (template-literal union of the backend codes) and `SETTINGS_PERMISSIONS`.
+- `AuthContext` stores `roles` and `permissions` (from login, refreshed with `GET /api/auth/me` on app load, so role changes apply without re-login) and exposes `hasPermission(code)` / `hasAnyPermission(codes)`.
+- `RequirePermission` is a route guard (`<Route element={<RequirePermission permission="..." />}>`) that renders `NoAccess` ("Sin permisos" / `No tiene permisos para acceder a esta sección.`) when the permission is missing.
+- `Sidebar` items declare the permissions needed and are hidden otherwise; empty sections disappear.
+- Create/edit/delete actions are hidden without the matching code. List/grid components receive edit/delete handlers as optional props and only render the action when the page passes one.
+- `api/client.ts` handles `403`: `PASSWORD_CHANGE_REQUIRED` marks the stored user and redirects to `/change-password`; any other 403 dispatches `autotech:forbidden`, which `ForbiddenNotifier` (mounted in `MainLayout`) shows as `No tiene permisos para realizar esta acción`.
+
+### 7.1 Routes
 
 | Route | Permission |
 |---|---|
-| `/` | any authenticated |
+| `/`, `/change-password` | any authenticated |
+| `/servicios`, `/productos`, `/paquetes-de-servicios` | any authenticated (catalog is readable by everyone; actions need `manage_services` / `manage_products`) |
 | `/empleados` | `read_employee` |
 | `/clientes` | `read_client` |
 | `/vehiculos` | `read_vehicle` |
@@ -219,12 +223,26 @@ public record CurrentUserResponse(
 | `/ordenes-trabajo/nueva` | `create_order` |
 | `/presupuestos/**` | `read_estimate` |
 | `/remitos/**` | `read_delivery_note` |
-| `/servicios`, `/paquetes-de-servicios`, `/configuracion/plantillas-inspeccion/**`, `/configuracion/problemas-comunes` | `manage_services` |
-| `/productos` | `manage_products` |
+| `/configuracion/plantillas-inspeccion/**`, `/configuracion/problemas-comunes` | `manage_services` |
 | `/reportes` | `view_reports` |
-| `/configuracion` | `manage_config` |
+| `/configuracion` | any of `manage_config`, `manage_services`, `manage_roles` |
 
----
+### 7.2 Actions
+
+| Screen | Action → permission |
+|---|---|
+| Clientes | Registrar → `create_client`; Editar → `update_client`; Eliminar (row and bulk) → `delete_client` |
+| Vehículos | Nuevo → `create_vehicle`; Editar → `update_vehicle`; Eliminar → `delete_vehicle` |
+| Empleados | Nuevo → `create_employee`; Editar → `update_employee`; Eliminar → `delete_employee`; Restablecer contraseña → `manage_roles`; role filter (needs `GET /api/roles`) → `manage_roles` |
+| Órdenes de trabajo | Nueva orden → `create_order` |
+| Presupuestos | Nuevo → `create_estimate`; Eliminar → `delete_estimate`; Remitir → `create_delivery_note` |
+| Remitos | Nuevo → `create_delivery_note`; Eliminar → `delete_delivery_note`; "Pagos" tab → `read_payment` |
+| Calendario | Nueva cita → `create_appointment`; editar / reprogramar / cancelar / marcar recibido → `update_appointment`; eliminar → `delete_appointment`; crear orden → `create_order` |
+| Servicios, Paquetes de servicios | Agregar / Editar / Eliminar → `manage_services` |
+| Productos | Agregar / Editar / Eliminar → `manage_products` |
+| Configuración | Calendario, Panel de inicio, Cuentas bancarias, Etiquetas, Impuestos → `manage_config`; Fichas técnicas → `manage_services`; Roles y permisos → `manage_roles` |
+
+Detail screens (repair order, estimate and delivery note detail) are not individually gated beyond the route; the backend still rejects unauthorized writes and the global 403 notification informs the user.
 
 ## 8. Tests
 
@@ -243,4 +261,5 @@ public record CurrentUserResponse(
 
 ### 8.2 Frontend
 
+- Vitest: `RequirePermission`, `AuthContext` (permissions, `/auth/me` refresh), `api/client` 403 handling, `Sidebar` filtering, `SettingsPage` card filtering.
 - `npm run build` and `npm run lint` pass.

@@ -17,8 +17,8 @@ interface ProductsDataGridProps {
   pageSize: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
-  onEditRow: (id: number) => void;
-  onDeleteRow: (id: number) => void;
+  onEditRow?: (id: number) => void;
+  onDeleteRow?: (id: number) => void;
 }
 
 export function ProductsDataGrid({
@@ -59,19 +59,27 @@ export function ProductsDataGrid({
       headerName: "Acciones",
       width: 120,
       getActions: (params) => [
-        <GridActionsCellItem
-          key="edit"
-          icon={<EditIcon />}
-          label="Editar"
-          onClick={() => onEditRow(params.row.id as number)}
-        />,
-        <GridActionsCellItem
-          key="delete"
-          icon={<DeleteIcon />}
-          label="Eliminar"
-          onClick={() => onDeleteRow(params.row.id as number)}
-          color="error"
-        />,
+        ...(onEditRow
+          ? [
+              <GridActionsCellItem
+                key="edit"
+                icon={<EditIcon />}
+                label="Editar"
+                onClick={() => onEditRow(params.row.id as number)}
+              />,
+            ]
+          : []),
+        ...(onDeleteRow
+          ? [
+              <GridActionsCellItem
+                key="delete"
+                icon={<DeleteIcon />}
+                label="Eliminar"
+                onClick={() => onDeleteRow(params.row.id as number)}
+                color="error"
+              />,
+            ]
+          : []),
       ],
     },
   ];

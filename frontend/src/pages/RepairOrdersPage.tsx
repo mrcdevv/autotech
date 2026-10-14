@@ -19,6 +19,7 @@ import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
 import { employeesApi } from "@/api/employees";
 import { tagsApi } from "@/api/tags";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { BoardTruncationNotice } from "@/features/repair-orders/components/BoardTruncationNotice";
 import { KanbanBoard } from "@/features/repair-orders/components/KanbanBoard";
 import { RepairOrderHistory } from "@/features/repair-orders/components/RepairOrderHistory";
@@ -44,6 +45,8 @@ function daysAgoIso(days: number): string {
 }
 
 export default function RepairOrdersPage() {
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission("create_order");
   const navigate = useNavigate();
 
   const [tab, setTab] = useState<TabKey>("kanban");
@@ -214,13 +217,15 @@ export default function RepairOrdersPage() {
           </>
         }
         actions={
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => navigate("/ordenes-trabajo/nueva")}
-          >
-            Nueva orden
-          </Button>
+          canCreate && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => navigate("/ordenes-trabajo/nueva")}
+            >
+              Nueva orden
+            </Button>
+          )
         }
       />
 
