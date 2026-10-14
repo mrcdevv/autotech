@@ -60,6 +60,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import org.mockito.ArgumentCaptor;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -326,6 +327,45 @@ class EstimateServiceImplTest {
     }
 
     @Test
+    void givenValidRequest_whenCreate_thenRecordsCreatedAuditWithStateAndTotal() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        EstimateRequest request = new EstimateRequest(1L, 2L, null, BigDecimal.ZERO, BigDecimal.ZERO,
+                List.of(new EstimateServiceItemRequest("Service A", BigDecimal.valueOf(100))),
+                List.of(new EstimateProductRequest("Product A", 2, BigDecimal.valueOf(50))));
+
+        Estimate mappedEntity = Estimate.builder()
+                .discountPercentage(BigDecimal.ZERO)
+                .taxPercentage(BigDecimal.ZERO)
+                .build();
+
+        Estimate savedEntity = buildEstimate(1L); // PENDIENTE, total 400
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(estimateMapper.toEntity(request)).thenReturn(mappedEntity);
+        when(estimateRepository.save(any(Estimate.class))).thenReturn(savedEntity);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(savedEntity));
+        when(estimateMapper.toDetailResponse(savedEntity)).thenReturn(buildDetailResponse(1L));
+
+        // Act
+        estimateService.create(request);
+
+        // Assert: the creation itself must leave a trace on the history
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, Object>> oldCaptor = ArgumentCaptor.forClass(Map.class);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, Object>> newCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(auditService).record(eq(AuditEntityType.ESTIMATE), eq(1L), eq(AuditAction.CREATED),
+                oldCaptor.capture(), newCaptor.capture());
+        assertThat(oldCaptor.getValue()).isNull();
+        assertThat(newCaptor.getValue())
+                .containsEntry("status", "PENDIENTE");
+        assertThat((BigDecimal) newCaptor.getValue().get("total")).isEqualByComparingTo("400");
+    }
+
+    @Test
     void givenPendienteEstimate_whenUpdate_thenReturnUpdatedResponse() {
         // Arrange
         Client client = buildClient(1L);
@@ -401,6 +441,29 @@ class EstimateServiceImplTest {
     }
 
     @Test
+    void givenPendienteEstimate_whenApprove_thenRecordsModifiedAuditWithStatusTransition() {
+        // Arrange
+        Estimate entity = buildEstimate(1L);
+        entity.setStatus(EstimateStatus.PENDIENTE);
+        EstimateDetailResponse detailResponse = buildDetailResponse(1L);
+
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(estimateRepository.save(entity)).thenReturn(entity);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(entity));
+        when(estimateMapper.toDetailResponse(entity)).thenReturn(detailResponse);
+
+        // Act
+        estimateService.approve(1L);
+
+        // Assert: the approval is the key event on a quote, it must leave a trace
+        Map<String, Object> oldValues = new LinkedHashMap<>();
+        oldValues.put("status", "PENDIENTE");
+        Map<String, Object> newValues = new LinkedHashMap<>();
+        newValues.put("status", "ACEPTADO");
+        verify(auditService).record(AuditEntityType.ESTIMATE, 1L, AuditAction.MODIFIED, oldValues, newValues);
+    }
+
+    @Test
     void givenNonPendienteEstimate_whenApprove_thenThrowBusinessException() {
         // Arrange
         Estimate entity = buildEstimate(1L);
@@ -431,6 +494,29 @@ class EstimateServiceImplTest {
         // Assert
         assertThat(entity.getStatus()).isEqualTo(EstimateStatus.RECHAZADO);
         assertThat(result).isNotNull();
+    }
+
+    @Test
+    void givenPendienteEstimate_whenReject_thenRecordsModifiedAuditWithStatusTransition() {
+        // Arrange
+        Estimate entity = buildEstimate(1L);
+        entity.setStatus(EstimateStatus.PENDIENTE);
+        EstimateDetailResponse detailResponse = buildDetailResponse(1L);
+
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(estimateRepository.save(entity)).thenReturn(entity);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(entity));
+        when(estimateMapper.toDetailResponse(entity)).thenReturn(detailResponse);
+
+        // Act
+        estimateService.reject(1L);
+
+        // Assert: the rejection must also leave a trace on the history
+        Map<String, Object> oldValues = new LinkedHashMap<>();
+        oldValues.put("status", "PENDIENTE");
+        Map<String, Object> newValues = new LinkedHashMap<>();
+        newValues.put("status", "RECHAZADO");
+        verify(auditService).record(AuditEntityType.ESTIMATE, 1L, AuditAction.MODIFIED, oldValues, newValues);
     }
 
     @Test
@@ -637,7 +723,7 @@ class EstimateServiceImplTest {
     @Test
     void givenExistingId_whenDelete_thenDeletesSuccessfully() {
         // Arrange
-        when(estimateRepository.existsById(1L)).thenReturn(true);
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(buildEstimate(1L)));
 
         // Act
         estimateService.delete(1L);
@@ -647,9 +733,30 @@ class EstimateServiceImplTest {
     }
 
     @Test
+    void givenExistingId_whenDelete_thenRecordsDeletedAuditWithPreDeletionState() {
+        // Arrange
+        Estimate entity = buildEstimate(1L); // PENDIENTE, total 400
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(entity));
+
+        // Act
+        estimateService.delete(1L);
+
+        // Assert: the audit table has no FK to the entity, so this row with the
+        // pre-deletion state is the only trace that the quote ever existed
+        verify(estimateRepository).deleteById(1L);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, Object>> oldCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(auditService).record(eq(AuditEntityType.ESTIMATE), eq(1L), eq(AuditAction.DELETED),
+                oldCaptor.capture(), isNull());
+        assertThat(oldCaptor.getValue())
+                .containsEntry("status", "PENDIENTE");
+        assertThat((BigDecimal) oldCaptor.getValue().get("total")).isEqualByComparingTo("400");
+    }
+
+    @Test
     void givenNonExistentId_whenDelete_thenThrowResourceNotFoundException() {
         // Arrange
-        when(estimateRepository.existsById(99L)).thenReturn(false);
+        when(estimateRepository.findById(99L)).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThatThrownBy(() -> estimateService.delete(99L))

@@ -153,6 +153,7 @@ public class EstimateServiceImpl implements EstimateService {
         entity.setTotal(total);
 
         Estimate saved = estimateRepository.save(entity);
+        recordCreationAudit(saved.getId(), saved.getStatus(), saved.getTotal());
         log.info("Created estimate with id {}", saved.getId());
         EstimateDetailResponse response = getById(saved.getId());
         emailNotificationService.notifyEstimateCreated(response);
@@ -204,8 +205,10 @@ public class EstimateServiceImpl implements EstimateService {
         if (entity.getStatus() != EstimateStatus.PENDIENTE) {
             throw new BusinessException("Solo se pueden aprobar presupuestos en estado PENDIENTE");
         }
+        EstimateStatus previousStatus = entity.getStatus();
         entity.setStatus(EstimateStatus.ACEPTADO);
         estimateRepository.save(entity);
+        recordEstimateAudit(id, previousStatus, null, entity.getStatus(), null);
         log.info("Approved estimate with id {}", id);
         EstimateDetailResponse response = getById(id);
         emailNotificationService.notifyEstimateStatusChanged(response);
@@ -220,8 +223,10 @@ public class EstimateServiceImpl implements EstimateService {
         if (entity.getStatus() != EstimateStatus.PENDIENTE) {
             throw new BusinessException("Solo se pueden rechazar presupuestos en estado PENDIENTE");
         }
+        EstimateStatus previousStatus = entity.getStatus();
         entity.setStatus(EstimateStatus.RECHAZADO);
         estimateRepository.save(entity);
+        recordEstimateAudit(id, previousStatus, null, entity.getStatus(), null);
         log.info("Rejected estimate with id {}", id);
         EstimateDetailResponse response = getById(id);
         emailNotificationService.notifyEstimateStatusChanged(response);
@@ -297,9 +302,9 @@ public class EstimateServiceImpl implements EstimateService {
     @Override
     @Transactional
     public void delete(Long id) {
-        if (!estimateRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Estimate", id);
-        }
+        Estimate entity = estimateRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Estimate", id));
+        recordDeletionAudit(entity);
         estimateRepository.deleteById(id);
         log.info("Deleted estimate with id {}", id);
     }
@@ -400,6 +405,32 @@ public class EstimateServiceImpl implements EstimateService {
         Map<String, Object> newValues = new LinkedHashMap<>();
         newValues.put("repairOrderId", repairOrderId);
         auditService.record(AuditEntityType.ESTIMATE, estimateId, AuditAction.MODIFIED, oldValues, newValues);
+    }
+
+    /**
+     * Records an audit row for the creation of an estimate (T7c): the state
+     * and total are the useful pair describing the estimate as created.
+     */
+    private void recordCreationAudit(Long estimateId, EstimateStatus status, BigDecimal total) {
+        Map<String, Object> newValues = new LinkedHashMap<>();
+        newValues.put("status", status.name());
+        newValues.put("total", total);
+        auditService.record(AuditEntityType.ESTIMATE, estimateId, AuditAction.CREATED, null, newValues);
+    }
+
+    /**
+     * Records an audit row for the deletion of an estimate (T7c): the audit
+     * table has no foreign key to the entity, so the row is designed to
+     * outlive the record and the pre-deletion state is the only trace that the
+     * quote ever existed.
+     */
+    private void recordDeletionAudit(Estimate entity) {
+        Map<String, Object> oldValues = new LinkedHashMap<>();
+        oldValues.put("status", entity.getStatus().name());
+        if (entity.getTotal() != null) {
+            oldValues.put("total", entity.getTotal());
+        }
+        auditService.record(AuditEntityType.ESTIMATE, entity.getId(), AuditAction.DELETED, oldValues, null);
     }
 
     private void addChildEntities(Estimate entity, EstimateRequest request) {
