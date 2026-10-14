@@ -34,4 +34,15 @@ public record InvoiceRequest(
 
         @Valid
         List<InvoiceProductRequest> products
-) {}
+) {
+
+    /**
+     * Request body for attaching an existing invoice to a repair order (T6a).
+     * A deliberate, one-way and one-time association: there is no unlink and
+     * re-attaching is refused, so the endpoint lives apart from any update path.
+     */
+    public record AttachRepairOrderRequest(
+            @NotNull(message = "La orden de trabajo es obligatoria")
+            Long repairOrderId
+    ) {}
+}

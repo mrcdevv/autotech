@@ -3,6 +3,9 @@ package com.autotech.invoice.service;
 import com.autotech.client.model.Client;
 import com.autotech.client.model.ClientType;
 import com.autotech.client.repository.ClientRepository;
+import com.autotech.common.audit.AuditAction;
+import com.autotech.common.audit.AuditEntityType;
+import com.autotech.common.audit.AuditService;
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.email.service.EmailNotificationService;
@@ -19,6 +22,7 @@ import com.autotech.invoice.dto.InvoiceServiceItemRequest;
 import com.autotech.invoice.model.Invoice;
 import com.autotech.invoice.model.InvoiceStatus;
 import com.autotech.invoice.repository.InvoiceRepository;
+import com.autotech.payment.repository.PaymentRepository;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.model.RepairOrderStatus;
 import com.autotech.repairorder.repository.RepairOrderRepository;
@@ -27,6 +31,7 @@ import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -39,11 +44,13 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -75,6 +82,12 @@ class InvoiceServiceImplTest {
 
     @Mock
     private EmailNotificationService emailNotificationService;
+
+    @Mock
+    private AuditService auditService;
+
+    @Mock
+    private PaymentRepository paymentRepository;
 
     @InjectMocks
     private InvoiceServiceImpl invoiceService;
@@ -652,7 +665,212 @@ class InvoiceServiceImplTest {
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
+    // --- attachToRepairOrder (T6a) ---
+
+    @Test
+    void givenStandaloneInvoiceForSameClientAndVehicle_whenAttachToRepairOrder_thenInvoiceIsLinkedToOrder() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        Invoice invoice = buildInvoice(1L);
+        RepairOrder order = buildAttachableOrder(10L, client, vehicle);
+
+        when(invoiceRepository.findById(1L)).thenReturn(Optional.of(invoice));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+        when(invoiceRepository.findByRepairOrderId(10L)).thenReturn(Optional.empty());
+        when(invoiceRepository.save(invoice)).thenReturn(invoice);
+        when(invoiceRepository.findWithDetailsById(1L)).thenReturn(Optional.of(invoice));
+        when(invoiceMapper.toDetailResponse(invoice)).thenReturn(buildDetailResponse(1L));
+
+        InvoiceDetailResponse result = invoiceService.attachToRepairOrder(1L, 10L);
+
+        assertThat(result.id()).isEqualTo(1L);
+        // The link must be persisted on the invoice, not merely returned
+        assertThat(invoice.getRepairOrder()).isSameAs(order);
+        verify(invoiceRepository).save(invoice);
+        verify(repairOrderService).validateNotClosedByStatus(order);
+    }
+
+    @Test
+    void givenAttachSucceeds_whenInvoked_thenRecordsAssociationAuditRow() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        Invoice invoice = buildInvoice(1L);
+        RepairOrder order = buildAttachableOrder(10L, client, vehicle);
+
+        when(invoiceRepository.findById(1L)).thenReturn(Optional.of(invoice));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+        when(invoiceRepository.findByRepairOrderId(10L)).thenReturn(Optional.empty());
+        when(invoiceRepository.save(invoice)).thenReturn(invoice);
+        when(invoiceRepository.findWithDetailsById(1L)).thenReturn(Optional.of(invoice));
+        when(invoiceMapper.toDetailResponse(invoice)).thenReturn(buildDetailResponse(1L));
+
+        invoiceService.attachToRepairOrder(1L, 10L);
+
+        ArgumentCaptor<Map<String, Object>> oldCaptor = mapCaptor();
+        ArgumentCaptor<Map<String, Object>> newCaptor = mapCaptor();
+        verify(auditService).record(eq(AuditEntityType.INVOICE), eq(1L), eq(AuditAction.MODIFIED),
+                oldCaptor.capture(), newCaptor.capture());
+        assertThat(oldCaptor.getValue()).containsEntry("repairOrderId", null);
+        assertThat(newCaptor.getValue()).containsEntry("repairOrderId", 10L);
+    }
+
+    @Test
+    void givenInvoiceAlreadyAttached_whenAttach_thenThrowBusinessException() {
+        Invoice invoice = buildInvoice(1L);
+        invoice.setRepairOrder(buildRepairOrder(11L));
+        when(invoiceRepository.findById(1L)).thenReturn(Optional.of(invoice));
+
+        assertThatThrownBy(() -> invoiceService.attachToRepairOrder(1L, 10L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("ya está asociada");
+        verify(invoiceRepository, never()).save(any(Invoice.class));
+    }
+
+    @Test
+    void givenRepairOrderAlreadyHasInvoice_whenAttach_thenThrowBusinessException() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        Invoice invoice = buildInvoice(1L);
+        RepairOrder order = buildAttachableOrder(10L, client, vehicle);
+
+        when(invoiceRepository.findById(1L)).thenReturn(Optional.of(invoice));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+        when(invoiceRepository.findByRepairOrderId(10L)).thenReturn(Optional.of(buildInvoice(99L)));
+
+        assertThatThrownBy(() -> invoiceService.attachToRepairOrder(1L, 10L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("ya tiene una factura");
+        verify(invoiceRepository, never()).save(any(Invoice.class));
+    }
+
+    @Test
+    void givenDifferentClient_whenAttach_thenThrowBusinessException() {
+        Client invoiceClient = buildClient(1L, ClientType.PERSONAL);
+        Client otherClient = buildClient(5L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(9L, otherClient);
+        Invoice invoice = buildInvoice(1L);
+        RepairOrder order = buildAttachableOrder(10L, otherClient, vehicle);
+
+        when(invoiceRepository.findById(1L)).thenReturn(Optional.of(invoice));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+        when(invoiceRepository.findByRepairOrderId(10L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> invoiceService.attachToRepairOrder(1L, 10L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("cliente");
+        verify(invoiceRepository, never()).save(any(Invoice.class));
+    }
+
+    @Test
+    void givenDifferentVehicle_whenAttach_thenThrowBusinessException() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle invoiceVehicle = buildVehicle(2L, client);
+        Vehicle orderVehicle = buildVehicle(9L, client);
+        Invoice invoice = buildInvoice(1L);
+        invoice.setVehicle(invoiceVehicle);
+        RepairOrder order = buildAttachableOrder(10L, client, orderVehicle);
+
+        when(invoiceRepository.findById(1L)).thenReturn(Optional.of(invoice));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+        when(invoiceRepository.findByRepairOrderId(10L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> invoiceService.attachToRepairOrder(1L, 10L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("vehículo");
+        verify(invoiceRepository, never()).save(any(Invoice.class));
+    }
+
+    @Test
+    void givenClosedRepairOrder_whenAttach_thenThrowsAndDoesNotSave() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        Invoice invoice = buildInvoice(1L);
+        RepairOrder order = buildAttachableOrder(10L, client, vehicle);
+        order.setStatus(RepairOrderStatus.ENTREGADO);
+
+        when(invoiceRepository.findById(1L)).thenReturn(Optional.of(invoice));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+        when(invoiceRepository.findByRepairOrderId(10L)).thenReturn(Optional.empty());
+        doThrow(new BusinessException("La orden de trabajo está cerrada"))
+                .when(repairOrderService).validateNotClosedByStatus(order);
+
+        assertThatThrownBy(() -> invoiceService.attachToRepairOrder(1L, 10L))
+                .isInstanceOf(BusinessException.class);
+        verify(invoiceRepository, never()).save(any(Invoice.class));
+        // The D1 guard is reused, not reimplemented
+        verify(repairOrderService).validateNotClosedByStatus(order);
+    }
+
+    @Test
+    void givenPaidInvoice_whenAttach_thenStillSucceedsAndAuditCarriesPaidAmount() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        Invoice invoice = buildInvoice(1L);
+        invoice.setStatus(InvoiceStatus.PAGADA);
+        RepairOrder order = buildAttachableOrder(10L, client, vehicle);
+
+        when(invoiceRepository.findById(1L)).thenReturn(Optional.of(invoice));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+        when(invoiceRepository.findByRepairOrderId(10L)).thenReturn(Optional.empty());
+        when(paymentRepository.sumAmountByInvoiceId(1L)).thenReturn(BigDecimal.valueOf(400));
+        when(invoiceRepository.save(invoice)).thenReturn(invoice);
+        when(invoiceRepository.findWithDetailsById(1L)).thenReturn(Optional.of(invoice));
+        when(invoiceMapper.toDetailResponse(invoice)).thenReturn(buildDetailResponse(1L));
+
+        InvoiceDetailResponse result = invoiceService.attachToRepairOrder(1L, 10L);
+
+        // A paid invoice is allowed: paying at the counter and recording the order
+        // afterwards is exactly the use case this endpoint exists for
+        assertThat(result.id()).isEqualTo(1L);
+        assertThat(invoice.getRepairOrder()).isSameAs(order);
+        ArgumentCaptor<Map<String, Object>> newCaptor = mapCaptor();
+        verify(auditService).record(eq(AuditEntityType.INVOICE), eq(1L), eq(AuditAction.MODIFIED),
+                any(), newCaptor.capture());
+        assertThat(newCaptor.getValue()).containsEntry("paidAmount", BigDecimal.valueOf(400));
+    }
+
+    @Test
+    void givenInvoiceWithNullVehicle_whenAttach_thenVehicleIsFilledFromOrderAndAudited() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        Invoice invoice = buildInvoice(1L);
+        invoice.setVehicle(null);
+        RepairOrder order = buildAttachableOrder(10L, client, vehicle);
+
+        when(invoiceRepository.findById(1L)).thenReturn(Optional.of(invoice));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+        when(invoiceRepository.findByRepairOrderId(10L)).thenReturn(Optional.empty());
+        when(invoiceRepository.save(invoice)).thenReturn(invoice);
+        when(invoiceRepository.findWithDetailsById(1L)).thenReturn(Optional.of(invoice));
+        when(invoiceMapper.toDetailResponse(invoice)).thenReturn(buildDetailResponse(1L));
+
+        invoiceService.attachToRepairOrder(1L, 10L);
+
+        // D14: a null vehicle on the invoice is filled from the order, a persisted mutation
+        assertThat(invoice.getVehicle()).isSameAs(vehicle);
+        ArgumentCaptor<Map<String, Object>> newCaptor = mapCaptor();
+        verify(auditService).record(eq(AuditEntityType.INVOICE), eq(1L), eq(AuditAction.MODIFIED),
+                any(), newCaptor.capture());
+        assertThat(newCaptor.getValue()).containsEntry("vehicleId", 2L);
+    }
+
+    @SuppressWarnings("unchecked")
+    private ArgumentCaptor<Map<String, Object>> mapCaptor() {
+        return ArgumentCaptor.forClass(Map.class);
+    }
+
     // --- Builder helpers ---
+
+    private RepairOrder buildAttachableOrder(Long id, Client client, Vehicle vehicle) {
+        RepairOrder order = RepairOrder.builder()
+                .title("Test Order")
+                .status(RepairOrderStatus.INGRESO_VEHICULO)
+                .build();
+        order.setId(id);
+        order.setClient(client);
+        order.setVehicle(vehicle);
+        return order;
+    }
 
     private Client buildClient(Long id, ClientType clientType) {
         Client client = Client.builder()

@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -64,6 +65,14 @@ public class InvoiceController {
         InvoiceDetailResponse created = invoiceService.createFromEstimate(estimateId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Factura creada desde presupuesto", created));
+    }
+
+    @PutMapping("/{id}/repair-order")
+    public ResponseEntity<ApiResponse<InvoiceDetailResponse>> attachToRepairOrder(
+            @PathVariable Long id,
+            @Valid @RequestBody InvoiceRequest.AttachRepairOrderRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Factura asociada a la orden de trabajo",
+                invoiceService.attachToRepairOrder(id, request.repairOrderId())));
     }
 
     @GetMapping("/{id}/pdf")

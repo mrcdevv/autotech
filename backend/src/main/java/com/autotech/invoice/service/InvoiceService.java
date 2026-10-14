@@ -26,6 +26,8 @@ public interface InvoiceService {
 
     InvoiceDetailResponse createFromEstimate(Long estimateId);
 
+    InvoiceDetailResponse attachToRepairOrder(Long id, Long repairOrderId);
+
     void delete(Long id);
 
     BigDecimal calculateTotal(List<InvoiceServiceItemRequest> services,
