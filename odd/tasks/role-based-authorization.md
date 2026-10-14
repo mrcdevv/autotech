@@ -15,7 +15,7 @@
 - [x] T3 — Server-side `mustChangePassword` enforcement
 - [x] T4 — Roles + permissions in login response, `GET /api/auth/me`
 - [x] T6 — Per-role integration tests (incl. MECANICO self-escalation regression)
-- [ ] T5 — Frontend: permissions in `AuthContext`, route guard, Sidebar filter, action buttons, 403 handling
+- [x] T5 — Frontend: permissions in `AuthContext`, route guard, Sidebar filter, action buttons, 403 handling
 
 ## Commits
 
@@ -27,8 +27,10 @@
 | T3 | `704b664` feat: enforce mustChangePassword on the server |
 | T4 | `2342946` feat: return roles and permissions on login and add GET /api/auth/me |
 | T6 | `818d53e` test: add per-role authorization integration tests |
+| T5 | `4bd7e51` feat: permission-aware frontend for role-based authorization |
 
 ## Notes
 
 - Docker is not available in the cloud session, so `RoleBasedAuthorizationIT` ran against a local PostgreSQL 16 by overriding the `test` profile datasource with `SPRING_DATASOURCE_*` environment variables. On a machine with Docker, `./mvnw clean verify` uses Testcontainers as configured.
 - `@Valid` request bodies are validated before `@PreAuthorize`, so a denied caller sending an invalid body gets 400 instead of 403 (documented in the spec).
+- Frontend detail screens (repair order, estimate, remito detail) are gated by route only; unauthorized writes there are rejected by the backend and surfaced by the global 403 notification.
