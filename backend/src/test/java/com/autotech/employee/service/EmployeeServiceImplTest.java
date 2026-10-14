@@ -1,5 +1,6 @@
 package com.autotech.employee.service;
 
+import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.email.service.EmailNotificationService;
 import com.autotech.employee.dto.EmployeeMapper;
@@ -20,8 +21,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -92,6 +95,39 @@ class EmployeeServiceImplTest {
         // Assert
         assertThat(employee.getStatus()).isEqualTo(EmployeeStatus.INACTIVO);
         verify(employeeRepository).save(employee);
+    }
+
+    @Test
+    void givenInactiveEmployeeNotAssigned_whenValidateActiveAssignees_thenThrowBusinessException() {
+        // Arrange
+        Employee inactive = buildEmployee(1L, EmployeeStatus.INACTIVO);
+
+        // Act & Assert
+        assertThatThrownBy(() -> employeeService.validateActiveAssignees(Set.of(inactive), Set.of()))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("inactivo")
+                .hasMessageContaining("Juan")
+                .hasMessageContaining("12345678");
+    }
+
+    @Test
+    void givenInactiveEmployeeAlreadyAssigned_whenValidateActiveAssignees_thenDoesNotThrow() {
+        // Arrange
+        Employee inactive = buildEmployee(1L, EmployeeStatus.INACTIVO);
+
+        // Act & Assert
+        assertThatCode(() -> employeeService.validateActiveAssignees(Set.of(inactive), Set.of(1L)))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void givenActiveEmployees_whenValidateActiveAssignees_thenDoesNotThrow() {
+        // Arrange
+        Employee active = buildEmployee(1L, EmployeeStatus.ACTIVO);
+
+        // Act & Assert
+        assertThatCode(() -> employeeService.validateActiveAssignees(Set.of(active), Set.of()))
+                .doesNotThrowAnyException();
     }
 
     private Employee buildEmployee(Long id, EmployeeStatus status) {

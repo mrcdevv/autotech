@@ -8,22 +8,30 @@ import com.autotech.appointment.model.Appointment;
 import com.autotech.appointment.model.AppointmentStatus;
 import com.autotech.appointment.model.VehicleDeliveryMethod;
 import com.autotech.appointment.repository.AppointmentRepository;
+import com.autotech.role.repository.RoleRepository;
 import com.autotech.client.model.Client;
 import com.autotech.client.model.ClientType;
 import com.autotech.client.repository.ClientRepository;
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
+import com.autotech.employee.dto.EmployeeMapper;
 import com.autotech.employee.model.Employee;
+import com.autotech.employee.model.EmployeeStatus;
 import com.autotech.employee.repository.EmployeeRepository;
+import com.autotech.employee.service.EmployeeService;
+import com.autotech.employee.service.EmployeeServiceImpl;
+import com.autotech.email.service.EmailNotificationService;
 import com.autotech.tag.model.Tag;
 import com.autotech.tag.repository.TagRepository;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -59,8 +67,31 @@ class AppointmentServiceImplTest {
     @Mock
     private TagRepository tagRepository;
 
-    @InjectMocks
+    @Mock
+    private EmployeeMapper employeeMapper;
+
+    @Mock
+    private RoleRepository roleRepository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private EmailNotificationService emailNotificationService;
+
     private AppointmentServiceImpl appointmentService;
+
+    @BeforeEach
+    void setUp() {
+        // Real employee service so the inactive-assignment guard (D12) is exercised for real;
+        // only its repositories/collaborators are mocked.
+        EmployeeService employeeService = new EmployeeServiceImpl(
+                employeeRepository, employeeMapper, roleRepository, passwordEncoder,
+                emailNotificationService);
+        appointmentService = new AppointmentServiceImpl(
+                appointmentRepository, appointmentMapper, clientRepository, vehicleRepository,
+                employeeRepository, employeeService, tagRepository);
+    }
 
     private final Pageable pageable = PageRequest.of(0, 12);
 
@@ -212,6 +243,25 @@ class AppointmentServiceImplTest {
         assertThat(result.id()).isEqualTo(1L);
         assertThat(entity.getEmployees()).containsExactly(emp);
         assertThat(entity.getTags()).containsExactly(tag);
+    }
+
+    @Test
+    void givenInactiveEmployee_whenCreate_thenThrowBusinessException() {
+        // Arrange
+        Employee inactive = buildEmployee(2L);
+        inactive.setStatus(EmployeeStatus.INACTIVO);
+        AppointmentRequest request = new AppointmentRequest(
+                "Test", null, null, null, startTime, endTime, null, List.of(2L), null);
+        Appointment entity = buildAppointment(null);
+
+        when(appointmentMapper.toEntity(request)).thenReturn(entity);
+        when(employeeRepository.findAllById(List.of(2L))).thenReturn(List.of(inactive));
+
+        // Act & Assert
+        assertThatThrownBy(() -> appointmentService.create(request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("inactivo")
+                .hasMessageContaining("Carlos");
     }
 
     @Test
