@@ -23,6 +23,7 @@ import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
 import { employeesApi } from "@/api/employees";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { getWeekStart } from "@/features/appointments/calendarRange";
 import { useAppointments } from "@/features/appointments/hooks/useAppointments";
 import { useCalendarConfig } from "@/features/appointments/hooks/useCalendarConfig";
 import { CalendarView } from "@/features/appointments/components/CalendarView";
@@ -112,7 +113,7 @@ export default function AppointmentsPage() {
       case "day":
         return d.format("DD [de] MMMM YYYY");
       case "week": {
-        const weekStart = d.startOf("week");
+        const weekStart = getWeekStart(d);
         const weekEnd = weekStart.add(6, "day");
         if (weekStart.month() === weekEnd.month()) {
           return `${weekStart.format("DD")} - ${weekEnd.format("DD [de] MMMM YYYY")}`;

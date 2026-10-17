@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import dayjs from "dayjs";
 
 import { appointmentsApi } from "@/api/appointments";
+import { getDateRange } from "@/features/appointments/calendarRange";
 
 import type {
   AppointmentResponse,
@@ -108,26 +109,4 @@ export function useAppointments() {
     cancelAppointment,
     refetch: fetchAppointments,
   };
-}
-
-function getDateRange(date: Date, mode: CalendarViewMode): { start: Date; end: Date } {
-  const d = new Date(date);
-  switch (mode) {
-    case "day": {
-      const start = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0);
-      const end = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 0, 0, 0);
-      return { start, end };
-    }
-    case "week": {
-      const dayOfWeek = d.getDay();
-      const start = new Date(d.getFullYear(), d.getMonth(), d.getDate() - dayOfWeek, 0, 0, 0);
-      const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7, 0, 0, 0);
-      return { start, end };
-    }
-    case "month": {
-      const start = new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0);
-      const end = new Date(d.getFullYear(), d.getMonth() + 1, 1, 0, 0, 0);
-      return { start, end };
-    }
-  }
 }
