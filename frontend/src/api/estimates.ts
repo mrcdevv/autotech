@@ -7,6 +7,7 @@ import type {
   EstimateRequest,
   EstimateDeliveryNoteDataResponse,
   EstimateStatus,
+  StaffDecisionChannel,
 } from "@/types/estimate";
 
 export const estimatesApi = {
@@ -48,11 +49,11 @@ export const estimatesApi = {
   update: (id: number, data: EstimateRequest) =>
     apiClient.put<ApiResponse<EstimateDetailResponse>>(`/estimates/${id}`, data),
 
-  approve: (id: number) =>
-    apiClient.put<ApiResponse<EstimateDetailResponse>>(`/estimates/${id}/approve`),
+  approve: (id: number, channel: StaffDecisionChannel) =>
+    apiClient.put<ApiResponse<EstimateDetailResponse>>(`/estimates/${id}/approve`, { channel }),
 
-  reject: (id: number) =>
-    apiClient.put<ApiResponse<EstimateDetailResponse>>(`/estimates/${id}/reject`),
+  reject: (id: number, channel: StaffDecisionChannel) =>
+    apiClient.put<ApiResponse<EstimateDetailResponse>>(`/estimates/${id}/reject`, { channel }),
 
   delete: (id: number) =>
     apiClient.delete<ApiResponse<void>>(`/estimates/${id}`),

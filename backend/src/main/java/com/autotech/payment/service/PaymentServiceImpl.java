@@ -147,7 +147,7 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         Payment savedWithDetails = paymentRepository.findWithDetailsById(saved.getId()).orElse(saved);
-        emailNotificationService.notifyPaymentRegistered(savedWithDetails);
+        emailNotificationService.notifyPaymentRegistered(savedWithDetails, getSummary(deliveryNoteId));
         return paymentMapper.toResponse(savedWithDetails);
     }
 

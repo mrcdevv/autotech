@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{email/layout :: layout(~{::content})}" lang="es">
+<body>
+<th:block th:fragment="content">
+    <div th:replace="~{email/components :: chip(${chipLabel}, ${chipTone})}"></div>
+    <div th:replace="~{email/components :: heading('Registramos tu pago')}"></div>
+    <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#4E545E;">Hola <span th:text="${name}">Martín</span>, registramos un pago para el remito <b style="color:#1D1F24;" th:text="${number}">#0556</b>. ¡Gracias!</p>
+    <div th:replace="~{email/components :: details(${rows})}"></div>
+</th:block>
+</body>
+</html>

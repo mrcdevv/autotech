@@ -42,9 +42,11 @@ export const appointmentsApi = {
       `/appointments/${id}/vehicle-picked-up`,
     ),
 
-  cancel: (id: number) =>
+  cancel: (id: number, notifyClient = false) =>
     apiClient.patch<ApiResponse<AppointmentResponse>>(
       `/appointments/${id}/cancel`,
+      null,
+      { params: { notifyClient } },
     ),
 
   getByDateRange: (start: string, end: string, employeeId?: number) =>

@@ -21,6 +21,12 @@ public interface DeliveryNoteRepository extends JpaRepository<DeliveryNote, Long
     @EntityGraph(attributePaths = {"services", "products", "client", "vehicle", "repairOrder", "estimate"})
     Optional<DeliveryNote> findWithDetailsById(Long id);
 
+    /** Balance-due reminder candidates: unpaid delivery notes issued before the cutoff. */
+    @EntityGraph(attributePaths = {"client", "vehicle", "vehicle.brand"})
+    @Query("SELECT d FROM DeliveryNote d WHERE d.status = :status AND d.createdAt <= :cutoff")
+    List<DeliveryNote> findByStatusCreatedBefore(@Param("status") DeliveryNoteStatus status,
+                                                 @Param("cutoff") LocalDateTime cutoff);
+
     Optional<DeliveryNote> findByRepairOrderId(Long repairOrderId);
 
     Optional<DeliveryNote> findByEstimateId(Long estimateId);

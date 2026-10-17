@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{email/layout :: layout(~{::content})}" lang="es">
+<body>
+<th:block th:fragment="content">
+    <div th:replace="~{email/components :: chip('Turno cancelado', 'bad')}"></div>
+    <div th:replace="~{email/components :: heading('Cancelamos tu turno')}"></div>
+    <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#4E545E;">Hola <span th:text="${name}">Martín</span>, te avisamos que el siguiente turno quedó cancelado:</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="margin:0 0 20px 0;background:#FBFAF7;border:1px solid #ECE9E1;border-radius:8px;border-collapse:separate;">
+        <tr>
+            <td style="padding:11px 18px;font-size:14px;color:#646A75;">Fecha</td>
+            <td align="right" style="padding:11px 18px;font-size:14px;font-weight:600;color:#646A75;text-decoration:line-through;" th:text="${dateTime}">Jueves 23/10 · 09:00</td>
+        </tr>
+        <tr th:each="row : ${rows}">
+            <td style="padding:11px 18px;font-size:14px;color:#646A75;border-top:1px solid #ECE9E1;" th:text="${row.label()}">Vehículo</td>
+            <td align="right" style="padding:11px 18px;font-size:14px;font-weight:600;color:#1D1F24;border-top:1px solid #ECE9E1;" th:text="${row.value()}">Toyota Corolla</td>
+        </tr>
+    </table>
+    <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#4E545E;">Si querés sacar un turno nuevo, comunicate con nosotros y te buscamos el horario que mejor te quede.</p>
+    <div th:replace="~{email/components :: buttons('Pedir un turno nuevo', ${workshopContactUrl != null and !#strings.isEmpty(workshopContactUrl) ? workshopContactUrl : null}, null, null)}"></div>
+</th:block>
+</body>
+</html>

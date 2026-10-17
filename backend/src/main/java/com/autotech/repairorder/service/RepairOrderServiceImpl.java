@@ -32,6 +32,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -148,6 +149,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
 
         RepairOrder result = repairOrderRepository.save(saved);
         log.info("Created repair order with id {} and title '{}'", result.getId(), result.getTitle());
+        emailNotificationService.notifyVehicleReceived(result);
         return repairOrderMapper.toResponse(result);
     }
 
@@ -236,9 +238,16 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         }
 
         log.info("Updating repair order {} status from {} to {}", id, currentStatus, newStatus);
+        boolean statusChanged = newStatus != currentStatus;
         order.setStatus(newStatus);
+        if (statusChanged && newStatus == RepairOrderStatus.LISTO_PARA_ENTREGAR) {
+            order.setReadyForPickupAt(LocalDateTime.now());
+        }
+        if (statusChanged && newStatus == RepairOrderStatus.ENTREGADO) {
+            order.setDeliveredAt(LocalDateTime.now());
+        }
         RepairOrder saved = repairOrderRepository.save(order);
-        if (newStatus == RepairOrderStatus.LISTO_PARA_ENTREGAR) {
+        if (statusChanged && newStatus == RepairOrderStatus.LISTO_PARA_ENTREGAR) {
             emailNotificationService.notifyVehicleReadyForPickup(saved);
         }
         return repairOrderMapper.toResponse(saved);

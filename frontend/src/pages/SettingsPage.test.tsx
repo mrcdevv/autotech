@@ -28,6 +28,14 @@ vi.mock("@/features/settings/components/RolesSettings", () => ({
   RolesSettings: () => <div data-testid="roles-settings">RolesSettings</div>,
 }));
 
+vi.mock("@/features/settings/components/NotificationSettings", () => ({
+  NotificationSettings: () => <div data-testid="notification-settings">NotificationSettings</div>,
+}));
+
+vi.mock("@/features/settings/components/NotificationActions", () => ({
+  NotificationActions: () => <div data-testid="notification-actions">NotificationActions</div>,
+}));
+
 vi.mock("@/features/settings/components/TaxSettings", () => ({
   TaxSettings: () => <div data-testid="tax-settings">TaxSettings</div>,
 }));
@@ -54,6 +62,7 @@ describe("SettingsPage", () => {
     expect(screen.getByRole("heading", { name: "Catálogos" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Remitos" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Accesos" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Notificaciones" })).toBeInTheDocument();
   });
 
   it("given page, when rendered, then shows billing and access cards", () => {

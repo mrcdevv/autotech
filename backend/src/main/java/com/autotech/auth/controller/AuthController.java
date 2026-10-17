@@ -4,6 +4,7 @@ import com.autotech.auth.dto.ChangePasswordRequest;
 import com.autotech.auth.dto.LoginRequest;
 import com.autotech.auth.dto.LoginResponse;
 import com.autotech.auth.dto.PasswordRecoveryRequest;
+import com.autotech.auth.dto.PasswordResetRequest;
 import com.autotech.auth.service.AuthService;
 import com.autotech.common.dto.ApiResponse;
 import com.autotech.employee.model.Employee;
@@ -76,7 +77,13 @@ public class AuthController {
             @Valid @RequestBody PasswordRecoveryRequest request) {
         authService.requestPasswordRecovery(request.getEmail());
         return ResponseEntity.ok(ApiResponse.<Void>success(
-                "Si el email existe, se enviaron instrucciones para recuperar la contraseña",
+                "Si el email corresponde a una cuenta activa, te enviamos un enlace para restablecer la contraseña",
                 null));
+    }
+
+    @PostMapping("/password-reset")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody PasswordResetRequest request) {
+        authService.resetPassword(request.token(), request.newPassword());
+        return ResponseEntity.ok(ApiResponse.<Void>success("Contraseña restablecida. Ya podés iniciar sesión.", null));
     }
 }

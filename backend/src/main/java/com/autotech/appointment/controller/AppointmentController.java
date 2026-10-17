@@ -87,9 +87,11 @@ public class AppointmentController {
     }
 
     @PatchMapping("/{id}/cancel")
-    public ResponseEntity<ApiResponse<AppointmentResponse>> cancel(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<AppointmentResponse>> cancel(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "false") boolean notifyClient) {
         return ResponseEntity.ok(ApiResponse.success("Cita cancelada",
-                appointmentService.cancel(id)));
+                appointmentService.cancel(id, notifyClient)));
     }
 
     @GetMapping("/range")

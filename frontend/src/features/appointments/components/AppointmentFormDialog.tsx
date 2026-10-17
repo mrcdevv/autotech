@@ -22,6 +22,8 @@ import dayjs from "dayjs";
 import { useNavigate } from "react-router";
 
 import { AppDialog } from "@/components/AppDialog";
+import { NotifyClientCheckbox } from "@/features/appointments/components/NotifyClientCheckbox";
+import { getNotifyClientDefault, hasEmail } from "@/features/appointments/notifyClient";
 import { clientsApi } from "@/api/clients";
 import { vehiclesApi } from "@/api/vehicles";
 import { employeesApi } from "@/api/employees";
@@ -57,6 +59,7 @@ export function AppointmentFormDialog({
   const [selectedEmployees, setSelectedEmployees] = useState<EmployeeResponse[]>([]);
   const [selectedTags, setSelectedTags] = useState<TagResponse[]>([]);
   const [saving, setSaving] = useState(false);
+  const [notifyClientOverride, setNotifyClientOverride] = useState<boolean | null>(null);
 
   const [clients, setClients] = useState<Client[]>([]);
   const [clientsLoading, setClientsLoading] = useState(false);
@@ -104,6 +107,7 @@ export function AppointmentFormDialog({
       setSelectedEmployees([]);
       setSelectedTags([]);
       setVehicles([]);
+      setNotifyClientOverride(null);
 
       fetchClients();
       fetchEmployees();
@@ -138,6 +142,9 @@ export function AppointmentFormDialog({
 
   const titlePlaceholder = generatedTitle ?? "Título de la cita";
 
+  const clientHasEmail = hasEmail(selectedClient?.email);
+  const notifyClient = notifyClientOverride ?? getNotifyClientDefault({ hasEmail: clientHasEmail, startTime });
+
   const isTitleRequired = !selectedClient && !selectedVehicle;
   const isVehicleMissing = selectedClient !== null && selectedVehicle === null;
 
@@ -159,6 +166,7 @@ export function AppointmentFormDialog({
         vehicleDeliveryMethod: vehicleDeliveryMethod || null,
         employeeIds: selectedEmployees.map((e) => e.id),
         tagIds: selectedTags.map((t) => t.id),
+        notifyClient: clientHasEmail && notifyClient,
       });
       onClose();
     } finally {
@@ -429,6 +437,15 @@ export function AppointmentFormDialog({
                 </FormControl>
               </Grid>
             </Grid>
+
+            {selectedClient && (
+              <NotifyClientCheckbox
+                checked={notifyClient}
+                onChange={setNotifyClientOverride}
+                clientHasEmail={clientHasEmail}
+                disabled={saving}
+              />
+            )}
           </Stack>
         </LocalizationProvider>
     </AppDialog>

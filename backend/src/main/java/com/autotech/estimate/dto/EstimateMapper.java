@@ -57,7 +57,12 @@ public class EstimateMapper {
                         ? entity.getProducts().stream().map(this::toProductResponse).toList()
                         : Collections.emptyList(),
                 entity.getCreatedAt(),
-                entity.getUpdatedAt()
+                entity.getUpdatedAt(),
+                entity.getDecisionChannel(),
+                entity.getDecidedAt(),
+                entity.getDecidedByEmployee() != null
+                        ? entity.getDecidedByEmployee().getFirstName() + " " + entity.getDecidedByEmployee().getLastName()
+                        : null
         );
     }
 

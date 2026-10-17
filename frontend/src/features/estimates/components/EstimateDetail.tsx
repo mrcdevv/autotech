@@ -36,6 +36,8 @@ import { useEstimate } from "@/features/estimates/hooks/useEstimate";
 import { ServicesGrid } from "./ServicesGrid";
 import { ProductsGrid } from "./ProductsGrid";
 import { EstimateSummary } from "./EstimateSummary";
+import { EstimateDecisionDialog } from "./EstimateDecisionDialog";
+import { describeDecision } from "@/features/estimates/decisionChannel";
 
 import type { ClientAutocompleteResponse } from "@/types/vehicle";
 import type { VehicleResponse } from "@/types/vehicle";
@@ -43,6 +45,7 @@ import type {
   EstimateServiceItemRequest,
   EstimateProductRequest,
   EstimateRequest,
+  StaffDecisionChannel,
 } from "@/types/estimate";
 import type { InspectionResponse } from "@/features/inspections/types";
 
@@ -395,28 +398,27 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
     }
   };
 
-  const handleApprove = async () => {
-    if (!estimate?.id) return;
-    setApiError(null);
-    try {
-      await approveEstimate(estimate.id);
-      if (!fromRepairOrder) {
-        navigate("/presupuestos");
-      }
-    } catch (err) {
-      setApiError(extractApiError(err));
-    }
-  };
+  const [decisionDialog, setDecisionDialog] = useState<"approve" | "reject" | null>(null);
 
-  const handleReject = async () => {
-    if (!estimate?.id) return;
+  const handleApprove = () => setDecisionDialog("approve");
+
+  const handleReject = () => setDecisionDialog("reject");
+
+  const handleDecisionConfirm = async (channel: StaffDecisionChannel) => {
+    if (!estimate?.id || !decisionDialog) return;
     setApiError(null);
     try {
-      await rejectEstimate(estimate.id);
+      if (decisionDialog === "approve") {
+        await approveEstimate(estimate.id, channel);
+      } else {
+        await rejectEstimate(estimate.id, channel);
+      }
+      setDecisionDialog(null);
       if (!fromRepairOrder) {
         navigate("/presupuestos");
       }
     } catch (err) {
+      setDecisionDialog(null);
       setApiError(extractApiError(err));
     }
   };
@@ -603,6 +605,19 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
           </Typography>
         )}
       </Stack>
+
+      {estimate && describeDecision(estimate) && (
+        <Alert severity={estimate.status === "ACEPTADO" ? "success" : "error"} variant="outlined" sx={{ mb: 2 }}>
+          {describeDecision(estimate)}
+        </Alert>
+      )}
+
+      <EstimateDecisionDialog
+        open={decisionDialog !== null}
+        decision={decisionDialog ?? "approve"}
+        onClose={() => setDecisionDialog(null)}
+        onConfirm={handleDecisionConfirm}
+      />
 
       <FormPageLayout
         aside={

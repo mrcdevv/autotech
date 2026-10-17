@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{email/layout :: layout(~{::content})}" lang="es">
+<body>
+<th:block th:fragment="content">
+    <div th:replace="~{email/components :: chip('Recordatorio', 'info')}"></div>
+    <div th:replace="~{email/components :: heading('Mañana tenés turno')}"></div>
+    <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#4E545E;">Hola <span th:text="${name}">Martín</span>, te recordamos que mañana te esperamos en el taller.</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px 0;">
+        <tr>
+            <td width="96" valign="top" style="width:96px;padding-right:16px;">
+                <table role="presentation" width="96" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #E3E0D8;border-radius:8px;border-collapse:separate;text-align:center;">
+                    <tr><td style="background:#FF7A1A;color:#17181C;font-size:12px;font-weight:700;padding:6px 0;letter-spacing:0.06em;border-radius:8px 8px 0 0;" th:text="${monthShort}">OCT</td></tr>
+                    <tr><td style="font-size:34px;font-weight:700;padding:10px 0 2px 0;color:#1D1F24;" th:text="${day}">23</td></tr>
+                    <tr><td style="font-size:12px;color:#646A75;padding:0 0 10px 0;" th:text="${dayName}">Jueves</td></tr>
+                </table>
+            </td>
+            <td valign="top" style="background:#FBFAF7;border:1px solid #ECE9E1;border-radius:8px;padding:14px 18px;font-size:14px;line-height:1.9;color:#1D1F24;">
+                <span style="color:#646A75;">Horario:</span> <b th:text="${timeRange}">09:00 a 10:00</b><br>
+                <th:block th:if="${vehicle != null}"><span style="color:#646A75;">Vehículo:</span> <b th:text="${vehicle}">Toyota Corolla</b><br></th:block>
+                <th:block th:if="${purpose != null}"><span style="color:#646A75;">Motivo:</span> <b th:text="${purpose}">Service</b></th:block>
+            </td>
+        </tr>
+    </table>
+    <div th:replace="~{email/components :: buttons(${primaryLabel}, ${primaryUrl}, 'No puedo asistir', ${declineUrl})}"></div>
+    <p style="margin:0 0 20px 0;font-size:13px;line-height:1.6;color:#646A75;">Si no podés venir, avisanos así liberamos el horario para otro cliente.</p>
+</th:block>
+</body>
+</html>

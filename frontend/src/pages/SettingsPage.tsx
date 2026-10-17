@@ -8,6 +8,8 @@ import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import LabelOutlinedIcon from "@mui/icons-material/LabelOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import MailOutlineIcon from "@mui/icons-material/MailOutline";
+import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
 import PercentOutlinedIcon from "@mui/icons-material/PercentOutlined";
 import ReceiptOutlinedIcon from "@mui/icons-material/ReceiptOutlined";
 
@@ -17,6 +19,8 @@ import { CalendarSettingsTab } from "@/features/settings/components/CalendarSett
 import { ConfigCard } from "@/features/settings/components/ConfigCard";
 import { DashboardSettingsTab } from "@/features/settings/components/DashboardSettingsTab";
 import { InspectionTemplatesTab } from "@/features/settings/components/InspectionTemplatesTab";
+import { NotificationActions } from "@/features/settings/components/NotificationActions";
+import { NotificationSettings } from "@/features/settings/components/NotificationSettings";
 import { RolesSettings } from "@/features/settings/components/RolesSettings";
 import { SettingsSection } from "@/features/settings/components/SettingsSection";
 import { TagsSettingsTab } from "@/features/settings/components/TagsSettingsTab";
@@ -69,6 +73,20 @@ export default function SettingsPage() {
         >
           <ConfigCard title="Impuestos" icon={<PercentOutlinedIcon />}>
             <TaxSettings />
+          </ConfigCard>
+        </SettingsSection>
+
+        <SettingsSection
+          id="notificaciones"
+          title="Notificaciones"
+          subtitle="Emails y recordatorios"
+          icon={<NotificationsOutlinedIcon />}
+        >
+          <ConfigCard title="Recordatorios automáticos" icon={<NotificationsOutlinedIcon />}>
+            <NotificationSettings />
+          </ConfigCard>
+          <ConfigCard title="Envío de emails" icon={<MailOutlineIcon />}>
+            <NotificationActions />
           </ConfigCard>
         </SettingsSection>
 

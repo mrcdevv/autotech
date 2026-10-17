@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Link as RouterLink, useNavigate } from "react-router";
 import { isAxiosError } from "axios";
 
 import {
@@ -12,6 +12,7 @@ import {
   Alert,
   InputAdornment,
   IconButton,
+  Link,
   Stack
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
@@ -132,15 +133,10 @@ export function Login() {
               </Button>
             </Stack>
 
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              textAlign="center"
-              display="block"
-              sx={{ mt: 2 }}
-            >
-              ¿Olvidaste tu contraseña? Contactá al administrador del sistema
-              para que la restablezca.
+            <Typography variant="body2" textAlign="center" sx={{ mt: 2 }}>
+              <Link component={RouterLink} to="/recuperar-contrasena">
+                ¿Olvidaste tu contraseña?
+              </Link>
             </Typography>
           </form>
         </CardContent>

@@ -8,6 +8,7 @@ import com.autotech.estimate.dto.EstimateDetailResponse;
 import com.autotech.estimate.dto.EstimateDeliveryNoteDataResponse;
 import com.autotech.estimate.dto.EstimateRequest;
 import com.autotech.estimate.dto.EstimateResponse;
+import com.autotech.estimate.model.EstimateDecisionChannel;
 import com.autotech.estimate.model.EstimateStatus;
 import com.autotech.estimate.service.EstimateService;
 import com.autotech.security.CustomUserDetailsService;
@@ -75,7 +76,7 @@ class EstimateControllerTest {
             null, Collections.emptyList(), EstimateStatus.PENDIENTE,
             BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.valueOf(400),
             Collections.emptyList(), Collections.emptyList(),
-            LocalDateTime.now(), LocalDateTime.now()
+            LocalDateTime.now(), LocalDateTime.now(), null, null, null
     );
 
     @Test
@@ -170,18 +171,22 @@ class EstimateControllerTest {
 
     @Test
     void givenPendienteEstimate_whenApprove_thenReturn200() throws Exception {
-        when(estimateService.approve(1L)).thenReturn(sampleDetailResponse);
+        when(estimateService.approve(eq(1L), eq(EstimateDecisionChannel.WHATSAPP), any())).thenReturn(sampleDetailResponse);
 
-        mockMvc.perform(put("/api/estimates/1/approve").with(csrf()))
+        mockMvc.perform(put("/api/estimates/1/approve").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"channel\":\"WHATSAPP\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Presupuesto aceptado"));
     }
 
     @Test
     void givenPendienteEstimate_whenReject_thenReturn200() throws Exception {
-        when(estimateService.reject(1L)).thenReturn(sampleDetailResponse);
+        when(estimateService.reject(eq(1L), eq(EstimateDecisionChannel.PHONE), any())).thenReturn(sampleDetailResponse);
 
-        mockMvc.perform(put("/api/estimates/1/reject").with(csrf()))
+        mockMvc.perform(put("/api/estimates/1/reject").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"channel\":\"PHONE\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Presupuesto rechazado"));
     }
@@ -214,5 +219,13 @@ class EstimateControllerTest {
         mockMvc.perform(get("/api/estimates/1/delivery-note-data"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.estimateId").value(1));
+    }
+
+    @Test
+    void givenNoChannel_whenApprove_thenReturn400() throws Exception {
+        mockMvc.perform(put("/api/estimates/1/approve").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
     }
 }
