@@ -29,5 +29,7 @@ public record AppointmentRequest(
 
         List<Long> employeeIds,
 
-        List<Long> tagIds
+        List<Long> tagIds,
+
+        Boolean notifyClient
 ) {}

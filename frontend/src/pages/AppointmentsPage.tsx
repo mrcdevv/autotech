@@ -29,9 +29,11 @@ import { CalendarView } from "@/features/appointments/components/CalendarView";
 import { AppointmentFormDialog } from "@/features/appointments/components/AppointmentFormDialog";
 import { AppointmentDetailDialog } from "@/features/appointments/components/AppointmentDetailDialog";
 import { AppointmentEditDialog } from "@/features/appointments/components/AppointmentEditDialog";
+import { NotifyClientCheckbox } from "@/features/appointments/components/NotifyClientCheckbox";
+import { getNotifyClientDefault, hasEmail } from "@/features/appointments/notifyClient";
 import { AppointmentActionsMenu } from "@/features/appointments/components/AppointmentActions";
 
-import type { AppointmentResponse, CalendarViewMode } from "@/types/appointment";
+import type { AppointmentResponse, AppointmentUpdateRequest, CalendarViewMode } from "@/types/appointment";
 import type { EmployeeResponse } from "@/features/employees/types";
 
 const VIEW_LABELS: Record<CalendarViewMode, string> = {
@@ -153,11 +155,21 @@ export default function AppointmentsPage() {
 
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [appointmentToCancel, setAppointmentToCancel] = useState<number | null>(null);
+  const [notifyOnCancelOverride, setNotifyOnCancelOverride] = useState<boolean | null>(null);
+  const cancelTarget = appointments.find((a) => a.id === appointmentToCancel) ?? null;
+  const cancelTargetHasEmail = hasEmail(cancelTarget?.clientEmail);
+  const notifyOnCancel =
+    notifyOnCancelOverride ??
+    getNotifyClientDefault({
+      hasEmail: cancelTargetHasEmail,
+      startTime: cancelTarget?.startTime ?? null,
+      clientArrived: cancelTarget?.clientArrived,
+    });
 
   const handleCancel = async () => {
     if (appointmentToCancel === null) return;
     try {
-      await cancelAppointment(appointmentToCancel);
+      await cancelAppointment(appointmentToCancel, cancelTargetHasEmail && notifyOnCancel);
       showSnackbar("Cita cancelada", "success");
       setCancelConfirmOpen(false);
       setAppointmentToCancel(null);
@@ -168,6 +180,7 @@ export default function AppointmentsPage() {
 
   const requestCancel = (id: number) => {
     setAppointmentToCancel(id);
+    setNotifyOnCancelOverride(null);
     setCancelConfirmOpen(true);
   };
 
@@ -185,7 +198,7 @@ export default function AppointmentsPage() {
     setEditOpen(true);
   };
 
-  const handleUpdate = async (id: number, data: { startTime: string; endTime: string }) => {
+  const handleUpdate = async (id: number, data: AppointmentUpdateRequest) => {
     try {
       await updateAppointment(id, data);
       showSnackbar("Cita actualizada", "success");
@@ -386,7 +399,15 @@ export default function AppointmentsPage() {
         confirmColor="warning"
         onConfirm={handleCancel}
         onCancel={() => setCancelConfirmOpen(false)}
-      />
+      >
+        {cancelTarget?.clientId && (
+          <NotifyClientCheckbox
+            checked={notifyOnCancel}
+            onChange={setNotifyOnCancelOverride}
+            clientHasEmail={cancelTargetHasEmail}
+          />
+        )}
+      </AppConfirmDialog>
 
       <Snackbar
         open={snackbar.open}

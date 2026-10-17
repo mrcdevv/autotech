@@ -1,5 +1,6 @@
 package com.autotech.estimate.dto;
 
+import com.autotech.estimate.model.EstimateDecisionChannel;
 import com.autotech.estimate.model.EstimateStatus;
 
 import java.math.BigDecimal;
@@ -28,5 +29,8 @@ public record EstimateDetailResponse(
         List<EstimateServiceItemResponse> services,
         List<EstimateProductResponse> products,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        EstimateDecisionChannel decisionChannel,
+        LocalDateTime decidedAt,
+        String decidedByEmployeeName
 ) {}

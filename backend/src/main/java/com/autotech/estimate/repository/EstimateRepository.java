@@ -20,6 +20,9 @@ public interface EstimateRepository extends JpaRepository<Estimate, Long> {
     @EntityGraph(attributePaths = {"services", "products", "client", "vehicle", "repairOrder"})
     Optional<Estimate> findWithDetailsById(Long id);
 
+    @EntityGraph(attributePaths = {"services", "products", "client", "vehicle", "vehicle.brand", "repairOrder"})
+    Optional<Estimate> findByApprovalToken(String approvalToken);
+
     Optional<Estimate> findByRepairOrderId(Long repairOrderId);
 
     List<Estimate> findAllByRepairOrderId(Long repairOrderId);
