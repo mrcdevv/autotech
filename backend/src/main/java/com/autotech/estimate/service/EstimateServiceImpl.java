@@ -185,9 +185,10 @@ public class EstimateServiceImpl implements EstimateService {
         Vehicle vehicle = vehicleRepository.findById(request.vehicleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle", request.vehicleId()));
 
+        // Keep the stored tax when the request omits it; never re-price with the current global value
         BigDecimal taxPercentage = request.taxPercentage() != null
                 ? request.taxPercentage()
-                : taxConfigService.getConfig().getTaxPercentage();
+                : entity.getTaxPercentage();
 
         entity.setClient(client);
         entity.setVehicle(vehicle);

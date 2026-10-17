@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
@@ -6,7 +6,7 @@ import { EstimateDetail } from "./EstimateDetail";
 import { useEstimate } from "@/features/estimates/hooks/useEstimate";
 import { formatCurrency } from "@/utils/formatCurrency";
 
-import type { EstimateResponse } from "@/types/estimate";
+import type { EstimateDetailResponse, EstimateResponse } from "@/types/estimate";
 
 // formatCurrency emits a non-breaking space (U+00A0) after the "$" symbol, which the
 // testing-library normalizer collapses to a plain space in the DOM text. Normalize the
@@ -35,6 +35,22 @@ function expectRightAlignedInBlock(element: HTMLElement): void {
 
 vi.mock("@/features/estimates/hooks/useEstimate", () => ({
   useEstimate: vi.fn(),
+}));
+
+const { mockGetTaxConfig } = vi.hoisted(() => ({
+  mockGetTaxConfig: vi.fn(),
+}));
+
+vi.mock("@/api/taxConfig", () => ({
+  taxConfigApi: { getConfig: mockGetTaxConfig },
+}));
+
+vi.mock("@/api/clientAutocomplete", () => ({
+  clientAutocompleteApi: { search: vi.fn().mockResolvedValue({ data: { data: [] } }) },
+}));
+
+vi.mock("@/api/vehicles", () => ({
+  vehiclesApi: { getByClient: vi.fn().mockResolvedValue({ data: { data: [] } }) },
 }));
 
 vi.mock("@/api/inspections", () => ({
@@ -89,6 +105,9 @@ function renderRejectedBanner(total: number | null): void {
 describe("EstimateDetail (rejected estimates banner)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetTaxConfig.mockResolvedValue({
+      data: { data: { id: 1, taxPercentage: 21, createdAt: "", updatedAt: "" } },
+    });
   });
 
   it("given a rejected estimate with a single-decimal total, when rendered, then the amount shows exactly 2 decimals", () => {
@@ -109,5 +128,85 @@ describe("EstimateDetail (rejected estimates banner)", () => {
     renderRejectedBanner(null);
 
     expect(screen.getByText("—")).toBeInTheDocument();
+  });
+});
+
+const storedEstimate: EstimateDetailResponse = {
+  id: 3,
+  clientId: 1,
+  clientFullName: "Juan Perez",
+  clientDni: null,
+  clientPhone: "123",
+  clientEmail: null,
+  vehicleId: 1,
+  vehiclePlate: "AB123CD",
+  vehicleBrand: null,
+  vehicleModel: "Corsa",
+  vehicleYear: null,
+  repairOrderId: null,
+  mechanicNotes: null,
+  inspectionIssues: [],
+  status: "PENDIENTE",
+  discountPercentage: 0,
+  taxPercentage: 10.5,
+  total: 110.5,
+  services: [{ id: 1, serviceName: "Service A", price: 100 }],
+  products: [],
+  createdAt: "2025-03-01T10:00:00",
+  updatedAt: "2025-03-01T10:00:00",
+  decisionChannel: null,
+  decidedAt: null,
+  decidedByEmployeeName: null,
+};
+
+function mockEstimateState(estimate: EstimateDetailResponse | null): void {
+  vi.mocked(useEstimate).mockReturnValue({
+    estimate,
+    allEstimates: [],
+    noActiveEstimate: false,
+    loading: false,
+    error: null,
+    clearError: vi.fn(),
+    createEstimate: vi.fn(),
+    updateEstimate: vi.fn(),
+    approveEstimate: vi.fn(),
+    rejectEstimate: vi.fn(),
+    refetch: vi.fn(),
+  });
+}
+
+describe("EstimateDetail (default tax)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetTaxConfig.mockResolvedValue({
+      data: { data: { id: 1, taxPercentage: 21, createdAt: "", updatedAt: "" } },
+    });
+  });
+
+  it("given a new estimate, when rendered, then the tax field is pre-filled with the global IVA", async () => {
+    mockEstimateState(null);
+    render(
+      <MemoryRouter>
+        <EstimateDetail />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Impuesto (%)")).toHaveValue(21);
+    });
+  });
+
+  it("given an existing estimate, when rendered, then the tax field keeps its stored value", async () => {
+    mockEstimateState(storedEstimate);
+    render(
+      <MemoryRouter>
+        <EstimateDetail estimateId={3} />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Impuesto (%)")).toHaveValue(10.5);
+    });
+    expect(mockGetTaxConfig).not.toHaveBeenCalled();
   });
 });
