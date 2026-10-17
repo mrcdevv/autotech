@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 
 import {
   Alert,
-  Box,
   Button,
   CircularProgress,
   IconButton,
@@ -10,14 +9,15 @@ import {
   ListItem,
   ListItemText,
   Snackbar,
-  Stack,
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 
 import { AppDialog } from "@/components/AppDialog";
+import { ConfigCard } from "@/features/settings/components/ConfigCard";
 import { rolesApi } from "@/api/roles";
 import { RoleFormDialog } from "@/features/settings/components/RoleFormDialog";
 
@@ -98,13 +98,15 @@ export function RolesSettings() {
   };
 
   return (
-    <Box>
-      <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
+    <ConfigCard
+      title="Roles y permisos"
+      icon={<BadgeOutlinedIcon />}
+      action={
         <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateDialog}>
           Agregar rol
         </Button>
-      </Stack>
-
+      }
+    >
       {loading && <CircularProgress />}
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -183,6 +185,6 @@ export function RolesSettings() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </ConfigCard>
   );
 }
