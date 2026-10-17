@@ -4,6 +4,16 @@ import { Alert, Box, Button, CircularProgress, Snackbar, TextField } from "@mui/
 
 import { taxConfigApi } from "@/api/taxConfig";
 
+const DEFAULT_HELPER_TEXT = "Porcentaje de IVA aplicado por defecto (0-100)";
+
+// Keeps the raw input so an empty field is rejected instead of silently becoming 0
+function validateTaxInput(raw: string): string | null {
+  if (raw.trim() === "") return "Ingresá un porcentaje de IVA";
+  const value = Number(raw);
+  if (Number.isNaN(value) || value < 0 || value > 100) return "El IVA debe estar entre 0 y 100";
+  return null;
+}
+
 interface SnackbarState {
   open: boolean;
   message: string;
@@ -11,7 +21,7 @@ interface SnackbarState {
 }
 
 export function TaxSettings() {
-  const [taxPercentage, setTaxPercentage] = useState<number>(0);
+  const [taxInput, setTaxInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,18 +34,21 @@ export function TaxSettings() {
   useEffect(() => {
     taxConfigApi
       .getConfig()
-      .then((res) => setTaxPercentage(res.data.data.taxPercentage))
+      .then((res) => setTaxInput(String(res.data.data.taxPercentage)))
       .catch(() => setError("Error al cargar la configuración de IVA"))
       .finally(() => setLoading(false));
   }, []);
 
+  const validationError = validateTaxInput(taxInput);
+
   const handleSave = async () => {
-    if (taxPercentage < 0 || taxPercentage > 100) return;
+    if (validationError) return;
+    const taxPercentage = Number(taxInput);
     setSaving(true);
     setError(null);
     try {
       const res = await taxConfigApi.updateConfig({ taxPercentage });
-      setTaxPercentage(res.data.data.taxPercentage);
+      setTaxInput(String(res.data.data.taxPercentage));
       setSnackbar({ open: true, message: "Configuración de IVA guardada", severity: "success" });
     } catch {
       setSnackbar({ open: true, message: "Error al guardar la configuración de IVA", severity: "error" });
@@ -57,16 +70,17 @@ export function TaxSettings() {
         <TextField
           label="IVA por defecto (%)"
           type="number"
-          value={taxPercentage}
-          onChange={(e) => setTaxPercentage(Number(e.target.value))}
+          value={taxInput}
+          onChange={(e) => setTaxInput(e.target.value)}
           inputProps={{ min: 0, max: 100 }}
-          helperText="Porcentaje de IVA aplicado por defecto (0-100)"
+          error={validationError != null}
+          helperText={validationError ?? DEFAULT_HELPER_TEXT}
           size="small"
         />
         <Button
           variant="contained"
           onClick={handleSave}
-          disabled={saving || taxPercentage < 0 || taxPercentage > 100}
+          disabled={saving || validationError != null}
         >
           {saving ? "Guardando..." : "Guardar"}
         </Button>

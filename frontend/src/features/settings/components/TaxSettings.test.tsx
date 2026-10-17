@@ -61,4 +61,28 @@ describe("TaxSettings", () => {
       expect(mockUpdateConfig).toHaveBeenCalledWith({ taxPercentage: 15 });
     });
   });
+
+  it("given an empty field, when editing, then disables Guardar and shows a validation message", async () => {
+    const user = userEvent.setup();
+    render(<TaxSettings />);
+
+    const input = await screen.findByLabelText("IVA por defecto (%)");
+    await user.clear(input);
+
+    expect(screen.getByText("Ingresá un porcentaje de IVA")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
+    expect(mockUpdateConfig).not.toHaveBeenCalled();
+  });
+
+  it("given a value above 100, when editing, then disables Guardar and shows the range message", async () => {
+    const user = userEvent.setup();
+    render(<TaxSettings />);
+
+    const input = await screen.findByLabelText("IVA por defecto (%)");
+    await user.clear(input);
+    await user.type(input, "150");
+
+    expect(screen.getByText("El IVA debe estar entre 0 y 100")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
+  });
 });
