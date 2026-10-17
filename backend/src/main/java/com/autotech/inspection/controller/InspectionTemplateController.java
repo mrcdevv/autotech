@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,16 +27,19 @@ public class InspectionTemplateController {
 
     private final InspectionTemplateService inspectionTemplateService;
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ApiResponse<List<InspectionTemplateResponse>>> getAll() {
         return ResponseEntity.ok(ApiResponse.success(inspectionTemplateService.getAll()));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<InspectionTemplateResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(inspectionTemplateService.getById(id)));
     }
 
+    @PreAuthorize("hasAuthority('manage_services')")
     @PostMapping
     public ResponseEntity<ApiResponse<InspectionTemplateResponse>> create(
             @Valid @RequestBody InspectionTemplateRequest request) {
@@ -44,6 +48,7 @@ public class InspectionTemplateController {
                 .body(ApiResponse.success("Plantilla de inspección creada", created));
     }
 
+    @PreAuthorize("hasAuthority('manage_services')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<InspectionTemplateResponse>> update(
             @PathVariable Long id,
@@ -52,12 +57,14 @@ public class InspectionTemplateController {
                 inspectionTemplateService.update(id, request)));
     }
 
+    @PreAuthorize("hasAuthority('manage_services')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         inspectionTemplateService.delete(id);
         return ResponseEntity.ok(ApiResponse.success("Plantilla de inspección eliminada", null));
     }
 
+    @PreAuthorize("hasAuthority('manage_services')")
     @PostMapping("/{id}/duplicate")
     public ResponseEntity<ApiResponse<InspectionTemplateResponse>> duplicate(@PathVariable Long id) {
         InspectionTemplateResponse duplicated = inspectionTemplateService.duplicate(id);

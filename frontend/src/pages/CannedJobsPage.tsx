@@ -6,6 +6,7 @@ import AddIcon from "@mui/icons-material/Add";
 import { AppSearchField } from "@/components/AppSearchField";
 import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { useCannedJobs } from "@/features/catalog/hooks/useCannedJobs";
 import { CannedJobsDataGrid } from "@/features/catalog/components/CannedJobsDataGrid";
 import { CannedJobFormDialog } from "@/features/catalog/components/CannedJobFormDialog";
@@ -13,6 +14,8 @@ import { CannedJobFormDialog } from "@/features/catalog/components/CannedJobForm
 import type { CannedJobDetailResponse, CannedJobRequest } from "@/types/catalog";
 
 export default function CannedJobsPage() {
+  const { hasPermission } = useAuth();
+  const canManage = hasPermission("manage_services");
   const {
     cannedJobs,
     loading,
@@ -101,9 +104,11 @@ export default function CannedJobsPage() {
           />
         }
         actions={
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-            Agregar paquete de servicios
-          </Button>
+          canManage && (
+            <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+              Agregar paquete de servicios
+            </Button>
+          )
         }
       />
 
@@ -115,8 +120,8 @@ export default function CannedJobsPage() {
         pageSize={pageSize}
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
-        onEditRow={handleEdit}
-        onDeleteRow={handleDelete}
+        onEditRow={canManage ? handleEdit : undefined}
+        onDeleteRow={canManage ? handleDelete : undefined}
       />
 
       <CannedJobFormDialog

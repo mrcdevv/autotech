@@ -4,6 +4,14 @@ import { describe, expect, it, vi } from "vitest";
 
 import SettingsPage from "./SettingsPage";
 
+const grantedPermissions = vi.hoisted(() => ({ codes: new Set<string>() }));
+
+vi.mock("@/features/auth/context/AuthContext", () => ({
+  useAuth: () => ({
+    hasPermission: (code: string) => grantedPermissions.codes.has(code),
+  }),
+}));
+
 vi.mock("@/features/settings/components/BankAccountsTab", () => ({
   BankAccountsTab: () => <div data-testid="bank-accounts-tab">BankAccountsTab</div>,
 }));
@@ -32,7 +40,8 @@ vi.mock("@/features/settings/components/TaxSettings", () => ({
   TaxSettings: () => <div data-testid="tax-settings">TaxSettings</div>,
 }));
 
-function renderSettingsPage() {
+function renderSettingsPage(permissions = ["manage_config", "manage_services", "manage_roles"]) {
+  grantedPermissions.codes = new Set(permissions);
   return render(
     <MemoryRouter>
       <SettingsPage />
@@ -73,5 +82,24 @@ describe("SettingsPage", () => {
     expect(screen.getByTestId("tags-settings-tab")).toBeInTheDocument();
     expect(screen.getByTestId("tax-settings")).toBeInTheDocument();
     expect(screen.getByTestId("roles-settings")).toBeInTheDocument();
+  });
+
+  it("given only manage_services, when rendered, then shows only the inspection templates card", () => {
+    renderSettingsPage(["manage_services"]);
+
+    expect(screen.getByTestId("inspection-templates-tab")).toBeInTheDocument();
+    expect(screen.queryByTestId("calendar-settings-tab")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("bank-accounts-tab")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("tax-settings")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("roles-settings")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Accesos" })).not.toBeInTheDocument();
+  });
+
+  it("given manage_config without manage_roles, when rendered, then hides roles section", () => {
+    renderSettingsPage(["manage_config"]);
+
+    expect(screen.getByTestId("tax-settings")).toBeInTheDocument();
+    expect(screen.queryByTestId("inspection-templates-tab")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("roles-settings")).not.toBeInTheDocument();
   });
 });

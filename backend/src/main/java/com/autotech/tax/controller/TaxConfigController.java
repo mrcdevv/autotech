@@ -8,6 +8,7 @@ import com.autotech.tax.service.TaxConfigService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,11 +22,13 @@ public class TaxConfigController {
 
     private final TaxConfigService taxConfigService;
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ApiResponse<TaxConfigResponse>> getConfig() {
         return ResponseEntity.ok(ApiResponse.success(toResponse(taxConfigService.getConfig())));
     }
 
+    @PreAuthorize("hasAuthority('manage_config')")
     @PutMapping
     public ResponseEntity<ApiResponse<TaxConfigResponse>> updateConfig(
             @Valid @RequestBody TaxConfigRequest request) {

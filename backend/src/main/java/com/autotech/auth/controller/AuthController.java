@@ -1,13 +1,12 @@
 package com.autotech.auth.controller;
 
 import com.autotech.auth.dto.ChangePasswordRequest;
+import com.autotech.auth.dto.CurrentUserResponse;
 import com.autotech.auth.dto.LoginRequest;
 import com.autotech.auth.dto.LoginResponse;
 import com.autotech.auth.dto.PasswordRecoveryRequest;
 import com.autotech.auth.service.AuthService;
 import com.autotech.common.dto.ApiResponse;
-import com.autotech.employee.model.Employee;
-import com.autotech.employee.repository.EmployeeRepository;
 import com.autotech.security.JwtTokenProvider;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +17,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,7 +31,6 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
-    private final EmployeeRepository employeeRepository;
     private final AuthService authService;
 
     @PostMapping("/login")
@@ -47,19 +45,25 @@ public class AuthController {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = tokenProvider.generateToken(authentication);
 
-        Employee employee = employeeRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new UsernameNotFoundException("Empleado no encontrado"));
+        CurrentUserResponse currentUser = authService.getCurrentUser(authentication.getName());
 
         LoginResponse response = LoginResponse.builder()
                 .accessToken(jwt)
                 .tokenType("Bearer")
-                .mustChangePassword(employee.getMustChangePassword())
-                .email(employee.getEmail())
-                .firstName(employee.getFirstName())
-                .lastName(employee.getLastName())
+                .mustChangePassword(currentUser.mustChangePassword())
+                .email(currentUser.email())
+                .firstName(currentUser.firstName())
+                .lastName(currentUser.lastName())
+                .roles(currentUser.roles())
+                .permissions(currentUser.permissions())
                 .build();
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<CurrentUserResponse>> me(@AuthenticationPrincipal UserDetails currentUser) {
+        return ResponseEntity.ok(ApiResponse.success(authService.getCurrentUser(currentUser.getUsername())));
     }
 
     @PutMapping("/change-password")

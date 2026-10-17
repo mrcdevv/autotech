@@ -10,6 +10,18 @@ export interface LoginResponse {
   email: string;
   firstName: string;
   lastName: string;
+  roles: string[];
+  permissions: string[];
+}
+
+export interface CurrentUserResponse {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  mustChangePassword: boolean;
+  roles: string[];
+  permissions: string[];
 }
 
 export interface ChangePasswordRequest {

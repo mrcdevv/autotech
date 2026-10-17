@@ -14,6 +14,7 @@ import { AppDialog } from "@/components/AppDialog";
 import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
 import { employeesApi } from "@/api/employees";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { EmployeeList } from "@/features/employees/EmployeeList";
 import { EmployeeForm } from "@/features/employees/EmployeeForm";
 import { EmployeeFilters } from "@/features/employees/EmployeeFilters";
@@ -24,6 +25,11 @@ import type { PageResponse, ApiResponse } from "@/types/api";
 import type { GridPaginationModel } from "@mui/x-data-grid";
 
 export default function EmployeesPage() {
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission("create_employee");
+  const canUpdate = hasPermission("update_employee");
+  const canDelete = hasPermission("delete_employee");
+  const canManageRoles = hasPermission("manage_roles");
   const [data, setData] = useState<PageResponse<EmployeeResponse> | null>(null);
   const [loading, setLoading] = useState(true);
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
@@ -183,9 +189,11 @@ export default function EmployeesPage() {
             <Button variant="outlined" startIcon={<FileDownloadIcon />} onClick={handleExport}>
               Exportar a Excel
             </Button>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-              Nuevo empleado
-            </Button>
+            {canCreate && (
+              <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+                Nuevo empleado
+              </Button>
+            )}
           </>
         }
       />
@@ -196,9 +204,9 @@ export default function EmployeesPage() {
         paginationModel={paginationModel}
         onPaginationChange={handlePaginationChange}
         onView={handleView}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onResetPassword={handleResetPassword}
+        onEdit={canUpdate ? handleEdit : undefined}
+        onDelete={canDelete ? handleDelete : undefined}
+        onResetPassword={canManageRoles ? handleResetPassword : undefined}
       />
 
       <EmployeeForm

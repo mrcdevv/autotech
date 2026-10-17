@@ -20,8 +20,8 @@ interface EstimateListProps {
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
   onRowClick: (id: number) => void;
-  onDelete: (id: number) => void;
-  onDeliveryNote: (id: number) => void;
+  onDelete?: (id: number) => void;
+  onDeliveryNote?: (id: number) => void;
 }
 
 export function EstimateList({
@@ -100,37 +100,41 @@ export function EstimateList({
           >
             <VisibilityIcon />
           </IconButton>
-          <IconButton
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(params.row.id);
-            }}
-            color="error"
-            size="small"
-          >
-            <DeleteIcon />
-          </IconButton>
-          <Tooltip
-            title={
-              params.row.status !== "ACEPTADO"
-                ? "Solo se pueden remitor presupuestos aceptados"
-                : "Remitor"
-            }
-          >
-            <span>
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeliveryNote(params.row.id);
-                }}
-                size="small"
-                disabled={params.row.status !== "ACEPTADO"}
-                color="primary"
-              >
-                <ReceiptIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
+          {onDelete && (
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(params.row.id);
+              }}
+              color="error"
+              size="small"
+            >
+              <DeleteIcon />
+            </IconButton>
+          )}
+          {onDeliveryNote && (
+            <Tooltip
+              title={
+                params.row.status !== "ACEPTADO"
+                  ? "Solo se pueden remitor presupuestos aceptados"
+                  : "Remitor"
+              }
+            >
+              <span>
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeliveryNote(params.row.id);
+                  }}
+                  size="small"
+                  disabled={params.row.status !== "ACEPTADO"}
+                  color="primary"
+                >
+                  <ReceiptIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+          )}
         </>
       ),
     },

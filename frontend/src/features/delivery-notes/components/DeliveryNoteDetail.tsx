@@ -36,6 +36,7 @@ import { ServicesGrid } from "./ServicesGrid";
 import { ProductsGrid } from "./ProductsGrid";
 import { DeliveryNoteSummary } from "./DeliveryNoteSummary";
 import { PaymentsTab } from "@/features/payments/components/PaymentsTab";
+import { useAuth } from "@/features/auth/context/AuthContext";
 
 import type { ClientAutocompleteResponse } from "@/types/vehicle";
 import type { VehicleResponse } from "@/types/vehicle";
@@ -98,6 +99,7 @@ interface DeliveryNoteDetailProps {
 
 export function DeliveryNoteDetail({ deliveryNoteId, repairOrderId, estimateId, onBack }: DeliveryNoteDetailProps) {
   const navigate = useNavigate();
+  const { hasPermission } = useAuth();
   const { deliveryNote, loading, error, clearError, createDeliveryNote } = useDeliveryNote(deliveryNoteId, repairOrderId);
 
   const [activeTab, setActiveTab] = useState(0);
@@ -443,7 +445,7 @@ export function DeliveryNoteDetail({ deliveryNoteId, repairOrderId, estimateId, 
 
         <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 3 }}>
           <Tab label="Datos de la Remito" />
-          <Tab label="Pagos" disabled={isCreateMode} />
+          <Tab label="Pagos" disabled={isCreateMode || !hasPermission("read_payment")} />
         </Tabs>
       </Box>
 
