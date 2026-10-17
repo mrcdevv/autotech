@@ -496,6 +496,53 @@ class AppointmentServiceImplTest {
     }
 
     @Test
+    void givenCompletedAppointmentAndNewTimes_whenUpdate_thenThrowBusinessException() {
+        // Arrange
+        Appointment entity = buildAppointment(1L);
+        entity.setStatus(AppointmentStatus.COMPLETED);
+        when(appointmentRepository.findWithDetailsById(1L)).thenReturn(Optional.of(entity));
+        AppointmentUpdateRequest request = new AppointmentUpdateRequest(startTime.plusHours(2), endTime.plusHours(2), null);
+
+        // Act & Assert
+        assertThatThrownBy(() -> appointmentService.update(1L, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("No se puede reprogramar un turno completado o cancelado");
+        assertThat(entity.getStartTime()).isEqualTo(startTime);
+        verify(appointmentRepository, never()).save(any());
+        verify(emailNotificationService, never()).notifyAppointmentRescheduled(any(), any(), any());
+    }
+
+    @Test
+    void givenCancelledAppointmentAndNewTimes_whenUpdate_thenThrowBusinessException() {
+        // Arrange
+        Appointment entity = buildAppointment(1L);
+        entity.setStatus(AppointmentStatus.CANCELLED);
+        when(appointmentRepository.findWithDetailsById(1L)).thenReturn(Optional.of(entity));
+        AppointmentUpdateRequest request = new AppointmentUpdateRequest(startTime, endTime.plusMinutes(30), null);
+
+        // Act & Assert
+        assertThatThrownBy(() -> appointmentService.update(1L, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("No se puede reprogramar un turno completado o cancelado");
+        verify(appointmentRepository, never()).save(any());
+    }
+
+    @Test
+    void givenCompletedAppointmentAndSameTimes_whenUpdate_thenSaveWithoutError() {
+        // Arrange
+        Appointment entity = buildAppointment(1L);
+        entity.setStatus(AppointmentStatus.COMPLETED);
+        when(appointmentRepository.findWithDetailsById(1L)).thenReturn(Optional.of(entity));
+        when(appointmentRepository.save(entity)).thenReturn(entity);
+
+        // Act
+        appointmentService.update(1L, new AppointmentUpdateRequest(startTime, endTime, null));
+
+        // Assert
+        verify(appointmentRepository).save(entity);
+    }
+
+    @Test
     void givenNotifyClient_whenCancel_thenSendCancelledEmail() {
         // Arrange
         Appointment entity = buildAppointment(1L);
