@@ -260,6 +260,6 @@ class ReminderServiceImplTest {
     }
 
     private PaymentSummaryResponse summary(BigDecimal total, BigDecimal paid) {
-        return new PaymentSummaryResponse(total, BigDecimal.ZERO, BigDecimal.ZERO, total, paid, total.subtract(paid));
+        return new PaymentSummaryResponse(total, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, total, paid, total.subtract(paid));
     }
 }

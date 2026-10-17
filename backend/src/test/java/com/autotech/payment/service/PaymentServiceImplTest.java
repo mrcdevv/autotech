@@ -139,6 +139,26 @@ class PaymentServiceImplTest {
     }
 
     @Test
+    void givenDeliveryNoteWithTax_whenGetSummary_thenTotalAndRemainingIncludeTax() {
+        DeliveryNoteDetailResponse base = buildDeliveryNoteDetailResponse();
+        DeliveryNoteDetailResponse deliveryNote = new DeliveryNoteDetailResponse(
+                base.id(), base.number(), base.clientId(), base.clientFullName(), base.clientDni(),
+                base.clientPhone(), base.clientEmail(), base.clientType(), base.vehicleId(), base.vehiclePlate(),
+                base.vehicleBrand(), base.vehicleModel(), base.vehicleYear(), base.repairOrderId(), base.estimateId(),
+                base.status(), base.discountPercentage(), BigDecimal.valueOf(21), new BigDecimal("1306.80"),
+                base.services(), base.products(), base.createdAt(), base.updatedAt());
+        when(deliveryNoteService.getById(10L)).thenReturn(deliveryNote);
+        when(paymentRepository.sumAmountByDeliveryNoteId(10L)).thenReturn(BigDecimal.valueOf(500));
+
+        PaymentSummaryResponse result = paymentService.getSummary(10L);
+
+        // subtotal=1200, discount(10%)=120, after discount=1080, IVA(21%)=226.80, total=1306.80
+        assertThat(result.taxAmount()).isEqualByComparingTo(new BigDecimal("226.80"));
+        assertThat(result.total()).isEqualByComparingTo(new BigDecimal("1306.80"));
+        assertThat(result.remaining()).isEqualByComparingTo(new BigDecimal("806.80"));
+    }
+
+    @Test
     void givenNoPayments_whenGetSummary_thenRemainingEqualsTotal() {
         DeliveryNoteDetailResponse deliveryNote = buildDeliveryNoteDetailResponse();
         when(deliveryNoteService.getById(10L)).thenReturn(deliveryNote);
@@ -449,7 +469,7 @@ class PaymentServiceImplTest {
         return new DeliveryNoteDetailResponse(
                 10L, 1L, 1L, "Juan Perez", "12345678", "1234567890", null, "PERSONAL",
                 2L, "ABC123", null, "Corolla", 2020, null, null,
-                DeliveryNoteStatus.PENDIENTE, BigDecimal.valueOf(10),
+                DeliveryNoteStatus.PENDIENTE, BigDecimal.valueOf(10), BigDecimal.ZERO,
                 new BigDecimal("1080.00"),
                 List.of(new DeliveryNoteServiceItemResponse(1L, "Service A", BigDecimal.valueOf(1000))),
                 List.of(new DeliveryNoteProductResponse(1L, "Product A", 2, BigDecimal.valueOf(100), BigDecimal.valueOf(200))),

@@ -30,7 +30,8 @@ public interface DeliveryNoteService {
 
     BigDecimal calculateTotal(List<DeliveryNoteServiceItemRequest> services,
                               List<DeliveryNoteProductRequest> products,
-                              BigDecimal discountPercentage);
+                              BigDecimal discountPercentage,
+                              BigDecimal taxPercentage);
 
     void markAsPaid(Long id);
 
