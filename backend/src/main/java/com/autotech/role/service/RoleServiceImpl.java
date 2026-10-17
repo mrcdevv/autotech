@@ -1,5 +1,6 @@
 package com.autotech.role.service;
 
+import com.autotech.common.exception.ConflictException;
 import com.autotech.common.exception.DuplicateResourceException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.permission.model.Permission;
@@ -25,6 +26,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RoleServiceImpl implements RoleService {
 
+    private static final String ADMIN_ROLE_PROTECTED_MESSAGE =
+            "El rol " + Role.ADMIN_ROLE_NAME + " es del sistema y no puede modificarse ni eliminarse";
+
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
     private final RoleMapper roleMapper;
@@ -48,7 +52,7 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional
     public RoleResponse create(RoleRequest request) {
-        if (roleRepository.findByName(request.name()).isPresent()) {
+        if (roleRepository.findByNameIgnoreCase(request.name()).isPresent()) {
             throw new DuplicateResourceException("Ya existe un rol con el nombre: " + request.name());
         }
         Role role = Role.builder()
@@ -66,7 +70,10 @@ public class RoleServiceImpl implements RoleService {
     public RoleResponse update(Long id, RoleRequest request) {
         Role role = roleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontró el rol con ID " + id));
-        Optional<Role> existing = roleRepository.findByName(request.name());
+        if (isAdminRole(role)) {
+            return updateAdminRole(role, request);
+        }
+        Optional<Role> existing = roleRepository.findByNameIgnoreCase(request.name());
         if (existing.isPresent() && !existing.get().getId().equals(id)) {
             throw new DuplicateResourceException("Ya existe un rol con el nombre: " + request.name());
         }
@@ -81,11 +88,37 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional
     public void delete(Long id) {
-        if (!roleRepository.existsById(id)) {
-            throw new ResourceNotFoundException("No se encontró el rol con ID " + id);
+        Role role = roleRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontró el rol con ID " + id));
+        if (isAdminRole(role)) {
+            log.warn("Rejected deletion of system role {}", Role.ADMIN_ROLE_NAME);
+            throw new ConflictException(ADMIN_ROLE_PROTECTED_MESSAGE);
         }
-        roleRepository.deleteById(id);
+        roleRepository.delete(role);
         log.info("Deleted role with id {}", id);
+    }
+
+    /**
+     * The system role only accepts description changes: its name and permission set are fixed.
+     */
+    private RoleResponse updateAdminRole(Role role, RoleRequest request) {
+        Set<Long> currentPermissionIds = role.getPermissions().stream()
+                .map(Permission::getId)
+                .collect(Collectors.toSet());
+        Set<Long> requestedPermissionIds = request.permissionIds() == null ? Set.of() : request.permissionIds();
+        boolean renamed = !Role.ADMIN_ROLE_NAME.equals(request.name());
+        if (renamed || !currentPermissionIds.equals(requestedPermissionIds)) {
+            log.warn("Rejected modification of system role {}", Role.ADMIN_ROLE_NAME);
+            throw new ConflictException(ADMIN_ROLE_PROTECTED_MESSAGE);
+        }
+        role.setDescription(request.description());
+        Role saved = roleRepository.save(role);
+        log.info("Updated description of system role {}", Role.ADMIN_ROLE_NAME);
+        return roleMapper.toResponse(saved);
+    }
+
+    private boolean isAdminRole(Role role) {
+        return Role.ADMIN_ROLE_NAME.equals(role.getName());
     }
 
     private Set<Permission> resolvePermissions(Set<Long> permissionIds) {
