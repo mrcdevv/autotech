@@ -54,6 +54,9 @@ export const estimatesApi = {
   reject: (id: number) =>
     apiClient.put<ApiResponse<EstimateDetailResponse>>(`/estimates/${id}/reject`),
 
+  reopen: (id: number) =>
+    apiClient.put<ApiResponse<EstimateDetailResponse>>(`/estimates/${id}/reopen`),
+
   delete: (id: number) =>
     apiClient.delete<ApiResponse<void>>(`/estimates/${id}`),
 

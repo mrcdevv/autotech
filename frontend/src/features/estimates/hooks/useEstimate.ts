@@ -78,6 +78,13 @@ export function useEstimate(id?: number, repairOrderId?: number) {
     return res.data.data;
   };
 
+  const reopenEstimate = async (estimateId: number) => {
+    const res = await estimatesApi.reopen(estimateId);
+    setEstimate(res.data.data);
+    await fetchEstimate();
+    return res.data.data;
+  };
+
   const clearError = () => setError(null);
 
   return {
@@ -91,6 +98,7 @@ export function useEstimate(id?: number, repairOrderId?: number) {
     updateEstimate,
     approveEstimate,
     rejectEstimate,
+    reopenEstimate,
     refetch: fetchEstimate,
   };
 }
