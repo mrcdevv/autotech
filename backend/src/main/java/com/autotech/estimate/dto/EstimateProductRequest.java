@@ -21,5 +21,8 @@ public record EstimateProductRequest(
         @NotNull(message = "El precio unitario es obligatorio")
         @DecimalMin(value = "0.00", message = "El precio unitario no puede ser negativo")
         @Digits(integer = 10, fraction = 2, message = "El precio unitario debe tener como máximo 10 dígitos enteros y 2 decimales")
-        BigDecimal unitPrice
+        BigDecimal unitPrice,
+
+        /** Optional catalog product; when set the line moves stock. */
+        Long productId
 ) {}

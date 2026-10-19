@@ -195,7 +195,7 @@ class EstimateServiceImplTest {
         Vehicle vehicle = buildVehicle(2L, client);
         EstimateRequest request = new EstimateRequest(1L, 2L, null, BigDecimal.ZERO, BigDecimal.ZERO,
                 List.of(new EstimateServiceItemRequest("Service A", BigDecimal.valueOf(100))),
-                List.of(new EstimateProductRequest("Product A", 2, BigDecimal.valueOf(50))));
+                List.of(new EstimateProductRequest("Product A", 2, BigDecimal.valueOf(50), null)));
 
         Estimate mappedEntity = Estimate.builder()
                 .discountPercentage(BigDecimal.ZERO)
@@ -503,7 +503,7 @@ class EstimateServiceImplTest {
                 new EstimateServiceItemRequest("Service B", BigDecimal.valueOf(200))
         );
         List<EstimateProductRequest> products = List.of(
-                new EstimateProductRequest("Product A", 2, BigDecimal.valueOf(50))
+                new EstimateProductRequest("Product A", 2, BigDecimal.valueOf(50), null)
         );
 
         // Act

@@ -1,5 +1,7 @@
 package com.autotech.estimate.service;
 
+import com.autotech.catalog.repository.ProductRepository;
+import com.autotech.catalog.model.Product;
 import com.autotech.client.model.Client;
 import com.autotech.client.repository.ClientRepository;
 import com.autotech.common.exception.BusinessException;
@@ -55,6 +57,7 @@ public class EstimateServiceImpl implements EstimateService {
     static final int APPROVAL_LINK_DAYS = 7;
 
     private final EstimateRepository estimateRepository;
+    private final ProductRepository productRepository;
     private final EstimateMapper estimateMapper;
     private final ClientRepository clientRepository;
     private final VehicleRepository vehicleRepository;
@@ -417,6 +420,7 @@ public class EstimateServiceImpl implements EstimateService {
             for (EstimateProductRequest prodReq : request.products()) {
                 EstimateProduct prod = EstimateProduct.builder()
                         .estimate(entity)
+                        .product(resolveProduct(prodReq.productId()))
                         .productName(prodReq.productName())
                         .quantity(prodReq.quantity())
                         .unitPrice(prodReq.unitPrice())
@@ -440,5 +444,11 @@ public class EstimateServiceImpl implements EstimateService {
                 response.createdAt(), response.updatedAt(),
                 response.decisionChannel(), response.decidedAt(), response.decidedByEmployeeName()
         );
+    }
+
+    private Product resolveProduct(Long productId) {
+        if (productId == null) return null;
+        return productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
     }
 }

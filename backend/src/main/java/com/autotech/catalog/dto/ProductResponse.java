@@ -10,5 +10,9 @@ public record ProductResponse(
         Integer quantity,
         BigDecimal unitPrice,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        Integer minStock,
+        Integer reservedQuantity,
+        Integer availableQuantity,
+        boolean lowStock
 ) {}

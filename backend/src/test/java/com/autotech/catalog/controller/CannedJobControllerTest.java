@@ -64,7 +64,7 @@ class CannedJobControllerTest {
     private final CannedJobDetailResponse sampleDetailResponse = new CannedJobDetailResponse(
             1L, "Full Service", "Complete vehicle service",
             List.of(new CannedJobServiceResponse(1L, "Oil Change", new BigDecimal("50.00"))),
-            List.of(new CannedJobProductResponse(1L, "Oil Filter", 1, new BigDecimal("15.00"))),
+            List.of(new CannedJobProductResponse(1L, "Oil Filter", 1, new BigDecimal("15.00"), null)),
             LocalDateTime.now(), LocalDateTime.now());
 
     @Test

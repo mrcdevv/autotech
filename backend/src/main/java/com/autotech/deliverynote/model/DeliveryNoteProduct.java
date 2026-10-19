@@ -1,5 +1,6 @@
 package com.autotech.deliverynote.model;
 
+import com.autotech.catalog.model.Product;
 import com.autotech.common.model.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -28,6 +29,11 @@ public class DeliveryNoteProduct extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "delivery_note_id", nullable = false)
     private DeliveryNote deliveryNote;
+
+    /** Catalog product this line draws stock from; null for free-text lines. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id")
+    private Product product;
 
     @Column(name = "product_name", nullable = false, length = 255)
     private String productName;

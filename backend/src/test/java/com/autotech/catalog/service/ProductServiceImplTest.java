@@ -106,7 +106,7 @@ class ProductServiceImplTest {
     @Test
     void givenValidRequest_whenCreate_thenReturnResponse() {
         // Arrange
-        ProductRequest request = new ProductRequest("Brake Pad", "Ceramic brake pad", 10, new BigDecimal("25.00"));
+        ProductRequest request = new ProductRequest("Brake Pad", "Ceramic brake pad", 10, new BigDecimal("25.00"), null);
         Product entity = buildEntity(null, "Brake Pad");
         Product saved = buildEntity(1L, "Brake Pad");
         ProductResponse response = buildResponse(1L, "Brake Pad");
@@ -125,7 +125,7 @@ class ProductServiceImplTest {
     @Test
     void givenExistingId_whenUpdate_thenReturnUpdatedResponse() {
         // Arrange
-        ProductRequest request = new ProductRequest("Updated Pad", "Updated desc", 20, new BigDecimal("30.00"));
+        ProductRequest request = new ProductRequest("Updated Pad", "Updated desc", 20, new BigDecimal("30.00"), null);
         Product entity = buildEntity(1L, "Brake Pad");
         Product saved = buildEntity(1L, "Updated Pad");
         ProductResponse response = buildResponse(1L, "Updated Pad");
@@ -145,7 +145,7 @@ class ProductServiceImplTest {
     @Test
     void givenNonExistingId_whenUpdate_thenThrowResourceNotFoundException() {
         // Arrange
-        ProductRequest request = new ProductRequest("X", null, 0, null);
+        ProductRequest request = new ProductRequest("X", null, 0, null, null);
         when(productRepository.findById(99L)).thenReturn(Optional.empty());
 
         // Act & Assert
@@ -188,6 +188,6 @@ class ProductServiceImplTest {
 
     private ProductResponse buildResponse(Long id, String name) {
         return new ProductResponse(id, name, "Test description", 10, new BigDecimal("25.00"),
-                LocalDateTime.now(), LocalDateTime.now());
+                LocalDateTime.now(), LocalDateTime.now(), null, 0, 0, false);
     }
 }

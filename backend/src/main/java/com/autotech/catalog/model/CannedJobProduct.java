@@ -29,6 +29,11 @@ public class CannedJobProduct extends BaseEntity {
     @JoinColumn(name = "canned_job_id", nullable = false)
     private CannedJob cannedJob;
 
+    /** Catalog product this line draws stock from; null for free-text lines. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id")
+    private Product product;
+
     @Column(name = "product_name", nullable = false, length = 255)
     private String productName;
 
