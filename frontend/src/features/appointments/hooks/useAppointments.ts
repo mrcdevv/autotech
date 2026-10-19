@@ -83,8 +83,8 @@ export function useAppointments() {
     await fetchAppointments();
   };
 
-  const cancelAppointment = async (id: number) => {
-    await appointmentsApi.cancel(id);
+  const cancelAppointment = async (id: number, notifyClient = false) => {
+    await appointmentsApi.cancel(id, notifyClient);
     await fetchAppointments();
   };
 

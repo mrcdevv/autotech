@@ -3,7 +3,9 @@ import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
 import dayjs from "dayjs";
 
 import { AppDialog } from "@/components/AppDialog";
+import { StatusBadge } from "@/components/StatusBadge";
 import { getAppointmentStatus } from "@/features/appointments/appointmentStatus";
+import { CONFIRMATION_STATUS_DISPLAY } from "@/features/appointments/notifyClient";
 
 import type { AppointmentResponse } from "@/types/appointment";
 
@@ -56,12 +58,19 @@ export function AppointmentDetailDialog({ open, appointment, onClose, onEdit }: 
       <Stack spacing={2}>
           <Box>
             <Typography variant="subtitle2" color="text.secondary">Estado</Typography>
-            <Chip
-              label={displayStatus.label}
-              color={displayStatus.color}
-              size="small"
-              sx={{ mt: 0.5 }}
-            />
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+              <Chip
+                label={displayStatus.label}
+                color={displayStatus.color}
+                size="small"
+              />
+              {appointment.status === "SCHEDULED" && appointment.clientId && (
+                <StatusBadge
+                  label={CONFIRMATION_STATUS_DISPLAY[appointment.confirmationStatus].label}
+                  tone={CONFIRMATION_STATUS_DISPLAY[appointment.confirmationStatus].tone}
+                />
+              )}
+            </Stack>
           </Box>
 
           <Box>

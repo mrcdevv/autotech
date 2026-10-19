@@ -2,6 +2,7 @@ package com.autotech.appointment.model;
 
 import com.autotech.client.model.Client;
 import com.autotech.common.model.BaseEntity;
+import com.autotech.common.util.SecureTokens;
 import com.autotech.employee.model.Employee;
 import com.autotech.tag.model.Tag;
 import com.autotech.vehicle.model.Vehicle;
@@ -74,6 +75,18 @@ public class Appointment extends BaseEntity {
     @Column(name = "client_arrived", nullable = false)
     @Builder.Default
     private Boolean clientArrived = false;
+
+    @Column(name = "confirmation_token", nullable = false, unique = true, length = 64)
+    @Builder.Default
+    private String confirmationToken = SecureTokens.generate();
+
+    @Column(name = "confirmation_status", nullable = false, length = 20)
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private AppointmentConfirmationStatus confirmationStatus = AppointmentConfirmationStatus.PENDING;
+
+    @Column(name = "confirmed_at")
+    private LocalDateTime confirmedAt;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

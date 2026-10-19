@@ -8,6 +8,8 @@ import { RequirePermission } from "@/components/RequirePermission";
 import { SETTINGS_PERMISSIONS } from "@/features/auth/permissions";
 import { Login } from "@/features/auth/components/Login";
 import { ChangePassword } from "@/features/auth/components/ChangePassword";
+import { ForgotPassword } from "@/features/auth/components/ForgotPassword";
+import { ResetPassword } from "@/features/auth/components/ResetPassword";
 
 const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
 const EmployeesPage = lazy(() => import("@/pages/EmployeesPage"));
@@ -29,6 +31,9 @@ const DeliveryNotesPage = lazy(() => import("@/pages/DeliveryNotesPage"));
 const DeliveryNoteDetailPage = lazy(() => import("@/pages/DeliveryNoteDetailPage"));
 const ReportesPage = lazy(() => import("@/pages/ReportesPage"));
 const SettingsPage = lazy(() => import("@/pages/SettingsPage"));
+const PublicAppointmentPage = lazy(() => import("@/pages/PublicAppointmentPage"));
+const PublicEstimatePage = lazy(() => import("@/pages/PublicEstimatePage"));
+const PublicUnsubscribePage = lazy(() => import("@/pages/PublicUnsubscribePage"));
 
 function Loading() {
   return (
@@ -43,6 +48,11 @@ export default function AppRoutes() {
     <Suspense fallback={<Loading />}>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/recuperar-contrasena" element={<ForgotPassword />} />
+        <Route path="/restablecer" element={<ResetPassword />} />
+        <Route path="/turno/:token" element={<PublicAppointmentPage />} />
+        <Route path="/presupuesto/:token" element={<PublicEstimatePage />} />
+        <Route path="/baja/:token" element={<PublicUnsubscribePage />} />
         
         <Route element={<PrivateRoute />}>
           <Route element={<MainLayout />}>

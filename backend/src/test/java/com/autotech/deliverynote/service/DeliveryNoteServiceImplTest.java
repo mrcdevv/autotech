@@ -299,7 +299,7 @@ class DeliveryNoteServiceImplTest {
                 null, Collections.emptyList(), com.autotech.estimate.model.EstimateStatus.ACEPTADO,
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                 Collections.emptyList(), Collections.emptyList(),
-                LocalDateTime.now(), LocalDateTime.now()));
+                LocalDateTime.now(), LocalDateTime.now(), null, null, null));
         when(deliveryNoteMapper.toEntity(request)).thenReturn(mappedEntity);
         when(deliveryNoteRepository.save(any(DeliveryNote.class))).thenReturn(savedEntity);
         when(deliveryNoteRepository.findWithDetailsById(1L)).thenReturn(Optional.of(savedEntity));
@@ -337,7 +337,7 @@ class DeliveryNoteServiceImplTest {
                 null, Collections.emptyList(), com.autotech.estimate.model.EstimateStatus.ACEPTADO,
                 BigDecimal.valueOf(10), BigDecimal.valueOf(21), BigDecimal.valueOf(300),
                 Collections.emptyList(), Collections.emptyList(),
-                LocalDateTime.now(), LocalDateTime.now()));
+                LocalDateTime.now(), LocalDateTime.now(), null, null, null));
         when(deliveryNoteMapper.toEntity(any(DeliveryNoteRequest.class))).thenReturn(mappedEntity);
         when(deliveryNoteRepository.save(any(DeliveryNote.class))).thenReturn(savedEntity);
         when(deliveryNoteRepository.findWithDetailsById(1L)).thenReturn(Optional.of(savedEntity));

@@ -12,5 +12,14 @@ services:
     volumes:
       - autotech-pgdata:/var/lib/postgresql/data
 
+  # Local SMTP server for development and demos: captures every email (nothing leaves the machine).
+  # Web UI: http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:v1.21
+    container_name: autotech-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
 volumes:
   autotech-pgdata:

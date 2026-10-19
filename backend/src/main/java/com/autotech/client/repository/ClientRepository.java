@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 // import org.springframework.data.jpa.repository.EntityGraph;
 // import java.util.Optional;
 
@@ -34,4 +36,6 @@ public interface ClientRepository extends JpaRepository<Client, Long> {
      * @EntityGraph(attributePaths = {"vehicles"})
      * Optional<Client> findWithVehiclesById(Long id);
      */
+
+    Optional<Client> findByUnsubscribeToken(String unsubscribeToken);
 }

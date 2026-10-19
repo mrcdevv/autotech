@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 
 import { estimatesApi } from "@/api/estimates";
 
-import type { EstimateDetailResponse, EstimateRequest, EstimateResponse } from "@/types/estimate";
+import type { EstimateDetailResponse, EstimateRequest, EstimateResponse, StaffDecisionChannel } from "@/types/estimate";
 
 export function useEstimate(id?: number, repairOrderId?: number) {
   const [estimate, setEstimate] = useState<EstimateDetailResponse | null>(null);
@@ -65,14 +65,14 @@ export function useEstimate(id?: number, repairOrderId?: number) {
     return res.data.data;
   };
 
-  const approveEstimate = async (estimateId: number) => {
-    const res = await estimatesApi.approve(estimateId);
+  const approveEstimate = async (estimateId: number, channel: StaffDecisionChannel) => {
+    const res = await estimatesApi.approve(estimateId, channel);
     setEstimate(res.data.data);
     return res.data.data;
   };
 
-  const rejectEstimate = async (estimateId: number) => {
-    const res = await estimatesApi.reject(estimateId);
+  const rejectEstimate = async (estimateId: number, channel: StaffDecisionChannel) => {
+    const res = await estimatesApi.reject(estimateId, channel);
     setEstimate(res.data.data);
     await fetchEstimate();
     return res.data.data;

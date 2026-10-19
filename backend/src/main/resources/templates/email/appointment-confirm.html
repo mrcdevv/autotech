@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{email/layout :: layout(~{::content})}" lang="es">
+<body>
+<th:block th:fragment="content">
+    <div th:replace="~{email/components :: chip('Pendiente de confirmación', 'warn')}"></div>
+    <div th:replace="~{email/components :: heading('Te reservamos un turno')}"></div>
+    <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#4E545E;">Hola <span th:text="${name}">Martín</span>, agendamos un turno para tu vehículo. Confirmanos si podés venir así lo dejamos reservado.</p>
+    <div th:replace="~{email/components :: details(${rows})}"></div>
+    <div th:replace="~{email/components :: buttons('Confirmar turno', ${confirmUrl}, 'No puedo asistir', ${declineUrl})}"></div>
+    <p style="margin:0 0 20px 0;font-size:13px;line-height:1.6;color:#646A75;">Si necesitás otro día u horario, elegí "No puedo asistir" y te contactamos para reprogramarlo.</p>
+</th:block>
+</body>
+</html>

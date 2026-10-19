@@ -28,3 +28,8 @@ export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
 }
+
+export interface PasswordResetRequest {
+  token: string;
+  newPassword: string;
+}

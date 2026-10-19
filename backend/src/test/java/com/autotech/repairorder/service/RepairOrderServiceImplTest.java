@@ -42,6 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -438,6 +439,74 @@ class RepairOrderServiceImplTest {
     }
 
     // --- Helpers ---
+
+    // --- Milestone emails and timestamps ---
+
+    @Test
+    void givenValidRequest_whenCreate_thenSendVehicleReceivedEmail() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(1L, client);
+        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Ruido", null, null, null, null);
+        RepairOrder saved = buildRepairOrder(1L, client, vehicle);
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
+        when(repairOrderRepository.save(any(RepairOrder.class))).thenReturn(saved);
+
+        // Act
+        repairOrderService.create(request);
+
+        // Assert
+        verify(emailNotificationService).notifyVehicleReceived(saved);
+    }
+
+    @Test
+    void givenOrderInRepair_whenUpdateStatusToReady_thenSetReadyTimestampAndSendEmail() {
+        // Arrange
+        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
+        order.setStatus(RepairOrderStatus.PRUEBAS);
+        when(repairOrderRepository.findWithDetailsById(1L)).thenReturn(Optional.of(order));
+        when(repairOrderRepository.save(order)).thenReturn(order);
+
+        // Act
+        repairOrderService.updateStatus(1L, new StatusUpdateRequest(RepairOrderStatus.LISTO_PARA_ENTREGAR));
+
+        // Assert
+        assertThat(order.getReadyForPickupAt()).isNotNull();
+        assertThat(order.getDeliveredAt()).isNull();
+        verify(emailNotificationService).notifyVehicleReadyForPickup(order);
+    }
+
+    @Test
+    void givenOrderAlreadyReady_whenUpdateStatusToReadyAgain_thenDoNotResendEmail() {
+        // Arrange
+        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
+        order.setStatus(RepairOrderStatus.LISTO_PARA_ENTREGAR);
+        when(repairOrderRepository.findWithDetailsById(1L)).thenReturn(Optional.of(order));
+        when(repairOrderRepository.save(order)).thenReturn(order);
+
+        // Act
+        repairOrderService.updateStatus(1L, new StatusUpdateRequest(RepairOrderStatus.LISTO_PARA_ENTREGAR));
+
+        // Assert
+        verify(emailNotificationService, never()).notifyVehicleReadyForPickup(any());
+    }
+
+    @Test
+    void givenReadyOrder_whenUpdateStatusToDelivered_thenSetDeliveredTimestampWithoutEmail() {
+        // Arrange
+        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
+        order.setStatus(RepairOrderStatus.LISTO_PARA_ENTREGAR);
+        when(repairOrderRepository.findWithDetailsById(1L)).thenReturn(Optional.of(order));
+        when(repairOrderRepository.save(order)).thenReturn(order);
+
+        // Act
+        repairOrderService.updateStatus(1L, new StatusUpdateRequest(RepairOrderStatus.ENTREGADO));
+
+        // Assert
+        assertThat(order.getDeliveredAt()).isNotNull();
+        verify(emailNotificationService, never()).notifyVehicleReadyForPickup(any());
+    }
 
     private Client buildClient(Long id) {
         Client client = Client.builder()

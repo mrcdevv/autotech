@@ -36,6 +36,15 @@ autotech:
     enabled: ${AUTOTECH_MAIL_ENABLED:false}
     from: ${AUTOTECH_MAIL_FROM:no-reply@autotech.com}
     workshop-name: ${AUTOTECH_WORKSHOP_NAME:Autotech}
+    workshop-address: ${AUTOTECH_WORKSHOP_ADDRESS:}
+    workshop-phone: ${AUTOTECH_WORKSHOP_PHONE:}
+    workshop-maps-url: ${AUTOTECH_WORKSHOP_MAPS_URL:}
+    workshop-contact-url: ${AUTOTECH_WORKSHOP_CONTACT_URL:}
+  app:
+    public-url: ${AUTOTECH_PUBLIC_URL:http://localhost:3000}
+    time-zone: ${AUTOTECH_TIME_ZONE:America/Argentina/Cordoba}
+  notifications:
+    reminders-cron: ${AUTOTECH_REMINDERS_CRON:0 0 9 * * *}
 
 springdoc:
   api-docs:
