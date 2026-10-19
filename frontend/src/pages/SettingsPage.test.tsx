@@ -78,7 +78,8 @@ describe("SettingsPage", () => {
     renderSettingsPage();
 
     expect(screen.getAllByText("Impuestos")).toHaveLength(2);
-    expect(screen.getAllByText("Roles y permisos")).toHaveLength(2);
+    // The roles card title is rendered inside RolesSettings (mocked here); only the section subtitle remains.
+    expect(screen.getAllByText("Roles y permisos")).toHaveLength(1);
   });
 
   it("given page, when rendered, then renders all settings config components", () => {

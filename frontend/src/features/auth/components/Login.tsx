@@ -73,8 +73,8 @@ export function Login() {
         px: 2,
       }}
     >
-      <Card sx={{ maxWidth: 420, width: "100%" }}>
-        <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+      <Card sx={{ maxWidth: 480, width: "100%" }}>
+        <CardContent sx={{ p: { xs: 3, sm: 5 } }}>
           <Stack spacing={1.5} alignItems="center" sx={{ mb: 3 }}>
             <Box sx={{ textAlign: "center" }}>
               <Typography variant="h3" component="h1">

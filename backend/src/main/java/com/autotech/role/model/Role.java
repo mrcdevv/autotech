@@ -28,6 +28,9 @@ import java.util.Set;
 @Builder
 public class Role extends BaseEntity {
 
+    /** Name of the built-in system role; it cannot be renamed, deleted or have its permissions changed. */
+    public static final String ADMIN_ROLE_NAME = "ADMINISTRADOR";
+
     @Column(name = "name", nullable = false, unique = true, length = 50)
     private String name;
 

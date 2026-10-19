@@ -1,6 +1,5 @@
 import { Stack, Typography } from "@mui/material";
 import AccountBalanceOutlinedIcon from "@mui/icons-material/AccountBalanceOutlined";
-import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
 import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
@@ -117,9 +116,7 @@ export default function SettingsPage() {
             subtitle="Roles y permisos"
             icon={<LockOutlinedIcon />}
           >
-            <ConfigCard title="Roles y permisos" icon={<BadgeOutlinedIcon />}>
-              <RolesSettings />
-            </ConfigCard>
+            <RolesSettings />
           </SettingsSection>
         )}
       </Stack>
