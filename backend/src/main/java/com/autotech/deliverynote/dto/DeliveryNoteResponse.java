@@ -17,6 +17,7 @@ public record DeliveryNoteResponse(
         Long estimateId,
         DeliveryNoteStatus status,
         BigDecimal discountPercentage,
+        BigDecimal taxPercentage,
         BigDecimal total,
         LocalDateTime createdAt,
         LocalDateTime updatedAt

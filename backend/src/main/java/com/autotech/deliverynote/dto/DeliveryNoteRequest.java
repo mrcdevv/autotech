@@ -24,6 +24,11 @@ public record DeliveryNoteRequest(
         @Digits(integer = 3, fraction = 2)
         BigDecimal discountPercentage,
 
+        @DecimalMin(value = "0.00", message = "El impuesto no puede ser negativo")
+        @DecimalMax(value = "100.00", message = "El impuesto no puede superar el 100%")
+        @Digits(integer = 3, fraction = 2)
+        BigDecimal taxPercentage,
+
         @Valid
         List<DeliveryNoteServiceItemRequest> services,
 

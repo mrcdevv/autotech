@@ -209,6 +209,7 @@ const deliveryNoteDetail: DeliveryNoteDetailResponse = {
   estimateId: 5,
   status: "PENDIENTE",
   discountPercentage: 0,
+  taxPercentage: 0,
   total: 2234.567,
   services: [],
   products: [],

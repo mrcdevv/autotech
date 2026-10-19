@@ -68,7 +68,7 @@ class PaymentControllerTest {
 
     private final PaymentSummaryResponse sampleSummary = new PaymentSummaryResponse(
             BigDecimal.valueOf(1000), BigDecimal.valueOf(200),
-            BigDecimal.valueOf(120),
+            BigDecimal.valueOf(120), BigDecimal.ZERO,
             new BigDecimal("1080.00"), BigDecimal.valueOf(500),
             new BigDecimal("580.00"));
 

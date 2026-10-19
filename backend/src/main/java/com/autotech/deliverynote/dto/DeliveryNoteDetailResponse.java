@@ -24,6 +24,7 @@ public record DeliveryNoteDetailResponse(
         Long estimateId,
         DeliveryNoteStatus status,
         BigDecimal discountPercentage,
+        BigDecimal taxPercentage,
         BigDecimal total,
         List<DeliveryNoteServiceItemResponse> services,
         List<DeliveryNoteProductResponse> products,

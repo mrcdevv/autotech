@@ -32,6 +32,7 @@ import { formatCurrency } from "@/utils/formatCurrency";
 import { clientAutocompleteApi } from "@/api/clientAutocomplete";
 import { vehiclesApi } from "@/api/vehicles";
 import { inspectionsApi } from "@/api/inspections";
+import { taxConfigApi } from "@/api/taxConfig";
 import { useEstimate } from "@/features/estimates/hooks/useEstimate";
 import { ServicesGrid } from "./ServicesGrid";
 import { ProductsGrid } from "./ProductsGrid";
@@ -232,6 +233,7 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
   const [products, setProducts] = useState<EstimateProductRequest[]>([]);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [taxPercentage, setTaxPercentage] = useState(0);
+  const [defaultTaxPercentage, setDefaultTaxPercentage] = useState(0);
   const [saving, setSaving] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -244,6 +246,25 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
   const isReadonly = estimate != null && estimate.status !== "PENDIENTE";
   const fromRepairOrder = repairOrderId != null;
   const displayId = estimate?.id ?? estimateId;
+
+  // New estimates start with the global IVA; existing estimates keep their stored value
+  useEffect(() => {
+    if (estimateId) return;
+    let cancelled = false;
+    taxConfigApi
+      .getConfig()
+      .then((res) => {
+        if (!cancelled) setDefaultTaxPercentage(res.data.data.taxPercentage);
+      })
+      .catch(() => {
+        // non-critical: the tax field stays editable
+      });
+    return () => { cancelled = true; };
+  }, [estimateId]);
+
+  useEffect(() => {
+    if (!estimate) setTaxPercentage(defaultTaxPercentage);
+  }, [estimate, defaultTaxPercentage]);
 
   // Fetch inspection issues independently so they're always available
   useEffect(() => {
@@ -463,7 +484,7 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
     setServices([]);
     setProducts([]);
     setDiscountPercentage(0);
-    setTaxPercentage(0);
+    setTaxPercentage(defaultTaxPercentage);
     clearError();
     setIsCreatingNew(true);
   };

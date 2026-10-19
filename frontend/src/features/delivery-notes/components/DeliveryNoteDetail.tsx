@@ -27,6 +27,7 @@ import { clientAutocompleteApi } from "@/api/clientAutocomplete";
 import { vehiclesApi } from "@/api/vehicles";
 import { estimatesApi } from "@/api/estimates";
 import { deliveryNotesApi } from "@/api/deliveryNotes";
+import { taxConfigApi } from "@/api/taxConfig";
 import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { FormPageLayout } from "@/components/FormPageLayout";
 import { FormSection } from "@/components/FormSection";
@@ -113,6 +114,7 @@ export function DeliveryNoteDetail({ deliveryNoteId, repairOrderId, estimateId, 
   const [services, setServices] = useState<DeliveryNoteServiceItemRequest[]>([]);
   const [products, setProducts] = useState<DeliveryNoteProductRequest[]>([]);
   const [discountPercentage, setDiscountPercentage] = useState(0);
+  const [taxPercentage, setTaxPercentage] = useState(0);
   const [saving, setSaving] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -141,6 +143,7 @@ export function DeliveryNoteDetail({ deliveryNoteId, repairOrderId, estimateId, 
         })),
       );
       setDiscountPercentage(deliveryNote.discountPercentage);
+      setTaxPercentage(deliveryNote.taxPercentage);
       setClientType(deliveryNote.clientType);
       setIsTemporalClient(deliveryNote.clientType === "TEMPORAL");
 
@@ -193,6 +196,7 @@ export function DeliveryNoteDetail({ deliveryNoteId, repairOrderId, estimateId, 
           setServices(data.services.map((s) => ({ serviceName: s.serviceName, price: s.price })));
           setProducts(data.products.map((p) => ({ productName: p.productName, quantity: p.quantity, unitPrice: p.unitPrice })));
           setDiscountPercentage(data.discountPercentage);
+          setTaxPercentage(data.taxPercentage);
 
           if (data.clientId) {
             try {
@@ -227,6 +231,21 @@ export function DeliveryNoteDetail({ deliveryNoteId, repairOrderId, estimateId, 
       loadEstimateData();
     }
   }, [estimateId, isCreateMode, estimatePreloaded]);
+
+  // Standalone delivery notes start with the global IVA; estimate-based ones copy the estimate's tax
+  useEffect(() => {
+    if (!isCreateMode || estimateId) return;
+    let cancelled = false;
+    taxConfigApi
+      .getConfig()
+      .then((res) => {
+        if (!cancelled) setTaxPercentage(res.data.data.taxPercentage);
+      })
+      .catch(() => {
+        // non-critical: the tax field stays editable
+      });
+    return () => { cancelled = true; };
+  }, [isCreateMode, estimateId]);
 
   const fetchClients = useCallback(async (query?: string) => {
     try {
@@ -292,6 +311,7 @@ export function DeliveryNoteDetail({ deliveryNoteId, repairOrderId, estimateId, 
         repairOrderId: repairOrderId ?? null,
         estimateId: estimateId ?? null,
         discountPercentage,
+        taxPercentage,
         services: isTemporalClient ? [] : services,
         products,
       };
@@ -459,6 +479,8 @@ export function DeliveryNoteDetail({ deliveryNoteId, repairOrderId, estimateId, 
                 productsSubtotal={productsSubtotal}
                 discountPercentage={discountPercentage}
                 onDiscountChange={setDiscountPercentage}
+                taxPercentage={taxPercentage}
+                onTaxChange={setTaxPercentage}
                 readonly={isReadonly}
               />
               {isCreateMode && (

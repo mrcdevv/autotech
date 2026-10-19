@@ -16,6 +16,8 @@ interface DeliveryNoteSummaryProps {
   productsSubtotal: number;
   discountPercentage: number;
   onDiscountChange: (value: number) => void;
+  taxPercentage: number;
+  onTaxChange: (value: number) => void;
   readonly?: boolean;
 }
 
@@ -36,11 +38,15 @@ export function DeliveryNoteSummary({
   productsSubtotal,
   discountPercentage,
   onDiscountChange,
+  taxPercentage,
+  onTaxChange,
   readonly = false,
 }: DeliveryNoteSummaryProps) {
   const subtotal = servicesSubtotal + productsSubtotal;
   const discountAmount = subtotal * (discountPercentage / 100);
-  const finalPrice = subtotal - discountAmount;
+  const afterDiscount = subtotal - discountAmount;
+  const taxAmount = afterDiscount * (taxPercentage / 100);
+  const finalPrice = afterDiscount + taxAmount;
 
   return (
     <Paper sx={{ p: 0, overflow: "hidden" }}>
@@ -108,6 +114,45 @@ export function DeliveryNoteSummary({
               </Typography>
             )}
           </Box>
+
+          {readonly ? (
+            taxPercentage > 0 && (
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">IVA ({taxPercentage}%)</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ textAlign: "right" }}>
+                  +{formatCurrency(taxAmount)}
+                </Typography>
+              </Box>
+            )
+          ) : (
+            <Box sx={percentageRowSx}>
+              <Typography variant="body2" color="text.secondary" sx={percentageLabelSx}>
+                IVA
+              </Typography>
+              <TextField
+                type="number"
+                value={taxPercentage === 0 ? "" : taxPercentage}
+                onChange={(e) => {
+                  const val = e.target.value === "" ? 0 : Math.min(100, Math.max(0, Number(e.target.value)));
+                  onTaxChange(val);
+                }}
+                onKeyDown={blockNonNumeric}
+                slotProps={{
+                  input: {
+                    endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                  },
+                  htmlInput: { "aria-label": "IVA (%)", min: 0, max: 100, step: "0.01" },
+                }}
+                size="small"
+                sx={{ width: 120 }}
+              />
+              {taxPercentage > 0 && (
+                <Typography variant="body2" color="text.secondary" sx={{ flex: 1, textAlign: "right" }}>
+                  +{formatCurrency(taxAmount)}
+                </Typography>
+              )}
+            </Box>
+          )}
 
           <Divider />
 

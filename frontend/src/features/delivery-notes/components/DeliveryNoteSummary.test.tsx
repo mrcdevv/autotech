@@ -16,6 +16,8 @@ describe("DeliveryNoteSummary", () => {
     productsSubtotal: 300,
     discountPercentage: 0,
     onDiscountChange: vi.fn(),
+    taxPercentage: 0,
+    onTaxChange: vi.fn(),
   };
 
   it("given subtotals, when rendered, then displays correct total", () => {
@@ -50,5 +52,25 @@ describe("DeliveryNoteSummary", () => {
     await user.type(discountField, "15");
 
     expect(onDiscountChange).toHaveBeenCalled();
+  });
+
+  it("given tax and discount, when rendered readonly, then shows the IVA line and a total with IVA", () => {
+    render(<DeliveryNoteSummary {...defaultProps} discountPercentage={10} taxPercentage={21} readonly />);
+
+    // subtotal=800, discount=80, after discount=720, IVA(21%)=151.20, total=871.20
+    expect(screen.getByText("IVA (21%)")).toBeInTheDocument();
+    expect(screen.getByText(`+${money(151.2)}`)).toBeInTheDocument();
+    expect(screen.getByText(money(871.2))).toBeInTheDocument();
+  });
+
+  it("given editable mode, when changing IVA, then calls onTaxChange", async () => {
+    const onTaxChange = vi.fn();
+    const user = userEvent.setup();
+    render(<DeliveryNoteSummary {...defaultProps} onTaxChange={onTaxChange} />);
+
+    const taxField = screen.getByLabelText("IVA (%)");
+    await user.type(taxField, "21");
+
+    expect(onTaxChange).toHaveBeenCalled();
   });
 });

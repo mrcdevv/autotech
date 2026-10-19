@@ -109,7 +109,7 @@ class DeliveryNoteMapperTest {
     @Test
     void givenDeliveryNoteRequest_whenToEntity_thenIgnoresChildCollections() {
         DeliveryNoteRequest request = new DeliveryNoteRequest(
-                10L, 20L, null, null, BigDecimal.valueOf(5),
+                10L, 20L, null, null, BigDecimal.valueOf(5), BigDecimal.ZERO,
                 null, null);
 
         DeliveryNote result = mapper.toEntity(request);

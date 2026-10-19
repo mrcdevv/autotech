@@ -167,7 +167,11 @@ public class DeliveryNotePdfServiceImpl implements DeliveryNotePdfService {
         BigDecimal subtotal = servicesSubtotal.add(productsSubtotal);
         BigDecimal discountPct = defaultZero(deliveryNote.discountPercentage());
         BigDecimal discount = applyPercent(subtotal, discountPct);
-        BigDecimal total = subtotal.subtract(discount);
+        BigDecimal afterDiscount = subtotal.subtract(discount);
+        BigDecimal taxPct = defaultZero(deliveryNote.taxPercentage());
+        BigDecimal tax = applyPercent(afterDiscount, taxPct);
+        // The stored total is the source of truth; recompute only for legacy rows without one
+        BigDecimal total = deliveryNote.total() != null ? deliveryNote.total() : afterDiscount.add(tax);
 
         PdfPTable table = new PdfPTable(new float[]{3f, 1.6f});
         table.setWidthPercentage(48);
@@ -178,6 +182,9 @@ public class DeliveryNotePdfServiceImpl implements DeliveryNotePdfService {
         addTotalRow(table, "Subtotal", money(subtotal), false);
         if (discountPct.compareTo(BigDecimal.ZERO) > 0) {
             addTotalRow(table, "Descuento (" + stripZeros(discountPct) + "%)", "- " + money(discount), false);
+        }
+        if (taxPct.compareTo(BigDecimal.ZERO) > 0) {
+            addTotalRow(table, "IVA (" + stripZeros(taxPct) + "%)", money(tax), false);
         }
         addTotalRow(table, "TOTAL", money(total), true);
         return table;

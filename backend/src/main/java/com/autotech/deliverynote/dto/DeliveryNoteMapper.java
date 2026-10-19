@@ -25,6 +25,7 @@ public class DeliveryNoteMapper {
                 entity.getEstimate() != null ? entity.getEstimate().getId() : null,
                 entity.getStatus(),
                 entity.getDiscountPercentage(),
+                entity.getTaxPercentage(),
                 entity.getTotal(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
@@ -52,6 +53,7 @@ public class DeliveryNoteMapper {
                 entity.getEstimate() != null ? entity.getEstimate().getId() : null,
                 entity.getStatus(),
                 entity.getDiscountPercentage(),
+                entity.getTaxPercentage(),
                 entity.getTotal(),
                 entity.getServices() != null
                         ? entity.getServices().stream().map(this::toServiceItemResponse).toList()
@@ -88,6 +90,7 @@ public class DeliveryNoteMapper {
         if (request == null) return null;
         return DeliveryNote.builder()
                 .discountPercentage(request.discountPercentage() != null ? request.discountPercentage() : BigDecimal.ZERO)
+                .taxPercentage(request.taxPercentage() != null ? request.taxPercentage() : BigDecimal.ZERO)
                 .build();
     }
 }

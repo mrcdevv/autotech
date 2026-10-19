@@ -31,6 +31,7 @@ export interface DeliveryNoteRequest {
   repairOrderId: number | null;
   estimateId: number | null;
   discountPercentage: number;
+  taxPercentage: number;
   services: DeliveryNoteServiceItemRequest[];
   products: DeliveryNoteProductRequest[];
 }
@@ -70,6 +71,7 @@ export interface DeliveryNoteDetailResponse {
   estimateId: number | null;
   status: DeliveryNoteStatus;
   discountPercentage: number;
+  taxPercentage: number;
   total: number | null;
   services: DeliveryNoteServiceItemResponse[];
   products: DeliveryNoteProductResponse[];

@@ -349,24 +349,23 @@ class EstimateServiceImplTest {
     }
 
     @Test
-    void givenRequestWithoutTaxPercentage_whenUpdate_thenUsesDefaultTax21() {
+    void givenRequestWithoutTaxPercentage_whenUpdate_thenKeepsStoredTax() {
         // Arrange
         Client client = buildClient(1L);
         Vehicle vehicle = buildVehicle(2L, client);
         Estimate existing = buildEstimate(1L);
         existing.setStatus(EstimateStatus.PENDIENTE);
+        existing.setTaxPercentage(BigDecimal.valueOf(10.5));
 
         EstimateRequest request = new EstimateRequest(1L, 2L, null, BigDecimal.ZERO, null,
                 List.of(new EstimateServiceItemRequest("Service A", BigDecimal.valueOf(100))),
                 Collections.emptyList());
 
         EstimateDetailResponse detailResponse = buildDetailResponse(1L);
-        TaxConfig taxConfig = buildTaxConfig(BigDecimal.valueOf(21));
 
         when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(existing));
         when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
         when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
-        when(taxConfigService.getConfig()).thenReturn(taxConfig);
         when(estimateRepository.save(any(Estimate.class))).thenReturn(existing);
         when(estimateMapper.toDetailResponse(existing)).thenReturn(detailResponse);
 
@@ -375,9 +374,9 @@ class EstimateServiceImplTest {
 
         // Assert
         assertThat(result.id()).isEqualTo(1L);
-        assertThat(existing.getTaxPercentage()).isEqualByComparingTo(BigDecimal.valueOf(21));
-        assertThat(existing.getTotal()).isEqualByComparingTo(BigDecimal.valueOf(121));
-        verify(taxConfigService).getConfig();
+        assertThat(existing.getTaxPercentage()).isEqualByComparingTo(BigDecimal.valueOf(10.5));
+        assertThat(existing.getTotal()).isEqualByComparingTo(BigDecimal.valueOf(110.5));
+        verify(taxConfigService, never()).getConfig();
     }
 
     @Test
