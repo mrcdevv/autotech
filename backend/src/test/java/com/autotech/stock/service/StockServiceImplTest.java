@@ -1,9 +1,13 @@
 package com.autotech.stock.service;
 
+import com.autotech.catalog.dto.ProductMapper;
 import com.autotech.catalog.model.Product;
+import com.autotech.common.exception.BusinessException;
 import com.autotech.catalog.repository.ProductRepository;
 import com.autotech.employee.model.Employee;
 import com.autotech.employee.repository.EmployeeRepository;
+import com.autotech.stock.dto.StockAdjustmentMode;
+import com.autotech.stock.dto.StockAdjustmentRequest;
 import com.autotech.stock.model.StockMovement;
 import com.autotech.stock.model.StockMovementType;
 import com.autotech.stock.model.StockSourceType;
@@ -23,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -42,6 +47,9 @@ class StockServiceImplTest {
 
     @Mock
     private EmployeeRepository employeeRepository;
+
+    @Mock
+    private ProductMapper productMapper;
 
     @InjectMocks
     private StockServiceImpl stockService;
@@ -140,6 +148,59 @@ class StockServiceImplTest {
 
         // Assert
         assertThat(savedMovements()).extracting(StockMovement::getCreatedBy).containsExactly(employee);
+    }
+
+    @Test
+    void givenPhysicalCount_whenAdjustWithSet_thenRecordsSignedDifference() {
+        // Arrange
+        Product oil = product(1L, 10, 2);
+        when(productRepository.findAllByIdInForUpdate(List.of(1L))).thenReturn(List.of(oil));
+
+        // Act
+        stockService.adjust(1L, new StockAdjustmentRequest(StockAdjustmentMode.SET, 6, " Conteo mensual "));
+
+        // Assert
+        assertThat(oil.getQuantity()).isEqualTo(6);
+        ArgumentCaptor<StockMovement> captor = ArgumentCaptor.forClass(StockMovement.class);
+        verify(stockMovementRepository).save(captor.capture());
+        assertThat(captor.getValue().getType()).isEqualTo(StockMovementType.ADJUSTMENT);
+        assertThat(captor.getValue().getQuantity()).isEqualTo(-4);
+        assertThat(captor.getValue().getReason()).isEqualTo("Conteo mensual");
+    }
+
+    @Test
+    void givenPurchaseReceived_whenAdjustWithIncrease_thenAddsToOnHand() {
+        // Arrange
+        Product oil = product(1L, 10, 0);
+        when(productRepository.findAllByIdInForUpdate(List.of(1L))).thenReturn(List.of(oil));
+
+        // Act
+        stockService.adjust(1L, new StockAdjustmentRequest(StockAdjustmentMode.INCREASE, 5, "Compra"));
+
+        // Assert
+        assertThat(oil.getQuantity()).isEqualTo(15);
+    }
+
+    @Test
+    void givenCountEqualToOnHand_whenAdjust_thenThrowBusinessException() {
+        // Arrange
+        Product oil = product(1L, 10, 0);
+        when(productRepository.findAllByIdInForUpdate(List.of(1L))).thenReturn(List.of(oil));
+
+        // Act & Assert
+        assertThatThrownBy(() -> stockService.adjust(1L,
+                new StockAdjustmentRequest(StockAdjustmentMode.SET, 10, "Conteo")))
+                .isInstanceOf(BusinessException.class);
+        verify(stockMovementRepository, never()).save(any());
+    }
+
+    @Test
+    void givenNewProductWithoutStock_whenRecordInitial_thenWritesNothing() {
+        // Act
+        stockService.recordInitial(product(1L, 0, 0));
+
+        // Assert
+        verify(stockMovementRepository, never()).save(any());
     }
 
     @SuppressWarnings("unchecked")

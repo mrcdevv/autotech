@@ -6,6 +6,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -20,6 +22,11 @@ public interface DeliveryNoteRepository extends JpaRepository<DeliveryNote, Long
 
     @EntityGraph(attributePaths = {"services", "products", "client", "vehicle", "repairOrder", "estimate"})
     Optional<DeliveryNote> findWithDetailsById(Long id);
+
+    /** SELECT ... FOR UPDATE: serializes stock syncs of the same delivery note. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT dn FROM DeliveryNote dn WHERE dn.id = :id")
+    Optional<DeliveryNote> findForUpdateById(@Param("id") Long id);
 
     /** Balance-due reminder candidates: unpaid delivery notes issued before the cutoff. */
     @EntityGraph(attributePaths = {"client", "vehicle", "vehicle.brand"})

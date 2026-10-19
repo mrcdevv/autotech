@@ -4,6 +4,7 @@ import com.autotech.common.dto.ApiResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -42,6 +43,13 @@ public class GlobalExceptionHandler {
         log.warn("Conflict: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiResponse<Void>> handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
+        log.warn("Concurrent modification: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error("Otro usuario modificó este registro al mismo tiempo. Volvé a intentarlo"));
     }
 
     @ExceptionHandler(BusinessException.class)

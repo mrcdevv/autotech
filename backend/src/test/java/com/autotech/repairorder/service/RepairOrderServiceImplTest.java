@@ -214,6 +214,7 @@ class RepairOrderServiceImplTest {
 
         // Assert
         verify(repairOrderRepository).delete(order);
+        verify(stockService).releaseRepairOrder(1L);
     }
 
     @Test

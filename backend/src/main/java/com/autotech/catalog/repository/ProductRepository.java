@@ -19,6 +19,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Product> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
             String name, String description, Pageable pageable);
 
+    String LOW_STOCK = "p.minStock IS NOT NULL AND p.quantity - p.reservedQuantity < p.minStock";
+
+    @Query("SELECT p FROM Product p WHERE " + LOW_STOCK
+            + " AND (LOWER(p.name) LIKE :pattern OR LOWER(COALESCE(p.description, '')) LIKE :pattern)")
+    Page<Product> findLowStock(@Param("pattern") String pattern, Pageable pageable);
+
+    /** Low-stock products, the ones furthest below their minimum first. */
+    @Query("SELECT p FROM Product p WHERE " + LOW_STOCK
+            + " ORDER BY (p.quantity - p.reservedQuantity - p.minStock), p.name")
+    List<Product> findAllLowStock();
+
     /** Row-locks the products in id order so concurrent stock updates queue instead of deadlocking. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM Product p WHERE p.id IN :ids ORDER BY p.id")

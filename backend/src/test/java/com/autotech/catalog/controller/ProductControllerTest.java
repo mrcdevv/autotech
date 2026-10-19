@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -61,7 +62,7 @@ class ProductControllerTest {
     @Test
     void givenRequest_whenSearch_thenReturn200() throws Exception {
         // Arrange
-        when(productService.search(any(), any(Pageable.class)))
+        when(productService.search(any(), anyBoolean(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(sampleResponse)));
 
         // Act & Assert

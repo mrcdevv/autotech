@@ -5,9 +5,15 @@ import com.autotech.catalog.dto.ProductResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+
 public interface ProductService {
 
-    Page<ProductResponse> search(String query, Pageable pageable);
+    /** @param lowStock when true, only products whose available stock is below their minimum */
+    Page<ProductResponse> search(String query, boolean lowStock, Pageable pageable);
+
+    /** Every low-stock product, the ones furthest below their minimum first. */
+    List<ProductResponse> getLowStock();
 
     ProductResponse getById(Long id);
 

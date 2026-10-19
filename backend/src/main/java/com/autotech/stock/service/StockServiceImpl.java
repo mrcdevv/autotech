@@ -1,7 +1,10 @@
 package com.autotech.stock.service;
 
+import com.autotech.catalog.dto.ProductMapper;
+import com.autotech.catalog.dto.ProductResponse;
 import com.autotech.catalog.model.Product;
 import com.autotech.catalog.repository.ProductRepository;
+import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.deliverynote.model.DeliveryNote;
 import com.autotech.deliverynote.model.DeliveryNoteProduct;
@@ -15,12 +18,17 @@ import com.autotech.estimate.repository.EstimateRepository;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.model.RepairOrderStatus;
 import com.autotech.repairorder.repository.RepairOrderRepository;
+import com.autotech.stock.dto.StockAdjustmentRequest;
+import com.autotech.stock.dto.StockMovementMapper;
+import com.autotech.stock.dto.StockMovementResponse;
 import com.autotech.stock.model.StockMovement;
 import com.autotech.stock.model.StockMovementType;
 import com.autotech.stock.model.StockSourceType;
 import com.autotech.stock.repository.StockMovementRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -44,12 +52,13 @@ public class StockServiceImpl implements StockService {
     private final EstimateRepository estimateRepository;
     private final DeliveryNoteRepository deliveryNoteRepository;
     private final EmployeeRepository employeeRepository;
+    private final ProductMapper productMapper;
+    private final StockMovementMapper stockMovementMapper;
 
     @Override
     @Transactional
     public void syncRepairOrder(Long repairOrderId) {
-        RepairOrder order = repairOrderRepository.findById(repairOrderId)
-                .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", repairOrderId));
+        RepairOrder order = lockRepairOrder(repairOrderId);
 
         Map<Long, Integer> lines = new HashMap<>();
         for (Estimate estimate : estimateRepository.findAllByRepairOrderId(repairOrderId)) {
@@ -72,6 +81,7 @@ public class StockServiceImpl implements StockService {
     @Override
     @Transactional
     public void releaseRepairOrder(Long repairOrderId) {
+        lockRepairOrder(repairOrderId);
         List<StockMovement> applied = stockMovementRepository
                 .findBySourceTypeAndSourceIdOrderByIdAsc(StockSourceType.REPAIR_ORDER, repairOrderId);
         Map<Long, Integer> consumed = net(applied, StockMovementType.CONSUME, StockMovementType.RETURN);
@@ -81,8 +91,7 @@ public class StockServiceImpl implements StockService {
     @Override
     @Transactional
     public void syncDeliveryNote(Long deliveryNoteId) {
-        DeliveryNote note = deliveryNoteRepository.findById(deliveryNoteId)
-                .orElseThrow(() -> new ResourceNotFoundException("DeliveryNote", deliveryNoteId));
+        DeliveryNote note = lockDeliveryNote(deliveryNoteId);
 
         Map<Long, Integer> consumed = new HashMap<>();
         // With a repair order the order owns the stock; the note itself stays neutral
@@ -97,7 +106,63 @@ public class StockServiceImpl implements StockService {
     @Override
     @Transactional
     public void revertDeliveryNote(Long deliveryNoteId) {
+        lockDeliveryNote(deliveryNoteId);
         applyTarget(StockSourceType.DELIVERY_NOTE, deliveryNoteId, Map.of(), Map.of());
+    }
+
+    @Override
+    @Transactional
+    public void recordInitial(Product product) {
+        if (product.getQuantity() == null || product.getQuantity() == 0) {
+            return;
+        }
+        stockMovementRepository.save(StockMovement.builder()
+                .product(product)
+                .type(StockMovementType.INITIAL)
+                .quantity(product.getQuantity())
+                .sourceType(StockSourceType.MANUAL)
+                .reason("Stock inicial")
+                .createdBy(currentEmployee())
+                .build());
+    }
+
+    @Override
+    @Transactional
+    public ProductResponse adjust(Long productId, StockAdjustmentRequest request) {
+        Product product = productRepository.findAllByIdInForUpdate(List.of(productId)).stream()
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
+
+        int delta = switch (request.mode()) {
+            case INCREASE -> request.quantity();
+            case DECREASE -> -request.quantity();
+            case SET -> request.quantity() - product.getQuantity();
+        };
+        if (delta == 0) {
+            throw new BusinessException("El ajuste no modifica el stock actual");
+        }
+
+        product.setQuantity(product.getQuantity() + delta);
+        stockMovementRepository.save(StockMovement.builder()
+                .product(product)
+                .type(StockMovementType.ADJUSTMENT)
+                .quantity(delta)
+                .sourceType(StockSourceType.MANUAL)
+                .reason(request.reason().trim())
+                .createdBy(currentEmployee())
+                .build());
+        log.info("Adjusted stock of product {} by {} ({})", productId, delta, request.mode());
+        return productMapper.toResponse(product);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<StockMovementResponse> getMovements(Long productId, Pageable pageable) {
+        if (!productRepository.existsById(productId)) {
+            throw new ResourceNotFoundException("Product", productId);
+        }
+        return stockMovementRepository.findByProductId(productId, pageable)
+                .map(stockMovementMapper::toResponse);
     }
 
     /**
@@ -145,6 +210,16 @@ public class StockServiceImpl implements StockService {
         }
         stockMovementRepository.saveAll(movements);
         log.info("Stock synced for {} {}: {} movement(s)", sourceType, sourceId, movements.size());
+    }
+
+    private RepairOrder lockRepairOrder(Long repairOrderId) {
+        return repairOrderRepository.findForUpdateById(repairOrderId)
+                .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", repairOrderId));
+    }
+
+    private DeliveryNote lockDeliveryNote(Long deliveryNoteId) {
+        return deliveryNoteRepository.findForUpdateById(deliveryNoteId)
+                .orElseThrow(() -> new ResourceNotFoundException("DeliveryNote", deliveryNoteId));
     }
 
     private static void addLine(Map<Long, Integer> lines, Product product, Integer quantity) {

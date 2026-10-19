@@ -52,8 +52,11 @@ class RoleBasedAuthorizationIT {
 
     // @Valid bodies are validated before @PreAuthorize runs, so write calls need a valid
     // body for a denial to surface as 403 instead of 400.
+    private static final String STOCK_ADJUSTMENT_URL = "/api/products/" + UNKNOWN_ID + "/stock-adjustments";
+
     private static final Map<String, String> VALID_BODIES = Map.of(
-            "/api/tax-config", "{\"taxPercentage\": 21}");
+            "/api/tax-config", "{\"taxPercentage\": 21}",
+            STOCK_ADJUSTMENT_URL, "{\"mode\": \"INCREASE\", \"quantity\": 1, \"reason\": \"Compra\"}");
 
     @Autowired
     private MockMvc mockMvc;
@@ -158,6 +161,8 @@ class RoleBasedAuthorizationIT {
                 Arguments.of(TestUser.MECANICO, HttpMethod.PUT, "/api/tax-config", false),
                 Arguments.of(TestUser.MECANICO, HttpMethod.GET, "/api/products", true),
                 Arguments.of(TestUser.MECANICO, HttpMethod.DELETE, "/api/products/" + UNKNOWN_ID, false),
+                Arguments.of(TestUser.MECANICO, HttpMethod.POST, STOCK_ADJUSTMENT_URL, false),
+                Arguments.of(TestUser.MECANICO, HttpMethod.GET, "/api/products/low-stock", true),
                 Arguments.of(TestUser.MECANICO, HttpMethod.GET, "/api/dashboard/summary", true),
                 Arguments.of(TestUser.MECANICO, HttpMethod.GET, reportsUrl(), false),
                 // RECEPCIONISTA
@@ -173,6 +178,7 @@ class RoleBasedAuthorizationIT {
                 Arguments.of(TestUser.RECEPCIONISTA, HttpMethod.DELETE, "/api/delivery-notes/" + UNKNOWN_ID + "/payments/1", true),
                 Arguments.of(TestUser.RECEPCIONISTA, HttpMethod.DELETE, "/api/appointments/" + UNKNOWN_ID, true),
                 Arguments.of(TestUser.RECEPCIONISTA, HttpMethod.DELETE, "/api/services/" + UNKNOWN_ID, false),
+                Arguments.of(TestUser.RECEPCIONISTA, HttpMethod.POST, STOCK_ADJUSTMENT_URL, false),
                 Arguments.of(TestUser.RECEPCIONISTA, HttpMethod.GET, reportsUrl(), false),
                 // JEFE_TALLER
                 Arguments.of(TestUser.JEFE_TALLER, HttpMethod.GET, "/api/employees", true),
@@ -181,11 +187,13 @@ class RoleBasedAuthorizationIT {
                 Arguments.of(TestUser.JEFE_TALLER, HttpMethod.DELETE, "/api/repair-orders/" + UNKNOWN_ID, true),
                 Arguments.of(TestUser.JEFE_TALLER, HttpMethod.DELETE, "/api/services/" + UNKNOWN_ID, true),
                 Arguments.of(TestUser.JEFE_TALLER, HttpMethod.DELETE, "/api/products/" + UNKNOWN_ID, true),
+                Arguments.of(TestUser.JEFE_TALLER, HttpMethod.POST, STOCK_ADJUSTMENT_URL, true),
                 Arguments.of(TestUser.JEFE_TALLER, HttpMethod.DELETE, "/api/tags/" + UNKNOWN_ID, false),
                 Arguments.of(TestUser.JEFE_TALLER, HttpMethod.GET, "/api/roles", false),
                 Arguments.of(TestUser.JEFE_TALLER, HttpMethod.GET, reportsUrl(), false),
                 // ADMINISTRADOR
                 Arguments.of(TestUser.ADMINISTRADOR, HttpMethod.GET, "/api/roles", true),
+                Arguments.of(TestUser.ADMINISTRADOR, HttpMethod.POST, STOCK_ADJUSTMENT_URL, true),
                 Arguments.of(TestUser.ADMINISTRADOR, HttpMethod.GET, "/api/permissions", true),
                 Arguments.of(TestUser.ADMINISTRADOR, HttpMethod.DELETE, "/api/employees/" + UNKNOWN_ID, true),
                 Arguments.of(TestUser.ADMINISTRADOR, HttpMethod.DELETE, "/api/tags/" + UNKNOWN_ID, true),
