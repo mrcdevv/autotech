@@ -15,6 +15,7 @@ import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { AppSearchField } from "@/components/AppSearchField";
 import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { DeliveryNoteList } from "@/features/delivery-notes/components/DeliveryNoteList";
 import { useDeliveryNotes } from "@/features/delivery-notes/hooks/useDeliveryNotes";
 
@@ -22,6 +23,9 @@ import type { SelectChangeEvent } from "@mui/material";
 import type { DeliveryNoteResponse, DeliveryNoteStatus } from "@/types/deliveryNote";
 
 export default function DeliveryNotesPage() {
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission("create_delivery_note");
+  const canDelete = hasPermission("delete_delivery_note");
   const {
     deliveryNotes,
     loading,
@@ -115,9 +119,11 @@ export default function DeliveryNotesPage() {
           </>
         }
         actions={
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-            Crear nueva remito
-          </Button>
+          canCreate && (
+            <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+              Crear nueva remito
+            </Button>
+          )
         }
       />
 
@@ -136,7 +142,7 @@ export default function DeliveryNotesPage() {
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
         onRowClick={handleRowClick}
-        onDelete={(id) => setDeleteDialogId(id)}
+        onDelete={canDelete ? (id) => setDeleteDialogId(id) : undefined}
       />
 
       <AppConfirmDialog

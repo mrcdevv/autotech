@@ -9,6 +9,7 @@ import { MonoText } from "@/components/MonoText";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { useClients } from "@/features/clients/hooks/useClients";
 import { clientsApi } from "@/api/clients";
 import ClientForm from "./ClientForm";
@@ -26,6 +27,10 @@ export default function ClientList() {
     const [actionError, setActionError] = useState<string | null>(null);
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
     const isInitialMount = useRef(true);
+    const { hasPermission } = useAuth();
+    const canCreate = hasPermission("create_client");
+    const canUpdate = hasPermission("update_client");
+    const canDelete = hasPermission("delete_client");
 
     useEffect(() => {
         // This effect should only run when the form is closed, not on initial mount.
@@ -64,19 +69,27 @@ export default function ClientList() {
                     label="Ver"
                     onClick={() => handleView(params.row)}
                 />,
-                <GridActionsCellItem
-                    key="edit"
-                    icon={<EditIcon />}
-                    label="Editar"
-                    onClick={() => handleEdit(params.row)}
-                />,
-                <GridActionsCellItem
-                    key="delete"
-                    icon={<DeleteIcon />}
-                    label="Eliminar"
-                    onClick={() => handleDeleteClick([params.row.id])}
-                    color="error"
-                />,
+                ...(canUpdate
+                    ? [
+                          <GridActionsCellItem
+                              key="edit"
+                              icon={<EditIcon />}
+                              label="Editar"
+                              onClick={() => handleEdit(params.row)}
+                          />,
+                      ]
+                    : []),
+                ...(canDelete
+                    ? [
+                          <GridActionsCellItem
+                              key="delete"
+                              icon={<DeleteIcon />}
+                              label="Eliminar"
+                              onClick={() => handleDeleteClick([params.row.id])}
+                              color="error"
+                          />,
+                      ]
+                    : []),
             ],
         }
     ];
@@ -156,9 +169,11 @@ export default function ClientList() {
                         <Button variant="outlined" startIcon={<ExportIcon />} onClick={handleExport}>
                             Exportar a Excel
                         </Button>
-                        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-                            Registrar cliente
-                        </Button>
+                        {canCreate && (
+                            <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+                                Registrar cliente
+                            </Button>
+                        )}
                     </>
                 }
             />
@@ -178,14 +193,14 @@ export default function ClientList() {
                 paginationModel={{ page, pageSize: size }}
                 paginationMode="server"
                 onPaginationModelChange={handlePaginationModelChange}
-                checkboxSelection
+                checkboxSelection={canDelete}
                 onRowSelectionModelChange={setSelectedIds}
                 rowSelectionModel={selectedIds}
                 disableRowSelectionOnClick
                 emptyMessage="No hay clientes para mostrar."
             />
 
-            {selectedIds.length > 0 && (
+            {canDelete && selectedIds.length > 0 && (
                 <Button variant="contained" color="error" onClick={() => handleDeleteClick(selectedIds)} sx={{ mt: 2 }}>
                     Eliminar seleccionados ({selectedIds.length})
                 </Button>

@@ -19,7 +19,7 @@ interface DeliveryNoteListProps {
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
   onRowClick: (row: DeliveryNoteResponse) => void;
-  onDelete: (id: number) => void;
+  onDelete?: (id: number) => void;
 }
 
 export function DeliveryNoteList({
@@ -103,29 +103,31 @@ export function DeliveryNoteList({
             >
               <VisibilityIcon />
             </IconButton>
-            <Tooltip
-              title={
-                isFromRepairOrder
-                  ? "No se puede eliminar una remito de orden de trabajo"
-                  : isPaid
-                    ? "No se puede eliminar una remito pagada"
-                    : "Eliminar"
-              }
-            >
-              <span>
-                <IconButton
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(params.row.id);
-                  }}
-                  color="error"
-                  size="small"
-                  disabled={isFromRepairOrder || isPaid}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </span>
-            </Tooltip>
+            {onDelete && (
+              <Tooltip
+                title={
+                  isFromRepairOrder
+                    ? "No se puede eliminar una remito de orden de trabajo"
+                    : isPaid
+                      ? "No se puede eliminar una remito pagada"
+                      : "Eliminar"
+                }
+              >
+                <span>
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(params.row.id);
+                    }}
+                    color="error"
+                    size="small"
+                    disabled={isFromRepairOrder || isPaid}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            )}
           </>
         );
       },

@@ -15,6 +15,7 @@ import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { AppSearchField } from "@/components/AppSearchField";
 import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { EstimateList } from "@/features/estimates/components/EstimateList";
 import { useEstimates } from "@/features/estimates/hooks/useEstimates";
 
@@ -22,6 +23,10 @@ import type { SelectChangeEvent } from "@mui/material";
 import type { EstimateStatus } from "@/types/estimate";
 
 export default function EstimatesPage() {
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission("create_estimate");
+  const canDelete = hasPermission("delete_estimate");
+  const canCreateDeliveryNote = hasPermission("create_delivery_note");
   const {
     estimates,
     loading,
@@ -110,9 +115,11 @@ export default function EstimatesPage() {
           </>
         }
         actions={
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-            Crear nuevo presupuesto
-          </Button>
+          canCreate && (
+            <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+              Crear nuevo presupuesto
+            </Button>
+          )
         }
       />
 
@@ -131,8 +138,8 @@ export default function EstimatesPage() {
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
         onRowClick={handleRowClick}
-        onDelete={(id) => setDeleteDialogId(id)}
-        onDeliveryNote={handleDeliveryNote}
+        onDelete={canDelete ? (id) => setDeleteDialogId(id) : undefined}
+        onDeliveryNote={canCreateDeliveryNote ? handleDeliveryNote : undefined}
       />
 
       <AppConfirmDialog

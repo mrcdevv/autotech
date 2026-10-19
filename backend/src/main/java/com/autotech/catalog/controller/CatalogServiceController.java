@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,6 +29,7 @@ public class CatalogServiceController {
 
     private final CatalogServiceService catalogServiceService;
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<CatalogServiceResponse>>> search(
             @RequestParam(required = false) String query,
@@ -35,11 +37,13 @@ public class CatalogServiceController {
         return ResponseEntity.ok(ApiResponse.success(catalogServiceService.search(query, pageable)));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<CatalogServiceResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(catalogServiceService.getById(id)));
     }
 
+    @PreAuthorize("hasAuthority('manage_services')")
     @PostMapping
     public ResponseEntity<ApiResponse<CatalogServiceResponse>> create(
             @Valid @RequestBody CatalogServiceRequest request) {
@@ -47,6 +51,7 @@ public class CatalogServiceController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Servicio creado", created));
     }
 
+    @PreAuthorize("hasAuthority('manage_services')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<CatalogServiceResponse>> update(
             @PathVariable Long id,
@@ -54,6 +59,7 @@ public class CatalogServiceController {
         return ResponseEntity.ok(ApiResponse.success("Servicio actualizado", catalogServiceService.update(id, request)));
     }
 
+    @PreAuthorize("hasAuthority('manage_services')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         catalogServiceService.delete(id);

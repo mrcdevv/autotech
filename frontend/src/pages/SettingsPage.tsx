@@ -12,6 +12,7 @@ import PercentOutlinedIcon from "@mui/icons-material/PercentOutlined";
 import ReceiptOutlinedIcon from "@mui/icons-material/ReceiptOutlined";
 
 import { PageShell } from "@/components/PageShell";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { BankAccountsTab } from "@/features/settings/components/BankAccountsTab";
 import { CalendarSettingsTab } from "@/features/settings/components/CalendarSettingsTab";
 import { ConfigCard } from "@/features/settings/components/ConfigCard";
@@ -23,6 +24,11 @@ import { TagsSettingsTab } from "@/features/settings/components/TagsSettingsTab"
 import { TaxSettings } from "@/features/settings/components/TaxSettings";
 
 export default function SettingsPage() {
+  const { hasPermission } = useAuth();
+  const canManageConfig = hasPermission("manage_config");
+  const canManageServices = hasPermission("manage_services");
+  const canManageRoles = hasPermission("manage_roles");
+
   return (
     <PageShell title="Configuración">
       <Typography color="text.secondary" sx={{ mb: 3 }}>
@@ -30,58 +36,72 @@ export default function SettingsPage() {
       </Typography>
 
       <Stack spacing={4}>
-        <SettingsSection
-          id="taller"
-          title="Taller"
-          subtitle="Operación diaria"
-          icon={<BuildOutlinedIcon />}
-        >
-          <ConfigCard title="Calendario" icon={<CalendarMonthOutlinedIcon />}>
-            <CalendarSettingsTab />
-          </ConfigCard>
-          <ConfigCard title="Panel de inicio" icon={<DashboardOutlinedIcon />}>
-            <DashboardSettingsTab />
-          </ConfigCard>
-        </SettingsSection>
+        {canManageConfig && (
+          <SettingsSection
+            id="taller"
+            title="Taller"
+            subtitle="Operación diaria"
+            icon={<BuildOutlinedIcon />}
+          >
+            <ConfigCard title="Calendario" icon={<CalendarMonthOutlinedIcon />}>
+              <CalendarSettingsTab />
+            </ConfigCard>
+            <ConfigCard title="Panel de inicio" icon={<DashboardOutlinedIcon />}>
+              <DashboardSettingsTab />
+            </ConfigCard>
+          </SettingsSection>
+        )}
 
-        <SettingsSection
-          id="catalogos"
-          title="Catálogos"
-          subtitle="Datos de referencia"
-          icon={<Inventory2OutlinedIcon />}
-        >
-          <ConfigCard title="Cuentas bancarias" icon={<AccountBalanceOutlinedIcon />}>
-            <BankAccountsTab />
-          </ConfigCard>
-          <ConfigCard title="Fichas técnicas" icon={<DescriptionOutlinedIcon />}>
-            <InspectionTemplatesTab />
-          </ConfigCard>
-          <ConfigCard title="Etiquetas" icon={<LabelOutlinedIcon />}>
-            <TagsSettingsTab />
-          </ConfigCard>
-        </SettingsSection>
+        {(canManageConfig || canManageServices) && (
+          <SettingsSection
+            id="catalogos"
+            title="Catálogos"
+            subtitle="Datos de referencia"
+            icon={<Inventory2OutlinedIcon />}
+          >
+            {canManageConfig && (
+              <ConfigCard title="Cuentas bancarias" icon={<AccountBalanceOutlinedIcon />}>
+                <BankAccountsTab />
+              </ConfigCard>
+            )}
+            {canManageServices && (
+              <ConfigCard title="Fichas técnicas" icon={<DescriptionOutlinedIcon />}>
+                <InspectionTemplatesTab />
+              </ConfigCard>
+            )}
+            {canManageConfig && (
+              <ConfigCard title="Etiquetas" icon={<LabelOutlinedIcon />}>
+                <TagsSettingsTab />
+              </ConfigCard>
+            )}
+          </SettingsSection>
+        )}
 
-        <SettingsSection
-          id="remitocion"
-          title="Remitos"
-          subtitle="Impuestos"
-          icon={<ReceiptOutlinedIcon />}
-        >
-          <ConfigCard title="Impuestos" icon={<PercentOutlinedIcon />}>
-            <TaxSettings />
-          </ConfigCard>
-        </SettingsSection>
+        {canManageConfig && (
+          <SettingsSection
+            id="remitocion"
+            title="Remitos"
+            subtitle="Impuestos"
+            icon={<ReceiptOutlinedIcon />}
+          >
+            <ConfigCard title="Impuestos" icon={<PercentOutlinedIcon />}>
+              <TaxSettings />
+            </ConfigCard>
+          </SettingsSection>
+        )}
 
-        <SettingsSection
-          id="accesos"
-          title="Accesos"
-          subtitle="Roles y permisos"
-          icon={<LockOutlinedIcon />}
-        >
-          <ConfigCard title="Roles y permisos" icon={<BadgeOutlinedIcon />}>
-            <RolesSettings />
-          </ConfigCard>
-        </SettingsSection>
+        {canManageRoles && (
+          <SettingsSection
+            id="accesos"
+            title="Accesos"
+            subtitle="Roles y permisos"
+            icon={<LockOutlinedIcon />}
+          >
+            <ConfigCard title="Roles y permisos" icon={<BadgeOutlinedIcon />}>
+              <RolesSettings />
+            </ConfigCard>
+          </SettingsSection>
+        )}
       </Stack>
     </PageShell>
   );

@@ -4,6 +4,8 @@ import { Routes, Route } from "react-router";
 import { CircularProgress, Box } from "@mui/material";
 import MainLayout from "@/layouts/MainLayout";
 import { PrivateRoute } from "@/components/PrivateRoute";
+import { RequirePermission } from "@/components/RequirePermission";
+import { SETTINGS_PERMISSIONS } from "@/features/auth/permissions";
 import { Login } from "@/features/auth/components/Login";
 import { ChangePassword } from "@/features/auth/components/ChangePassword";
 
@@ -45,27 +47,49 @@ export default function AppRoutes() {
         <Route element={<PrivateRoute />}>
           <Route element={<MainLayout />}>
             <Route path="/" element={<DashboardPage />} />
-            <Route path="/empleados" element={<EmployeesPage />} />
             <Route path="/servicios" element={<ServicesPage />} />
             <Route path="/productos" element={<ProductsPage />} />
             <Route path="/paquetes-de-servicios" element={<CannedJobsPage />} />
-            <Route path="/clientes" element={<ClientsPage />} />
-            <Route path="/vehiculos" element={<VehiclesPage />} />
-            <Route path="/calendario" element={<AppointmentsPage />} />
-            <Route path="/ordenes-trabajo" element={<RepairOrdersPage />} />
-            <Route path="/ordenes-trabajo/nueva" element={<CreateRepairOrderPage />} />
-            <Route path="/ordenes-trabajo/:id" element={<RepairOrderDetailPage />} />
-            <Route path="/configuracion/plantillas-inspeccion" element={<InspectionTemplateListPage />} />
-            <Route path="/configuracion/plantillas-inspeccion/nueva" element={<InspectionTemplateBuilderPage />} />
-            <Route path="/configuracion/plantillas-inspeccion/:id/editar" element={<InspectionTemplateBuilderPage />} />
-            <Route path="/configuracion/problemas-comunes" element={<CommonProblemsPage />} />
-            <Route path="/presupuestos" element={<EstimatesPage />} />
-            <Route path="/presupuestos/:id" element={<EstimateDetailPage />} />
-            <Route path="/remitos" element={<DeliveryNotesPage />} />
-            <Route path="/remitos/:id" element={<DeliveryNoteDetailPage />} />
-            <Route path="/reportes" element={<ReportesPage />} />
-            <Route path="/configuracion" element={<SettingsPage />} />
             <Route path="/change-password" element={<ChangePassword />} />
+            <Route element={<RequirePermission permission="read_employee" />}>
+              <Route path="/empleados" element={<EmployeesPage />} />
+            </Route>
+            <Route element={<RequirePermission permission="read_client" />}>
+              <Route path="/clientes" element={<ClientsPage />} />
+            </Route>
+            <Route element={<RequirePermission permission="read_vehicle" />}>
+              <Route path="/vehiculos" element={<VehiclesPage />} />
+            </Route>
+            <Route element={<RequirePermission permission="read_appointment" />}>
+              <Route path="/calendario" element={<AppointmentsPage />} />
+            </Route>
+            <Route element={<RequirePermission permission="read_order" />}>
+              <Route path="/ordenes-trabajo" element={<RepairOrdersPage />} />
+              <Route path="/ordenes-trabajo/:id" element={<RepairOrderDetailPage />} />
+            </Route>
+            <Route element={<RequirePermission permission="create_order" />}>
+              <Route path="/ordenes-trabajo/nueva" element={<CreateRepairOrderPage />} />
+            </Route>
+            <Route element={<RequirePermission permission="manage_services" />}>
+              <Route path="/configuracion/plantillas-inspeccion" element={<InspectionTemplateListPage />} />
+              <Route path="/configuracion/plantillas-inspeccion/nueva" element={<InspectionTemplateBuilderPage />} />
+              <Route path="/configuracion/plantillas-inspeccion/:id/editar" element={<InspectionTemplateBuilderPage />} />
+              <Route path="/configuracion/problemas-comunes" element={<CommonProblemsPage />} />
+            </Route>
+            <Route element={<RequirePermission permission="read_estimate" />}>
+              <Route path="/presupuestos" element={<EstimatesPage />} />
+              <Route path="/presupuestos/:id" element={<EstimateDetailPage />} />
+            </Route>
+            <Route element={<RequirePermission permission="read_delivery_note" />}>
+              <Route path="/remitos" element={<DeliveryNotesPage />} />
+              <Route path="/remitos/:id" element={<DeliveryNoteDetailPage />} />
+            </Route>
+            <Route element={<RequirePermission permission="view_reports" />}>
+              <Route path="/reportes" element={<ReportesPage />} />
+            </Route>
+            <Route element={<RequirePermission permission={SETTINGS_PERMISSIONS} />}>
+              <Route path="/configuracion" element={<SettingsPage />} />
+            </Route>
           </Route>
         </Route>
       </Routes>

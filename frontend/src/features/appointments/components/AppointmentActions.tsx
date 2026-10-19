@@ -6,11 +6,11 @@ interface AppointmentActionsMenuProps {
   anchorEl: HTMLElement | null;
   appointment: AppointmentResponse | null;
   onClose: () => void;
-  onMarkVehicleArrived: (id: number) => void;
-  onEdit: (appointment: AppointmentResponse) => void;
-  onCancel: (id: number) => void;
-  onDelete: (id: number) => void;
-  onCreateWorkOrder: (appointment: AppointmentResponse) => void;
+  onMarkVehicleArrived?: (id: number) => void;
+  onEdit?: (appointment: AppointmentResponse) => void;
+  onCancel?: (id: number) => void;
+  onDelete?: (id: number) => void;
+  onCreateWorkOrder?: (appointment: AppointmentResponse) => void;
 }
 
 export function AppointmentActionsMenu({
@@ -34,7 +34,7 @@ export function AppointmentActionsMenu({
       onClose={onClose}
       onClick={(e) => e.stopPropagation()}
     >
-      {!appointment.vehicleArrivedAt && !isCancelled && (
+      {onMarkVehicleArrived && !appointment.vehicleArrivedAt && !isCancelled && (
         <MenuItem
           onClick={() => {
             onMarkVehicleArrived(appointment.id);
@@ -45,16 +45,18 @@ export function AppointmentActionsMenu({
         </MenuItem>
       )}
 
-      <MenuItem
-        onClick={() => {
-          onEdit(appointment);
-          onClose();
-        }}
-      >
-        Editar fecha y hora
-      </MenuItem>
+      {onEdit && (
+        <MenuItem
+          onClick={() => {
+            onEdit(appointment);
+            onClose();
+          }}
+        >
+          Editar fecha y hora
+        </MenuItem>
+      )}
 
-      {!isCancelled && (
+      {onCreateWorkOrder && !isCancelled && (
         <MenuItem
           onClick={() => {
             onCreateWorkOrder(appointment);
@@ -65,9 +67,9 @@ export function AppointmentActionsMenu({
         </MenuItem>
       )}
 
-      <Divider />
+      {(onCancel || onDelete) && <Divider />}
 
-      {!isCancelled && (
+      {onCancel && !isCancelled && (
         <MenuItem
           onClick={() => {
             onCancel(appointment.id);
@@ -79,15 +81,17 @@ export function AppointmentActionsMenu({
         </MenuItem>
       )}
 
-      <MenuItem
-        onClick={() => {
-          onDelete(appointment.id);
-          onClose();
-        }}
-        sx={{ color: "error.main" }}
-      >
-        Eliminar cita
-      </MenuItem>
+      {onDelete && (
+        <MenuItem
+          onClick={() => {
+            onDelete(appointment.id);
+            onClose();
+          }}
+          sx={{ color: "error.main" }}
+        >
+          Eliminar cita
+        </MenuItem>
+      )}
     </Menu>
   );
 }

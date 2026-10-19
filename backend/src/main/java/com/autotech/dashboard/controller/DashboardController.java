@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,22 +30,26 @@ public class DashboardController {
     private final DashboardService dashboardService;
     private final DashboardExportService dashboardExportService;
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/summary")
     public ResponseEntity<ApiResponse<DashboardSummaryResponse>> getSummary() {
         return ResponseEntity.ok(ApiResponse.success(dashboardService.getSummary()));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/financiero")
     public ResponseEntity<ApiResponse<DashboardFinancieroResponse>> getFinanciero(
             @RequestParam(defaultValue = "6") int months) {
         return ResponseEntity.ok(ApiResponse.success(dashboardService.getFinanciero(months)));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/productividad")
     public ResponseEntity<ApiResponse<DashboardProductividadResponse>> getProductividad() {
         return ResponseEntity.ok(ApiResponse.success(dashboardService.getProductividad()));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/config")
     public ResponseEntity<ApiResponse<DashboardConfigResponse>> getConfig() {
         DashboardConfig config = dashboardService.getConfig();
@@ -52,6 +57,7 @@ public class DashboardController {
                 new DashboardConfigResponse(config.getStaleThresholdDays())));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/config")
     public ResponseEntity<ApiResponse<DashboardConfigResponse>> updateConfig(
             @Valid @RequestBody DashboardConfigRequest request) {
@@ -60,6 +66,7 @@ public class DashboardController {
                 new DashboardConfigResponse(config.getStaleThresholdDays())));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/export/financiero")
     public ResponseEntity<byte[]> exportFinanciero(
             @RequestParam(defaultValue = "6") int months) {
@@ -71,6 +78,7 @@ public class DashboardController {
                 .body(file);
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/export/productividad")
     public ResponseEntity<byte[]> exportProductividad() {
         byte[] file = dashboardExportService.exportProductividad();

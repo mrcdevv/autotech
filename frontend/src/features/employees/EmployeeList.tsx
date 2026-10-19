@@ -18,9 +18,9 @@ interface EmployeeListProps {
   paginationModel: GridPaginationModel;
   onPaginationChange: (model: GridPaginationModel) => void;
   onView: (employee: EmployeeResponse) => void;
-  onEdit: (employee: EmployeeResponse) => void;
-  onDelete: (id: number) => void;
-  onResetPassword: (employee: EmployeeResponse) => void;
+  onEdit?: (employee: EmployeeResponse) => void;
+  onDelete?: (id: number) => void;
+  onResetPassword?: (employee: EmployeeResponse) => void;
 }
 
 export function EmployeeList({
@@ -66,26 +66,38 @@ export function EmployeeList({
           label="Ver"
           onClick={() => onView(params.row as EmployeeResponse)}
         />,
-        <GridActionsCellItem
-          key="edit"
-          icon={<EditIcon />}
-          label="Editar"
-          onClick={() => onEdit(params.row as EmployeeResponse)}
-        />,
-        <GridActionsCellItem
-          key="reset-password"
-          icon={<LockResetIcon />}
-          label="Resetear contraseña"
-          onClick={() => onResetPassword(params.row as EmployeeResponse)}
-          showInMenu
-        />,
-        <GridActionsCellItem
-          key="delete"
-          icon={<DeleteIcon />}
-          label="Eliminar"
-          onClick={() => onDelete((params.row as EmployeeResponse).id)}
-          showInMenu
-        />,
+        ...(onEdit
+          ? [
+              <GridActionsCellItem
+                key="edit"
+                icon={<EditIcon />}
+                label="Editar"
+                onClick={() => onEdit(params.row as EmployeeResponse)}
+              />,
+            ]
+          : []),
+        ...(onResetPassword
+          ? [
+              <GridActionsCellItem
+                key="reset-password"
+                icon={<LockResetIcon />}
+                label="Resetear contraseña"
+                onClick={() => onResetPassword(params.row as EmployeeResponse)}
+                showInMenu
+              />,
+            ]
+          : []),
+        ...(onDelete
+          ? [
+              <GridActionsCellItem
+                key="delete"
+                icon={<DeleteIcon />}
+                label="Eliminar"
+                onClick={() => onDelete((params.row as EmployeeResponse).id)}
+                showInMenu
+              />,
+            ]
+          : []),
       ],
     },
   ];
