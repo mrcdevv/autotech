@@ -36,6 +36,7 @@ import com.autotech.repairorder.repository.RepairOrderRepository;
 import com.autotech.tax.service.TaxConfigService;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
+import com.autotech.stock.service.StockService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -67,6 +68,7 @@ public class EstimateServiceImpl implements EstimateService {
     private final TaxConfigService taxConfigService;
     private final EmployeeRepository employeeRepository;
     private final AppProperties appProperties;
+    private final StockService stockService;
 
     @Override
     @Transactional(readOnly = true)
@@ -208,6 +210,7 @@ public class EstimateServiceImpl implements EstimateService {
 
         Estimate saved = estimateRepository.save(entity);
         log.info("Updated estimate with id {}", saved.getId());
+        syncRepairOrderStock(saved);
         return getById(saved.getId());
     }
 
@@ -256,11 +259,15 @@ public class EstimateServiceImpl implements EstimateService {
     @Override
     @Transactional
     public void delete(Long id) {
-        if (!estimateRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Estimate", id);
-        }
-        estimateRepository.deleteById(id);
+        Estimate entity = estimateRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Estimate", id));
+        RepairOrder repairOrder = entity.getRepairOrder();
+        estimateRepository.delete(entity);
+        estimateRepository.flush();
         log.info("Deleted estimate with id {}", id);
+        if (repairOrder != null) {
+            stockService.syncRepairOrder(repairOrder.getId());
+        }
     }
 
     @Override
@@ -342,10 +349,18 @@ public class EstimateServiceImpl implements EstimateService {
         entity.setDecidedByEmployee(decidedBy);
         estimateRepository.save(entity);
         log.info("Estimate {} marked as {} via {}", entity.getId(), newStatus, channel);
+        syncRepairOrderStock(entity);
 
         EstimateDetailResponse response = getById(entity.getId());
         emailNotificationService.notifyEstimateStatusChanged(response);
         return response;
+    }
+
+    /** Approved estimates on a repair order reserve stock; the order owns that reservation. */
+    private void syncRepairOrderStock(Estimate entity) {
+        if (entity.getRepairOrder() != null) {
+            stockService.syncRepairOrder(entity.getRepairOrder().getId());
+        }
     }
 
     private void validateStaffChannel(EstimateDecisionChannel channel) {
