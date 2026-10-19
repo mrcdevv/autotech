@@ -122,6 +122,9 @@ public class AppointmentServiceImpl implements AppointmentService {
         LocalDateTime previousStart = entity.getStartTime();
         LocalDateTime previousEnd = entity.getEndTime();
         boolean rescheduled = !request.startTime().equals(previousStart) || !request.endTime().equals(previousEnd);
+        if (rescheduled && entity.getStatus() != AppointmentStatus.SCHEDULED) {
+            throw new BusinessException("No se puede reprogramar un turno completado o cancelado");
+        }
 
         entity.setStartTime(request.startTime());
         entity.setEndTime(request.endTime());
