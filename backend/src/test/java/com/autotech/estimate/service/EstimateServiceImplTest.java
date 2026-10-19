@@ -1,5 +1,6 @@
 package com.autotech.estimate.service;
 
+import com.autotech.stock.service.StockService;
 import com.autotech.client.model.Client;
 import com.autotech.client.model.ClientType;
 import com.autotech.client.repository.ClientRepository;
@@ -63,6 +64,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -97,6 +99,9 @@ class EstimateServiceImplTest {
 
     @Mock
     private AppProperties appProperties;
+
+    @Mock
+    private StockService stockService;
 
     @InjectMocks
     private EstimateServiceImpl estimateService;
@@ -476,19 +481,35 @@ class EstimateServiceImplTest {
     @Test
     void givenExistingId_whenDelete_thenDeletesSuccessfully() {
         // Arrange
-        when(estimateRepository.existsById(1L)).thenReturn(true);
+        Estimate estimate = buildEstimate(1L);
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(estimate));
 
         // Act
         estimateService.delete(1L);
 
         // Assert
-        verify(estimateRepository).deleteById(1L);
+        verify(estimateRepository).delete(estimate);
+        verifyNoInteractions(stockService);
+    }
+
+    @Test
+    void givenEstimateOnRepairOrder_whenDelete_thenResyncsRepairOrderStock() {
+        // Arrange
+        Estimate estimate = buildEstimateWithRepairOrder(1L, 10L);
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(estimate));
+
+        // Act
+        estimateService.delete(1L);
+
+        // Assert
+        verify(estimateRepository).delete(estimate);
+        verify(stockService).syncRepairOrder(10L);
     }
 
     @Test
     void givenNonExistentId_whenDelete_thenThrowResourceNotFoundException() {
         // Arrange
-        when(estimateRepository.existsById(99L)).thenReturn(false);
+        when(estimateRepository.findById(99L)).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThatThrownBy(() -> estimateService.delete(99L))

@@ -24,6 +24,7 @@ import com.autotech.tag.model.Tag;
 import com.autotech.tag.repository.TagRepository;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
+import com.autotech.stock.service.StockService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -53,6 +54,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
     private final EmployeeRepository employeeRepository;
     private final TagRepository tagRepository;
     private final EmailNotificationService emailNotificationService;
+    private final StockService stockService;
 
     @Override
     @Transactional(readOnly = true)
@@ -205,6 +207,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
     public void delete(Long id) {
         RepairOrder order = repairOrderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", id));
+        stockService.releaseRepairOrder(id);
         repairOrderRepository.delete(order);
         log.info("Deleted repair order with id {}", id);
     }
@@ -247,6 +250,8 @@ public class RepairOrderServiceImpl implements RepairOrderService {
             order.setDeliveredAt(LocalDateTime.now());
         }
         RepairOrder saved = repairOrderRepository.save(order);
+        // Idempotent: reserves, consumes, releases or returns whatever the new status implies
+        stockService.syncRepairOrder(saved.getId());
         if (statusChanged && newStatus == RepairOrderStatus.LISTO_PARA_ENTREGAR) {
             emailNotificationService.notifyVehicleReadyForPickup(saved);
         }

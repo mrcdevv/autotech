@@ -1,5 +1,6 @@
 package com.autotech.repairorder.service;
 
+import com.autotech.stock.service.StockService;
 import com.autotech.appointment.repository.AppointmentRepository;
 import com.autotech.client.model.Client;
 import com.autotech.client.model.ClientType;
@@ -72,6 +73,9 @@ class RepairOrderServiceImplTest {
 
     @Mock
     private EmailNotificationService emailNotificationService;
+
+    @Mock
+    private StockService stockService;
 
     @InjectMocks
     private RepairOrderServiceImpl repairOrderService;
@@ -241,6 +245,7 @@ class RepairOrderServiceImplTest {
         // Assert
         assertThat(result).isNotNull();
         assertThat(order.getStatus()).isEqualTo(RepairOrderStatus.REPARACION);
+        verify(stockService).syncRepairOrder(1L);
     }
 
     @Test
