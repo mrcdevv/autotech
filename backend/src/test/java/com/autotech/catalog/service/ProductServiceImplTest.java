@@ -6,6 +6,7 @@ import com.autotech.catalog.dto.ProductResponse;
 import com.autotech.catalog.model.Product;
 import com.autotech.catalog.repository.ProductRepository;
 import com.autotech.common.exception.ResourceNotFoundException;
+import com.autotech.stock.service.StockService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
@@ -36,10 +38,28 @@ class ProductServiceImplTest {
     @Mock
     private ProductMapper productMapper;
 
+    @Mock
+    private StockService stockService;
+
     @InjectMocks
     private ProductServiceImpl productService;
 
     private final Pageable pageable = PageRequest.of(0, 12);
+
+    @Test
+    void givenLowStockFilter_whenSearch_thenQueriesLowStockWithLowercasePattern() {
+        // Arrange
+        Product product = Product.builder().name("Filtro").quantity(1).minStock(3).build();
+        when(productRepository.findLowStock("%filt%", pageable)).thenReturn(new PageImpl<>(List.of(product)));
+        when(productMapper.toResponse(product)).thenReturn(null);
+
+        // Act
+        Page<ProductResponse> result = productService.search(" Filt ", true, pageable);
+
+        // Assert
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        verify(productRepository).findLowStock("%filt%", pageable);
+    }
 
     @Test
     void givenQuery_whenSearch_thenReturnFilteredPage() {
@@ -53,7 +73,7 @@ class ProductServiceImplTest {
         when(productMapper.toResponse(entity)).thenReturn(response);
 
         // Act
-        Page<ProductResponse> result = productService.search("brake", pageable);
+        Page<ProductResponse> result = productService.search("brake", false, pageable);
 
         // Assert
         assertThat(result.getContent()).hasSize(1);
@@ -71,7 +91,7 @@ class ProductServiceImplTest {
         when(productMapper.toResponse(entity)).thenReturn(response);
 
         // Act
-        Page<ProductResponse> result = productService.search("", pageable);
+        Page<ProductResponse> result = productService.search("", false, pageable);
 
         // Assert
         assertThat(result.getContent()).hasSize(1);
@@ -120,6 +140,7 @@ class ProductServiceImplTest {
 
         // Assert
         assertThat(result.id()).isEqualTo(1L);
+        verify(stockService).recordInitial(any());
     }
 
     @Test
