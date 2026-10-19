@@ -57,7 +57,12 @@ public class EstimateMapper {
                         ? entity.getProducts().stream().map(this::toProductResponse).toList()
                         : Collections.emptyList(),
                 entity.getCreatedAt(),
-                entity.getUpdatedAt()
+                entity.getUpdatedAt(),
+                entity.getDecisionChannel(),
+                entity.getDecidedAt(),
+                entity.getDecidedByEmployee() != null
+                        ? entity.getDecidedByEmployee().getFirstName() + " " + entity.getDecidedByEmployee().getLastName()
+                        : null
         );
     }
 
@@ -89,9 +94,9 @@ public class EstimateMapper {
                 .build();
     }
 
-    public EstimateInvoiceDataResponse toInvoiceDataResponse(Estimate entity) {
+    public EstimateDeliveryNoteDataResponse toDeliveryNoteDataResponse(Estimate entity) {
         if (entity == null) return null;
-        return new EstimateInvoiceDataResponse(
+        return new EstimateDeliveryNoteDataResponse(
                 entity.getId(),
                 entity.getClient().getId(),
                 entity.getVehicle().getId(),

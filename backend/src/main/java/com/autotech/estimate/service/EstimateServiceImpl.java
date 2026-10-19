@@ -4,16 +4,23 @@ import com.autotech.client.model.Client;
 import com.autotech.client.repository.ClientRepository;
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
+import com.autotech.common.util.SecureTokens;
+import com.autotech.config.AppProperties;
+import com.autotech.email.service.EmailFormats;
+import com.autotech.employee.model.Employee;
+import com.autotech.employee.repository.EmployeeRepository;
 import com.autotech.estimate.dto.EstimateDetailResponse;
-import com.autotech.estimate.dto.EstimateInvoiceDataResponse;
+import com.autotech.estimate.dto.EstimateDeliveryNoteDataResponse;
 import com.autotech.estimate.dto.EstimateMapper;
 import com.autotech.estimate.dto.EstimateProductRequest;
 import com.autotech.estimate.dto.EstimateRequest;
 import com.autotech.estimate.dto.EstimateResponse;
 import com.autotech.estimate.dto.EstimateServiceItemRequest;
 import com.autotech.estimate.dto.InspectionIssueResponse;
+import com.autotech.estimate.dto.PublicEstimateResponse;
 import com.autotech.email.service.EmailNotificationService;
 import com.autotech.estimate.model.Estimate;
+import com.autotech.estimate.model.EstimateDecisionChannel;
 import com.autotech.estimate.model.EstimateProduct;
 import com.autotech.estimate.model.EstimateServiceItem;
 import com.autotech.estimate.model.EstimateStatus;
@@ -24,6 +31,7 @@ import com.autotech.inspection.model.InspectionItemStatus;
 import com.autotech.inspection.repository.InspectionRepository;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.repository.RepairOrderRepository;
+import com.autotech.tax.service.TaxConfigService;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,6 +52,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EstimateServiceImpl implements EstimateService {
 
+    static final int APPROVAL_LINK_DAYS = 7;
+
     private final EstimateRepository estimateRepository;
     private final EstimateMapper estimateMapper;
     private final ClientRepository clientRepository;
@@ -50,6 +61,9 @@ public class EstimateServiceImpl implements EstimateService {
     private final RepairOrderRepository repairOrderRepository;
     private final InspectionRepository inspectionRepository;
     private final EmailNotificationService emailNotificationService;
+    private final TaxConfigService taxConfigService;
+    private final EmployeeRepository employeeRepository;
+    private final AppProperties appProperties;
 
     @Override
     @Transactional(readOnly = true)
@@ -129,22 +143,30 @@ public class EstimateServiceImpl implements EstimateService {
             }
         }
 
+        BigDecimal taxPercentage = request.taxPercentage() != null
+                ? request.taxPercentage()
+                : taxConfigService.getConfig().getTaxPercentage();
+
         Estimate entity = estimateMapper.toEntity(request);
         entity.setClient(client);
         entity.setVehicle(vehicle);
         entity.setRepairOrder(repairOrder);
         entity.setStatus(EstimateStatus.PENDIENTE);
+        entity.setTaxPercentage(taxPercentage);
+        entity.setApprovalToken(SecureTokens.generate());
+        entity.setApprovalTokenExpiresAt(LocalDateTime.now().plusDays(APPROVAL_LINK_DAYS));
 
         addChildEntities(entity, request);
 
         BigDecimal total = calculateTotal(request.services(), request.products(),
-                request.discountPercentage(), request.taxPercentage());
+                request.discountPercentage(), taxPercentage);
         entity.setTotal(total);
 
         Estimate saved = estimateRepository.save(entity);
         log.info("Created estimate with id {}", saved.getId());
         EstimateDetailResponse response = getById(saved.getId());
-        emailNotificationService.notifyEstimateCreated(response);
+        emailNotificationService.notifyEstimateCreated(response,
+                appProperties.publicLink("/presupuesto/" + saved.getApprovalToken()), APPROVAL_LINK_DAYS);
         return response;
     }
 
@@ -163,17 +185,22 @@ public class EstimateServiceImpl implements EstimateService {
         Vehicle vehicle = vehicleRepository.findById(request.vehicleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle", request.vehicleId()));
 
+        // Keep the stored tax when the request omits it; never re-price with the current global value
+        BigDecimal taxPercentage = request.taxPercentage() != null
+                ? request.taxPercentage()
+                : entity.getTaxPercentage();
+
         entity.setClient(client);
         entity.setVehicle(vehicle);
         entity.setDiscountPercentage(request.discountPercentage() != null ? request.discountPercentage() : BigDecimal.ZERO);
-        entity.setTaxPercentage(request.taxPercentage() != null ? request.taxPercentage() : BigDecimal.ZERO);
+        entity.setTaxPercentage(taxPercentage);
 
         entity.getServices().clear();
         entity.getProducts().clear();
         addChildEntities(entity, request);
 
         BigDecimal total = calculateTotal(request.services(), request.products(),
-                request.discountPercentage(), request.taxPercentage());
+                request.discountPercentage(), taxPercentage);
         entity.setTotal(total);
 
         Estimate saved = estimateRepository.save(entity);
@@ -183,34 +210,44 @@ public class EstimateServiceImpl implements EstimateService {
 
     @Override
     @Transactional
-    public EstimateDetailResponse approve(Long id) {
+    public EstimateDetailResponse approve(Long id, EstimateDecisionChannel channel, String decidedByEmail) {
         Estimate entity = estimateRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Estimate", id));
-        if (entity.getStatus() != EstimateStatus.PENDIENTE) {
-            throw new BusinessException("Solo se pueden aprobar presupuestos en estado PENDIENTE");
-        }
-        entity.setStatus(EstimateStatus.ACEPTADO);
-        estimateRepository.save(entity);
-        log.info("Approved estimate with id {}", id);
-        EstimateDetailResponse response = getById(id);
-        emailNotificationService.notifyEstimateStatusChanged(response);
-        return response;
+        validateStaffChannel(channel);
+        return decide(entity, EstimateStatus.ACEPTADO, channel, findEmployee(decidedByEmail));
     }
 
     @Override
     @Transactional
-    public EstimateDetailResponse reject(Long id) {
+    public EstimateDetailResponse reject(Long id, EstimateDecisionChannel channel, String decidedByEmail) {
         Estimate entity = estimateRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Estimate", id));
-        if (entity.getStatus() != EstimateStatus.PENDIENTE) {
-            throw new BusinessException("Solo se pueden rechazar presupuestos en estado PENDIENTE");
-        }
-        entity.setStatus(EstimateStatus.RECHAZADO);
-        estimateRepository.save(entity);
-        log.info("Rejected estimate with id {}", id);
-        EstimateDetailResponse response = getById(id);
-        emailNotificationService.notifyEstimateStatusChanged(response);
-        return response;
+        validateStaffChannel(channel);
+        return decide(entity, EstimateStatus.RECHAZADO, channel, findEmployee(decidedByEmail));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PublicEstimateResponse getByApprovalToken(String token) {
+        return toPublicResponse(findByApprovalToken(token));
+    }
+
+    @Override
+    @Transactional
+    public PublicEstimateResponse approveByToken(String token) {
+        Estimate entity = findByApprovalToken(token);
+        ensureLinkUsable(entity);
+        decide(entity, EstimateStatus.ACEPTADO, EstimateDecisionChannel.EMAIL_LINK, null);
+        return toPublicResponse(entity);
+    }
+
+    @Override
+    @Transactional
+    public PublicEstimateResponse rejectByToken(String token) {
+        Estimate entity = findByApprovalToken(token);
+        ensureLinkUsable(entity);
+        decide(entity, EstimateStatus.RECHAZADO, EstimateDecisionChannel.EMAIL_LINK, null);
+        return toPublicResponse(entity);
     }
 
     @Override
@@ -259,13 +296,13 @@ public class EstimateServiceImpl implements EstimateService {
 
     @Override
     @Transactional(readOnly = true)
-    public EstimateInvoiceDataResponse convertToInvoiceData(Long estimateId) {
+    public EstimateDeliveryNoteDataResponse convertToDeliveryNoteData(Long estimateId) {
         Estimate entity = estimateRepository.findWithDetailsById(estimateId)
                 .orElseThrow(() -> new ResourceNotFoundException("Estimate", estimateId));
         if (entity.getStatus() != EstimateStatus.ACEPTADO) {
-            throw new BusinessException("Solo se pueden facturar presupuestos en estado ACEPTADO");
+            throw new BusinessException("Solo se pueden emitir remitos desde presupuestos en estado ACEPTADO");
         }
-        return estimateMapper.toInvoiceDataResponse(entity);
+        return estimateMapper.toDeliveryNoteDataResponse(entity);
     }
 
     @Override
@@ -287,6 +324,82 @@ public class EstimateServiceImpl implements EstimateService {
             }
         }
         return issues;
+    }
+
+    private EstimateDetailResponse decide(Estimate entity, EstimateStatus newStatus,
+                                          EstimateDecisionChannel channel, Employee decidedBy) {
+        if (entity.getStatus() != EstimateStatus.PENDIENTE) {
+            throw new BusinessException(newStatus == EstimateStatus.ACEPTADO
+                    ? "Solo se pueden aprobar presupuestos en estado PENDIENTE"
+                    : "Solo se pueden rechazar presupuestos en estado PENDIENTE");
+        }
+        entity.setStatus(newStatus);
+        entity.setDecisionChannel(channel);
+        entity.setDecidedAt(LocalDateTime.now());
+        entity.setDecidedByEmployee(decidedBy);
+        estimateRepository.save(entity);
+        log.info("Estimate {} marked as {} via {}", entity.getId(), newStatus, channel);
+
+        EstimateDetailResponse response = getById(entity.getId());
+        emailNotificationService.notifyEstimateStatusChanged(response);
+        return response;
+    }
+
+    private void validateStaffChannel(EstimateDecisionChannel channel) {
+        if (channel == null || channel == EstimateDecisionChannel.EMAIL_LINK) {
+            throw new BusinessException("Indicá si el cliente respondió por WhatsApp, por teléfono o en persona");
+        }
+    }
+
+    private Employee findEmployee(String email) {
+        return email == null ? null : employeeRepository.findByEmail(email).orElse(null);
+    }
+
+    private Estimate findByApprovalToken(String token) {
+        return estimateRepository.findByApprovalToken(token)
+                .orElseThrow(() -> new ResourceNotFoundException("El enlace del presupuesto no es válido"));
+    }
+
+    private boolean isLinkExpired(Estimate entity) {
+        return entity.getApprovalTokenExpiresAt() == null
+                || !entity.getApprovalTokenExpiresAt().isAfter(LocalDateTime.now());
+    }
+
+    private void ensureLinkUsable(Estimate entity) {
+        if (entity.getStatus() == EstimateStatus.ACEPTADO) {
+            throw new BusinessException("Este presupuesto ya fue aprobado");
+        }
+        if (entity.getStatus() == EstimateStatus.RECHAZADO) {
+            throw new BusinessException("Este presupuesto ya fue rechazado");
+        }
+        if (isLinkExpired(entity)) {
+            throw new BusinessException("El enlace venció. Comunicate con el taller para recibir uno nuevo");
+        }
+    }
+
+    private PublicEstimateResponse toPublicResponse(Estimate entity) {
+        String vehicle = EmailFormats.vehicleLabel(
+                entity.getVehicle().getBrand() != null ? entity.getVehicle().getBrand().getName() : null,
+                entity.getVehicle().getModel(), entity.getVehicle().getPlate());
+        List<InspectionIssueResponse> issues = entity.getRepairOrder() != null
+                ? getInspectionIssues(entity.getRepairOrder().getId())
+                : List.of();
+        return new PublicEstimateResponse(
+                entity.getId(),
+                entity.getClient().getFirstName(),
+                vehicle,
+                entity.getServices().stream().map(estimateMapper::toServiceItemResponse).toList(),
+                entity.getProducts().stream().map(estimateMapper::toProductResponse).toList(),
+                issues,
+                entity.getDiscountPercentage(),
+                entity.getTaxPercentage(),
+                entity.getTotal(),
+                entity.getStatus(),
+                entity.getDecisionChannel(),
+                entity.getDecidedAt(),
+                entity.getApprovalTokenExpiresAt(),
+                entity.getStatus() == EstimateStatus.PENDIENTE && !isLinkExpired(entity)
+        );
     }
 
     private void addChildEntities(Estimate entity, EstimateRequest request) {
@@ -324,7 +437,8 @@ public class EstimateServiceImpl implements EstimateService {
                 response.mechanicNotes(), issues, response.status(),
                 response.discountPercentage(), response.taxPercentage(), response.total(),
                 response.services(), response.products(),
-                response.createdAt(), response.updatedAt()
+                response.createdAt(), response.updatedAt(),
+                response.decisionChannel(), response.decidedAt(), response.decidedByEmployeeName()
         );
     }
 }

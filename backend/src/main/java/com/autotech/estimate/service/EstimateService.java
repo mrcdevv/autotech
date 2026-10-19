@@ -1,12 +1,14 @@
 package com.autotech.estimate.service;
 
 import com.autotech.estimate.dto.EstimateDetailResponse;
-import com.autotech.estimate.dto.EstimateInvoiceDataResponse;
+import com.autotech.estimate.dto.EstimateDeliveryNoteDataResponse;
 import com.autotech.estimate.dto.EstimateProductRequest;
 import com.autotech.estimate.dto.EstimateRequest;
 import com.autotech.estimate.dto.EstimateResponse;
 import com.autotech.estimate.dto.EstimateServiceItemRequest;
 import com.autotech.estimate.dto.InspectionIssueResponse;
+import com.autotech.estimate.dto.PublicEstimateResponse;
+import com.autotech.estimate.model.EstimateDecisionChannel;
 import com.autotech.estimate.model.EstimateStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,9 +32,18 @@ public interface EstimateService {
 
     EstimateDetailResponse update(Long id, EstimateRequest request);
 
-    EstimateDetailResponse approve(Long id);
+    /**
+     * Staff decision. The channel tells how the client answered (WhatsApp, phone, in person).
+     */
+    EstimateDetailResponse approve(Long id, EstimateDecisionChannel channel, String decidedByEmail);
 
-    EstimateDetailResponse reject(Long id);
+    EstimateDetailResponse reject(Long id, EstimateDecisionChannel channel, String decidedByEmail);
+
+    PublicEstimateResponse getByApprovalToken(String token);
+
+    PublicEstimateResponse approveByToken(String token);
+
+    PublicEstimateResponse rejectByToken(String token);
 
     void delete(Long id);
 
@@ -41,7 +52,7 @@ public interface EstimateService {
                               BigDecimal discountPercentage,
                               BigDecimal taxPercentage);
 
-    EstimateInvoiceDataResponse convertToInvoiceData(Long estimateId);
+    EstimateDeliveryNoteDataResponse convertToDeliveryNoteData(Long estimateId);
 
     List<InspectionIssueResponse> getInspectionIssues(Long repairOrderId);
 }

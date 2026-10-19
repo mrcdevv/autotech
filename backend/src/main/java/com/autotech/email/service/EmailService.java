@@ -1,10 +1,19 @@
 package com.autotech.email.service;
 
-import java.util.Collection;
+import com.autotech.email.dto.EmailMessage;
 
 public interface EmailService {
 
-    void send(String recipient, String subject, String body);
+    /**
+     * Queues the email for asynchronous delivery. When called inside a transaction, delivery
+     * happens only after a successful commit. Failures are logged, never propagated.
+     */
+    void send(EmailMessage message);
 
-    void send(Collection<String> recipients, String subject, String body);
+    /**
+     * Delivers the email synchronously and propagates any failure (used for the test email).
+     */
+    void sendNow(EmailMessage message);
+
+    boolean isEnabled();
 }

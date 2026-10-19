@@ -25,6 +25,32 @@ public interface RepairOrderRepository
     @EntityGraph(attributePaths = {"client", "vehicle", "vehicle.brand", "employees", "tags"})
     List<RepairOrder> findAllByIdIn(Collection<Long> ids);
 
+    /**
+     * Service reminder candidates: delivered orders older than the cutoff that are still the latest
+     * (non-cancelled) order of their vehicle.
+     */
+    @Query("""
+            SELECT ro FROM RepairOrder ro
+            WHERE ro.status = com.autotech.repairorder.model.RepairOrderStatus.ENTREGADO
+              AND ro.deliveredAt <= :cutoff
+              AND NOT EXISTS (
+                  SELECT o.id FROM RepairOrder o
+                  WHERE o.vehicle = ro.vehicle
+                    AND o.createdAt > ro.createdAt
+                    AND o.status <> com.autotech.repairorder.model.RepairOrderStatus.CANCELADO)
+            """)
+    @EntityGraph(attributePaths = {"client", "vehicle", "vehicle.brand"})
+    List<RepairOrder> findLatestDeliveredBefore(@Param("cutoff") LocalDateTime cutoff);
+
+    /** Pickup reminder candidates: ready orders waiting since before the cutoff. */
+    @Query("""
+            SELECT ro FROM RepairOrder ro
+            WHERE ro.status = com.autotech.repairorder.model.RepairOrderStatus.LISTO_PARA_ENTREGAR
+              AND ro.readyForPickupAt <= :cutoff
+            """)
+    @EntityGraph(attributePaths = {"client", "vehicle", "vehicle.brand"})
+    List<RepairOrder> findReadyForPickupBefore(@Param("cutoff") LocalDateTime cutoff);
+
     List<RepairOrder> findByVehicleIdOrderByCreatedAtDesc(Long vehicleId);
 
     boolean existsByVehicleIdAndStatusNotIn(Long vehicleId, Collection<RepairOrderStatus> statuses);

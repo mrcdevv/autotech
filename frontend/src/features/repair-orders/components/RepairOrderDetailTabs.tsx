@@ -1,11 +1,10 @@
-import { useState } from "react";
-
 import { Box, Tabs, Tab } from "@mui/material";
+import { useSearchParams } from "react-router";
 
 import { GeneralInfoTab } from "./GeneralInfoTab";
 import { InspectionsTab } from "@/features/inspections/InspectionsTab";
 import { EstimateTab } from "@/features/estimates/components/EstimateTab";
-import { InvoiceTab } from "@/features/invoices/components/InvoiceTab";
+import { DeliveryNoteTab } from "@/features/delivery-notes/components/DeliveryNoteTab";
 
 import type { RepairOrderDetailResponse } from "../types";
 
@@ -19,15 +18,31 @@ const TAB_LABELS = [
   "Información General",
   "Inspecciones",
   "Presupuesto",
-  "Factura",
+  "Remito",
 ];
 
+const TAB_SLUGS = ["general", "inspecciones", "presupuesto", "factura"] as const;
+
+const SLUG_TO_INDEX = new Map<string, number>(TAB_SLUGS.map((slug, index) => [slug, index]));
+
+function tabIndexFromSearch(searchParams: URLSearchParams): number {
+  const raw = searchParams.get("tab");
+  if (raw === null) return 0;
+  return SLUG_TO_INDEX.get(raw.toLowerCase()) ?? 0;
+}
+
 export function RepairOrderDetailTabs({ order, loading, onRefetch }: RepairOrderDetailTabsProps) {
-  const [activeTab, setActiveTab] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = tabIndexFromSearch(searchParams);
+
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
+    const slug: string = TAB_SLUGS[newValue] ?? "general";
+    setSearchParams({ tab: slug }, { replace: true });
+  };
 
   return (
     <Box>
-      <Tabs value={activeTab} onChange={(_, newValue: number) => setActiveTab(newValue)}>
+      <Tabs value={activeTab} onChange={handleTabChange}>
         {TAB_LABELS.map((label, index) => (
           <Tab key={index} label={label} />
         ))}
@@ -66,7 +81,7 @@ export function RepairOrderDetailTabs({ order, loading, onRefetch }: RepairOrder
         />
       )}
       {activeTab === 3 && order && (
-        <InvoiceTab repairOrderId={order.id} />
+        <DeliveryNoteTab repairOrderId={order.id} />
       )}
     </Box>
   );

@@ -7,13 +7,13 @@ import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.email.service.EmailNotificationService;
 import com.autotech.employee.repository.EmployeeRepository;
-import com.autotech.invoice.dto.InvoiceDetailResponse;
-import com.autotech.invoice.dto.InvoiceProductResponse;
-import com.autotech.invoice.dto.InvoiceServiceItemResponse;
-import com.autotech.invoice.model.Invoice;
-import com.autotech.invoice.model.InvoiceStatus;
-import com.autotech.invoice.repository.InvoiceRepository;
-import com.autotech.invoice.service.InvoiceService;
+import com.autotech.deliverynote.dto.DeliveryNoteDetailResponse;
+import com.autotech.deliverynote.dto.DeliveryNoteProductResponse;
+import com.autotech.deliverynote.dto.DeliveryNoteServiceItemResponse;
+import com.autotech.deliverynote.model.DeliveryNote;
+import com.autotech.deliverynote.model.DeliveryNoteStatus;
+import com.autotech.deliverynote.repository.DeliveryNoteRepository;
+import com.autotech.deliverynote.service.DeliveryNoteService;
 import com.autotech.payment.dto.PaymentMapper;
 import com.autotech.payment.dto.PaymentRequest;
 import com.autotech.payment.dto.PaymentResponse;
@@ -59,10 +59,10 @@ class PaymentServiceImplTest {
     private PaymentMapper paymentMapper;
 
     @Mock
-    private InvoiceService invoiceService;
+    private DeliveryNoteService deliveryNoteService;
 
     @Mock
-    private InvoiceRepository invoiceRepository;
+    private DeliveryNoteRepository deliveryNoteRepository;
 
     @Mock
     private EmployeeRepository employeeRepository;
@@ -80,23 +80,23 @@ class PaymentServiceImplTest {
     private PaymentServiceImpl paymentService;
 
     @Test
-    void givenPaymentsExist_whenGetByInvoiceId_thenReturnPaymentList() {
+    void givenPaymentsExist_whenGetByDeliveryNoteId_thenReturnPaymentList() {
         Payment payment = buildPayment(1L);
         PaymentResponse response = buildPaymentResponse(1L);
-        when(paymentRepository.findByInvoiceIdOrderByPaymentDateDesc(10L)).thenReturn(List.of(payment));
+        when(paymentRepository.findByDeliveryNoteIdOrderByPaymentDateDesc(10L)).thenReturn(List.of(payment));
         when(paymentMapper.toResponse(payment)).thenReturn(response);
 
-        List<PaymentResponse> result = paymentService.getByInvoiceId(10L);
+        List<PaymentResponse> result = paymentService.getByDeliveryNoteId(10L);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).id()).isEqualTo(1L);
     }
 
     @Test
-    void givenNoPayments_whenGetByInvoiceId_thenReturnEmptyList() {
-        when(paymentRepository.findByInvoiceIdOrderByPaymentDateDesc(10L)).thenReturn(Collections.emptyList());
+    void givenNoPayments_whenGetByDeliveryNoteId_thenReturnEmptyList() {
+        when(paymentRepository.findByDeliveryNoteIdOrderByPaymentDateDesc(10L)).thenReturn(Collections.emptyList());
 
-        List<PaymentResponse> result = paymentService.getByInvoiceId(10L);
+        List<PaymentResponse> result = paymentService.getByDeliveryNoteId(10L);
 
         assertThat(result).isEmpty();
     }
@@ -122,28 +122,47 @@ class PaymentServiceImplTest {
     }
 
     @Test
-    void givenInvoiceWithPayments_whenGetSummary_thenCalculateAllFieldsCorrectly() {
-        InvoiceDetailResponse invoice = buildInvoiceDetailResponse();
-        when(invoiceService.getById(10L)).thenReturn(invoice);
-        when(paymentRepository.sumAmountByInvoiceId(10L)).thenReturn(BigDecimal.valueOf(500));
+    void givenDeliveryNoteWithPayments_whenGetSummary_thenCalculateAllFieldsCorrectly() {
+        DeliveryNoteDetailResponse deliveryNote = buildDeliveryNoteDetailResponse();
+        when(deliveryNoteService.getById(10L)).thenReturn(deliveryNote);
+        when(paymentRepository.sumAmountByDeliveryNoteId(10L)).thenReturn(BigDecimal.valueOf(500));
 
         PaymentSummaryResponse result = paymentService.getSummary(10L);
 
-        // services=1000, products=200, subtotal=1200, discount(10%)=120, after=1080, tax(21%)=226.80, total=1306.80
+        // services=1000, products=200, subtotal=1200, discount(10%)=120, total=1080
         assertThat(result.totalServices()).isEqualByComparingTo(BigDecimal.valueOf(1000));
         assertThat(result.totalProducts()).isEqualByComparingTo(BigDecimal.valueOf(200));
         assertThat(result.discountAmount()).isEqualByComparingTo(BigDecimal.valueOf(120));
+        assertThat(result.total()).isEqualByComparingTo(new BigDecimal("1080.00"));
+        assertThat(result.totalPaid()).isEqualByComparingTo(BigDecimal.valueOf(500));
+        assertThat(result.remaining()).isEqualByComparingTo(new BigDecimal("580.00"));
+    }
+
+    @Test
+    void givenDeliveryNoteWithTax_whenGetSummary_thenTotalAndRemainingIncludeTax() {
+        DeliveryNoteDetailResponse base = buildDeliveryNoteDetailResponse();
+        DeliveryNoteDetailResponse deliveryNote = new DeliveryNoteDetailResponse(
+                base.id(), base.number(), base.clientId(), base.clientFullName(), base.clientDni(),
+                base.clientPhone(), base.clientEmail(), base.clientType(), base.vehicleId(), base.vehiclePlate(),
+                base.vehicleBrand(), base.vehicleModel(), base.vehicleYear(), base.repairOrderId(), base.estimateId(),
+                base.status(), base.discountPercentage(), BigDecimal.valueOf(21), new BigDecimal("1306.80"),
+                base.services(), base.products(), base.createdAt(), base.updatedAt());
+        when(deliveryNoteService.getById(10L)).thenReturn(deliveryNote);
+        when(paymentRepository.sumAmountByDeliveryNoteId(10L)).thenReturn(BigDecimal.valueOf(500));
+
+        PaymentSummaryResponse result = paymentService.getSummary(10L);
+
+        // subtotal=1200, discount(10%)=120, after discount=1080, IVA(21%)=226.80, total=1306.80
         assertThat(result.taxAmount()).isEqualByComparingTo(new BigDecimal("226.80"));
         assertThat(result.total()).isEqualByComparingTo(new BigDecimal("1306.80"));
-        assertThat(result.totalPaid()).isEqualByComparingTo(BigDecimal.valueOf(500));
         assertThat(result.remaining()).isEqualByComparingTo(new BigDecimal("806.80"));
     }
 
     @Test
     void givenNoPayments_whenGetSummary_thenRemainingEqualsTotal() {
-        InvoiceDetailResponse invoice = buildInvoiceDetailResponse();
-        when(invoiceService.getById(10L)).thenReturn(invoice);
-        when(paymentRepository.sumAmountByInvoiceId(10L)).thenReturn(BigDecimal.ZERO);
+        DeliveryNoteDetailResponse deliveryNote = buildDeliveryNoteDetailResponse();
+        when(deliveryNoteService.getById(10L)).thenReturn(deliveryNote);
+        when(paymentRepository.sumAmountByDeliveryNoteId(10L)).thenReturn(BigDecimal.ZERO);
 
         PaymentSummaryResponse result = paymentService.getSummary(10L);
 
@@ -152,9 +171,9 @@ class PaymentServiceImplTest {
 
     @Test
     void givenFullyPaid_whenGetSummary_thenRemainingIsZero() {
-        InvoiceDetailResponse invoice = buildInvoiceDetailResponse();
-        when(invoiceService.getById(10L)).thenReturn(invoice);
-        when(paymentRepository.sumAmountByInvoiceId(10L)).thenReturn(new BigDecimal("1306.80"));
+        DeliveryNoteDetailResponse deliveryNote = buildDeliveryNoteDetailResponse();
+        when(deliveryNoteService.getById(10L)).thenReturn(deliveryNote);
+        when(paymentRepository.sumAmountByDeliveryNoteId(10L)).thenReturn(new BigDecimal("1080.00"));
 
         PaymentSummaryResponse result = paymentService.getSummary(10L);
 
@@ -211,16 +230,16 @@ class PaymentServiceImplTest {
     }
 
     @Test
-    void givenInvoiceFullyPaid_whenCreate_thenThrowBusinessException() {
+    void givenDeliveryNoteFullyPaid_whenCreate_thenThrowBusinessException() {
         PaymentRequest request = new PaymentRequest(
                 LocalDate.now(), BigDecimal.valueOf(100), null, PaymentType.EFECTIVO, null, null);
-        InvoiceDetailResponse invoice = buildInvoiceDetailResponse();
-        when(invoiceService.getById(10L)).thenReturn(invoice);
-        when(paymentRepository.sumAmountByInvoiceId(10L)).thenReturn(new BigDecimal("1306.80"));
+        DeliveryNoteDetailResponse deliveryNote = buildDeliveryNoteDetailResponse();
+        when(deliveryNoteService.getById(10L)).thenReturn(deliveryNote);
+        when(paymentRepository.sumAmountByDeliveryNoteId(10L)).thenReturn(new BigDecimal("1080.00"));
 
         assertThatThrownBy(() -> paymentService.create(10L, request))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("completamente pagada");
+                .hasMessageContaining("completamente pagado");
     }
 
     @Test
@@ -239,17 +258,17 @@ class PaymentServiceImplTest {
     }
 
     @Test
-    void givenPaymentFullyPaysInvoice_whenCreate_thenUpdatesStatusToPagada() {
+    void givenPaymentFullyPaysDeliveryNote_whenCreate_thenUpdatesStatusToPagada() {
         PaymentRequest request = new PaymentRequest(
-                LocalDate.now(), new BigDecimal("1306.80"), null, PaymentType.EFECTIVO, null, null);
-        InvoiceDetailResponse invoice = buildInvoiceDetailResponse();
-        when(invoiceService.getById(10L)).thenReturn(invoice);
-        when(paymentRepository.sumAmountByInvoiceId(10L))
+                LocalDate.now(), new BigDecimal("1080.00"), null, PaymentType.EFECTIVO, null, null);
+        DeliveryNoteDetailResponse deliveryNote = buildDeliveryNoteDetailResponse();
+        when(deliveryNoteService.getById(10L)).thenReturn(deliveryNote);
+        when(paymentRepository.sumAmountByDeliveryNoteId(10L))
                 .thenReturn(BigDecimal.ZERO)
-                .thenReturn(new BigDecimal("1306.80"));
+                .thenReturn(new BigDecimal("1080.00"));
 
-        Invoice invoiceEntity = buildInvoiceEntity(10L);
-        when(invoiceRepository.findById(10L)).thenReturn(Optional.of(invoiceEntity));
+        DeliveryNote deliveryNoteEntity = buildDeliveryNoteEntity(10L);
+        when(deliveryNoteRepository.findById(10L)).thenReturn(Optional.of(deliveryNoteEntity));
 
         Payment mapped = buildPayment(1L);
         when(paymentMapper.toEntity(request)).thenReturn(mapped);
@@ -261,7 +280,7 @@ class PaymentServiceImplTest {
 
         paymentService.create(10L, request);
 
-        verify(invoiceService).updateStatusToPagada(10L);
+        verify(deliveryNoteService).updateStatusToPagada(10L);
     }
 
     @Test
@@ -362,48 +381,48 @@ class PaymentServiceImplTest {
     }
 
     @Test
-    void givenPaymentDeleted_whenDelete_thenRevertsInvoiceStatusToPendiente() {
+    void givenPaymentDeleted_whenDelete_thenRevertsDeliveryNoteStatusToPendiente() {
         Payment existing = buildPayment(1L);
         when(paymentRepository.findWithDetailsById(1L)).thenReturn(Optional.of(existing));
 
-        InvoiceDetailResponse invoice = buildInvoiceDetailResponse();
-        when(invoiceService.getById(10L)).thenReturn(invoice);
-        when(paymentRepository.sumAmountByInvoiceId(10L)).thenReturn(BigDecimal.valueOf(500));
+        DeliveryNoteDetailResponse deliveryNote = buildDeliveryNoteDetailResponse();
+        when(deliveryNoteService.getById(10L)).thenReturn(deliveryNote);
+        when(paymentRepository.sumAmountByDeliveryNoteId(10L)).thenReturn(BigDecimal.valueOf(500));
 
         paymentService.delete(1L, 5L);
 
-        verify(invoiceService).updateStatusToPendiente(10L);
+        verify(deliveryNoteService).updateStatusToPendiente(10L);
     }
 
     // --- Helpers ---
 
     private void setupSummaryMocks() {
-        InvoiceDetailResponse invoice = buildInvoiceDetailResponse();
-        when(invoiceService.getById(10L)).thenReturn(invoice);
-        when(paymentRepository.sumAmountByInvoiceId(10L)).thenReturn(BigDecimal.ZERO);
+        DeliveryNoteDetailResponse deliveryNote = buildDeliveryNoteDetailResponse();
+        when(deliveryNoteService.getById(10L)).thenReturn(deliveryNote);
+        when(paymentRepository.sumAmountByDeliveryNoteId(10L)).thenReturn(BigDecimal.ZERO);
     }
 
     private void setupSummaryMocksForUpdate() {
-        InvoiceDetailResponse invoice = buildInvoiceDetailResponse();
-        when(invoiceService.getById(10L)).thenReturn(invoice);
-        when(paymentRepository.sumAmountByInvoiceId(10L)).thenReturn(BigDecimal.valueOf(500));
+        DeliveryNoteDetailResponse deliveryNote = buildDeliveryNoteDetailResponse();
+        when(deliveryNoteService.getById(10L)).thenReturn(deliveryNote);
+        when(paymentRepository.sumAmountByDeliveryNoteId(10L)).thenReturn(BigDecimal.valueOf(500));
     }
 
     private void setupSummaryMocksForDelete() {
-        InvoiceDetailResponse invoice = buildInvoiceDetailResponse();
-        when(invoiceService.getById(10L)).thenReturn(invoice);
-        when(paymentRepository.sumAmountByInvoiceId(10L)).thenReturn(BigDecimal.valueOf(500));
+        DeliveryNoteDetailResponse deliveryNote = buildDeliveryNoteDetailResponse();
+        when(deliveryNoteService.getById(10L)).thenReturn(deliveryNote);
+        when(paymentRepository.sumAmountByDeliveryNoteId(10L)).thenReturn(BigDecimal.valueOf(500));
     }
 
     private void setupCreateMocks(BigDecimal amount) {
-        InvoiceDetailResponse invoice = buildInvoiceDetailResponse();
-        when(invoiceService.getById(10L)).thenReturn(invoice);
-        when(paymentRepository.sumAmountByInvoiceId(10L))
+        DeliveryNoteDetailResponse deliveryNote = buildDeliveryNoteDetailResponse();
+        when(deliveryNoteService.getById(10L)).thenReturn(deliveryNote);
+        when(paymentRepository.sumAmountByDeliveryNoteId(10L))
                 .thenReturn(BigDecimal.ZERO)
                 .thenReturn(amount);
 
-        Invoice invoiceEntity = buildInvoiceEntity(10L);
-        when(invoiceRepository.findById(10L)).thenReturn(Optional.of(invoiceEntity));
+        DeliveryNote deliveryNoteEntity = buildDeliveryNoteEntity(10L);
+        when(deliveryNoteRepository.findById(10L)).thenReturn(Optional.of(deliveryNoteEntity));
 
         Payment mapped = buildPayment(1L);
         when(paymentMapper.toEntity(any(PaymentRequest.class))).thenReturn(mapped);
@@ -415,9 +434,9 @@ class PaymentServiceImplTest {
     }
 
     private Payment buildPayment(Long id) {
-        Invoice invoice = buildInvoiceEntity(10L);
+        DeliveryNote deliveryNote = buildDeliveryNoteEntity(10L);
         Payment payment = Payment.builder()
-                .invoice(invoice)
+                .deliveryNote(deliveryNote)
                 .paymentDate(LocalDate.now())
                 .amount(BigDecimal.valueOf(500))
                 .payerName("Juan Perez")
@@ -429,15 +448,14 @@ class PaymentServiceImplTest {
         return payment;
     }
 
-    private Invoice buildInvoiceEntity(Long id) {
-        Invoice invoice = Invoice.builder()
-                .status(InvoiceStatus.PENDIENTE)
+    private DeliveryNote buildDeliveryNoteEntity(Long id) {
+        DeliveryNote deliveryNote = DeliveryNote.builder()
+                .status(DeliveryNoteStatus.PENDIENTE)
                 .discountPercentage(BigDecimal.valueOf(10))
-                .taxPercentage(BigDecimal.valueOf(21))
-                .total(new BigDecimal("1306.80"))
+                .total(new BigDecimal("1080.00"))
                 .build();
-        invoice.setId(id);
-        return invoice;
+        deliveryNote.setId(id);
+        return deliveryNote;
     }
 
     private PaymentResponse buildPaymentResponse(Long id) {
@@ -447,14 +465,14 @@ class PaymentServiceImplTest {
                 null, null, null, null, null);
     }
 
-    private InvoiceDetailResponse buildInvoiceDetailResponse() {
-        return new InvoiceDetailResponse(
-                10L, 1L, "Juan Perez", "12345678", "1234567890", null, "PERSONAL",
+    private DeliveryNoteDetailResponse buildDeliveryNoteDetailResponse() {
+        return new DeliveryNoteDetailResponse(
+                10L, 1L, 1L, "Juan Perez", "12345678", "1234567890", null, "PERSONAL",
                 2L, "ABC123", null, "Corolla", 2020, null, null,
-                InvoiceStatus.PENDIENTE, BigDecimal.valueOf(10), BigDecimal.valueOf(21),
-                new BigDecimal("1306.80"),
-                List.of(new InvoiceServiceItemResponse(1L, "Service A", BigDecimal.valueOf(1000))),
-                List.of(new InvoiceProductResponse(1L, "Product A", 2, BigDecimal.valueOf(100), BigDecimal.valueOf(200))),
+                DeliveryNoteStatus.PENDIENTE, BigDecimal.valueOf(10), BigDecimal.ZERO,
+                new BigDecimal("1080.00"),
+                List.of(new DeliveryNoteServiceItemResponse(1L, "Service A", BigDecimal.valueOf(1000))),
+                List.of(new DeliveryNoteProductResponse(1L, "Product A", 2, BigDecimal.valueOf(100), BigDecimal.valueOf(200))),
                 LocalDateTime.now(), LocalDateTime.now());
     }
 

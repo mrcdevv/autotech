@@ -3,7 +3,7 @@ package com.autotech.repairorder.controller;
 import com.autotech.common.exception.GlobalExceptionHandler;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.estimate.service.EstimateService;
-import com.autotech.invoice.service.InvoiceService;
+import com.autotech.deliverynote.service.DeliveryNoteService;
 import com.autotech.repairorder.dto.RepairOrderDetailResponse;
 import com.autotech.repairorder.dto.RepairOrderFilter;
 import com.autotech.repairorder.dto.RepairOrderRequest;
@@ -14,6 +14,8 @@ import com.autotech.repairorder.model.RepairOrderStatus;
 import com.autotech.repairorder.service.RepairOrderService;
 import com.autotech.security.CustomUserDetailsService;
 import com.autotech.security.JwtTokenProvider;
+import com.autotech.security.SecurityConfig;
+import com.autotech.security.WithAllPermissions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +23,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -42,8 +43,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(RepairOrderController.class)
-@Import(GlobalExceptionHandler.class)
-@WithMockUser
+@Import({GlobalExceptionHandler.class, SecurityConfig.class})
+@WithAllPermissions
 class RepairOrderControllerTest {
 
     @Autowired
@@ -59,7 +60,7 @@ class RepairOrderControllerTest {
     private EstimateService estimateService;
 
     @MockitoBean
-    private InvoiceService invoiceService;
+    private DeliveryNoteService deliveryNoteService;
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
@@ -114,7 +115,7 @@ class RepairOrderControllerTest {
 
     @Test
     void create_validRequest_returns201() throws Exception {
-        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Engine noise", null, null, null);
+        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Engine noise", null, null, null, null);
         when(repairOrderService.create(any(RepairOrderRequest.class))).thenReturn(sampleResponse);
 
         mockMvc.perform(post("/api/repair-orders")
@@ -127,7 +128,7 @@ class RepairOrderControllerTest {
 
     @Test
     void create_missingClientId_returns400() throws Exception {
-        RepairOrderRequest request = new RepairOrderRequest(null, 1L, null, null, null, null, null);
+        RepairOrderRequest request = new RepairOrderRequest(null, 1L, null, null, null, null, null, null);
 
         mockMvc.perform(post("/api/repair-orders")
                         .with(csrf())
@@ -138,7 +139,7 @@ class RepairOrderControllerTest {
 
     @Test
     void create_missingVehicleId_returns400() throws Exception {
-        RepairOrderRequest request = new RepairOrderRequest(1L, null, null, null, null, null, null);
+        RepairOrderRequest request = new RepairOrderRequest(1L, null, null, null, null, null, null, null);
 
         mockMvc.perform(post("/api/repair-orders")
                         .with(csrf())
@@ -149,7 +150,7 @@ class RepairOrderControllerTest {
 
     @Test
     void update_validRequest_returns200() throws Exception {
-        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Updated", null, null, null);
+        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Updated", null, null, null, null);
         when(repairOrderService.update(eq(1L), any(RepairOrderRequest.class))).thenReturn(sampleResponse);
 
         mockMvc.perform(put("/api/repair-orders/1")

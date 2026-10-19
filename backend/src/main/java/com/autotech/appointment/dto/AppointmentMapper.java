@@ -20,6 +20,7 @@ public class AppointmentMapper {
                 entity.getClient() != null
                         ? entity.getClient().getFirstName() + " " + entity.getClient().getLastName()
                         : null,
+                entity.getClient() != null ? entity.getClient().getEmail() : null,
                 entity.getVehicle() != null ? entity.getVehicle().getId() : null,
                 entity.getVehicle() != null ? entity.getVehicle().getPlate() : null,
                 entity.getVehicle() != null && entity.getVehicle().getBrand() != null
@@ -34,6 +35,8 @@ public class AppointmentMapper {
                 entity.getVehicleArrivedAt(),
                 entity.getVehiclePickedUpAt(),
                 entity.getClientArrived(),
+                entity.getConfirmationStatus(),
+                entity.getConfirmedAt(),
                 entity.getEmployees() != null
                         ? entity.getEmployees().stream().map(this::toEmployeeSummaryResponse).toList()
                         : List.of(),

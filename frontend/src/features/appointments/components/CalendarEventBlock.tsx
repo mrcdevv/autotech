@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Box } from "@mui/material";
 import dayjs from "dayjs";
 
@@ -56,8 +56,51 @@ export function CalendarEventBlock({
   const snapPx = pxPerMin * SNAP_MINUTES;
   const snap = (raw: number) => Math.round(raw / snapPx) * snapPx;
 
+  // Only scheduled appointments can be moved or resized; completed and
+  // cancelled ones behave as plain clickable cards.
+  const canReschedule = Boolean(onReschedule) && appointment.status === "SCHEDULED";
+
+  const capturePointer = (pointerId: number) => {
+    try {
+      wrapperRef.current?.setPointerCapture?.(pointerId);
+    } catch {
+      // capture is best effort; the window listener below still ends the gesture
+    }
+  };
+
+  const releasePointer = (pointerId: number) => {
+    try {
+      wrapperRef.current?.releasePointerCapture?.(pointerId);
+    } catch {
+      // pointer capture may already be released
+    }
+  };
+
+  const cancelGesture = () => {
+    gestureRef.current = null;
+    suppressClickRef.current = false;
+    setDrag(null);
+  };
+
+  // Safety net: a pointer released or cancelled anywhere (e.g. outside the card
+  // before capture took effect) must never leave a gesture pending.
+  useEffect(() => {
+    const handleWindowPointerEnd = () => {
+      if (!gestureRef.current) return;
+      gestureRef.current = null;
+      suppressClickRef.current = false;
+      setDrag(null);
+    };
+    window.addEventListener("pointerup", handleWindowPointerEnd);
+    window.addEventListener("pointercancel", handleWindowPointerEnd);
+    return () => {
+      window.removeEventListener("pointerup", handleWindowPointerEnd);
+      window.removeEventListener("pointercancel", handleWindowPointerEnd);
+    };
+  }, []);
+
   const beginGesture = (mode: DragMode) => (e: React.PointerEvent<HTMLElement>) => {
-    if (!onReschedule) return;
+    if (!canReschedule) return;
     // Let interactive controls (menu button) work natively.
     if ((e.target as HTMLElement).closest("button")) {
       suppressClickRef.current = false;
@@ -66,16 +109,20 @@ export function CalendarEventBlock({
     e.stopPropagation();
     suppressClickRef.current = true;
     gestureRef.current = { startY: e.clientY, mode, moved: false };
+    capturePointer(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLElement>) => {
     const g = gestureRef.current;
     if (!g) return;
-    const raw = e.clientY - g.startY;
-    if (!g.moved && Math.abs(raw) > DRAG_THRESHOLD_PX) {
-      g.moved = true;
-      wrapperRef.current?.setPointerCapture(e.pointerId);
+    // No button pressed means the release was missed: drop the gesture unsaved.
+    if (e.buttons === 0) {
+      releasePointer(e.pointerId);
+      cancelGesture();
+      return;
     }
+    const raw = e.clientY - g.startY;
+    if (!g.moved && Math.abs(raw) > DRAG_THRESHOLD_PX) g.moved = true;
     if (g.moved) setDrag({ mode: g.mode, deltaPx: snap(raw) });
   };
 
@@ -83,19 +130,15 @@ export function CalendarEventBlock({
     const g = gestureRef.current;
     if (!g) return;
     gestureRef.current = null;
+    setDrag(null);
+    releasePointer(e.pointerId);
 
     if (!g.moved) {
-      setDrag(null);
-      if (!cancelled) onClick(appointment);
+      // A plain click on the card opens the detail; on the resize strip it does nothing.
+      if (!cancelled && g.mode === "move") onClick(appointment);
       return;
     }
 
-    setDrag(null);
-    try {
-      wrapperRef.current?.releasePointerCapture(e.pointerId);
-    } catch {
-      // pointer capture may already be released
-    }
     if (!onReschedule) return;
 
     const minutesDelta = snap(e.clientY - g.startY) / pxPerMin;
@@ -169,7 +212,7 @@ export function CalendarEventBlock({
         zIndex: drag ? 100 : zIndex,
         transition: drag ? "none" : "all 0.15s ease-in-out",
         userSelect: "none",
-        touchAction: "none",
+        touchAction: canReschedule ? "none" : "auto",
         "&:hover":
           groupSize > 1 && !drag
             ? { zIndex: 50, width: "calc(100% - 8px)", left: "4px" }
@@ -183,8 +226,9 @@ export function CalendarEventBlock({
         onClick={onClick}
         onMenuOpen={onMenuOpen}
       />
-      {onReschedule && (
+      {canReschedule && (
         <Box
+          data-testid="appointment-resize-handle"
           onPointerDown={beginGesture("resize")}
           onClick={(e) => e.stopPropagation()}
           sx={{

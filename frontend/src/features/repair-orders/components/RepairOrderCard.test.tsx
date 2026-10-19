@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect } from "vitest";
 import { MemoryRouter } from "react-router";
@@ -30,6 +30,20 @@ const sampleOrder: RepairOrderResponse = {
   tags: [{ id: 1, name: "Urgente", color: "#FF0000" }],
   createdAt: "2025-01-15T10:00:00",
   updatedAt: "2025-01-15T10:00:00",
+};
+
+const multiMechanicOrder: RepairOrderResponse = {
+  ...sampleOrder,
+  employees: [
+    { id: 1, firstName: "Carlos", lastName: "Lopez" },
+    { id: 2, firstName: "Ana", lastName: "Garcia" },
+    { id: 3, firstName: "Luis", lastName: "Martinez" },
+  ],
+};
+
+const unassignedOrder: RepairOrderResponse = {
+  ...sampleOrder,
+  employees: [],
 };
 
 describe("RepairOrderCard", () => {
@@ -66,14 +80,106 @@ describe("RepairOrderCard", () => {
     expect(screen.getAllByText(/ABC123/).length).toBeGreaterThan(0);
   });
 
-  it("given order with employees, when rendered, then shows employee chips", () => {
+  it("given order, when rendered, then separates the vehicle model from the plate with a real space in the DOM text", () => {
     render(
       <MemoryRouter>
         <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Carlos Lopez")).toBeInTheDocument();
+    const vehicleText = screen.getByText(/2020 Toyota Corolla/);
+    // Positive control: the model and the plate are separated by a real space,
+    // so screen readers and clipboard copies get a correctly separated value.
+    expect(vehicleText.textContent).toContain("2020 Toyota Corolla ABC123");
+    // Negative control: guards against the glued form the user reported
+    // ("...Polo HighlineAD789GH"), which is how this defect survived unnoticed.
+    expect(vehicleText.textContent).not.toContain("CorollaABC123");
+  });
+
+  it("given order with one mechanic, when rendered, then shows initials avatar and reveals the full name on hover", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("CL")).toBeInTheDocument();
+    expect(screen.queryByText("Carlos Lopez")).not.toBeInTheDocument();
+
+    await user.hover(screen.getByText("CL"));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Carlos Lopez");
+  });
+
+  it("given order with three mechanics, when rendered, then shows one initials avatar per mechanic and no visible full name", () => {
+    render(
+      <MemoryRouter>
+        <RepairOrderCard order={multiMechanicOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("CL")).toBeInTheDocument();
+    expect(screen.getByText("AG")).toBeInTheDocument();
+    expect(screen.getByText("LM")).toBeInTheDocument();
+    expect(screen.queryByText("Carlos Lopez")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ana Garcia")).not.toBeInTheDocument();
+    expect(screen.queryByText("Luis Martinez")).not.toBeInTheDocument();
+  });
+
+  it("given order with three mechanics, when hovering each avatar, then each tooltip reveals its own mechanic", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <RepairOrderCard order={multiMechanicOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    await user.hover(screen.getByText("CL"));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Carlos Lopez");
+
+    await user.unhover(screen.getByText("CL"));
+    await waitFor(() => expect(screen.queryByText("Carlos Lopez")).not.toBeInTheDocument());
+
+    await user.hover(screen.getByText("AG"));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Ana Garcia");
+
+    await user.unhover(screen.getByText("AG"));
+    await waitFor(() => expect(screen.queryByText("Ana Garcia")).not.toBeInTheDocument());
+
+    await user.hover(screen.getByText("LM"));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Luis Martinez");
+  });
+
+  it("given order with three mechanics, when rendered, then row label reads Mecánicos", () => {
+    render(
+      <MemoryRouter>
+        <RepairOrderCard order={multiMechanicOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Mecánicos")).toBeInTheDocument();
+  });
+
+  it("given order with one mechanic, when rendered, then row label reads Mecánico", () => {
+    render(
+      <MemoryRouter>
+        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Mecánico")).toBeInTheDocument();
+    expect(screen.queryByText("Mecánicos")).not.toBeInTheDocument();
+  });
+
+  it("given order with no mechanics, when rendered, then shows Sin asignar and no mechanic", () => {
+    render(
+      <MemoryRouter>
+        <RepairOrderCard order={unassignedOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Sin asignar")).toBeInTheDocument();
+    expect(screen.queryByText("Carlos Lopez")).not.toBeInTheDocument();
   });
 
   it("given order with tags, when rendered, then shows tag chips", () => {
@@ -124,6 +230,29 @@ describe("RepairOrderCard", () => {
     await user.click(screen.getByLabelText("Opciones de la orden"));
 
     expect(screen.getByText("Asignar mecánico")).toBeInTheDocument();
+  });
+
+  it("given card, when clicking copy tracking code, then writes the OT-<id> identifier to the clipboard", async () => {
+    // userEvent.setup() installs its own navigator.clipboard, so the mock must be
+    // defined after setup to remain visible to the component.
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+    render(
+      <MemoryRouter>
+        <RepairOrderCard order={sampleOrder} onUpdateStatus={vi.fn()} onRefetch={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByLabelText("Opciones de la orden"));
+    await user.click(await screen.findByText("Copiar código de seguimiento"));
+
+    expect(writeText).toHaveBeenCalledTimes(1);
+    expect(writeText).toHaveBeenCalledWith("OT-1");
+    expect(writeText).not.toHaveBeenCalledWith("1");
   });
 
   it("given card, when clicking update status button, then opens status dialog", async () => {

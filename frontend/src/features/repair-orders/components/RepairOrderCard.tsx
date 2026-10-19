@@ -1,8 +1,11 @@
 import { useState } from "react";
 
 import {
+  Avatar,
+  AvatarGroup,
   Card,
   CardContent,
+  Tooltip,
   Typography,
   Box,
   IconButton,
@@ -17,7 +20,6 @@ import { useNavigate } from "react-router";
 
 import { MonoText } from "@/components/MonoText";
 import { StatusBadge } from "@/components/StatusBadge";
-import { initials } from "@/utils/initials";
 
 import { AssignMechanicsDialog } from "./AssignMechanicsDialog";
 import { StatusUpdateDialog } from "./StatusUpdateDialog";
@@ -45,7 +47,7 @@ export function RepairOrderCard({ order, onUpdateStatus, onRefetch }: RepairOrde
   const vehicleLabel =
     [order.vehicleYear, order.vehicleBrandName, order.vehicleModel].filter(Boolean).join(" ") ||
     "Vehículo";
-  const employee = order.employees[0];
+  const employeeLabel = order.employees.length > 1 ? "Mecánicos" : "Mecánico";
 
   const handleCardClick = () => {
     navigate(`/ordenes-trabajo/${order.id}`);
@@ -57,7 +59,7 @@ export function RepairOrderCard({ order, onUpdateStatus, onRefetch }: RepairOrde
   };
 
   const handleCopyTrackingCode = () => {
-    navigator.clipboard.writeText(String(order.id));
+    navigator.clipboard.writeText(`OT-${order.id}`);
     setAnchorEl(null);
   };
 
@@ -146,42 +148,34 @@ export function RepairOrderCard({ order, onUpdateStatus, onRefetch }: RepairOrde
             sx={{ mb: 1.5 }}
           >
             <InfoRow label="Vehículo">
+              {/* Model and plate must be one inline text flow inside a single
+                  flex child: as siblings, the whitespace between them is
+                  discarded by the flex container and the texts visually collide
+                  (e.g. "Polo HighlineAD789GH"). */}
               <Typography component="span" sx={{ fontSize: "0.8125rem", color: "text.muted" }}>
                 {vehicleLabel}{" "}
+                <MonoText sx={{ fontSize: "0.75rem", color: "text.secondary" }}>
+                  {order.vehiclePlate}
+                </MonoText>
               </Typography>
-              <MonoText sx={{ fontSize: "0.75rem", color: "text.secondary" }}>
-                {order.vehiclePlate}
-              </MonoText>
             </InfoRow>
             <InfoRow label="Teléfono">
               <MonoText sx={{ fontSize: "0.75rem", color: "text.muted" }}>
                 {order.clientPhone}
               </MonoText>
             </InfoRow>
-            <InfoRow label="Mecánico">
-              {employee ? (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                  <Box
-                    sx={{
-                      width: 22,
-                      height: 22,
-                      flex: "none",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderRadius: "50%",
-                      bgcolor: "shell.avatarBg",
-                      color: "text.primary",
-                      fontSize: "0.5625rem",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {initials(employee.firstName, employee.lastName)}
-                  </Box>
-                  <Typography sx={{ fontSize: "0.8125rem", color: "text.muted" }}>
-                    {employee.firstName} {employee.lastName}
-                  </Typography>
-                </Box>
+            <InfoRow label={employeeLabel}>
+              {order.employees.length > 0 ? (
+                <AvatarGroup max={4} sx={{ justifyContent: "flex-end" }}>
+                  {order.employees.map((employee) => (
+                    <Tooltip key={employee.id} title={`${employee.firstName} ${employee.lastName}`}>
+                      <Avatar sx={{ width: 28, height: 28, fontSize: 12, bgcolor: "primary.main" }}>
+                        {employee.firstName[0]}
+                        {employee.lastName[0]}
+                      </Avatar>
+                    </Tooltip>
+                  ))}
+                </AvatarGroup>
               ) : (
                 <Typography sx={{ fontSize: "0.8125rem", color: "text.disabled" }}>
                   Sin asignar

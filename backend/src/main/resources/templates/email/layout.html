@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:fragment="layout(content)" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${workshopName}">Autotech</title>
+</head>
+<body style="margin:0;padding:0;background:#F4F2ED;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F4F2ED;">
+    <tr>
+        <td align="center" style="padding:24px 12px;">
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
+                   style="width:100%;max-width:600px;background:#FFFFFF;border:1px solid #E3E0D8;border-radius:8px;border-collapse:separate;font-family:Inter,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1D1F24;">
+                <tr>
+                    <td style="background:#131418;padding:20px 32px;border-radius:8px 8px 0 0;">
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td width="22" height="22" style="width:22px;height:22px;background:#FF7A1A;border-radius:4px;font-size:0;line-height:0;">&#8203;</td>
+                                <td style="padding-left:10px;color:#ECEDEF;font-weight:700;font-size:16px;letter-spacing:0.06em;"
+                                    th:text="${#strings.toUpperCase(workshopName)}">AUTOTECH</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:36px 32px 16px 32px;" th:insert="${content}"></td>
+                </tr>
+                <tr>
+                    <td style="background:#EFEDE6;padding:18px 32px;font-size:12px;line-height:1.6;color:#646A75;border-radius:0 0 8px 8px;">
+                        <span th:text="${footerLine}">Autotech</span><br>
+                        <th:block th:if="${unsubscribeUrl != null}">¿No querés recibir más recordatorios? <a th:href="${unsubscribeUrl}" style="color:#B4560F;">Darme de baja</a></th:block>
+                        <th:block th:unless="${unsubscribeUrl != null}">Este es un mensaje automático, no lo respondas.</th:block>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

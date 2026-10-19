@@ -19,8 +19,8 @@ interface VehicleListProps {
   pageSize: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
-  onEditRow: (id: number) => void;
-  onDeleteRow: (id: number) => void;
+  onEditRow?: (id: number) => void;
+  onDeleteRow?: (id: number) => void;
   onViewRow: (id: number) => void;
 }
 
@@ -71,21 +71,29 @@ export function VehicleList({
             onClick={() => onViewRow(params.row.id as number)}
           />
         </Tooltip>,
-        <Tooltip title="Editar" key="edit">
-          <GridActionsCellItem
-            icon={<EditIcon />}
-            label="Editar"
-            onClick={() => onEditRow(params.row.id as number)}
-          />
-        </Tooltip>,
-        <Tooltip title="Eliminar" key="delete">
-          <GridActionsCellItem
-            icon={<DeleteIcon />}
-            label="Eliminar"
-            onClick={() => onDeleteRow(params.row.id as number)}
-            color="error"
-          />
-        </Tooltip>,
+        ...(onEditRow
+          ? [
+              <Tooltip title="Editar" key="edit">
+                <GridActionsCellItem
+                  icon={<EditIcon />}
+                  label="Editar"
+                  onClick={() => onEditRow(params.row.id as number)}
+                />
+              </Tooltip>,
+            ]
+          : []),
+        ...(onDeleteRow
+          ? [
+              <Tooltip title="Eliminar" key="delete">
+                <GridActionsCellItem
+                  icon={<DeleteIcon />}
+                  label="Eliminar"
+                  onClick={() => onDeleteRow(params.row.id as number)}
+                  color="error"
+                />
+              </Tooltip>,
+            ]
+          : []),
       ],
     },
   ];

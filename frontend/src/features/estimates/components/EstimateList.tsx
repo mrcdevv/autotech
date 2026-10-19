@@ -5,6 +5,7 @@ import ReceiptIcon from "@mui/icons-material/Receipt";
 
 import { AppDataGrid } from "@/components/AppDataGrid";
 import { MonoText } from "@/components/MonoText";
+import { moneyColumn } from "@/utils/gridColumns";
 import { StatusBadge } from "@/components/StatusBadge";
 
 import type { GridColDef } from "@mui/x-data-grid";
@@ -19,8 +20,8 @@ interface EstimateListProps {
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
   onRowClick: (id: number) => void;
-  onDelete: (id: number) => void;
-  onInvoice: (id: number) => void;
+  onDelete?: (id: number) => void;
+  onDeliveryNote?: (id: number) => void;
 }
 
 export function EstimateList({
@@ -33,7 +34,7 @@ export function EstimateList({
   onPageSizeChange,
   onRowClick,
   onDelete,
-  onInvoice,
+  onDeliveryNote,
 }: EstimateListProps) {
   const columns: GridColDef[] = [
     {
@@ -78,19 +79,11 @@ export function EstimateList({
         <MonoText>{params.value != null ? `#${params.value}` : "—"}</MonoText>
       ),
     },
-    {
+    moneyColumn({
       field: "total",
       headerName: "Total",
-      flex: 0.75,
-      minWidth: 120,
-      align: "right",
-      headerAlign: "right",
-      renderCell: (params) => (
-        <MonoText sx={{ display: "block", width: "100%", textAlign: "right" }}>
-          {params.value != null ? `$${Number(params.value).toFixed(2)}` : "—"}
-        </MonoText>
-      ),
-    },
+      overrides: { flex: 0.75, minWidth: 120 },
+    }),
     {
       field: "actions",
       headerName: "Acciones",
@@ -107,37 +100,41 @@ export function EstimateList({
           >
             <VisibilityIcon />
           </IconButton>
-          <IconButton
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(params.row.id);
-            }}
-            color="error"
-            size="small"
-          >
-            <DeleteIcon />
-          </IconButton>
-          <Tooltip
-            title={
-              params.row.status !== "ACEPTADO"
-                ? "Solo se pueden facturar presupuestos aceptados"
-                : "Facturar"
-            }
-          >
-            <span>
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onInvoice(params.row.id);
-                }}
-                size="small"
-                disabled={params.row.status !== "ACEPTADO"}
-                color="primary"
-              >
-                <ReceiptIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
+          {onDelete && (
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(params.row.id);
+              }}
+              color="error"
+              size="small"
+            >
+              <DeleteIcon />
+            </IconButton>
+          )}
+          {onDeliveryNote && (
+            <Tooltip
+              title={
+                params.row.status !== "ACEPTADO"
+                  ? "Solo se pueden remitor presupuestos aceptados"
+                  : "Remitor"
+              }
+            >
+              <span>
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeliveryNote(params.row.id);
+                  }}
+                  size="small"
+                  disabled={params.row.status !== "ACEPTADO"}
+                  color="primary"
+                >
+                  <ReceiptIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+          )}
         </>
       ),
     },

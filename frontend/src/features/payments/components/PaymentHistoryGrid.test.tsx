@@ -8,7 +8,7 @@ import type { PaymentResponse } from "@/types/payment";
 
 const buildPayment = (overrides?: Partial<PaymentResponse>): PaymentResponse => ({
   id: 1,
-  invoiceId: 10,
+  deliveryNoteId: 10,
   paymentDate: "2025-01-15",
   createdAt: "2025-01-15T10:30:00",
   amount: 500,
@@ -34,7 +34,7 @@ describe("PaymentHistoryGrid", () => {
     );
 
     expect(
-      screen.getByText("No se registraron pagos para esta factura."),
+      screen.getByText("No se registraron pagos para esta remito."),
     ).toBeInTheDocument();
   });
 
@@ -50,7 +50,9 @@ describe("PaymentHistoryGrid", () => {
 
     expect(screen.getByText("Historial de pagos")).toBeInTheDocument();
     expect(screen.getByText("Juan Perez")).toBeInTheDocument();
-    expect(screen.getByText("$500.00")).toBeInTheDocument();
+    // Rendered text is "$\u00A0500,00" (NBSP after symbol); testing-library's
+    // default normalizer collapses it to a plain space on the element side.
+    expect(screen.getByText("$ 500,00")).toBeInTheDocument();
     expect(screen.getByText("Efectivo")).toBeInTheDocument();
   });
 

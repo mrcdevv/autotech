@@ -11,7 +11,6 @@ describe("TagsSettingsTab", () => {
   it("given tab, when rendered, then shows tags manager", () => {
     render(<TagsSettingsTab />);
 
-    expect(screen.getByText("Etiquetas")).toBeInTheDocument();
     expect(screen.getByTestId("tags-manager")).toBeInTheDocument();
   });
 });

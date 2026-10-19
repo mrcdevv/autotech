@@ -10,6 +10,8 @@ import {
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 
 import { AppDialog } from "@/components/AppDialog";
+import { MoneyInput } from "@/components/MoneyInput";
+import { formatCurrency } from "@/utils/formatCurrency";
 import { usePayments } from "../hooks/usePayments";
 import { useBankAccounts } from "../hooks/useBankAccounts";
 
@@ -18,7 +20,7 @@ import type { PaymentRequest, PaymentResponse } from "@/types/payment";
 interface BankPaymentDialogProps {
   open: boolean;
   onClose: () => void;
-  invoiceId: number;
+  deliveryNoteId: number;
   remaining: number;
   clientFullName: string;
   editingPayment: PaymentResponse | null;
@@ -29,7 +31,7 @@ interface BankPaymentDialogProps {
 export function BankPaymentDialog({
   open,
   onClose,
-  invoiceId,
+  deliveryNoteId,
   remaining,
   clientFullName,
   editingPayment,
@@ -37,7 +39,7 @@ export function BankPaymentDialog({
   onUpdated,
 }: BankPaymentDialogProps) {
   const isEditing = editingPayment !== null;
-  const { createPayment, updatePayment } = usePayments(invoiceId);
+  const { createPayment, updatePayment } = usePayments(deliveryNoteId);
   const { bankAccounts, loading: bankAccountsLoading } = useBankAccounts();
 
   const getToday = () => new Date().toISOString().slice(0, 10);
@@ -129,20 +131,20 @@ export function BankPaymentDialog({
           />
           <TextField
             label="Restante por pagar"
-            value={`$${displayRemaining.toFixed(2)}`}
-            slotProps={{ input: { readOnly: true } }}
+            value={formatCurrency(displayRemaining)}
+            slotProps={{
+              input: { readOnly: true },
+              htmlInput: { style: { textAlign: "right" } },
+            }}
             onClick={handleRemainingClick}
             sx={{ cursor: "pointer" }}
             fullWidth
           />
-          <TextField
-            type="number"
+          <MoneyInput
             label="Monto a pagar"
+            layout="adornment"
             value={amount}
-            onChange={(e) => setAmount(Number(e.target.value))}
-            slotProps={{
-              htmlInput: { min: 0.01, max: displayRemaining, step: 0.01 },
-            }}
+            onChange={(v) => setAmount(v ?? 0)}
             fullWidth
           />
           <TextField

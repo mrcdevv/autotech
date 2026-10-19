@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import dayjs from "dayjs";
 
+import { getWeekStart } from "@/features/appointments/calendarRange";
+
 import { AppointmentCard, MultiDayBar } from "./AppointmentCard";
 import { CalendarEventBlock } from "./CalendarEventBlock";
 import { OverlappingAppointmentsMenu } from "./OverlappingAppointmentsMenu";
@@ -310,7 +312,7 @@ function WeekView({ appointments, date, startHour, endHour, onAppointmentClick, 
   const [overlapMenuAppts, setOverlapMenuAppts] = useState<AppointmentResponse[]>([]);
   
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
-  const weekStart = dayjs(date).startOf("week");
+  const weekStart = getWeekStart(date);
   const days = Array.from({ length: 7 }, (_, i) => weekStart.add(i, "day"));
   const multiDay = appointments.filter((a) => isMultiDay(a));
   const allDayRows = layoutMultiDayRows(multiDay, days);
@@ -468,9 +470,9 @@ interface MonthViewProps extends SharedProps {
 
 function MonthView({ appointments, date, onAppointmentClick, onMenuOpen, onDateClick }: MonthViewProps) {
   const monthStart = dayjs(date).startOf("month");
-  const calendarStart = monthStart.startOf("week");
+  const calendarStart = getWeekStart(monthStart);
   const monthEnd = dayjs(date).endOf("month");
-  const calendarEnd = monthEnd.endOf("week");
+  const calendarEnd = getWeekStart(monthEnd).add(6, "day");
   const totalDays = calendarEnd.diff(calendarStart, "day") + 1;
   const weeks = Math.ceil(totalDays / 7);
 

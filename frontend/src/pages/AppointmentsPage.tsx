@@ -22,15 +22,19 @@ import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
 import { employeesApi } from "@/api/employees";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { getWeekStart } from "@/features/appointments/calendarRange";
 import { useAppointments } from "@/features/appointments/hooks/useAppointments";
 import { useCalendarConfig } from "@/features/appointments/hooks/useCalendarConfig";
 import { CalendarView } from "@/features/appointments/components/CalendarView";
 import { AppointmentFormDialog } from "@/features/appointments/components/AppointmentFormDialog";
 import { AppointmentDetailDialog } from "@/features/appointments/components/AppointmentDetailDialog";
 import { AppointmentEditDialog } from "@/features/appointments/components/AppointmentEditDialog";
+import { NotifyClientCheckbox } from "@/features/appointments/components/NotifyClientCheckbox";
+import { getNotifyClientDefault, hasEmail } from "@/features/appointments/notifyClient";
 import { AppointmentActionsMenu } from "@/features/appointments/components/AppointmentActions";
 
-import type { AppointmentResponse, CalendarViewMode } from "@/types/appointment";
+import type { AppointmentResponse, AppointmentUpdateRequest, CalendarViewMode } from "@/types/appointment";
 import type { EmployeeResponse } from "@/features/employees/types";
 
 const VIEW_LABELS: Record<CalendarViewMode, string> = {
@@ -40,6 +44,11 @@ const VIEW_LABELS: Record<CalendarViewMode, string> = {
 };
 
 export default function AppointmentsPage() {
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission("create_appointment");
+  const canUpdate = hasPermission("update_appointment");
+  const canDelete = hasPermission("delete_appointment");
+  const canCreateOrder = hasPermission("create_order");
   const navigate = useNavigate();
   const {
     appointments,
@@ -104,7 +113,7 @@ export default function AppointmentsPage() {
       case "day":
         return d.format("DD [de] MMMM YYYY");
       case "week": {
-        const weekStart = d.startOf("week");
+        const weekStart = getWeekStart(d);
         const weekEnd = weekStart.add(6, "day");
         if (weekStart.month() === weekEnd.month()) {
           return `${weekStart.format("DD")} - ${weekEnd.format("DD [de] MMMM YYYY")}`;
@@ -147,11 +156,21 @@ export default function AppointmentsPage() {
 
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [appointmentToCancel, setAppointmentToCancel] = useState<number | null>(null);
+  const [notifyOnCancelOverride, setNotifyOnCancelOverride] = useState<boolean | null>(null);
+  const cancelTarget = appointments.find((a) => a.id === appointmentToCancel) ?? null;
+  const cancelTargetHasEmail = hasEmail(cancelTarget?.clientEmail);
+  const notifyOnCancel =
+    notifyOnCancelOverride ??
+    getNotifyClientDefault({
+      hasEmail: cancelTargetHasEmail,
+      startTime: cancelTarget?.startTime ?? null,
+      clientArrived: cancelTarget?.clientArrived,
+    });
 
   const handleCancel = async () => {
     if (appointmentToCancel === null) return;
     try {
-      await cancelAppointment(appointmentToCancel);
+      await cancelAppointment(appointmentToCancel, cancelTargetHasEmail && notifyOnCancel);
       showSnackbar("Cita cancelada", "success");
       setCancelConfirmOpen(false);
       setAppointmentToCancel(null);
@@ -162,6 +181,7 @@ export default function AppointmentsPage() {
 
   const requestCancel = (id: number) => {
     setAppointmentToCancel(id);
+    setNotifyOnCancelOverride(null);
     setCancelConfirmOpen(true);
   };
 
@@ -179,7 +199,7 @@ export default function AppointmentsPage() {
     setEditOpen(true);
   };
 
-  const handleUpdate = async (id: number, data: { startTime: string; endTime: string }) => {
+  const handleUpdate = async (id: number, data: AppointmentUpdateRequest) => {
     try {
       await updateAppointment(id, data);
       showSnackbar("Cita actualizada", "success");
@@ -205,6 +225,15 @@ export default function AppointmentsPage() {
   const businessEndHour = 24; //config?.endTime ? parseInt(config.endTime.split(":")[0] ?? "20", 10) : 20;
 
   const todayLabel = dayjs().format("dddd, DD MMM, YYYY");
+
+  const handleReschedule = async (id: number, startTime: string, endTime: string) => {
+    try {
+      await rescheduleAppointment(id, startTime, endTime);
+      showSnackbar("Cita reprogramada", "success");
+    } catch {
+      showSnackbar("Error al reprogramar la cita", "error");
+    }
+  };
 
   return (
     <PageShell
@@ -245,13 +274,15 @@ export default function AppointmentsPage() {
           </>
         }
         actions={
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setFormOpen(true)}
-          >
-            Nueva cita
-          </Button>
+          canCreate && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setFormOpen(true)}
+            >
+              Nueva cita
+            </Button>
+          )
         }
       />
 
@@ -305,14 +336,7 @@ export default function AppointmentsPage() {
           setCurrentDate(date);
           setViewMode("day");
         }}
-        onAppointmentReschedule={async (id, startTime, endTime) => {
-          try {
-            await rescheduleAppointment(id, startTime, endTime);
-            showSnackbar("Cita reprogramada", "success");
-          } catch {
-            showSnackbar("Error al reprogramar la cita", "error");
-          }
-        }}
+        onAppointmentReschedule={canUpdate ? handleReschedule : undefined}
       />
 
       <AppointmentActionsMenu
@@ -322,11 +346,11 @@ export default function AppointmentsPage() {
           setMenuAnchor(null);
           setMenuAppointment(null);
         }}
-        onMarkVehicleArrived={handleMarkVehicleArrived}
-        onEdit={handleEdit}
-        onCancel={requestCancel}
-        onDelete={requestDelete}
-        onCreateWorkOrder={handleCreateWorkOrder}
+        onMarkVehicleArrived={canUpdate ? handleMarkVehicleArrived : undefined}
+        onEdit={canUpdate ? handleEdit : undefined}
+        onCancel={canUpdate ? requestCancel : undefined}
+        onDelete={canDelete ? requestDelete : undefined}
+        onCreateWorkOrder={canCreateOrder ? handleCreateWorkOrder : undefined}
       />
 
       <AppointmentFormDialog
@@ -343,7 +367,7 @@ export default function AppointmentsPage() {
           setDetailOpen(false);
           setSelectedAppointment(null);
         }}
-        onEdit={handleEdit}
+        onEdit={canUpdate ? handleEdit : undefined}
       />
 
       <AppointmentEditDialog
@@ -376,7 +400,15 @@ export default function AppointmentsPage() {
         confirmColor="warning"
         onConfirm={handleCancel}
         onCancel={() => setCancelConfirmOpen(false)}
-      />
+      >
+        {cancelTarget?.clientId && (
+          <NotifyClientCheckbox
+            checked={notifyOnCancel}
+            onChange={setNotifyOnCancelOverride}
+            clientHasEmail={cancelTargetHasEmail}
+          />
+        )}
+      </AppConfirmDialog>
 
       <Snackbar
         open={snackbar.open}

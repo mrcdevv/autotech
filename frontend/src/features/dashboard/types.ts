@@ -57,12 +57,12 @@ export interface MonthlyRevenueResponse {
 
 export interface DebtAgingResponse {
   range: string;
-  invoiceCount: number;
+  deliveryNoteCount: number;
   totalAmount: number;
 }
 
-export interface UnpaidInvoiceResponse {
-  invoiceId: number;
+export interface UnpaidDeliveryNoteResponse {
+  deliveryNoteId: number;
   clientFullName: string;
   vehiclePlate: string | null;
   total: number;
@@ -76,7 +76,7 @@ export interface DashboardFinancieroResponse {
   estimatesTotal: number;
   totalPendingBilling: number;
   debtAging: DebtAgingResponse[];
-  topUnpaidInvoices: UnpaidInvoiceResponse[];
+  topUnpaidDeliveryNotes: UnpaidDeliveryNoteResponse[];
 }
 
 export interface MechanicProductivityResponse {

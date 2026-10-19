@@ -4,6 +4,6 @@ import java.math.BigDecimal;
 
 public record DebtAgingResponse(
         String range,
-        Long invoiceCount,
+        Long deliveryNoteCount,
         BigDecimal totalAmount
 ) {}

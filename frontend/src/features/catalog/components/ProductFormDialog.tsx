@@ -9,6 +9,7 @@ import Grid from "@mui/material/Grid2";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
 
 import { AppDialog } from "@/components/AppDialog";
+import { MoneyInput } from "@/components/MoneyInput";
 
 import type { ProductResponse, ProductRequest } from "@/types/catalog";
 
@@ -25,7 +26,7 @@ interface FormErrors {
 
 type ProductFormState = Omit<ProductRequest, "quantity" | "unitPrice"> & {
   quantity: number | string | null;
-  unitPrice: number | string | null;
+  unitPrice: number | null;
 };
 
 export function ProductFormDialog({ open, onClose, onSave, initialData }: ProductFormDialogProps) {
@@ -64,7 +65,7 @@ export function ProductFormDialog({ open, onClose, onSave, initialData }: Produc
     if (form.quantity === "" || form.quantity === null || form.quantity === undefined) {
       newErrors.quantity = "La cantidad es obligatoria";
     }
-    if (form.unitPrice === "" || form.unitPrice === null || form.unitPrice === undefined) {
+    if (form.unitPrice === null || form.unitPrice === undefined) {
       newErrors.unitPrice = "El precio unitario es obligatorio";
     }
     setErrors(newErrors);
@@ -134,19 +135,15 @@ export function ProductFormDialog({ open, onClose, onSave, initialData }: Produc
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
+            <MoneyInput
               fullWidth
               label="Precio unitario"
-              type="number"
-              value={form.unitPrice ?? ""}
-              onChange={(e) => {
-                const val = e.target.value;
-                handleChange("unitPrice", val === "" ? "" : parseFloat(val));
-              }}
+              layout="adornment"
+              value={form.unitPrice}
+              onChange={(v) => handleChange("unitPrice", v)}
               error={!!errors.unitPrice}
               helperText={errors.unitPrice}
               required
-              slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
             />
           </Grid>
         </Grid>

@@ -12,7 +12,7 @@ public class PaymentMapper {
         if (entity == null) return null;
         return new PaymentResponse(
                 entity.getId(),
-                entity.getInvoice().getId(),
+                entity.getDeliveryNote().getId(),
                 entity.getPaymentDate(),
                 entity.getCreatedAt(),
                 entity.getAmount(),

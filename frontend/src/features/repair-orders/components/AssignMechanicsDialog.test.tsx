@@ -30,7 +30,7 @@ function buildMechanic(id: number, firstName: string, lastName: string): Employe
     childrenCount: 0,
     entryDate: null,
     status: "ACTIVO",
-    roles: [{ id: 3, name: "MECANICO", description: "" }],
+    roles: [{ id: 3, name: "MECANICO", description: "", permissions: [], createdAt: null, updatedAt: null }],
     createdAt: "",
     updatedAt: "",
   };

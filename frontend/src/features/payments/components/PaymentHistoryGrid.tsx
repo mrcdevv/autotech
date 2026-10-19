@@ -4,6 +4,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 
 import { AppDataGrid } from "@/components/AppDataGrid";
 import { MonoText } from "@/components/MonoText";
+import { moneyColumn } from "@/utils/gridColumns";
 import { StatusBadge } from "@/components/StatusBadge";
 
 import type { GridColDef } from "@mui/x-data-grid";
@@ -48,18 +49,11 @@ export function PaymentHistoryGrid({
       flex: 1,
       valueFormatter: (value: string | null) => value ?? "—",
     },
-    {
+    moneyColumn({
       field: "amount",
       headerName: "Monto",
-      width: 130,
-      align: "right",
-      headerAlign: "right",
-      renderCell: (params) => (
-        <MonoText sx={{ display: "block", width: "100%", textAlign: "right" }}>
-          {params.value != null ? `$${Number(params.value).toFixed(2)}` : "—"}
-        </MonoText>
-      ),
-    },
+      overrides: { width: 130 },
+    }),
     {
       field: "paymentType",
       headerName: "Tipo de pago",
@@ -113,7 +107,7 @@ export function PaymentHistoryGrid({
           Historial de pagos
         </Typography>
         <Typography color="text.secondary">
-          No se registraron pagos para esta factura.
+          No se registraron pagos para esta remito.
         </Typography>
       </Box>
     );
@@ -132,7 +126,7 @@ export function PaymentHistoryGrid({
         pageSizeOptions={[5, 10, 20]}
         minHeight={320}
         desktopHeight="360px"
-        emptyMessage="No se registraron pagos para esta factura."
+        emptyMessage="No se registraron pagos para esta remito."
         initialState={{
           pagination: { paginationModel: { pageSize: 10 } },
         }}

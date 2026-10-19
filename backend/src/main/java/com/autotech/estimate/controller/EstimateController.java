@@ -1,8 +1,9 @@
 package com.autotech.estimate.controller;
 
 import com.autotech.common.dto.ApiResponse;
+import com.autotech.estimate.dto.EstimateDecisionRequest;
 import com.autotech.estimate.dto.EstimateDetailResponse;
-import com.autotech.estimate.dto.EstimateInvoiceDataResponse;
+import com.autotech.estimate.dto.EstimateDeliveryNoteDataResponse;
 import com.autotech.estimate.dto.EstimateRequest;
 import com.autotech.estimate.dto.EstimateResponse;
 import com.autotech.estimate.model.EstimateStatus;
@@ -15,6 +16,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,6 +36,7 @@ public class EstimateController {
 
     private final EstimateService estimateService;
 
+    @PreAuthorize("hasAuthority('read_estimate')")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<EstimateResponse>>> getAll(
             @RequestParam(required = false) String clientName,
@@ -44,11 +49,13 @@ public class EstimateController {
         return ResponseEntity.ok(ApiResponse.success(estimateService.getAll(pageable)));
     }
 
+    @PreAuthorize("hasAuthority('read_estimate')")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<EstimateDetailResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(estimateService.getById(id)));
     }
 
+    @PreAuthorize("hasAuthority('create_estimate')")
     @PostMapping
     public ResponseEntity<ApiResponse<EstimateDetailResponse>> create(
             @Valid @RequestBody EstimateRequest request) {
@@ -56,6 +63,7 @@ public class EstimateController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Presupuesto creado", created));
     }
 
+    @PreAuthorize("hasAuthority('update_estimate')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<EstimateDetailResponse>> update(
             @PathVariable Long id,
@@ -63,24 +71,36 @@ public class EstimateController {
         return ResponseEntity.ok(ApiResponse.success("Presupuesto actualizado", estimateService.update(id, request)));
     }
 
+    @PreAuthorize("hasAuthority('update_estimate')")
     @PutMapping("/{id}/approve")
-    public ResponseEntity<ApiResponse<EstimateDetailResponse>> approve(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success("Presupuesto aceptado", estimateService.approve(id)));
+    public ResponseEntity<ApiResponse<EstimateDetailResponse>> approve(
+            @PathVariable Long id,
+            @Valid @RequestBody EstimateDecisionRequest request,
+            @AuthenticationPrincipal UserDetails currentUser) {
+        return ResponseEntity.ok(ApiResponse.success("Presupuesto aceptado",
+                estimateService.approve(id, request.channel(), currentUser != null ? currentUser.getUsername() : null)));
     }
 
+    @PreAuthorize("hasAuthority('update_estimate')")
     @PutMapping("/{id}/reject")
-    public ResponseEntity<ApiResponse<EstimateDetailResponse>> reject(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success("Presupuesto rechazado", estimateService.reject(id)));
+    public ResponseEntity<ApiResponse<EstimateDetailResponse>> reject(
+            @PathVariable Long id,
+            @Valid @RequestBody EstimateDecisionRequest request,
+            @AuthenticationPrincipal UserDetails currentUser) {
+        return ResponseEntity.ok(ApiResponse.success("Presupuesto rechazado",
+                estimateService.reject(id, request.channel(), currentUser != null ? currentUser.getUsername() : null)));
     }
 
+    @PreAuthorize("hasAuthority('delete_estimate')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         estimateService.delete(id);
         return ResponseEntity.ok(ApiResponse.success("Presupuesto eliminado", null));
     }
 
-    @GetMapping("/{id}/invoice-data")
-    public ResponseEntity<ApiResponse<EstimateInvoiceDataResponse>> getInvoiceData(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(estimateService.convertToInvoiceData(id)));
+    @PreAuthorize("hasAuthority('read_estimate')")
+    @GetMapping("/{id}/delivery-note-data")
+    public ResponseEntity<ApiResponse<EstimateDeliveryNoteDataResponse>> getDeliveryNoteData(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(estimateService.convertToDeliveryNoteData(id)));
     }
 }

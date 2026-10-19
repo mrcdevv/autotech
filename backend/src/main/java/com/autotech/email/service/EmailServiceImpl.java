@@ -1,66 +1,56 @@
 package com.autotech.email.service;
 
+import com.autotech.common.exception.BusinessException;
 import com.autotech.email.config.EmailProperties;
+import com.autotech.email.dto.EmailMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.mail.MailException;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
-import java.util.Collection;
-import java.util.Objects;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
 
-    private final JavaMailSender mailSender;
     private final EmailProperties properties;
+    private final EmailSender emailSender;
+    private final AsyncEmailDispatcher dispatcher;
 
     @Override
-    @Async
-    public void send(String recipient, String subject, String body) {
-        if (recipient == null || recipient.isBlank()) {
+    public void send(EmailMessage message) {
+        if (message.to() == null || message.to().isBlank()) {
             log.debug("Skipping email with empty recipient");
             return;
         }
-        sendMessage(recipient, subject, body);
+        if (!properties.isEnabled()) {
+            log.info("Email sending disabled. Skipping '{}' email to {}", message.subject(), message.to());
+            return;
+        }
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    dispatcher.dispatch(message);
+                }
+            });
+        } else {
+            dispatcher.dispatch(message);
+        }
     }
 
     @Override
-    @Async
-    public void send(Collection<String> recipients, String subject, String body) {
-        if (recipients == null || recipients.isEmpty()) {
-            log.debug("Skipping email with no recipients");
-            return;
+    public void sendNow(EmailMessage message) {
+        if (!properties.isEnabled()) {
+            throw new BusinessException("El envío de emails está deshabilitado (AUTOTECH_MAIL_ENABLED=false)");
         }
-        recipients.stream()
-                .filter(Objects::nonNull)
-                .map(String::trim)
-                .filter(email -> !email.isBlank())
-                .distinct()
-                .forEach(recipient -> sendMessage(recipient, subject, body));
+        emailSender.deliver(message);
     }
 
-    private void sendMessage(String recipient, String subject, String body) {
-        if (!properties.isEnabled()) {
-            log.info("Email sending disabled. Skipping '{}' email to {}", subject, recipient);
-            return;
-        }
-
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(properties.getFrom());
-            message.setTo(recipient);
-            message.setSubject(subject);
-            message.setText(body);
-            mailSender.send(message);
-            log.info("Sent '{}' email to {}", subject, recipient);
-        } catch (MailException ex) {
-            log.error("Failed to send '{}' email to {}", subject, recipient, ex);
-        }
+    @Override
+    public boolean isEnabled() {
+        return properties.isEnabled();
     }
 }

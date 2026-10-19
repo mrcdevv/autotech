@@ -4,13 +4,16 @@ import com.autotech.appointment.dto.CalendarConfigRequest;
 import com.autotech.appointment.dto.CalendarConfigResponse;
 import com.autotech.appointment.service.CalendarConfigService;
 import com.autotech.common.exception.GlobalExceptionHandler;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
+import com.autotech.security.SecurityConfig;
+import com.autotech.security.WithAllPermissions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -25,8 +28,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(CalendarConfigController.class)
-@Import(GlobalExceptionHandler.class)
-@WithMockUser
+@Import({GlobalExceptionHandler.class, SecurityConfig.class})
+@WithAllPermissions
 class CalendarConfigControllerTest {
 
     @Autowired
@@ -37,6 +40,12 @@ class CalendarConfigControllerTest {
 
     @MockitoBean
     private CalendarConfigService calendarConfigService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     private final CalendarConfigResponse sampleResponse = new CalendarConfigResponse(
             1L, 60, LocalTime.of(9, 0), LocalTime.of(17, 0), null, null);

@@ -36,7 +36,7 @@ function buildEmployee(id: number, status: "ACTIVO" | "INACTIVO"): EmployeeRespo
     childrenCount: 0,
     entryDate: null,
     status,
-    roles: [{ id: 3, name: "MECANICO", description: "" }],
+    roles: [{ id: 3, name: "MECANICO", description: "", permissions: [], createdAt: null, updatedAt: null }],
     createdAt: "",
     updatedAt: "",
   };

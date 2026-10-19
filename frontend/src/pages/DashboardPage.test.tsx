@@ -86,9 +86,10 @@ vi.mock("@/features/dashboard/hooks/useHomeDashboard", () => ({
         updatedAt: new Date().toISOString(),
       },
     ],
-    invoices: [
+    deliveryNotes: [
       {
         id: 1,
+        number: 1,
         clientId: 1,
         clientFullName: "Carolina Mendez",
         vehicleId: null,
@@ -98,7 +99,6 @@ vi.mock("@/features/dashboard/hooks/useHomeDashboard", () => ({
         estimateId: null,
         status: "PAGADA",
         discountPercentage: 0,
-        taxPercentage: 0,
         total: 122815,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

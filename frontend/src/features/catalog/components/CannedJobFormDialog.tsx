@@ -15,6 +15,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 
 import { AppDialog } from "@/components/AppDialog";
+import { MoneyInput } from "@/components/MoneyInput";
+import { formatCurrency } from "@/utils/formatCurrency";
 import { catalogServicesApi } from "@/api/catalogServices";
 import { productsApi } from "@/api/products";
 
@@ -254,8 +256,8 @@ export function CannedJobFormDialog({ open, onClose, onSave, initialData }: Cann
                       <Box>
                         <Typography variant="body2">{option.name}</Typography>
                         {option.price != null && (
-                          <Typography variant="caption" color="text.secondary">
-                            ${option.price.toFixed(2)}
+                          <Typography variant="caption" color="text.secondary" sx={{ textAlign: "right" }}>
+                            {formatCurrency(option.price)}
                           </Typography>
                         )}
                       </Box>
@@ -263,21 +265,16 @@ export function CannedJobFormDialog({ open, onClose, onSave, initialData }: Cann
                   )}
                   sx={{ flex: 2 }}
                 />
-                <TextField
-                  label="Precio"
-                  type="number"
-                  value={svc.price}
-                  onFocus={(e) => {
-                    if (svc.price === 0) e.target.select();
-                  }}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    handleServiceFieldChange(index, "price", val === "" ? 0 : parseFloat(val));
-                  }}
-                  size="small"
-                  sx={{ flex: 1 }}
-                  slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
-                />
+                <Box sx={{ flex: 1, display: "flex" }}>
+                  <MoneyInput
+                    label="Precio"
+                    layout="adornment"
+                    value={svc.price}
+                    onChange={(v) => handleServiceFieldChange(index, "price", v ?? 0)}
+                    size="small"
+                    fullWidth
+                  />
+                </Box>
                 <IconButton onClick={() => handleRemoveService(index)} color="error" size="small">
                   <DeleteIcon />
                 </IconButton>
@@ -334,8 +331,8 @@ export function CannedJobFormDialog({ open, onClose, onSave, initialData }: Cann
                       <Box>
                         <Typography variant="body2">{option.name}</Typography>
                         {option.unitPrice != null && (
-                          <Typography variant="caption" color="text.secondary">
-                            ${option.unitPrice.toFixed(2)} — Stock: {option.quantity}
+                          <Typography variant="caption" color="text.secondary" sx={{ textAlign: "right" }}>
+                            {formatCurrency(option.unitPrice)} — Stock: {option.quantity}
                           </Typography>
                         )}
                       </Box>
@@ -358,21 +355,16 @@ export function CannedJobFormDialog({ open, onClose, onSave, initialData }: Cann
                   sx={{ flex: 1 }}
                   slotProps={{ htmlInput: { min: 1 } }}
                 />
-                <TextField
-                  label="Precio unitario"
-                  type="number"
-                  value={prod.unitPrice}
-                  onFocus={(e) => {
-                    if (prod.unitPrice === 0) e.target.select();
-                  }}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    handleProductFieldChange(index, "unitPrice", val === "" ? 0 : parseFloat(val));
-                  }}
-                  size="small"
-                  sx={{ flex: 1 }}
-                  slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
-                />
+                <Box sx={{ flex: 1, display: "flex" }}>
+                  <MoneyInput
+                    label="Precio unitario"
+                    layout="adornment"
+                    value={prod.unitPrice}
+                    onChange={(v) => handleProductFieldChange(index, "unitPrice", v ?? 0)}
+                    size="small"
+                    fullWidth
+                  />
+                </Box>
                 <IconButton onClick={() => handleRemoveProduct(index)} color="error" size="small">
                   <DeleteIcon />
                 </IconButton>

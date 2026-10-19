@@ -12,9 +12,9 @@ import com.autotech.dashboard.repository.DashboardConfigRepository;
 import com.autotech.estimate.model.Estimate;
 import com.autotech.estimate.model.EstimateStatus;
 import com.autotech.estimate.repository.EstimateRepository;
-import com.autotech.invoice.model.Invoice;
-import com.autotech.invoice.model.InvoiceStatus;
-import com.autotech.invoice.repository.InvoiceRepository;
+import com.autotech.deliverynote.model.DeliveryNote;
+import com.autotech.deliverynote.model.DeliveryNoteStatus;
+import com.autotech.deliverynote.repository.DeliveryNoteRepository;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.model.RepairOrderStatus;
 import com.autotech.repairorder.repository.RepairOrderRepository;
@@ -47,7 +47,7 @@ class DashboardServiceImplTest {
     private AppointmentRepository appointmentRepository;
 
     @Mock
-    private InvoiceRepository invoiceRepository;
+    private DeliveryNoteRepository deliveryNoteRepository;
 
     @Mock
     private EstimateRepository estimateRepository;
@@ -215,17 +215,17 @@ class DashboardServiceImplTest {
         List<Object[]> monthlyData = new java.util.ArrayList<>();
         monthlyData.add(new Object[]{2026, 1, new BigDecimal("30000")});
         monthlyData.add(new Object[]{2026, 2, new BigDecimal("45000")});
-        when(invoiceRepository.sumTotalByStatusGroupByMonth(eq(InvoiceStatus.PAGADA), any(), any()))
+        when(deliveryNoteRepository.sumTotalByStatusGroupByMonth(eq(DeliveryNoteStatus.PAGADA), any(), any()))
                 .thenReturn(monthlyData);
         when(estimateRepository.countByStatusAndCreatedAtBetween(eq(EstimateStatus.ACEPTADO), any(), any()))
                 .thenReturn(8L);
         when(estimateRepository.countByCreatedAtBetween(any(), any())).thenReturn(10L);
-        when(invoiceRepository.sumTotalByStatus(InvoiceStatus.PENDIENTE)).thenReturn(new BigDecimal("15000"));
-        when(invoiceRepository.countAndSumByStatusAndCreatedAtBetween(any(), any(), any()))
+        when(deliveryNoteRepository.sumTotalByStatus(DeliveryNoteStatus.PENDIENTE)).thenReturn(new BigDecimal("15000"));
+        when(deliveryNoteRepository.countAndSumByStatusAndCreatedAtBetween(any(), any(), any()))
                 .thenReturn(new Object[]{2L, new BigDecimal("5000")});
-        when(invoiceRepository.countAndSumByStatusAndCreatedAtBefore(any(), any()))
+        when(deliveryNoteRepository.countAndSumByStatusAndCreatedAtBefore(any(), any()))
                 .thenReturn(new Object[]{1L, new BigDecimal("3000")});
-        when(invoiceRepository.findByStatusWithClientAndVehicleOrderByTotalDesc(any(), any()))
+        when(deliveryNoteRepository.findByStatusWithClientAndVehicleOrderByTotalDesc(any(), any()))
                 .thenReturn(Collections.emptyList());
 
         // Act
@@ -243,16 +243,16 @@ class DashboardServiceImplTest {
     @Test
     void givenNoEstimates_whenGetFinanciero_thenConversionRateIsZero() {
         // Arrange
-        when(invoiceRepository.sumTotalByStatusGroupByMonth(any(), any(), any()))
+        when(deliveryNoteRepository.sumTotalByStatusGroupByMonth(any(), any(), any()))
                 .thenReturn(Collections.emptyList());
         when(estimateRepository.countByStatusAndCreatedAtBetween(any(), any(), any())).thenReturn(0L);
         when(estimateRepository.countByCreatedAtBetween(any(), any())).thenReturn(0L);
-        when(invoiceRepository.sumTotalByStatus(any())).thenReturn(null);
-        when(invoiceRepository.countAndSumByStatusAndCreatedAtBetween(any(), any(), any()))
+        when(deliveryNoteRepository.sumTotalByStatus(any())).thenReturn(null);
+        when(deliveryNoteRepository.countAndSumByStatusAndCreatedAtBetween(any(), any(), any()))
                 .thenReturn(new Object[]{0L, BigDecimal.ZERO});
-        when(invoiceRepository.countAndSumByStatusAndCreatedAtBefore(any(), any()))
+        when(deliveryNoteRepository.countAndSumByStatusAndCreatedAtBefore(any(), any()))
                 .thenReturn(new Object[]{0L, BigDecimal.ZERO});
-        when(invoiceRepository.findByStatusWithClientAndVehicleOrderByTotalDesc(any(), any()))
+        when(deliveryNoteRepository.findByStatusWithClientAndVehicleOrderByTotalDesc(any(), any()))
                 .thenReturn(Collections.emptyList());
 
         // Act
@@ -266,16 +266,16 @@ class DashboardServiceImplTest {
     @Test
     void givenDebtAging_whenGetFinanciero_thenReturnFourRanges() {
         // Arrange
-        when(invoiceRepository.sumTotalByStatusGroupByMonth(any(), any(), any()))
+        when(deliveryNoteRepository.sumTotalByStatusGroupByMonth(any(), any(), any()))
                 .thenReturn(Collections.emptyList());
         when(estimateRepository.countByStatusAndCreatedAtBetween(any(), any(), any())).thenReturn(0L);
         when(estimateRepository.countByCreatedAtBetween(any(), any())).thenReturn(0L);
-        when(invoiceRepository.sumTotalByStatus(any())).thenReturn(BigDecimal.ZERO);
-        when(invoiceRepository.countAndSumByStatusAndCreatedAtBetween(eq(InvoiceStatus.PENDIENTE), any(), any()))
+        when(deliveryNoteRepository.sumTotalByStatus(any())).thenReturn(BigDecimal.ZERO);
+        when(deliveryNoteRepository.countAndSumByStatusAndCreatedAtBetween(eq(DeliveryNoteStatus.PENDIENTE), any(), any()))
                 .thenReturn(new Object[]{3L, new BigDecimal("9000")});
-        when(invoiceRepository.countAndSumByStatusAndCreatedAtBefore(eq(InvoiceStatus.PENDIENTE), any()))
+        when(deliveryNoteRepository.countAndSumByStatusAndCreatedAtBefore(eq(DeliveryNoteStatus.PENDIENTE), any()))
                 .thenReturn(new Object[]{1L, new BigDecimal("2000")});
-        when(invoiceRepository.findByStatusWithClientAndVehicleOrderByTotalDesc(any(), any()))
+        when(deliveryNoteRepository.findByStatusWithClientAndVehicleOrderByTotalDesc(any(), any()))
                 .thenReturn(Collections.emptyList());
 
         // Act
@@ -290,29 +290,29 @@ class DashboardServiceImplTest {
     }
 
     @Test
-    void givenUnpaidInvoices_whenGetFinanciero_thenReturnTopUnpaid() {
+    void givenUnpaidDeliveryNotes_whenGetFinanciero_thenReturnTopUnpaid() {
         // Arrange
-        when(invoiceRepository.sumTotalByStatusGroupByMonth(any(), any(), any()))
+        when(deliveryNoteRepository.sumTotalByStatusGroupByMonth(any(), any(), any()))
                 .thenReturn(Collections.emptyList());
         when(estimateRepository.countByStatusAndCreatedAtBetween(any(), any(), any())).thenReturn(0L);
         when(estimateRepository.countByCreatedAtBetween(any(), any())).thenReturn(0L);
-        when(invoiceRepository.sumTotalByStatus(any())).thenReturn(BigDecimal.ZERO);
-        when(invoiceRepository.countAndSumByStatusAndCreatedAtBetween(any(InvoiceStatus.class), any(), any()))
+        when(deliveryNoteRepository.sumTotalByStatus(any())).thenReturn(BigDecimal.ZERO);
+        when(deliveryNoteRepository.countAndSumByStatusAndCreatedAtBetween(any(DeliveryNoteStatus.class), any(), any()))
                 .thenReturn(new Object[]{0L, BigDecimal.ZERO});
-        when(invoiceRepository.countAndSumByStatusAndCreatedAtBefore(any(InvoiceStatus.class), any()))
+        when(deliveryNoteRepository.countAndSumByStatusAndCreatedAtBefore(any(DeliveryNoteStatus.class), any()))
                 .thenReturn(new Object[]{0L, BigDecimal.ZERO});
 
-        Invoice inv = buildInvoice(1L, new BigDecimal("5000"));
-        when(invoiceRepository.findByStatusWithClientAndVehicleOrderByTotalDesc(
-                eq(InvoiceStatus.PENDIENTE), eq(PageRequest.of(0, 10))))
+        DeliveryNote inv = buildDeliveryNote(1L, new BigDecimal("5000"));
+        when(deliveryNoteRepository.findByStatusWithClientAndVehicleOrderByTotalDesc(
+                eq(DeliveryNoteStatus.PENDIENTE), eq(PageRequest.of(0, 10))))
                 .thenReturn(List.of(inv));
 
         // Act
         DashboardFinancieroResponse result = dashboardService.getFinanciero(6);
 
         // Assert
-        assertThat(result.topUnpaidInvoices()).hasSize(1);
-        assertThat(result.topUnpaidInvoices().getFirst().total()).isEqualByComparingTo(new BigDecimal("5000"));
+        assertThat(result.topUnpaidDeliveryNotes()).hasSize(1);
+        assertThat(result.topUnpaidDeliveryNotes().getFirst().total()).isEqualByComparingTo(new BigDecimal("5000"));
     }
 
     // --- getProductividad tests ---
@@ -329,7 +329,7 @@ class DashboardServiceImplTest {
                 .thenReturn(mechanicData);
         List<Object[]> serviceData = new java.util.ArrayList<>();
         serviceData.add(new Object[]{"Cambio de aceite", 10L});
-        when(invoiceRepository.findTopServiceNames(eq(InvoiceStatus.PAGADA), any(), any(), any()))
+        when(deliveryNoteRepository.findTopServiceNames(eq(DeliveryNoteStatus.PAGADA), any(), any(), any()))
                 .thenReturn(serviceData);
 
         // Act
@@ -350,7 +350,7 @@ class DashboardServiceImplTest {
                 .thenReturn(null);
         when(repairOrderRepository.countCompletedByEmployee(any(), any(), any()))
                 .thenReturn(Collections.emptyList());
-        when(invoiceRepository.findTopServiceNames(any(), any(), any(), any()))
+        when(deliveryNoteRepository.findTopServiceNames(any(), any(), any(), any()))
                 .thenReturn(Collections.emptyList());
 
         // Act
@@ -449,16 +449,16 @@ class DashboardServiceImplTest {
         return e;
     }
 
-    private Invoice buildInvoice(Long id, BigDecimal total) {
+    private DeliveryNote buildDeliveryNote(Long id, BigDecimal total) {
         Client client = Client.builder().firstName("Carlos").lastName("Lopez").build();
         client.setId(3L);
         Vehicle vehicle = Vehicle.builder().plate("DEF456").build();
         vehicle.setId(3L);
-        Invoice inv = Invoice.builder()
+        DeliveryNote inv = DeliveryNote.builder()
                 .client(client)
                 .vehicle(vehicle)
                 .total(total)
-                .status(InvoiceStatus.PENDIENTE)
+                .status(DeliveryNoteStatus.PENDIENTE)
                 .build();
         inv.setId(id);
         inv.setCreatedAt(LocalDateTime.now());

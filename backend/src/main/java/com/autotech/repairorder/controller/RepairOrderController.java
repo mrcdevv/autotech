@@ -4,8 +4,8 @@ import com.autotech.common.dto.ApiResponse;
 import com.autotech.estimate.dto.EstimateDetailResponse;
 import com.autotech.estimate.dto.EstimateResponse;
 import com.autotech.estimate.service.EstimateService;
-import com.autotech.invoice.dto.InvoiceDetailResponse;
-import com.autotech.invoice.service.InvoiceService;
+import com.autotech.deliverynote.dto.DeliveryNoteDetailResponse;
+import com.autotech.deliverynote.service.DeliveryNoteService;
 import com.autotech.repairorder.dto.NotesUpdateRequest;
 import com.autotech.repairorder.dto.RepairOrderDetailResponse;
 import com.autotech.repairorder.dto.RepairOrderFilter;
@@ -24,6 +24,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -45,26 +46,32 @@ public class RepairOrderController {
 
     private final RepairOrderService repairOrderService;
     private final EstimateService estimateService;
-    private final InvoiceService invoiceService;
+    private final DeliveryNoteService deliveryNoteService;
 
+    @PreAuthorize("hasAuthority('read_order')")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<RepairOrderResponse>>> search(
             @RequestParam(required = false) List<RepairOrderStatus> statuses,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdTo,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate updatedFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate updatedTo,
             @RequestParam(required = false) Long employeeId,
             @RequestParam(required = false) Long tagId,
             @RequestParam(required = false) String q,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        RepairOrderFilter filter = new RepairOrderFilter(statuses, from, to, employeeId, tagId, q);
+        RepairOrderFilter filter = new RepairOrderFilter(
+                statuses, createdFrom, createdTo, updatedFrom, updatedTo, employeeId, tagId, q);
         return ResponseEntity.ok(ApiResponse.success(repairOrderService.search(filter, pageable)));
     }
 
+    @PreAuthorize("hasAuthority('read_order')")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<RepairOrderDetailResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(repairOrderService.getById(id)));
     }
 
+    @PreAuthorize("hasAuthority('create_order')")
     @PostMapping
     public ResponseEntity<ApiResponse<RepairOrderResponse>> create(
             @Valid @RequestBody RepairOrderRequest request) {
@@ -73,6 +80,7 @@ public class RepairOrderController {
                 .body(ApiResponse.success("Orden de trabajo creada", created));
     }
 
+    @PreAuthorize("hasAuthority('update_order')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<RepairOrderResponse>> update(
             @PathVariable Long id,
@@ -81,12 +89,14 @@ public class RepairOrderController {
                 ApiResponse.success("Orden de trabajo actualizada", repairOrderService.update(id, request)));
     }
 
+    @PreAuthorize("hasAuthority('delete_order')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         repairOrderService.delete(id);
         return ResponseEntity.ok(ApiResponse.success("Orden de trabajo eliminada", null));
     }
 
+    @PreAuthorize("hasAuthority('update_order')")
     @PatchMapping("/{id}/status")
     public ResponseEntity<ApiResponse<RepairOrderResponse>> updateStatus(
             @PathVariable Long id,
@@ -95,6 +105,7 @@ public class RepairOrderController {
                 ApiResponse.success("Estado actualizado", repairOrderService.updateStatus(id, request)));
     }
 
+    @PreAuthorize("hasAuthority('update_order')")
     @PatchMapping("/{id}/notes")
     public ResponseEntity<ApiResponse<RepairOrderDetailResponse>> updateNotes(
             @PathVariable Long id,
@@ -103,6 +114,7 @@ public class RepairOrderController {
                 ApiResponse.success("Notas actualizadas", repairOrderService.updateNotes(id, request)));
     }
 
+    @PreAuthorize("hasAuthority('update_order')")
     @PatchMapping("/{id}/title")
     public ResponseEntity<ApiResponse<RepairOrderResponse>> updateTitle(
             @PathVariable Long id,
@@ -111,6 +123,7 @@ public class RepairOrderController {
                 ApiResponse.success("Título actualizado", repairOrderService.updateTitle(id, request)));
     }
 
+    @PreAuthorize("hasAuthority('update_order')")
     @PutMapping("/{id}/employees")
     public ResponseEntity<ApiResponse<RepairOrderResponse>> assignEmployees(
             @PathVariable Long id,
@@ -119,6 +132,7 @@ public class RepairOrderController {
                 ApiResponse.success("Empleados asignados", repairOrderService.assignEmployees(id, employeeIds)));
     }
 
+    @PreAuthorize("hasAuthority('update_order')")
     @PutMapping("/{id}/tags")
     public ResponseEntity<ApiResponse<RepairOrderResponse>> assignTags(
             @PathVariable Long id,
@@ -127,18 +141,21 @@ public class RepairOrderController {
                 ApiResponse.success("Etiquetas asignadas", repairOrderService.assignTags(id, tagIds)));
     }
 
+    @PreAuthorize("hasAuthority('read_estimate')")
     @GetMapping("/{id}/estimate")
     public ResponseEntity<ApiResponse<EstimateDetailResponse>> getEstimateByRepairOrder(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(estimateService.getByRepairOrderId(id)));
     }
 
+    @PreAuthorize("hasAuthority('read_estimate')")
     @GetMapping("/{id}/estimates")
     public ResponseEntity<ApiResponse<List<EstimateResponse>>> getAllEstimatesByRepairOrder(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(estimateService.getAllByRepairOrderId(id)));
     }
 
-    @GetMapping("/{id}/invoice")
-    public ResponseEntity<ApiResponse<InvoiceDetailResponse>> getInvoiceByRepairOrder(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(invoiceService.getByRepairOrderId(id)));
+    @PreAuthorize("hasAuthority('read_delivery_note')")
+    @GetMapping("/{id}/delivery-note")
+    public ResponseEntity<ApiResponse<DeliveryNoteDetailResponse>> getDeliveryNoteByRepairOrder(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(deliveryNoteService.getByRepairOrderId(id)));
     }
 }

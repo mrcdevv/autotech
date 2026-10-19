@@ -6,7 +6,7 @@ import com.autotech.dashboard.dto.DebtAgingResponse;
 import com.autotech.dashboard.dto.MechanicProductivityResponse;
 import com.autotech.dashboard.dto.MonthlyRevenueResponse;
 import com.autotech.dashboard.dto.TopServiceResponse;
-import com.autotech.dashboard.dto.UnpaidInvoiceResponse;
+import com.autotech.dashboard.dto.UnpaidDeliveryNoteResponse;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
@@ -46,7 +46,7 @@ class DashboardExportServiceImplTest {
                         new DebtAgingResponse("31-60", 1L, new BigDecimal("3000")),
                         new DebtAgingResponse("61-90", 0L, BigDecimal.ZERO),
                         new DebtAgingResponse("90+", 1L, new BigDecimal("2000"))),
-                List.of(new UnpaidInvoiceResponse(1L, "Juan Perez", "ABC123",
+                List.of(new UnpaidDeliveryNoteResponse(1L, "Juan Perez", "ABC123",
                         new BigDecimal("5000"), LocalDateTime.of(2026, 1, 15, 10, 0))));
         when(dashboardService.getFinanciero(6)).thenReturn(data);
 
@@ -59,7 +59,7 @@ class DashboardExportServiceImplTest {
             assertThat(workbook.getNumberOfSheets()).isEqualTo(4);
             assertThat(workbook.getSheetName(0)).isEqualTo("Ingresos Mensuales");
             assertThat(workbook.getSheetName(1)).isEqualTo("Antigüedad de Deuda");
-            assertThat(workbook.getSheetName(2)).isEqualTo("Facturas Impagas");
+            assertThat(workbook.getSheetName(2)).isEqualTo("Remitos Impagos");
             assertThat(workbook.getSheetName(3)).isEqualTo("Resumen Financiero");
 
             XSSFSheet revenueSheet = workbook.getSheetAt(0);
@@ -86,7 +86,7 @@ class DashboardExportServiceImplTest {
         try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(result))) {
             assertThat(workbook.getNumberOfSheets()).isEqualTo(2);
             assertThat(workbook.getSheetName(0)).isEqualTo("Productividad Mecánicos");
-            assertThat(workbook.getSheetName(1)).isEqualTo("Servicios Más Facturados");
+            assertThat(workbook.getSheetName(1)).isEqualTo("Servicios Más Remitidos");
 
             XSSFSheet servicesSheet = workbook.getSheetAt(1);
             assertThat(servicesSheet.getLastRowNum()).isEqualTo(1);

@@ -1,5 +1,10 @@
 export type EstimateStatus = "PENDIENTE" | "ACEPTADO" | "RECHAZADO";
 
+/** How the client answered. EMAIL_LINK is set automatically by the public approval link. */
+export type EstimateDecisionChannel = "WHATSAPP" | "PHONE" | "IN_PERSON" | "EMAIL_LINK";
+
+export type StaffDecisionChannel = Exclude<EstimateDecisionChannel, "EMAIL_LINK">;
+
 // ---- Service Line Item ----
 
 export interface EstimateServiceItemRequest {
@@ -80,6 +85,26 @@ export interface EstimateDetailResponse {
   products: EstimateProductResponse[];
   createdAt: string;
   updatedAt: string;
+  decisionChannel: EstimateDecisionChannel | null;
+  decidedAt: string | null;
+  decidedByEmployeeName: string | null;
+}
+
+export interface PublicEstimateResponse {
+  estimateNumber: number;
+  clientFirstName: string;
+  vehicleDescription: string;
+  services: EstimateServiceItemResponse[];
+  products: EstimateProductResponse[];
+  inspectionIssues: InspectionIssueResponse[];
+  discountPercentage: number;
+  taxPercentage: number;
+  total: number | null;
+  status: EstimateStatus;
+  decisionChannel: EstimateDecisionChannel | null;
+  decidedAt: string | null;
+  expiresAt: string | null;
+  canDecide: boolean;
 }
 
 export interface InspectionIssueResponse {
@@ -89,7 +114,7 @@ export interface InspectionIssueResponse {
   comment: string | null;
 }
 
-export interface EstimateInvoiceDataResponse {
+export interface EstimateDeliveryNoteDataResponse {
   estimateId: number;
   clientId: number;
   vehicleId: number;

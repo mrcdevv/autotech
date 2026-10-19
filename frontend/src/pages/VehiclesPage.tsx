@@ -11,6 +11,7 @@ import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { AppSearchField } from "@/components/AppSearchField";
 import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { useVehicles } from "@/features/vehicles/hooks/useVehicles";
 import { useBrands } from "@/features/vehicles/hooks/useBrands";
 import { useVehicleTypes } from "@/features/vehicles/hooks/useVehicleTypes";
@@ -21,6 +22,10 @@ import { VehicleFilters } from "@/features/vehicles/components/VehicleFilters";
 import type { VehicleResponse, VehicleRequest } from "@/types/vehicle";
 
 export default function VehiclesPage() {
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission("create_vehicle");
+  const canUpdate = hasPermission("update_vehicle");
+  const canDelete = hasPermission("delete_vehicle");
   const {
     vehicles,
     loading,
@@ -128,13 +133,15 @@ export default function VehiclesPage() {
           </>
         }
         actions={
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleCreate}
-          >
-            Nuevo vehículo
-          </Button>
+          canCreate && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleCreate}
+            >
+              Nuevo vehículo
+            </Button>
+          )
         }
       />
 
@@ -152,8 +159,8 @@ export default function VehiclesPage() {
         pageSize={pageSize}
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
-        onEditRow={handleEdit}
-        onDeleteRow={handleDeleteRequest}
+        onEditRow={canUpdate ? handleEdit : undefined}
+        onDeleteRow={canDelete ? handleDeleteRequest : undefined}
         onViewRow={handleView}
       />
 

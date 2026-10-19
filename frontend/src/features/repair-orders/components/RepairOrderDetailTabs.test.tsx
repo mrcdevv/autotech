@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect } from "vitest";
+import { MemoryRouter, useLocation } from "react-router";
 
 import { RepairOrderDetailTabs } from "./RepairOrderDetailTabs";
 
@@ -18,8 +19,8 @@ vi.mock("@/features/estimates/components/EstimateTab", () => ({
   EstimateTab: () => <div data-testid="estimate-tab">EstimateTab</div>,
 }));
 
-vi.mock("@/features/invoices/components/InvoiceTab", () => ({
-  InvoiceTab: () => <div data-testid="invoice-tab">InvoiceTab</div>,
+vi.mock("@/features/delivery-notes/components/DeliveryNoteTab", () => ({
+  DeliveryNoteTab: () => <div data-testid="deliveryNote-tab">DeliveryNoteTab</div>,
 }));
 
 const mockRefetch = vi.fn();
@@ -51,19 +52,36 @@ const sampleOrder: RepairOrderDetailResponse = {
   updatedAt: "2025-01-15T10:00:00",
 };
 
+function LocationProbe({ record }: { record: { search: string } }) {
+  const location = useLocation();
+  record.search = location.search;
+  return null;
+}
+
+function renderTabs(search = "") {
+  const record = { search: "" };
+  const utils = render(
+    <MemoryRouter initialEntries={[`/ordenes-trabajo/1${search}`]}>
+      <LocationProbe record={record} />
+      <RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />
+    </MemoryRouter>,
+  );
+  return { ...utils, record };
+}
+
 describe("RepairOrderDetailTabs", () => {
   it("given order, when rendered, then shows the tab labels", () => {
-    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />);
+    renderTabs();
 
     expect(screen.getByText("Información General")).toBeInTheDocument();
     expect(screen.getByText("Inspecciones")).toBeInTheDocument();
     expect(screen.getByText("Presupuesto")).toBeInTheDocument();
     expect(screen.queryByText("Trabajos")).not.toBeInTheDocument();
-    expect(screen.getByText("Factura")).toBeInTheDocument();
+    expect(screen.getByText("Remito")).toBeInTheDocument();
   });
 
-  it("given order, when first tab active, then shows GeneralInfoTab content", () => {
-    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />);
+  it("given order and no tab param, when rendered, then shows GeneralInfoTab content", () => {
+    renderTabs();
 
     expect(screen.getByText("Resumen Financiero")).toBeInTheDocument();
     expect(screen.getByText("Motivo y Notas")).toBeInTheDocument();
@@ -71,7 +89,7 @@ describe("RepairOrderDetailTabs", () => {
 
   it("given order, when clicking Inspecciones tab, then shows InspectionsTab", async () => {
     const user = userEvent.setup();
-    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />);
+    renderTabs();
 
     await user.click(screen.getByText("Inspecciones"));
 
@@ -80,19 +98,71 @@ describe("RepairOrderDetailTabs", () => {
 
   it("given order, when clicking Presupuesto tab, then shows EstimateTab", async () => {
     const user = userEvent.setup();
-    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />);
+    renderTabs();
 
     await user.click(screen.getByText("Presupuesto"));
 
     expect(screen.getByTestId("estimate-tab")).toBeInTheDocument();
   });
 
-  it("given order, when clicking Factura tab, then shows InvoiceTab", async () => {
+  it("given order, when clicking Remito tab, then shows DeliveryNoteTab", async () => {
     const user = userEvent.setup();
-    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />);
+    renderTabs();
 
-    await user.click(screen.getByText("Factura"));
+    await user.click(screen.getByText("Remito"));
 
-    expect(screen.getByTestId("invoice-tab")).toBeInTheDocument();
+    expect(screen.getByTestId("deliveryNote-tab")).toBeInTheDocument();
+  });
+
+  it("given deep link with ?tab=factura, when rendered, then shows the invoice tab on first render", () => {
+    renderTabs("?tab=factura");
+
+    expect(screen.getByTestId("deliveryNote-tab")).toBeInTheDocument();
+    expect(screen.queryByText("Resumen Financiero")).not.toBeInTheDocument();
+  });
+
+  it("given deep link with ?tab=inspecciones, when rendered, then shows the inspections tab", () => {
+    renderTabs("?tab=inspecciones");
+
+    expect(screen.getByTestId("inspections-tab")).toBeInTheDocument();
+  });
+
+  it("given deep link with ?tab=presupuesto, when rendered, then shows the estimate tab", () => {
+    renderTabs("?tab=presupuesto");
+
+    expect(screen.getByTestId("estimate-tab")).toBeInTheDocument();
+  });
+
+  it("given the General tab shown, when clicking another tab, then the URL query param updates", async () => {
+    const user = userEvent.setup();
+    const { record } = renderTabs();
+
+    await user.click(screen.getByText("Remito"));
+
+    expect(record.search).toBe("?tab=factura");
+  });
+
+  it("given the invoice tab via deep link, when clicking Información General, then the URL query param updates", async () => {
+    const user = userEvent.setup();
+    const { record } = renderTabs("?tab=factura");
+
+    await user.click(screen.getByText("Información General"));
+
+    expect(record.search).toBe("?tab=general");
+  });
+
+  it("given an unknown tab value, when rendered, then falls back to the General tab without crashing", () => {
+    renderTabs("?tab=banana");
+
+    expect(screen.getByText("Resumen Financiero")).toBeInTheDocument();
+    expect(screen.queryByTestId("deliveryNote-tab")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("inspections-tab")).not.toBeInTheDocument();
+  });
+
+  it("given an out-of-range numeric tab value, when rendered, then falls back to the General tab", () => {
+    renderTabs("?tab=99");
+
+    expect(screen.getByText("Resumen Financiero")).toBeInTheDocument();
+    expect(screen.queryByTestId("deliveryNote-tab")).not.toBeInTheDocument();
   });
 });

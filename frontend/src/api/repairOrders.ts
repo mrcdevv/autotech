@@ -13,8 +13,10 @@ import type { NotesUpdateRequest } from "@/features/inspections/types";
 
 export interface RepairOrderListParams {
   statuses?: RepairOrderStatus[];
-  from?: string;
-  to?: string;
+  createdFrom?: string;
+  createdTo?: string;
+  updatedFrom?: string;
+  updatedTo?: string;
   employeeId?: number;
   tagId?: number;
   q?: string;
@@ -30,8 +32,10 @@ export const repairOrdersApi = {
         ...(params.statuses && params.statuses.length > 0
           ? { statuses: params.statuses.join(",") }
           : {}),
-        ...(params.from ? { from: params.from } : {}),
-        ...(params.to ? { to: params.to } : {}),
+        ...(params.createdFrom ? { createdFrom: params.createdFrom } : {}),
+        ...(params.createdTo ? { createdTo: params.createdTo } : {}),
+        ...(params.updatedFrom ? { updatedFrom: params.updatedFrom } : {}),
+        ...(params.updatedTo ? { updatedTo: params.updatedTo } : {}),
         ...(params.employeeId != null ? { employeeId: params.employeeId } : {}),
         ...(params.tagId != null ? { tagId: params.tagId } : {}),
         ...(params.q ? { q: params.q } : {}),

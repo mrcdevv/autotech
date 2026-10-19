@@ -3,9 +3,14 @@ package com.autotech.appointment.controller;
 import com.autotech.appointment.dto.AppointmentRequest;
 import com.autotech.appointment.dto.AppointmentResponse;
 import com.autotech.appointment.dto.AppointmentUpdateRequest;
+import com.autotech.appointment.model.AppointmentConfirmationStatus;
 import com.autotech.appointment.model.AppointmentStatus;
 import com.autotech.appointment.service.AppointmentService;
 import com.autotech.common.exception.GlobalExceptionHandler;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
+import com.autotech.security.SecurityConfig;
+import com.autotech.security.WithAllPermissions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +19,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -34,8 +38,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AppointmentController.class)
-@Import(GlobalExceptionHandler.class)
-@WithMockUser
+@Import({GlobalExceptionHandler.class, SecurityConfig.class})
+@WithAllPermissions
 class AppointmentControllerTest {
 
     @Autowired
@@ -47,12 +51,19 @@ class AppointmentControllerTest {
     @MockitoBean
     private AppointmentService appointmentService;
 
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
+
     private final LocalDateTime startTime = LocalDateTime.of(2025, 3, 15, 10, 0);
     private final LocalDateTime endTime = LocalDateTime.of(2025, 3, 15, 11, 0);
 
     private final AppointmentResponse sampleResponse = new AppointmentResponse(
-            1L, "Test", null, null, null, null, null, null,
+            1L, "Test", null, null, null, null, null, null, null,
             "Purpose", startTime, endTime, null, AppointmentStatus.SCHEDULED, null, null, false,
+            AppointmentConfirmationStatus.PENDING, null,
             List.of(), List.of(), null, null
     );
 
@@ -83,7 +94,7 @@ class AppointmentControllerTest {
     void givenValidRequest_whenCreate_thenReturn201() throws Exception {
         // Arrange
         AppointmentRequest request = new AppointmentRequest(
-                "Test", null, null, "Purpose", startTime, endTime, null, null, null);
+                "Test", null, null, "Purpose", startTime, endTime, null, null, null, null);
         when(appointmentService.create(any(AppointmentRequest.class))).thenReturn(sampleResponse);
 
         // Act & Assert
@@ -98,7 +109,7 @@ class AppointmentControllerTest {
     void givenInvalidRequest_whenCreate_thenReturn400() throws Exception {
         // Arrange - missing startTime and endTime
         AppointmentRequest request = new AppointmentRequest(
-                "Test", null, null, "Purpose", null, null, null, null, null);
+                "Test", null, null, "Purpose", null, null, null, null, null, null);
 
         // Act & Assert
         mockMvc.perform(post("/api/appointments").with(csrf())
@@ -110,7 +121,7 @@ class AppointmentControllerTest {
     @Test
     void givenValidRequest_whenUpdate_thenReturn200() throws Exception {
         // Arrange
-        AppointmentUpdateRequest request = new AppointmentUpdateRequest(startTime, endTime);
+        AppointmentUpdateRequest request = new AppointmentUpdateRequest(startTime, endTime, null);
         when(appointmentService.update(eq(1L), any(AppointmentUpdateRequest.class))).thenReturn(sampleResponse);
 
         // Act & Assert
@@ -189,5 +200,27 @@ class AppointmentControllerTest {
                         .param("employeeId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].title").value("Test"));
+    }
+
+    @Test
+    void givenNotifyClientParam_whenCancel_thenPassFlagToService() throws Exception {
+        // Arrange
+        when(appointmentService.cancel(1L, true)).thenReturn(sampleResponse);
+
+        // Act & Assert
+        mockMvc.perform(patch("/api/appointments/1/cancel").param("notifyClient", "true").with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Cita cancelada"));
+    }
+
+    @Test
+    void givenNoNotifyClientParam_whenCancel_thenDefaultToFalse() throws Exception {
+        // Arrange
+        when(appointmentService.cancel(1L, false)).thenReturn(sampleResponse);
+
+        // Act & Assert
+        mockMvc.perform(patch("/api/appointments/1/cancel").with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.title").value("Test"));
     }
 }

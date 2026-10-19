@@ -28,13 +28,17 @@ import axios from "axios";
 import { FormPageLayout } from "@/components/FormPageLayout";
 import { FormSection } from "@/components/FormSection";
 import { InfoList } from "@/components/InfoList";
+import { formatCurrency } from "@/utils/formatCurrency";
 import { clientAutocompleteApi } from "@/api/clientAutocomplete";
 import { vehiclesApi } from "@/api/vehicles";
 import { inspectionsApi } from "@/api/inspections";
+import { taxConfigApi } from "@/api/taxConfig";
 import { useEstimate } from "@/features/estimates/hooks/useEstimate";
 import { ServicesGrid } from "./ServicesGrid";
 import { ProductsGrid } from "./ProductsGrid";
 import { EstimateSummary } from "./EstimateSummary";
+import { EstimateDecisionDialog } from "./EstimateDecisionDialog";
+import { describeDecision } from "@/features/estimates/decisionChannel";
 
 import type { ClientAutocompleteResponse } from "@/types/vehicle";
 import type { VehicleResponse } from "@/types/vehicle";
@@ -42,6 +46,7 @@ import type {
   EstimateServiceItemRequest,
   EstimateProductRequest,
   EstimateRequest,
+  StaffDecisionChannel,
 } from "@/types/estimate";
 import type { InspectionResponse } from "@/features/inspections/types";
 
@@ -228,6 +233,7 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
   const [products, setProducts] = useState<EstimateProductRequest[]>([]);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [taxPercentage, setTaxPercentage] = useState(0);
+  const [defaultTaxPercentage, setDefaultTaxPercentage] = useState(0);
   const [saving, setSaving] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -240,6 +246,25 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
   const isReadonly = estimate != null && estimate.status !== "PENDIENTE";
   const fromRepairOrder = repairOrderId != null;
   const displayId = estimate?.id ?? estimateId;
+
+  // New estimates start with the global IVA; existing estimates keep their stored value
+  useEffect(() => {
+    if (estimateId) return;
+    let cancelled = false;
+    taxConfigApi
+      .getConfig()
+      .then((res) => {
+        if (!cancelled) setDefaultTaxPercentage(res.data.data.taxPercentage);
+      })
+      .catch(() => {
+        // non-critical: the tax field stays editable
+      });
+    return () => { cancelled = true; };
+  }, [estimateId]);
+
+  useEffect(() => {
+    if (!estimate) setTaxPercentage(defaultTaxPercentage);
+  }, [estimate, defaultTaxPercentage]);
 
   // Fetch inspection issues independently so they're always available
   useEffect(() => {
@@ -394,28 +419,27 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
     }
   };
 
-  const handleApprove = async () => {
-    if (!estimate?.id) return;
-    setApiError(null);
-    try {
-      await approveEstimate(estimate.id);
-      if (!fromRepairOrder) {
-        navigate("/presupuestos");
-      }
-    } catch (err) {
-      setApiError(extractApiError(err));
-    }
-  };
+  const [decisionDialog, setDecisionDialog] = useState<"approve" | "reject" | null>(null);
 
-  const handleReject = async () => {
-    if (!estimate?.id) return;
+  const handleApprove = () => setDecisionDialog("approve");
+
+  const handleReject = () => setDecisionDialog("reject");
+
+  const handleDecisionConfirm = async (channel: StaffDecisionChannel) => {
+    if (!estimate?.id || !decisionDialog) return;
     setApiError(null);
     try {
-      await rejectEstimate(estimate.id);
+      if (decisionDialog === "approve") {
+        await approveEstimate(estimate.id, channel);
+      } else {
+        await rejectEstimate(estimate.id, channel);
+      }
+      setDecisionDialog(null);
       if (!fromRepairOrder) {
         navigate("/presupuestos");
       }
     } catch (err) {
+      setDecisionDialog(null);
       setApiError(extractApiError(err));
     }
   };
@@ -460,7 +484,7 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
     setServices([]);
     setProducts([]);
     setDiscountPercentage(0);
-    setTaxPercentage(0);
+    setTaxPercentage(defaultTaxPercentage);
     clearError();
     setIsCreatingNew(true);
   };
@@ -503,9 +527,12 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
                   }}
                 >
                   <Chip label="Rechazado" color="error" size="small" />
-                  <Typography variant="body2">
-                    #{est.id} — ${est.total?.toLocaleString("es-AR") ?? "—"}
-                  </Typography>
+                  <Box sx={{ flex: 1, display: "flex", alignItems: "baseline", gap: 1, minWidth: 0 }}>
+                    <Typography variant="body2">#{est.id} —</Typography>
+                    <Typography variant="body2" sx={{ flex: 1, textAlign: "right" }}>
+                      {est.total != null ? formatCurrency(est.total) : "—"}
+                    </Typography>
+                  </Box>
                   <Typography variant="caption" color="text.secondary">
                     {new Date(est.createdAt).toLocaleDateString("es-AR")}
                   </Typography>
@@ -599,6 +626,19 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
           </Typography>
         )}
       </Stack>
+
+      {estimate && describeDecision(estimate) && (
+        <Alert severity={estimate.status === "ACEPTADO" ? "success" : "error"} variant="outlined" sx={{ mb: 2 }}>
+          {describeDecision(estimate)}
+        </Alert>
+      )}
+
+      <EstimateDecisionDialog
+        open={decisionDialog !== null}
+        decision={decisionDialog ?? "approve"}
+        onClose={() => setDecisionDialog(null)}
+        onConfirm={handleDecisionConfirm}
+      />
 
       <FormPageLayout
         aside={

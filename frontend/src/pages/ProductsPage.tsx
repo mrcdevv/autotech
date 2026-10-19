@@ -7,6 +7,7 @@ import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { AppSearchField } from "@/components/AppSearchField";
 import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { useProducts } from "@/features/catalog/hooks/useProducts";
 import { ProductsDataGrid } from "@/features/catalog/components/ProductsDataGrid";
 import { ProductFormDialog } from "@/features/catalog/components/ProductFormDialog";
@@ -14,6 +15,8 @@ import { ProductFormDialog } from "@/features/catalog/components/ProductFormDial
 import type { ProductResponse, ProductRequest } from "@/types/catalog";
 
 export default function ProductsPage() {
+  const { hasPermission } = useAuth();
+  const canManage = hasPermission("manage_products");
   const {
     products,
     loading,
@@ -110,9 +113,11 @@ export default function ProductsPage() {
           />
         }
         actions={
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-            Agregar producto
-          </Button>
+          canManage && (
+            <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+              Agregar producto
+            </Button>
+          )
         }
       />
 
@@ -124,8 +129,8 @@ export default function ProductsPage() {
         pageSize={pageSize}
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
-        onEditRow={handleEdit}
-        onDeleteRow={confirmDelete}
+        onEditRow={canManage ? handleEdit : undefined}
+        onDeleteRow={canManage ? confirmDelete : undefined}
       />
 
       <ProductFormDialog
