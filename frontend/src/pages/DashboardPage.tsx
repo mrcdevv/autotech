@@ -2,6 +2,7 @@ import { Alert, Box, CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router";
 
 import { DailyCash } from "@/features/dashboard/components/DailyCash";
+import { LowStockAlerts } from "@/features/dashboard/components/LowStockAlerts";
 import { PendingEstimateAlerts } from "@/features/dashboard/components/PendingEstimateAlerts";
 import { StaleOrderAlerts } from "@/features/dashboard/components/StaleOrderAlerts";
 import { UpcomingAppointments } from "@/features/dashboard/components/UpcomingAppointments";
@@ -74,6 +75,7 @@ export default function DashboardPage() {
           alerts={summary.pendingEstimateAlerts}
           thresholdDays={summary.staleThresholdDays}
         />
+        <LowStockAlerts alerts={summary.lowStockAlerts ?? []} />
       </Box>
     </Box>
   );

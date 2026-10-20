@@ -65,7 +65,7 @@ class DashboardControllerTest {
                 5L, 2L, 3L, 4L,
                 Collections.emptyList(), Collections.emptyList(),
                 Collections.emptyList(), Collections.emptyList(),
-                Collections.emptyList(), 5);
+                Collections.emptyList(), 5, Collections.emptyList());
         when(dashboardService.getSummary()).thenReturn(summary);
 
         // Act & Assert

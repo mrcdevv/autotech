@@ -28,6 +28,16 @@ export interface PendingEstimateAlertResponse {
   daysPending: number;
 }
 
+export interface LowStockAlertResponse {
+  productId: number;
+  productName: string;
+  quantity: number;
+  reservedQuantity: number;
+  /** quantity - reservedQuantity, below minStock */
+  availableQuantity: number;
+  minStock: number;
+}
+
 export interface ReadyForPickupResponse {
   repairOrderId: number;
   title: string | null;
@@ -47,6 +57,7 @@ export interface DashboardSummaryResponse {
   staleOrderAlerts: StaleOrderAlertResponse[];
   pendingEstimateAlerts: PendingEstimateAlertResponse[];
   staleThresholdDays: number;
+  lowStockAlerts: LowStockAlertResponse[];
 }
 
 export interface MonthlyRevenueResponse {
