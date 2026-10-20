@@ -8,6 +8,7 @@ import com.autotech.dashboard.dto.DashboardSummaryResponse;
 import com.autotech.dashboard.dto.DebtAgingResponse;
 import com.autotech.dashboard.dto.MechanicProductivityResponse;
 import com.autotech.dashboard.dto.MonthlyRevenueResponse;
+import com.autotech.dashboard.dto.LowStockAlertResponse;
 import com.autotech.dashboard.dto.PendingEstimateAlertResponse;
 import com.autotech.dashboard.dto.ReadyForPickupResponse;
 import com.autotech.dashboard.dto.StaleOrderAlertResponse;
@@ -15,6 +16,7 @@ import com.autotech.dashboard.dto.StatusCountResponse;
 import com.autotech.dashboard.dto.TodayAppointmentResponse;
 import com.autotech.dashboard.dto.TopServiceResponse;
 import com.autotech.dashboard.dto.UnpaidDeliveryNoteResponse;
+import com.autotech.catalog.repository.ProductRepository;
 import com.autotech.dashboard.model.DashboardConfig;
 import com.autotech.dashboard.repository.DashboardConfigRepository;
 import com.autotech.estimate.model.EstimateStatus;
@@ -46,6 +48,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final DeliveryNoteRepository deliveryNoteRepository;
     private final EstimateRepository estimateRepository;
     private final DashboardConfigRepository dashboardConfigRepository;
+    private final ProductRepository productRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -111,10 +114,21 @@ public class DashboardServiceImpl implements DashboardService {
                         Duration.between(e.getCreatedAt(), LocalDateTime.now()).toDays()))
                 .toList();
 
+        // Available (on hand - reserved) below the minimum, the ones furthest below first
+        List<LowStockAlertResponse> lowStockAlerts = productRepository.findAllLowStock().stream()
+                .map(p -> new LowStockAlertResponse(
+                        p.getId(),
+                        p.getName(),
+                        p.getQuantity(),
+                        p.getReservedQuantity(),
+                        p.getAvailableQuantity(),
+                        p.getMinStock()))
+                .toList();
+
         return new DashboardSummaryResponse(
                 openOrderCount, readyForPickupCount, todayAppointmentCount, pendingEstimateCount,
                 statusCounts, todayAppointments, readyForPickupOrders, staleAlerts, pendingEstimates,
-                config.getStaleThresholdDays());
+                config.getStaleThresholdDays(), lowStockAlerts);
     }
 
     @Override
