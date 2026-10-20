@@ -15,6 +15,8 @@ export interface DeliveryNoteProductRequest {
   productName: string;
   quantity: number;
   unitPrice: number;
+  /** Catalog product this line moves stock from; absent / null for free-text lines. */
+  productId?: number | null;
 }
 
 export interface DeliveryNoteProductResponse {
@@ -23,6 +25,7 @@ export interface DeliveryNoteProductResponse {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  productId?: number | null;
 }
 
 export interface DeliveryNoteRequest {

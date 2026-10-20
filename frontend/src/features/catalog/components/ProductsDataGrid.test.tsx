@@ -6,9 +6,14 @@ import { ProductsDataGrid } from "./ProductsDataGrid";
 
 import type { ProductResponse } from "@/types/catalog";
 
+const stock = { minStock: null, reservedQuantity: 0, lowStock: false };
+
 const mockRows: ProductResponse[] = [
-  { id: 1, name: "Brake Pad", description: "Ceramic", quantity: 10, unitPrice: 25, createdAt: "", updatedAt: "" },
-  { id: 2, name: "Oil Filter", description: null, quantity: 0, unitPrice: null, createdAt: "", updatedAt: "" },
+  { id: 1, name: "Brake Pad", description: "Ceramic", quantity: 10, unitPrice: 25, createdAt: "", updatedAt: "", ...stock, availableQuantity: 10 },
+  {
+    id: 2, name: "Oil Filter", description: null, quantity: 1, unitPrice: null, createdAt: "", updatedAt: "",
+    minStock: 3, reservedQuantity: 1, availableQuantity: 0, lowStock: true,
+  },
 ];
 
 const defaultProps = {
@@ -28,10 +33,19 @@ describe("ProductsDataGrid", () => {
     render(<ProductsDataGrid {...defaultProps} />);
 
     expect(screen.getByText("Nombre")).toBeInTheDocument();
-    expect(screen.getByText("Cantidad")).toBeInTheDocument();
+    expect(screen.getByText("En stock")).toBeInTheDocument();
+    expect(screen.getByText("Reservado")).toBeInTheDocument();
+    expect(screen.getByText("Disponible")).toBeInTheDocument();
+    expect(screen.getByText("Stock mín.")).toBeInTheDocument();
     expect(screen.getByText("Precio unitario")).toBeInTheDocument();
     expect(screen.getByText("Brake Pad")).toBeInTheDocument();
     expect(screen.getByText("Oil Filter")).toBeInTheDocument();
+  });
+
+  it("given a product below its minimum, when rendered, then shows the low stock badge only on that row", () => {
+    render(<ProductsDataGrid {...defaultProps} />);
+
+    expect(screen.getAllByText("Stock bajo")).toHaveLength(1);
   });
 
   it("given loading state, when rendered, then shows loading overlay", () => {
@@ -60,5 +74,24 @@ describe("ProductsDataGrid", () => {
     await user.click(deleteButton);
 
     expect(onDeleteRow).toHaveBeenCalledWith(1);
+  });
+
+  it("given stock handlers, when clicking adjust and movements, then calls them with the row id", async () => {
+    const user = userEvent.setup();
+    const onAdjustStock = vi.fn();
+    const onShowMovements = vi.fn();
+    render(<ProductsDataGrid {...defaultProps} onAdjustStock={onAdjustStock} onShowMovements={onShowMovements} />);
+
+    await user.click(screen.getAllByRole("menuitem", { name: /ajustar stock/i })[1]!);
+    await user.click(screen.getAllByRole("menuitem", { name: /movimientos de stock/i })[0]!);
+
+    expect(onAdjustStock).toHaveBeenCalledWith(2);
+    expect(onShowMovements).toHaveBeenCalledWith(1);
+  });
+
+  it("given no stock permission, when rendered, then hides the adjust action", () => {
+    render(<ProductsDataGrid {...defaultProps} onShowMovements={vi.fn()} />);
+
+    expect(screen.queryByRole("menuitem", { name: /ajustar stock/i })).not.toBeInTheDocument();
   });
 });

@@ -18,6 +18,7 @@ export type PermissionCode =
   | "manage_config"
   | "manage_services"
   | "manage_products"
+  | "manage_stock"
   | "manage_roles";
 
 /** Any of these grants access to the settings page (each card checks its own code). */

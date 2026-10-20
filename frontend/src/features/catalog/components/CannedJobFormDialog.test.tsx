@@ -36,7 +36,10 @@ vi.mock("@/api/products", () => ({
       data: {
         data: {
           content: [
-            { id: 2, name: "Oil Filter", description: null, quantity: 7, unitPrice: 1234.5, createdAt: "", updatedAt: "" },
+            {
+              id: 2, name: "Oil Filter", description: null, quantity: 7, unitPrice: 1234.5, createdAt: "", updatedAt: "",
+              minStock: null, reservedQuantity: 2, availableQuantity: 5, lowStock: false,
+            },
           ],
         },
       },
@@ -204,7 +207,7 @@ describe("CannedJobFormDialog", () => {
     await user.type(screen.getByLabelText("Nombre del producto"), "Oil");
 
     expect(
-      await screen.findByText(`${money(1234.5)} — Stock: 7`),
+      await screen.findByText(`${money(1234.5)} — Disponible: 5`),
     ).toBeInTheDocument();
   });
 });

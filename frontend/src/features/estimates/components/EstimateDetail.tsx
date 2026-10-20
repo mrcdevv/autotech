@@ -294,6 +294,7 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
           productName: p.productName,
           quantity: p.quantity,
           unitPrice: p.unitPrice,
+          productId: p.productId ?? null,
         })),
       );
       setDiscountPercentage(estimate.discountPercentage);
