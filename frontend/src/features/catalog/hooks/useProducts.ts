@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 
 import { productsApi } from "@/api/products";
 
-import type { ProductResponse, ProductRequest } from "@/types/catalog";
+import type { ProductResponse, ProductRequest, StockAdjustmentRequest } from "@/types/catalog";
 
 export function useProducts() {
   const [products, setProducts] = useState<ProductResponse[]>([]);
@@ -12,12 +12,13 @@ export function useProducts() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(12);
   const [query, setQuery] = useState("");
+  const [lowStockOnly, setLowStockOnly] = useState(false);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await productsApi.search(query || undefined, page, pageSize);
+      const res = await productsApi.search(query || undefined, page, pageSize, lowStockOnly);
       setProducts(res.data.data.content);
       setTotalCount(res.data.data.totalElements);
     } catch {
@@ -25,7 +26,7 @@ export function useProducts() {
     } finally {
       setLoading(false);
     }
-  }, [query, page, pageSize]);
+  }, [query, page, pageSize, lowStockOnly]);
 
   useEffect(() => {
     fetchProducts();
@@ -39,6 +40,12 @@ export function useProducts() {
 
   const updateProduct = async (id: number, data: ProductRequest): Promise<ProductResponse> => {
     const res = await productsApi.update(id, data);
+    await fetchProducts();
+    return res.data.data;
+  };
+
+  const adjustStock = async (id: number, data: StockAdjustmentRequest): Promise<ProductResponse> => {
+    const res = await productsApi.adjustStock(id, data);
     await fetchProducts();
     return res.data.data;
   };
@@ -59,9 +66,12 @@ export function useProducts() {
     setPageSize,
     query,
     setQuery,
+    lowStockOnly,
+    setLowStockOnly,
     createProduct,
     updateProduct,
     deleteProduct,
+    adjustStock,
     refetch: fetchProducts,
   };
 }

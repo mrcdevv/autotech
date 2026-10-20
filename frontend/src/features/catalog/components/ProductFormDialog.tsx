@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 
 import {
+  Alert,
   Button,
   TextField,
   Stack,
@@ -24,17 +25,20 @@ interface FormErrors {
   [key: string]: string;
 }
 
-type ProductFormState = Omit<ProductRequest, "quantity" | "unitPrice"> & {
+type ProductFormState = Omit<ProductRequest, "quantity" | "unitPrice" | "minStock"> & {
   quantity: number | string | null;
   unitPrice: number | null;
+  minStock: number | null;
 };
 
 export function ProductFormDialog({ open, onClose, onSave, initialData }: ProductFormDialogProps) {
+  const isEditing = !!initialData;
   const [form, setForm] = useState<ProductFormState>({
     name: "",
     description: null,
     quantity: 0,
     unitPrice: null,
+    minStock: null,
   });
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -46,9 +50,10 @@ export function ProductFormDialog({ open, onClose, onSave, initialData }: Produc
           description: initialData.description,
           quantity: initialData.quantity,
           unitPrice: initialData.unitPrice,
+          minStock: initialData.minStock,
         });
       } else {
-        setForm({ name: "", description: null, quantity: 0, unitPrice: null });
+        setForm({ name: "", description: null, quantity: 0, unitPrice: null, minStock: null });
       }
       setErrors({});
     }
@@ -62,8 +67,8 @@ export function ProductFormDialog({ open, onClose, onSave, initialData }: Produc
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
     if (!form.name.trim()) newErrors.name = "El nombre del producto es obligatorio";
-    if (form.quantity === "" || form.quantity === null || form.quantity === undefined) {
-      newErrors.quantity = "La cantidad es obligatoria";
+    if (!isEditing && (form.quantity === "" || form.quantity === null || form.quantity === undefined)) {
+      newErrors.quantity = "El stock inicial es obligatorio";
     }
     if (form.unitPrice === null || form.unitPrice === undefined) {
       newErrors.unitPrice = "El precio unitario es obligatorio";
@@ -118,19 +123,35 @@ export function ProductFormDialog({ open, onClose, onSave, initialData }: Produc
               rows={3}
             />
           </Grid>
+          {!isEditing && (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                label="Stock inicial"
+                type="number"
+                value={form.quantity ?? ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleChange("quantity", val === "" ? null : Math.max(0, parseInt(val)));
+                }}
+                error={!!errors.quantity}
+                helperText={errors.quantity}
+                required
+                slotProps={{ htmlInput: { min: 0 } }}
+              />
+            </Grid>
+          )}
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               fullWidth
-              label="Cantidad"
+              label="Stock mínimo"
               type="number"
-              value={form.quantity ?? ""}
+              value={form.minStock ?? ""}
               onChange={(e) => {
                 const val = e.target.value;
-                handleChange("quantity", val === "" ? null : Math.max(0, parseInt(val)));
+                handleChange("minStock", val === "" ? null : Math.max(0, parseInt(val)));
               }}
-              error={!!errors.quantity}
-              helperText={errors.quantity}
-              required
+              helperText="Avisa cuando el disponible queda por debajo"
               slotProps={{ htmlInput: { min: 0 } }}
             />
           </Grid>
@@ -147,6 +168,11 @@ export function ProductFormDialog({ open, onClose, onSave, initialData }: Produc
             />
           </Grid>
         </Grid>
+        {isEditing && (
+          <Alert severity="info">
+            Para cambiar el stock usá "Ajustar stock": así queda registrado el motivo.
+          </Alert>
+        )}
       </Stack>
     </AppDialog>
   );
