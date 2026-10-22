@@ -12,5 +12,6 @@ public record DashboardSummaryResponse(
         List<ReadyForPickupResponse> readyForPickupOrders,
         List<StaleOrderAlertResponse> staleOrderAlerts,
         List<PendingEstimateAlertResponse> pendingEstimateAlerts,
-        Integer staleThresholdDays
+        Integer staleThresholdDays,
+        List<LowStockAlertResponse> lowStockAlerts
 ) {}

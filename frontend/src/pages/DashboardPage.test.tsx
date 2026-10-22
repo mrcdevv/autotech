@@ -41,6 +41,7 @@ vi.mock("@/features/dashboard/hooks/useHomeDashboard", () => ({
         },
       ],
       staleThresholdDays: 5,
+      lowStockAlerts: [],
     },
     orders: [
       {

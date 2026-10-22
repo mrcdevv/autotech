@@ -109,6 +109,7 @@ const summary: DashboardSummaryResponse = {
     { estimateId: 1, clientFullName: "Juan Perez", vehiclePlate: "ABC123", total: 1234.5, daysPending: 3 },
   ],
   staleThresholdDays: 30,
+  lowStockAlerts: [],
 };
 
 const todayIso = () => new Date().toISOString();
