@@ -1,7 +1,10 @@
 package com.autotech.stock.service;
 
+import com.autotech.catalog.dto.ProductRequest;
+import com.autotech.catalog.dto.ProductResponse;
 import com.autotech.catalog.model.Product;
 import com.autotech.catalog.repository.ProductRepository;
+import com.autotech.catalog.service.ProductService;
 import com.autotech.client.model.Client;
 import com.autotech.client.model.ClientType;
 import com.autotech.client.repository.ClientRepository;
@@ -18,6 +21,9 @@ import com.autotech.repairorder.dto.RepairOrderRequest;
 import com.autotech.repairorder.dto.StatusUpdateRequest;
 import com.autotech.repairorder.model.RepairOrderStatus;
 import com.autotech.repairorder.service.RepairOrderService;
+import com.autotech.stock.dto.StockAdjustmentMode;
+import com.autotech.stock.dto.StockAdjustmentRequest;
+import com.autotech.stock.dto.StockMovementResponse;
 import com.autotech.stock.model.StockMovement;
 import com.autotech.stock.model.StockMovementType;
 import com.autotech.stock.model.StockSourceType;
@@ -28,6 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,6 +55,7 @@ import static org.assertj.core.api.Assertions.tuple;
 class StockFlowIT {
 
     @Autowired private StockService stockService;
+    @Autowired private ProductService productService;
     @Autowired private EstimateService estimateService;
     @Autowired private RepairOrderService repairOrderService;
     @Autowired private DeliveryNoteService deliveryNoteService;
@@ -273,6 +281,64 @@ class StockFlowIT {
 
         // Assert
         assertStock(oil, 7, 0);
+    }
+
+    // ---------------------------------------------------------------------
+    // Manual stock and low-stock alerts
+    // ---------------------------------------------------------------------
+
+    @Test
+    void givenNewProductWithStock_whenCreated_thenInitialMovementIsRecorded() {
+        // Act
+        ProductResponse created = productService.create(
+                new ProductRequest("Bujia IT", null, 12, BigDecimal.ONE, 4));
+
+        // Assert
+        assertThat(stockService.getMovements(created.id(), PageRequest.of(0, 10)).getContent())
+                .extracting(StockMovementResponse::type, StockMovementResponse::quantity)
+                .containsExactly(tuple(StockMovementType.INITIAL, 12));
+    }
+
+    @Test
+    void givenProductEdit_whenQuantityChangesInForm_thenOnHandIsNotTouched() {
+        // Act
+        productService.update(oil.getId(), new ProductRequest("Aceite IT", null, 99, BigDecimal.ONE, 2));
+
+        // Assert
+        assertStock(oil, 10, 0);
+    }
+
+    @Test
+    void givenReservationBelowMinimum_whenSearchLowStock_thenProductIsListed() {
+        // Arrange
+        Long orderId = createRepairOrder();
+        createApprovedEstimate(orderId, line(oil, 9));
+
+        // Act
+        List<ProductResponse> lowStock = productService.getLowStock();
+        List<ProductResponse> filtered = productService.search("aceite it", true, PageRequest.of(0, 10)).getContent();
+
+        // Assert
+        assertThat(lowStock).extracting(ProductResponse::id).contains(oil.getId());
+        assertThat(filtered).extracting(ProductResponse::id).containsExactly(oil.getId());
+        assertThat(filtered.get(0).availableQuantity()).isEqualTo(1);
+        assertThat(filtered.get(0).lowStock()).isTrue();
+    }
+
+    @Test
+    void givenPhysicalCount_whenAdjusted_thenOnHandMatchesCountAndKeepsReservation() {
+        // Arrange
+        Long orderId = createRepairOrder();
+        createApprovedEstimate(orderId, line(oil, 3));
+
+        // Act
+        ProductResponse adjusted = stockService.adjust(oil.getId(),
+                new StockAdjustmentRequest(StockAdjustmentMode.SET, 8, "Conteo fisico"));
+
+        // Assert
+        assertThat(adjusted.quantity()).isEqualTo(8);
+        assertThat(adjusted.reservedQuantity()).isEqualTo(3);
+        assertThat(adjusted.availableQuantity()).isEqualTo(5);
     }
 
     // ---------------------------------------------------------------------

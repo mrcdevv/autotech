@@ -24,7 +24,7 @@ import java.lang.annotation.Target;
         "create_delivery_note", "read_delivery_note", "update_delivery_note", "delete_delivery_note",
         "create_payment", "read_payment", "update_payment", "delete_payment",
         "create_appointment", "read_appointment", "update_appointment", "delete_appointment",
-        "view_reports", "manage_config", "manage_services", "manage_products", "manage_roles"
+        "view_reports", "manage_config", "manage_services", "manage_products", "manage_stock", "manage_roles"
 })
 public @interface WithAllPermissions {
 }

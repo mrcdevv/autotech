@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
@@ -33,8 +35,15 @@ public class ProductController {
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ProductResponse>>> search(
             @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "false") boolean lowStock,
             @PageableDefault(size = 12, sort = "name") Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(productService.search(query, pageable)));
+        return ResponseEntity.ok(ApiResponse.success(productService.search(query, lowStock, pageable)));
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/low-stock")
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> getLowStock() {
+        return ResponseEntity.ok(ApiResponse.success(productService.getLowStock()));
     }
 
     @PreAuthorize("isAuthenticated()")
