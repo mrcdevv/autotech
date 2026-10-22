@@ -26,6 +26,7 @@ import com.autotech.tax.service.TaxConfigService;
 import com.autotech.repairorder.repository.RepairOrderRepository;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
+import com.autotech.stock.service.StockService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -51,6 +52,7 @@ public class DeliveryNoteServiceImpl implements DeliveryNoteService {
     private final EstimateService estimateService;
     private final EmailNotificationService emailNotificationService;
     private final TaxConfigService taxConfigService;
+    private final StockService stockService;
 
     @Override
     @Transactional(readOnly = true)
@@ -143,6 +145,7 @@ public class DeliveryNoteServiceImpl implements DeliveryNoteService {
 
         DeliveryNote saved = deliveryNoteRepository.save(entity);
         log.info("Created delivery note with id {}", saved.getId());
+        stockService.syncDeliveryNote(saved.getId());
         DeliveryNoteDetailResponse response = getById(saved.getId());
         emailNotificationService.notifyDeliveryNoteCreated(response);
         return response;
@@ -190,6 +193,7 @@ public class DeliveryNoteServiceImpl implements DeliveryNoteService {
             throw new BusinessException("No se puede eliminar un remito que ya fue pagado");
         }
 
+        stockService.revertDeliveryNote(id);
         deliveryNoteRepository.deleteById(id);
         log.info("Deleted delivery note with id {}", id);
     }
