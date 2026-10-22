@@ -57,7 +57,7 @@ export function CannedJobFormDialog({ open, onClose, onSave, initialData }: Cann
         setTitle(initialData.title);
         setDescription(initialData.description ?? "");
         setServices(initialData.services.map((s) => ({ serviceName: s.serviceName, price: s.price })));
-        setProducts(initialData.products.map((p) => ({ productName: p.productName, quantity: p.quantity, unitPrice: p.unitPrice })));
+        setProducts(initialData.products.map((p) => ({ productName: p.productName, quantity: p.quantity, unitPrice: p.unitPrice, productId: p.productId ?? null })));
       } else {
         setTitle("");
         setDescription("");
@@ -141,7 +141,7 @@ export function CannedJobFormDialog({ open, onClose, onSave, initialData }: Cann
       setProducts((prev) =>
         prev.map((item, i) =>
           i === index
-            ? { productName: selected.name, quantity: 1, unitPrice: selected.unitPrice ?? 0 }
+            ? { productName: selected.name, quantity: 1, unitPrice: selected.unitPrice ?? 0, productId: selected.id }
             : item
         )
       );
@@ -152,7 +152,14 @@ export function CannedJobFormDialog({ open, onClose, onSave, initialData }: Cann
     setProducts((prev) =>
       prev.map((item, i) =>
         i === index
-          ? { productName: item.productName, quantity: item.quantity, unitPrice: item.unitPrice, [field]: value }
+          ? {
+              productName: item.productName,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              // Renaming a catalog product turns the line into free text
+              productId: field === "productName" && value !== item.productName ? null : item.productId,
+              [field]: value,
+            }
           : item
       )
     );
@@ -332,7 +339,7 @@ export function CannedJobFormDialog({ open, onClose, onSave, initialData }: Cann
                         <Typography variant="body2">{option.name}</Typography>
                         {option.unitPrice != null && (
                           <Typography variant="caption" color="text.secondary" sx={{ textAlign: "right" }}>
-                            {formatCurrency(option.unitPrice)} — Stock: {option.quantity}
+                            {formatCurrency(option.unitPrice)} — Disponible: {option.availableQuantity}
                           </Typography>
                         )}
                       </Box>
