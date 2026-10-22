@@ -39,7 +39,7 @@ class ProductMapperTest {
     @Test
     void givenRequest_whenToEntity_thenMapsAllFields() {
         // Arrange
-        ProductRequest request = new ProductRequest("Brake Pad", "Ceramic", 10, new BigDecimal("25.00"));
+        ProductRequest request = new ProductRequest("Brake Pad", "Ceramic", 10, new BigDecimal("25.00"), null);
 
         // Act
         Product entity = mapper.toEntity(request);
@@ -54,7 +54,7 @@ class ProductMapperTest {
     @Test
     void givenNullQuantity_whenToEntity_thenDefaultsToZero() {
         // Arrange
-        ProductRequest request = new ProductRequest("Brake Pad", null, null, null);
+        ProductRequest request = new ProductRequest("Brake Pad", null, null, null, null);
 
         // Act
         Product entity = mapper.toEntity(request);
@@ -64,7 +64,7 @@ class ProductMapperTest {
     }
 
     @Test
-    void givenRequest_whenUpdateEntity_thenUpdatesAllFields() {
+    void givenRequest_whenUpdateEntity_thenUpdatesCatalogFieldsButNotOnHandStock() {
         // Arrange
         Product entity = Product.builder()
                 .name("Old Name")
@@ -72,7 +72,7 @@ class ProductMapperTest {
                 .quantity(5)
                 .unitPrice(new BigDecimal("10.00"))
                 .build();
-        ProductRequest request = new ProductRequest("New Name", "New desc", 20, new BigDecimal("99.00"));
+        ProductRequest request = new ProductRequest("New Name", "New desc", 20, new BigDecimal("99.00"), 3);
 
         // Act
         mapper.updateEntity(request, entity);
@@ -80,7 +80,8 @@ class ProductMapperTest {
         // Assert
         assertThat(entity.getName()).isEqualTo("New Name");
         assertThat(entity.getDescription()).isEqualTo("New desc");
-        assertThat(entity.getQuantity()).isEqualTo(20);
+        assertThat(entity.getQuantity()).isEqualTo(5);
+        assertThat(entity.getMinStock()).isEqualTo(3);
         assertThat(entity.getUnitPrice()).isEqualByComparingTo(new BigDecimal("99.00"));
     }
 }

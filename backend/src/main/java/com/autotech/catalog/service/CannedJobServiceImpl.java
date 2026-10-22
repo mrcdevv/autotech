@@ -1,5 +1,7 @@
 package com.autotech.catalog.service;
 
+import com.autotech.catalog.repository.ProductRepository;
+import com.autotech.catalog.model.Product;
 import com.autotech.catalog.dto.CannedJobDetailResponse;
 import com.autotech.catalog.dto.CannedJobMapper;
 import com.autotech.catalog.dto.CannedJobProductRequest;
@@ -23,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CannedJobServiceImpl implements CannedJobService {
 
     private final CannedJobRepository cannedJobRepository;
+    private final ProductRepository productRepository;
     private final CannedJobMapper cannedJobMapper;
 
     @Override
@@ -101,6 +104,7 @@ public class CannedJobServiceImpl implements CannedJobService {
             for (CannedJobProductRequest prodReq : request.products()) {
                 CannedJobProduct prod = CannedJobProduct.builder()
                         .cannedJob(entity)
+                        .product(resolveProduct(prodReq.productId()))
                         .productName(prodReq.productName())
                         .quantity(prodReq.quantity())
                         .unitPrice(prodReq.unitPrice())
@@ -108,5 +112,11 @@ public class CannedJobServiceImpl implements CannedJobService {
                 entity.getProducts().add(prod);
             }
         }
+    }
+
+    private Product resolveProduct(Long productId) {
+        if (productId == null) return null;
+        return productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
     }
 }

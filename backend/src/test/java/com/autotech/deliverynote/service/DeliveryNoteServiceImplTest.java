@@ -185,7 +185,7 @@ class DeliveryNoteServiceImplTest {
         DeliveryNoteRequest request = new DeliveryNoteRequest(1L, 2L, null, null,
                 BigDecimal.ZERO, BigDecimal.ZERO,
                 List.of(new DeliveryNoteServiceItemRequest("Service A", BigDecimal.valueOf(100))),
-                List.of(new DeliveryNoteProductRequest("Product A", 2, BigDecimal.valueOf(50))));
+                List.of(new DeliveryNoteProductRequest("Product A", 2, BigDecimal.valueOf(50), null)));
 
         DeliveryNote mappedEntity = DeliveryNote.builder()
                 .discountPercentage(BigDecimal.ZERO)
@@ -239,7 +239,7 @@ class DeliveryNoteServiceImplTest {
         DeliveryNoteRequest request = new DeliveryNoteRequest(1L, null, null, null,
                 BigDecimal.ZERO, BigDecimal.ZERO,
                 Collections.emptyList(),
-                List.of(new DeliveryNoteProductRequest("Product A", 2, BigDecimal.valueOf(50))));
+                List.of(new DeliveryNoteProductRequest("Product A", 2, BigDecimal.valueOf(50), null)));
 
         DeliveryNote mappedEntity = DeliveryNote.builder()
                 .discountPercentage(BigDecimal.ZERO)
@@ -264,7 +264,7 @@ class DeliveryNoteServiceImplTest {
         DeliveryNoteRequest request = new DeliveryNoteRequest(1L, null, null, null,
                 BigDecimal.ZERO, BigDecimal.ZERO,
                 null,
-                List.of(new DeliveryNoteProductRequest("Product A", 1, BigDecimal.valueOf(100))));
+                List.of(new DeliveryNoteProductRequest("Product A", 1, BigDecimal.valueOf(100), null)));
 
         DeliveryNote mappedEntity = DeliveryNote.builder()
                 .discountPercentage(BigDecimal.ZERO)
@@ -324,7 +324,7 @@ class DeliveryNoteServiceImplTest {
         EstimateDeliveryNoteDataResponse estimateData = new EstimateDeliveryNoteDataResponse(
                 5L, 1L, 2L, null,
                 List.of(new EstimateServiceItemResponse(1L, "Service A", BigDecimal.valueOf(100))),
-                List.of(new EstimateProductResponse(1L, "Product A", 2, BigDecimal.valueOf(50), BigDecimal.valueOf(100))),
+                List.of(new EstimateProductResponse(1L, "Product A", 2, BigDecimal.valueOf(50), BigDecimal.valueOf(100), null)),
                 BigDecimal.valueOf(10), BigDecimal.valueOf(21), BigDecimal.valueOf(300));
 
         DeliveryNote mappedEntity = DeliveryNote.builder()
@@ -362,7 +362,7 @@ class DeliveryNoteServiceImplTest {
         EstimateDeliveryNoteDataResponse estimateData = new EstimateDeliveryNoteDataResponse(
                 5L, 1L, 2L, null,
                 List.of(new EstimateServiceItemResponse(1L, "Service A", BigDecimal.valueOf(100))),
-                List.of(new EstimateProductResponse(1L, "Product A", 2, BigDecimal.valueOf(50), BigDecimal.valueOf(100))),
+                List.of(new EstimateProductResponse(1L, "Product A", 2, BigDecimal.valueOf(50), BigDecimal.valueOf(100), null)),
                 BigDecimal.valueOf(10), BigDecimal.valueOf(21), new BigDecimal("217.80"));
 
         DeliveryNote mappedEntity = DeliveryNote.builder()
@@ -483,7 +483,7 @@ class DeliveryNoteServiceImplTest {
                 new DeliveryNoteServiceItemRequest("Service A", BigDecimal.valueOf(100)),
                 new DeliveryNoteServiceItemRequest("Service B", BigDecimal.valueOf(200)));
         List<DeliveryNoteProductRequest> products = List.of(
-                new DeliveryNoteProductRequest("Product A", 2, BigDecimal.valueOf(50)));
+                new DeliveryNoteProductRequest("Product A", 2, BigDecimal.valueOf(50), null));
 
         BigDecimal total = deliveryNoteService.calculateTotal(services, products, BigDecimal.ZERO, BigDecimal.ZERO);
 
@@ -504,7 +504,7 @@ class DeliveryNoteServiceImplTest {
     @Test
     void givenEmptyServices_whenCalculateTotal_thenReturnProductsTotal() {
         List<DeliveryNoteProductRequest> products = List.of(
-                new DeliveryNoteProductRequest("Product A", 3, BigDecimal.valueOf(100)));
+                new DeliveryNoteProductRequest("Product A", 3, BigDecimal.valueOf(100), null));
 
         BigDecimal total = deliveryNoteService.calculateTotal(Collections.emptyList(), products,
                 BigDecimal.ZERO, BigDecimal.ZERO);

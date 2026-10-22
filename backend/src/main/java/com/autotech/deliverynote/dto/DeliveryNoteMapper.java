@@ -82,7 +82,8 @@ public class DeliveryNoteMapper {
                 entity.getProductName(),
                 entity.getQuantity(),
                 entity.getUnitPrice(),
-                entity.getTotalPrice()
+                entity.getTotalPrice(),
+                entity.getProduct() != null ? entity.getProduct().getId() : null
         );
     }
 

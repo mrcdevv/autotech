@@ -15,7 +15,11 @@ public class ProductMapper {
                 entity.getQuantity(),
                 entity.getUnitPrice(),
                 entity.getCreatedAt(),
-                entity.getUpdatedAt()
+                entity.getUpdatedAt(),
+                entity.getMinStock(),
+                entity.getReservedQuantity(),
+                entity.getAvailableQuantity(),
+                entity.isLowStock()
         );
     }
 
@@ -26,13 +30,15 @@ public class ProductMapper {
                 .description(request.description())
                 .quantity(request.quantity() != null ? request.quantity() : 0)
                 .unitPrice(request.unitPrice())
+                .minStock(request.minStock())
                 .build();
     }
 
+    /** On-hand quantity is intentionally not touched: it only changes through stock movements. */
     public void updateEntity(ProductRequest request, Product entity) {
         entity.setName(request.name());
         entity.setDescription(request.description());
-        entity.setQuantity(request.quantity() != null ? request.quantity() : 0);
         entity.setUnitPrice(request.unitPrice());
+        entity.setMinStock(request.minStock());
     }
 }
