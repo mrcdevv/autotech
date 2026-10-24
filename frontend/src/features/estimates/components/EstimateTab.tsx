@@ -2,8 +2,11 @@ import { Box } from "@mui/material";
 
 import { EstimateDetail } from "./EstimateDetail";
 
+import type { RepairOrderStatus } from "@/features/repair-orders/types";
+
 interface EstimateTabProps {
   repairOrderId: number;
+  repairOrderStatus?: RepairOrderStatus;
   clientId: number;
   clientFirstName: string;
   clientLastName: string;
@@ -19,6 +22,7 @@ interface EstimateTabProps {
 
 export function EstimateTab({
   repairOrderId,
+  repairOrderStatus,
   clientId,
   clientFirstName,
   clientLastName,
@@ -35,6 +39,7 @@ export function EstimateTab({
     <Box>
       <EstimateDetail
         repairOrderId={repairOrderId}
+        repairOrderStatus={repairOrderStatus}
         reason={reason}
         mechanicNotes={mechanicNotes}
         repairOrderClient={{

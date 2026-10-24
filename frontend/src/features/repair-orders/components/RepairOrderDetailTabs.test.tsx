@@ -15,7 +15,11 @@ vi.mock("@/features/inspections/InspectionsTab", () => ({
 }));
 
 vi.mock("@/features/estimates/components/EstimateTab", () => ({
-  EstimateTab: () => <div data-testid="estimate-tab">EstimateTab</div>,
+  EstimateTab: (props: Record<string, unknown>) => (
+    <div data-testid="estimate-tab" data-props={JSON.stringify(props)}>
+      EstimateTab
+    </div>
+  ),
 }));
 
 vi.mock("@/features/invoices/components/InvoiceTab", () => ({
@@ -121,5 +125,17 @@ describe("RepairOrderDetailTabs", () => {
       vehicleModel: "Corolla",
       vehicleYear: 2020,
     });
+  });
+
+  it("given order, when clicking Presupuesto tab, then EstimateTab receives the order's status", async () => {
+    const user = userEvent.setup();
+    render(<RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />);
+
+    await user.click(screen.getByText("Presupuesto"));
+
+    const props = JSON.parse(
+      screen.getByTestId("estimate-tab").getAttribute("data-props") ?? "{}",
+    ) as Record<string, unknown>;
+    expect(props.repairOrderStatus).toBe("INGRESO_VEHICULO");
   });
 });

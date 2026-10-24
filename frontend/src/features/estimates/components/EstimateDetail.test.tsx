@@ -9,6 +9,7 @@ import { useEstimate } from "@/features/estimates/hooks/useEstimate";
 import { formatCurrency } from "@/utils/formatCurrency";
 
 import type { EstimateDetailResponse, EstimateResponse } from "@/types/estimate";
+import type { RepairOrderStatus } from "@/features/repair-orders/types";
 
 // formatCurrency emits a non-breaking space (U+00A0) after the "$" symbol, which the
 // testing-library normalizer collapses to a plain space in the DOM text. Normalize the
@@ -314,5 +315,85 @@ describe("EstimateDetail (reopen accepted estimate)", () => {
     // findByRole (not getByRole): the dialog is still in its MUI exit transition at this
     // point, which keeps the page content aria-hidden until it unmounts.
     expect(await screen.findByRole("button", { name: REOPEN_BUTTON })).toBeInTheDocument();
+  });
+});
+
+// ── Create estimate blocked on a closed repair order ──
+//
+// The backend guard (T3a) refuses estimates for ENTREGADO/CANCELADO orders only when the
+// user presses "Guardar"; the UI must refuse earlier by disabling "Crear presupuesto"
+// with a tooltip that names the order's actual state.
+
+function renderNoEstimateView(repairOrderStatus?: RepairOrderStatus): void {
+  mockUseEstimate([]);
+  render(
+    <MemoryRouter initialEntries={["/ordenes/5"]}>
+      <EstimateDetail repairOrderId={5} repairOrderStatus={repairOrderStatus} />
+    </MemoryRouter>,
+  );
+}
+
+// A disabled MUI button emits no pointer events, so the Tooltip must live on the <span>
+// wrapper; hover the wrapper (the button's parentElement), not the button itself.
+async function hoverCreateButtonWrapper(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  const wrapper = screen.getByRole("button", { name: "Crear presupuesto" }).parentElement;
+  expect(wrapper).not.toBeNull();
+  await user.hover(wrapper!);
+}
+
+describe("EstimateDetail (create estimate on a closed repair order)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("given a delivered repair order, when there is no estimate yet, then the create button is disabled and a tooltip explains why", async () => {
+    const user = userEvent.setup();
+    renderNoEstimateView("ENTREGADO");
+
+    expect(screen.getByRole("button", { name: "Crear presupuesto" })).toBeDisabled();
+
+    await hoverCreateButtonWrapper(user);
+
+    // findByRole (not getByRole): MUI opens the tooltip through a transition.
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(
+      'No se puede crear un presupuesto porque la orden de trabajo está entregada.',
+    );
+  });
+
+  it("given a cancelled repair order, when there is no estimate yet, then the create button is disabled and a tooltip explains why", async () => {
+    const user = userEvent.setup();
+    renderNoEstimateView("CANCELADO");
+
+    expect(screen.getByRole("button", { name: "Crear presupuesto" })).toBeDisabled();
+
+    await hoverCreateButtonWrapper(user);
+
+    // findByRole (not getByRole): MUI opens the tooltip through a transition.
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(
+      'No se puede crear un presupuesto porque la orden de trabajo está cancelada.',
+    );
+  });
+
+  it("given an open repair order, when there is no estimate yet, then the create button is enabled", () => {
+    renderNoEstimateView("REPARACION");
+
+    expect(screen.getByRole("button", { name: "Crear presupuesto" })).toBeEnabled();
+  });
+
+  it("given a repair order context without a known status, when rendered, then the create button stays enabled", () => {
+    renderNoEstimateView(undefined);
+
+    expect(screen.getByRole("button", { name: "Crear presupuesto" })).toBeEnabled();
+  });
+
+  it("given a standalone estimate view without a repair order, when rendered, then no create button is rendered at all", () => {
+    mockUseEstimate([]);
+    render(
+      <MemoryRouter>
+        <EstimateDetail />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole("button", { name: "Crear presupuesto" })).not.toBeInTheDocument();
   });
 });

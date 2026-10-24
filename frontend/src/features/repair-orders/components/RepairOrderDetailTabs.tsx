@@ -52,6 +52,7 @@ export function RepairOrderDetailTabs({ order, loading, onRefetch }: RepairOrder
       {activeTab === 2 && order && (
         <EstimateTab
           repairOrderId={order.id}
+          repairOrderStatus={order.status}
           clientId={order.clientId}
           clientFirstName={order.clientFirstName}
           clientLastName={order.clientLastName}
