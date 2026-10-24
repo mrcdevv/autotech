@@ -187,8 +187,8 @@ export function InvoiceTab({
             Aún no hay factura para esta orden
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400, mx: "auto" }}>
-            Para generar una factura dentro de una orden de trabajo, primero debe crear y aprobar un
-            presupuesto en la solapa "Presupuesto".
+            Podés generar la factura directamente con el botón de abajo, o bien crear y aprobar un
+            presupuesto en la solapa "Presupuesto" y facturarlo desde acá.
           </Typography>
           <Button variant="contained" sx={{ mt: 3 }} onClick={() => setConfirmNoEstimateOpen(true)}>
             Crear factura sin presupuesto
