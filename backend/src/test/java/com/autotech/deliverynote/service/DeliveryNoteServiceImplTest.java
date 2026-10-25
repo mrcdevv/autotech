@@ -1,5 +1,6 @@
 package com.autotech.deliverynote.service;
 
+import com.autotech.stock.service.StockService;
 import com.autotech.client.model.Client;
 import com.autotech.client.model.ClientType;
 import com.autotech.client.repository.ClientRepository;
@@ -75,6 +76,9 @@ class DeliveryNoteServiceImplTest {
 
     @Mock
     private TaxConfigService taxConfigService;
+
+    @Mock
+    private StockService stockService;
 
 
     @InjectMocks
@@ -442,6 +446,7 @@ class DeliveryNoteServiceImplTest {
 
         deliveryNoteService.delete(1L);
 
+        verify(stockService).revertDeliveryNote(1L);
         verify(deliveryNoteRepository).deleteById(1L);
     }
 
