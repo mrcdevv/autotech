@@ -83,6 +83,43 @@ describe("RepairOrderCard", () => {
     expect(screen.getByText("Carlos Lopez")).toBeInTheDocument();
   });
 
+  it("given order without employees, when rendered, then shows Sin asignar", () => {
+    render(
+      <MemoryRouter>
+        <RepairOrderCard
+          order={{ ...sampleOrder, employees: [] }}
+          onUpdateStatus={vi.fn()}
+          onRefetch={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Sin asignar")).toBeInTheDocument();
+  });
+
+  it("given order with two employees, when rendered, then both mechanics are shown with their names", () => {
+    render(
+      <MemoryRouter>
+        <RepairOrderCard
+          order={{
+            ...sampleOrder,
+            employees: [
+              { id: 1, firstName: "Carlos", lastName: "Lopez" },
+              { id: 2, firstName: "Maria", lastName: "Gomez" },
+            ],
+          }}
+          onUpdateStatus={vi.fn()}
+          onRefetch={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Carlos Lopez")).toBeInTheDocument();
+    expect(screen.getByText("Maria Gomez")).toBeInTheDocument();
+    expect(screen.getByText("CL")).toBeInTheDocument();
+    expect(screen.getByText("MG")).toBeInTheDocument();
+  });
+
   it("given order with tags, when rendered, then shows tag chips", () => {
     render(
       <MemoryRouter>

@@ -45,7 +45,7 @@ export function RepairOrderCard({ order, onUpdateStatus, onRefetch }: RepairOrde
   const vehicleLabel =
     [order.vehicleYear, order.vehicleBrandName, order.vehicleModel].filter(Boolean).join(" ") ||
     "Vehículo";
-  const employee = order.employees[0];
+  const employees = order.employees;
 
   const handleCardClick = () => {
     navigate(`/ordenes-trabajo/${order.id}`);
@@ -159,28 +159,32 @@ export function RepairOrderCard({ order, onUpdateStatus, onRefetch }: RepairOrde
               </MonoText>
             </InfoRow>
             <InfoRow label="Mecánico">
-              {employee ? (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                  <Box
-                    sx={{
-                      width: 22,
-                      height: 22,
-                      flex: "none",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderRadius: "50%",
-                      bgcolor: "shell.avatarBg",
-                      color: "text.primary",
-                      fontSize: "0.5625rem",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {initials(employee.firstName, employee.lastName)}
-                  </Box>
-                  <Typography sx={{ fontSize: "0.8125rem", color: "text.muted" }}>
-                    {employee.firstName} {employee.lastName}
-                  </Typography>
+              {employees.length > 0 ? (
+                <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", columnGap: 1, rowGap: 0.5 }}>
+                  {employees.map((emp) => (
+                    <Box key={emp.id} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                      <Box
+                        sx={{
+                          width: 22,
+                          height: 22,
+                          flex: "none",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          borderRadius: "50%",
+                          bgcolor: "shell.avatarBg",
+                          color: "text.primary",
+                          fontSize: "0.5625rem",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {initials(emp.firstName, emp.lastName)}
+                      </Box>
+                      <Typography sx={{ fontSize: "0.8125rem", color: "text.muted" }}>
+                        {emp.firstName} {emp.lastName}
+                      </Typography>
+                    </Box>
+                  ))}
                 </Box>
               ) : (
                 <Typography sx={{ fontSize: "0.8125rem", color: "text.disabled" }}>
