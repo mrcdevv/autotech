@@ -1,9 +1,13 @@
+import { Box } from "@mui/material";
 import { GridActionsCellItem } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import TuneIcon from "@mui/icons-material/Tune";
+import HistoryIcon from "@mui/icons-material/History";
 
 import { AppDataGrid } from "@/components/AppDataGrid";
 import { MonoText } from "@/components/MonoText";
+import { StatusBadge } from "@/components/StatusBadge";
 import { moneyColumn } from "@/utils/gridColumns";
 
 import type { GridColDef } from "@mui/x-data-grid";
@@ -19,6 +23,31 @@ interface ProductsDataGridProps {
   onPageSizeChange: (pageSize: number) => void;
   onEditRow?: (id: number) => void;
   onDeleteRow?: (id: number) => void;
+  onAdjustStock?: (id: number) => void;
+  onShowMovements?: (id: number) => void;
+}
+
+function numberColumn(field: keyof ProductResponse, headerName: string, width = 110): GridColDef {
+  return {
+    field,
+    headerName,
+    width,
+    type: "number",
+    align: "right",
+    headerAlign: "right",
+    renderCell: (params) => (
+      <MonoText
+        sx={{
+          display: "block",
+          width: "100%",
+          textAlign: "right",
+          color: typeof params.value === "number" && params.value < 0 ? "error.main" : undefined,
+        }}
+      >
+        {params.value ?? "—"}
+      </MonoText>
+    ),
+  };
 }
 
 export function ProductsDataGrid({
@@ -31,23 +60,29 @@ export function ProductsDataGrid({
   onPageSizeChange,
   onEditRow,
   onDeleteRow,
+  onAdjustStock,
+  onShowMovements,
 }: ProductsDataGridProps) {
-  const columns: GridColDef[] = [
-    { field: "name", headerName: "Nombre", flex: 1 },
-    { field: "description", headerName: "Descripción", flex: 2 },
+  const columns: GridColDef<ProductResponse>[] = [
     {
-      field: "quantity",
-      headerName: "Cantidad",
-      width: 120,
-      type: "number",
-      align: "right",
-      headerAlign: "right",
+      field: "name",
+      headerName: "Nombre",
+      flex: 1,
+      minWidth: 180,
       renderCell: (params) => (
-        <MonoText sx={{ display: "block", width: "100%", textAlign: "right" }}>
-          {params.value ?? "—"}
-        </MonoText>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+          <Box component="span" sx={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+            {params.row.name}
+          </Box>
+          {params.row.lowStock && <StatusBadge label="Stock bajo" tone="bad" />}
+        </Box>
       ),
     },
+    { field: "description", headerName: "Descripción", flex: 1.5 },
+    numberColumn("quantity", "En stock"),
+    numberColumn("reservedQuantity", "Reservado"),
+    numberColumn("availableQuantity", "Disponible"),
+    numberColumn("minStock", "Stock mín."),
     moneyColumn({
       field: "unitPrice",
       headerName: "Precio unitario",
@@ -57,15 +92,35 @@ export function ProductsDataGrid({
       field: "actions",
       type: "actions",
       headerName: "Acciones",
-      width: 120,
+      width: 170,
       getActions: (params) => [
+        ...(onShowMovements
+          ? [
+              <GridActionsCellItem
+                key="movements"
+                icon={<HistoryIcon />}
+                label="Movimientos de stock"
+                onClick={() => onShowMovements(params.row.id)}
+              />,
+            ]
+          : []),
+        ...(onAdjustStock
+          ? [
+              <GridActionsCellItem
+                key="adjust"
+                icon={<TuneIcon />}
+                label="Ajustar stock"
+                onClick={() => onAdjustStock(params.row.id)}
+              />,
+            ]
+          : []),
         ...(onEditRow
           ? [
               <GridActionsCellItem
                 key="edit"
                 icon={<EditIcon />}
                 label="Editar"
-                onClick={() => onEditRow(params.row.id as number)}
+                onClick={() => onEditRow(params.row.id)}
               />,
             ]
           : []),
@@ -75,7 +130,7 @@ export function ProductsDataGrid({
                 key="delete"
                 icon={<DeleteIcon />}
                 label="Eliminar"
-                onClick={() => onDeleteRow(params.row.id as number)}
+                onClick={() => onDeleteRow(params.row.id)}
                 color="error"
               />,
             ]

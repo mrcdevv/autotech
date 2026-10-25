@@ -140,6 +140,7 @@ export function DeliveryNoteDetail({ deliveryNoteId, repairOrderId, estimateId, 
           productName: p.productName,
           quantity: p.quantity,
           unitPrice: p.unitPrice,
+          productId: p.productId ?? null,
         })),
       );
       setDiscountPercentage(deliveryNote.discountPercentage);
@@ -194,7 +195,7 @@ export function DeliveryNoteDetail({ deliveryNoteId, repairOrderId, estimateId, 
           const data = res.data.data;
 
           setServices(data.services.map((s) => ({ serviceName: s.serviceName, price: s.price })));
-          setProducts(data.products.map((p) => ({ productName: p.productName, quantity: p.quantity, unitPrice: p.unitPrice })));
+          setProducts(data.products.map((p) => ({ productName: p.productName, quantity: p.quantity, unitPrice: p.unitPrice, productId: p.productId ?? null })));
           setDiscountPercentage(data.discountPercentage);
           setTaxPercentage(data.taxPercentage);
 

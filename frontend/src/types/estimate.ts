@@ -24,6 +24,8 @@ export interface EstimateProductRequest {
   productName: string;
   quantity: number;
   unitPrice: number;
+  /** Catalog product this line moves stock from; absent / null for free-text lines. */
+  productId?: number | null;
 }
 
 export interface EstimateProductResponse {
@@ -32,6 +34,7 @@ export interface EstimateProductResponse {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  productId?: number | null;
 }
 
 // ---- Estimate ----
