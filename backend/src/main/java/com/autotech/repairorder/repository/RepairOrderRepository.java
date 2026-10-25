@@ -2,9 +2,11 @@ package com.autotech.repairorder.repository;
 
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.model.RepairOrderStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -21,6 +23,11 @@ public interface RepairOrderRepository
 
     @EntityGraph(attributePaths = {"client", "vehicle", "vehicle.brand", "employees", "tags", "appointment"})
     Optional<RepairOrder> findWithDetailsById(Long id);
+
+    /** SELECT ... FOR UPDATE: serializes stock syncs of the same repair order. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT ro FROM RepairOrder ro WHERE ro.id = :id")
+    Optional<RepairOrder> findForUpdateById(@Param("id") Long id);
 
     @EntityGraph(attributePaths = {"client", "vehicle", "vehicle.brand", "employees", "tags"})
     List<RepairOrder> findAllByIdIn(Collection<Long> ids);
