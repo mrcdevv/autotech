@@ -22,6 +22,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import EngineeringIcon from "@mui/icons-material/Engineering";
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
+import DescriptionIcon from "@mui/icons-material/Description";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import UndoIcon from "@mui/icons-material/Undo";
 import { useNavigate } from "react-router";
@@ -31,6 +32,7 @@ import { FormPageLayout } from "@/components/FormPageLayout";
 import { FormSection } from "@/components/FormSection";
 import { InfoList } from "@/components/InfoList";
 import { AppConfirmDialog } from "@/components/AppConfirmDialog";
+import { EmptyState } from "@/components/EmptyState";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { clientAutocompleteApi } from "@/api/clientAutocomplete";
 import { vehiclesApi } from "@/api/vehicles";
@@ -543,13 +545,13 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
                 </Box>
               ))}
             </Box>
-          ) : (
-            <Typography color="text.secondary">
-              No hay presupuesto asociado a esta orden de trabajo.
-            </Typography>
-          )}
+          ) : null}
 
-          <Box>
+          <EmptyState
+            icon={<DescriptionIcon sx={{ color: "text.disabled" }} />}
+            title="Aún no hay presupuesto"
+            description="Creá el presupuesto para que el cliente lo apruebe."
+          >
             {createBlocked && repairOrderStatus ? (
               // A disabled MUI button emits no pointer events, so the Tooltip must sit on a
               // <span> wrapper; putting it directly on the disabled button never shows.
@@ -566,7 +568,7 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
                 Crear presupuesto
               </Button>
             )}
-          </Box>
+          </EmptyState>
         </Stack>
       );
     }

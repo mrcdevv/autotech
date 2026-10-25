@@ -397,3 +397,25 @@ describe("EstimateDetail (create estimate on a closed repair order)", () => {
     expect(screen.queryByRole("button", { name: "Crear presupuesto" })).not.toBeInTheDocument();
   });
 });
+
+describe("EstimateDetail (empty state, repair order context)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("given a repair order with no estimate, when rendered, then the empty state is a titled, described block with the create action inside it", () => {
+    renderNoEstimateView();
+
+    const title = screen.getByText("Aún no hay presupuesto");
+    expect(
+      screen.getByText("Creá el presupuesto para que el cliente lo apruebe."),
+    ).toBeInTheDocument();
+
+    // The action must live INSIDE the same bordered container as the title, not below it.
+    const container = title.closest(".MuiPaper-root");
+    expect(container).not.toBeNull();
+    expect(container!.contains(screen.getByRole("button", { name: "Crear presupuesto" }))).toBe(
+      true,
+    );
+  });
+});

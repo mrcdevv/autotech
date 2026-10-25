@@ -157,6 +157,15 @@ describe("InvoiceTab creating an invoice without an estimate", () => {
     ).toBeInTheDocument();
   });
 
+  it("given an OT with no estimate and no invoice, when the Factura tab renders, then the empty state uses the unified copy", async () => {
+    render(<InvoiceTab repairOrderId={42} {...orderPropsForTab} />);
+
+    expect(await screen.findByText("Aún no hay factura")).toBeInTheDocument();
+    expect(
+      screen.getByText("Podés generarla directamente, sin necesidad de un presupuesto."),
+    ).toBeInTheDocument();
+  });
+
   it("given the no-estimate empty state, when clicking create, then the confirmation states that the order has no estimate", async () => {
     const user = userEvent.setup();
     render(<InvoiceTab repairOrderId={42} {...orderPropsForTab} />);

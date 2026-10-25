@@ -13,6 +13,9 @@ import {
 } from "@mui/material";
 import PrintIcon from "@mui/icons-material/Print";
 import AddIcon from "@mui/icons-material/Add";
+import FactCheckIcon from "@mui/icons-material/FactCheck";
+
+import { EmptyState } from "@/components/EmptyState";
 
 import { useRepairOrderInspections } from "@/features/inspections/useRepairOrderInspections";
 import { InspectionForm } from "@/features/inspections/InspectionForm";
@@ -222,30 +225,47 @@ export function InspectionsTab({
 
         <Divider sx={{ mb: 2 }} />
 
-        <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-          <Button
-            variant="outlined"
-            startIcon={<PrintIcon />}
-            disabled={inspections.length === 0}
-            onClick={handlePrint}
+        {/* Empty state carries the primary action, so the toolbar is hidden while there
+            is nothing to print or list. Once there is at least one inspection the
+            toolbar renders exactly as before. */}
+        {!loading && inspections.length === 0 ? (
+          <EmptyState
+            icon={<FactCheckIcon sx={{ color: "text.disabled" }} />}
+            title="Aún no hay inspecciones"
+            description="Registrá qué está bien, qué hay que arreglar y qué puede esperar."
           >
-            Imprimir resumen
-          </Button>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddDialogOpen(true)}>
-            Agregar inspección
-          </Button>
-        </Stack>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setAddDialogOpen(true)}
+            >
+              Agregar inspección
+            </Button>
+          </EmptyState>
+        ) : (
+          <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+            <Button
+              variant="outlined"
+              startIcon={<PrintIcon />}
+              disabled={inspections.length === 0}
+              onClick={handlePrint}
+            >
+              Imprimir resumen
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setAddDialogOpen(true)}
+            >
+              Agregar inspección
+            </Button>
+          </Stack>
+        )}
 
         {loading && (
           <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
             <CircularProgress />
           </Box>
-        )}
-
-        {!loading && inspections.length === 0 && (
-          <Typography color="text.secondary" sx={{ mt: 2 }}>
-            No existen inspecciones
-          </Typography>
         )}
       </Box>
 

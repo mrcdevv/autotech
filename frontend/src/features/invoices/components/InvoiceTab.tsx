@@ -18,6 +18,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { estimatesApi } from "@/api/estimates";
 import { invoicesApi } from "@/api/invoices";
 import { AppConfirmDialog } from "@/components/AppConfirmDialog";
+import { EmptyState } from "@/components/EmptyState";
 import { InvoiceDetail } from "./InvoiceDetail";
 
 import { formatCurrency } from "@/utils/formatCurrency";
@@ -178,22 +179,15 @@ export function InvoiceTab({
       )}
 
       {estimateState.kind === "none" && (
-        <Paper
-          elevation={0}
-          sx={{ p: 4, textAlign: "center", border: 1, borderColor: "divider", borderRadius: 2 }}
+        <EmptyState
+          icon={<ReceiptLongIcon sx={{ color: "text.disabled" }} />}
+          title="Aún no hay factura"
+          description="Podés generarla directamente, sin necesidad de un presupuesto."
         >
-          <ReceiptLongIcon sx={{ fontSize: 48, color: "text.disabled", mb: 2 }} />
-          <Typography variant="h6" sx={{ mb: 1, fontWeight: 500 }}>
-            Aún no hay factura para esta orden
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400, mx: "auto" }}>
-            Podés generar la factura directamente con el botón de abajo, o bien crear y aprobar un
-            presupuesto en la solapa "Presupuesto" y facturarlo desde acá.
-          </Typography>
-          <Button variant="contained" sx={{ mt: 3 }} onClick={() => setConfirmNoEstimateOpen(true)}>
+          <Button variant="contained" onClick={() => setConfirmNoEstimateOpen(true)}>
             Crear factura sin presupuesto
           </Button>
-        </Paper>
+        </EmptyState>
       )}
 
       {estimateState.kind === "pending" && (
