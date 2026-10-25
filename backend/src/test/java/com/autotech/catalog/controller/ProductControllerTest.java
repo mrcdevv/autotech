@@ -56,7 +56,7 @@ class ProductControllerTest {
 
     private final ProductResponse sampleResponse = new ProductResponse(
             1L, "Brake Pad", "Ceramic brake pad", 10, new BigDecimal("25.00"),
-            LocalDateTime.now(), LocalDateTime.now());
+            LocalDateTime.now(), LocalDateTime.now(), null, 0, 0, false);
 
     @Test
     void givenRequest_whenSearch_thenReturn200() throws Exception {
@@ -84,7 +84,7 @@ class ProductControllerTest {
     @Test
     void givenValidRequest_whenCreate_thenReturn201() throws Exception {
         // Arrange
-        ProductRequest request = new ProductRequest("Brake Pad", "Ceramic", 10, new BigDecimal("25.00"));
+        ProductRequest request = new ProductRequest("Brake Pad", "Ceramic", 10, new BigDecimal("25.00"), null);
         when(productService.create(any(ProductRequest.class))).thenReturn(sampleResponse);
 
         // Act & Assert
@@ -98,7 +98,7 @@ class ProductControllerTest {
     @Test
     void givenInvalidRequest_whenCreate_thenReturn400() throws Exception {
         // Arrange
-        ProductRequest request = new ProductRequest("", null, -1, null);
+        ProductRequest request = new ProductRequest("", null, -1, null, null);
 
         // Act & Assert
         mockMvc.perform(post("/api/products").with(csrf())
@@ -110,7 +110,7 @@ class ProductControllerTest {
     @Test
     void givenValidRequest_whenUpdate_thenReturn200() throws Exception {
         // Arrange
-        ProductRequest request = new ProductRequest("Updated", "Updated desc", 20, new BigDecimal("30.00"));
+        ProductRequest request = new ProductRequest("Updated", "Updated desc", 20, new BigDecimal("30.00"), null);
         when(productService.update(eq(1L), any(ProductRequest.class))).thenReturn(sampleResponse);
 
         // Act & Assert

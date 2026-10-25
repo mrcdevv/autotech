@@ -472,7 +472,7 @@ class PaymentServiceImplTest {
                 DeliveryNoteStatus.PENDIENTE, BigDecimal.valueOf(10), BigDecimal.ZERO,
                 new BigDecimal("1080.00"),
                 List.of(new DeliveryNoteServiceItemResponse(1L, "Service A", BigDecimal.valueOf(1000))),
-                List.of(new DeliveryNoteProductResponse(1L, "Product A", 2, BigDecimal.valueOf(100), BigDecimal.valueOf(200))),
+                List.of(new DeliveryNoteProductResponse(1L, "Product A", 2, BigDecimal.valueOf(100), BigDecimal.valueOf(200), null)),
                 LocalDateTime.now(), LocalDateTime.now());
     }
 

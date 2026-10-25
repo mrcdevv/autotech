@@ -21,5 +21,8 @@ public record CannedJobProductRequest(
         @NotNull(message = "El precio unitario es obligatorio")
         @DecimalMin(value = "0.00", message = "El precio unitario no puede ser negativo")
         @Digits(integer = 10, fraction = 2)
-        BigDecimal unitPrice
+        BigDecimal unitPrice,
+
+        /** Optional catalog product; when set the line moves stock. */
+        Long productId
 ) {}

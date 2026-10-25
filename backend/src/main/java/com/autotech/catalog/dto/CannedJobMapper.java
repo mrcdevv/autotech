@@ -58,7 +58,8 @@ public class CannedJobMapper {
                 entity.getId(),
                 entity.getProductName(),
                 entity.getQuantity(),
-                entity.getUnitPrice()
+                entity.getUnitPrice(),
+                entity.getProduct() != null ? entity.getProduct().getId() : null
         );
     }
 

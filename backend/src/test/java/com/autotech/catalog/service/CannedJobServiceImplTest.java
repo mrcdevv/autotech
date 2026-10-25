@@ -135,7 +135,7 @@ class CannedJobServiceImplTest {
                 new CannedJobServiceRequest("Oil Change", new BigDecimal("50.00"))
         );
         List<CannedJobProductRequest> prodRequests = List.of(
-                new CannedJobProductRequest("Oil Filter", 1, new BigDecimal("15.00"))
+                new CannedJobProductRequest("Oil Filter", 1, new BigDecimal("15.00"), null)
         );
         CannedJobRequest request = new CannedJobRequest("Full Service", "Complete", svcRequests, prodRequests);
         CannedJob entity = buildEntity(null, "Full Service");
@@ -232,7 +232,7 @@ class CannedJobServiceImplTest {
     private CannedJobDetailResponse buildDetailResponse(Long id, String title) {
         return new CannedJobDetailResponse(id, title, "Test description",
                 List.of(new CannedJobServiceResponse(1L, "Oil Change", new BigDecimal("50.00"))),
-                List.of(new CannedJobProductResponse(1L, "Oil Filter", 1, new BigDecimal("15.00"))),
+                List.of(new CannedJobProductResponse(1L, "Oil Filter", 1, new BigDecimal("15.00"), null)),
                 LocalDateTime.now(), LocalDateTime.now());
     }
 }

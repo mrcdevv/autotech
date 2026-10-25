@@ -1,5 +1,7 @@
 package com.autotech.deliverynote.service;
 
+import com.autotech.catalog.repository.ProductRepository;
+import com.autotech.catalog.model.Product;
 import com.autotech.client.model.Client;
 import com.autotech.client.model.ClientType;
 import com.autotech.client.repository.ClientRepository;
@@ -41,6 +43,7 @@ import java.util.List;
 public class DeliveryNoteServiceImpl implements DeliveryNoteService {
 
     private final DeliveryNoteRepository deliveryNoteRepository;
+    private final ProductRepository productRepository;
     private final DeliveryNoteMapper deliveryNoteMapper;
     private final ClientRepository clientRepository;
     private final VehicleRepository vehicleRepository;
@@ -155,7 +158,7 @@ public class DeliveryNoteServiceImpl implements DeliveryNoteService {
                 .toList();
 
         List<DeliveryNoteProductRequest> products = estimateData.products().stream()
-                .map(p -> new DeliveryNoteProductRequest(p.productName(), p.quantity(), p.unitPrice()))
+                .map(p -> new DeliveryNoteProductRequest(p.productName(), p.quantity(), p.unitPrice(), p.productId()))
                 .toList();
 
         DeliveryNoteRequest request = new DeliveryNoteRequest(
@@ -264,6 +267,7 @@ public class DeliveryNoteServiceImpl implements DeliveryNoteService {
             for (DeliveryNoteProductRequest prodReq : request.products()) {
                 DeliveryNoteProduct prod = DeliveryNoteProduct.builder()
                         .deliveryNote(entity)
+                        .product(resolveProduct(prodReq.productId()))
                         .productName(prodReq.productName())
                         .quantity(prodReq.quantity())
                         .unitPrice(prodReq.unitPrice())
@@ -272,5 +276,11 @@ public class DeliveryNoteServiceImpl implements DeliveryNoteService {
                 entity.getProducts().add(prod);
             }
         }
+    }
+
+    private Product resolveProduct(Long productId) {
+        if (productId == null) return null;
+        return productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
     }
 }

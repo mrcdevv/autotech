@@ -16,10 +16,14 @@ public record ProductRequest(
         @Size(max = 5000, message = "La descripción no puede superar los 5000 caracteres")
         String description,
 
+        /** Initial on-hand stock; only used on create. Later changes go through stock adjustments. */
         @Min(value = 0, message = "La cantidad no puede ser negativa")
         Integer quantity,
 
         @DecimalMin(value = "0.00", message = "El precio unitario no puede ser negativo")
         @Digits(integer = 10, fraction = 2, message = "El precio debe tener como máximo 10 dígitos enteros y 2 decimales")
-        BigDecimal unitPrice
+        BigDecimal unitPrice,
+
+        @Min(value = 0, message = "El stock mínimo no puede ser negativo")
+        Integer minStock
 ) {}
