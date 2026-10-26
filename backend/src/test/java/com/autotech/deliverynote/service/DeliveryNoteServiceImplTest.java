@@ -224,6 +224,38 @@ class DeliveryNoteServiceImplTest {
     }
 
     @Test
+    void givenRepairOrderWithExistingDeliveryNote_whenCreate_thenThrowBusinessException() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        RepairOrder repairOrder = buildRepairOrder(10L);
+        DeliveryNoteRequest request = new DeliveryNoteRequest(1L, null, 10L, null,
+                BigDecimal.ZERO, BigDecimal.ZERO, Collections.emptyList(), Collections.emptyList());
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(repairOrder));
+        when(deliveryNoteRepository.findByRepairOrderId(10L))
+                .thenReturn(Optional.of(buildDeliveryNote(99L)));
+
+        assertThatThrownBy(() -> deliveryNoteService.create(request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("ya tiene un remito");
+    }
+
+    @Test
+    void givenEstimateAlreadyRemitted_whenCreate_thenThrowBusinessException() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        DeliveryNoteRequest request = new DeliveryNoteRequest(1L, null, null, 5L,
+                BigDecimal.ZERO, BigDecimal.ZERO, Collections.emptyList(), Collections.emptyList());
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(deliveryNoteRepository.findByEstimateId(5L))
+                .thenReturn(Optional.of(buildDeliveryNote(99L)));
+
+        assertThatThrownBy(() -> deliveryNoteService.create(request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("El presupuesto ya tiene un remito");
+    }
+
+    @Test
     void givenTemporalClientWithServices_whenCreate_thenThrowBusinessException() {
         Client client = buildClient(1L, ClientType.TEMPORAL);
         DeliveryNoteRequest request = new DeliveryNoteRequest(1L, null, null, null,
@@ -302,6 +334,7 @@ class DeliveryNoteServiceImplTest {
 
         when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
         when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(deliveryNoteRepository.findByEstimateId(5L)).thenReturn(Optional.empty());
         when(estimateService.getById(5L)).thenReturn(new com.autotech.estimate.dto.EstimateDetailResponse(
                 5L, 1L, "Juan Perez", null, null, null,
                 2L, "ABC123", null, "Corolla", 2020, null,
@@ -340,6 +373,7 @@ class DeliveryNoteServiceImplTest {
         when(estimateService.convertToDeliveryNoteData(5L)).thenReturn(estimateData);
         when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
         when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(deliveryNoteRepository.findByEstimateId(5L)).thenReturn(Optional.empty());
         when(estimateService.getById(5L)).thenReturn(new com.autotech.estimate.dto.EstimateDetailResponse(
                 5L, 1L, "Juan Perez", null, null, null,
                 2L, "ABC123", null, "Corolla", 2020, null,
@@ -377,6 +411,7 @@ class DeliveryNoteServiceImplTest {
         when(estimateService.convertToDeliveryNoteData(5L)).thenReturn(estimateData);
         when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
         when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(deliveryNoteRepository.findByEstimateId(5L)).thenReturn(Optional.empty());
         when(deliveryNoteMapper.toEntity(any(DeliveryNoteRequest.class))).thenReturn(mappedEntity);
         when(deliveryNoteRepository.save(any(DeliveryNote.class))).thenReturn(savedEntity);
         when(deliveryNoteRepository.findWithDetailsById(1L)).thenReturn(Optional.of(savedEntity));

@@ -112,10 +112,19 @@ public class DeliveryNoteServiceImpl implements DeliveryNoteService {
         if (request.repairOrderId() != null) {
             repairOrder = repairOrderRepository.findById(request.repairOrderId())
                     .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", request.repairOrderId()));
+
+            // One delivery note per repair order: covers both create and createFromEstimate (which delegates here)
+            if (deliveryNoteRepository.findByRepairOrderId(request.repairOrderId()).isPresent()) {
+                throw new BusinessException("La orden de trabajo ya tiene un remito asociado");
+            }
         }
 
         // Validate estimate existence via EstimateService (cross-module boundary)
         if (request.estimateId() != null) {
+            // One delivery note per estimate: covers both create and createFromEstimate (which delegates here)
+            if (deliveryNoteRepository.findByEstimateId(request.estimateId()).isPresent()) {
+                throw new BusinessException("El presupuesto ya tiene un remito asociado");
+            }
             estimateService.getById(request.estimateId());
         }
 
