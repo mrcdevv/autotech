@@ -26,6 +26,8 @@ public interface DeliveryNoteService {
 
     DeliveryNoteDetailResponse createFromEstimate(Long estimateId);
 
+    DeliveryNoteDetailResponse attachToRepairOrder(Long id, Long repairOrderId);
+
     void delete(Long id);
 
     BigDecimal calculateTotal(List<DeliveryNoteServiceItemRequest> services,

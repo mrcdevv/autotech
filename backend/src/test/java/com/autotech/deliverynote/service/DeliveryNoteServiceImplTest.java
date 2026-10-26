@@ -4,6 +4,9 @@ import com.autotech.stock.service.StockService;
 import com.autotech.client.model.Client;
 import com.autotech.client.model.ClientType;
 import com.autotech.client.repository.ClientRepository;
+import com.autotech.common.audit.AuditAction;
+import com.autotech.common.audit.AuditEntityType;
+import com.autotech.common.audit.AuditService;
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.email.service.EmailNotificationService;
@@ -20,15 +23,18 @@ import com.autotech.deliverynote.dto.DeliveryNoteServiceItemRequest;
 import com.autotech.deliverynote.model.DeliveryNote;
 import com.autotech.deliverynote.model.DeliveryNoteStatus;
 import com.autotech.deliverynote.repository.DeliveryNoteRepository;
+import com.autotech.payment.repository.PaymentRepository;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.model.RepairOrderStatus;
 import com.autotech.repairorder.repository.RepairOrderRepository;
+import com.autotech.repairorder.service.RepairOrderService;
 import com.autotech.tax.model.TaxConfig;
 import com.autotech.tax.service.TaxConfigService;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -41,11 +47,14 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -79,6 +88,15 @@ class DeliveryNoteServiceImplTest {
 
     @Mock
     private StockService stockService;
+
+    @Mock
+    private RepairOrderService repairOrderService;
+
+    @Mock
+    private AuditService auditService;
+
+    @Mock
+    private PaymentRepository paymentRepository;
 
 
     @InjectMocks
@@ -596,7 +614,212 @@ class DeliveryNoteServiceImplTest {
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
+    // --- attachToRepairOrder ---
+
+    @Test
+    void givenStandaloneDeliveryNoteForSameClientAndVehicle_whenAttachToRepairOrder_thenDeliveryNoteIsLinkedToOrder() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        DeliveryNote deliveryNote = buildDeliveryNote(1L);
+        RepairOrder order = buildAttachableOrder(10L, client, vehicle);
+
+        when(deliveryNoteRepository.findById(1L)).thenReturn(Optional.of(deliveryNote));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+        when(deliveryNoteRepository.findByRepairOrderId(10L)).thenReturn(Optional.empty());
+        when(deliveryNoteRepository.save(deliveryNote)).thenReturn(deliveryNote);
+        when(deliveryNoteRepository.findWithDetailsById(1L)).thenReturn(Optional.of(deliveryNote));
+        when(deliveryNoteMapper.toDetailResponse(deliveryNote)).thenReturn(buildDetailResponse(1L));
+
+        DeliveryNoteDetailResponse result = deliveryNoteService.attachToRepairOrder(1L, 10L);
+
+        assertThat(result.id()).isEqualTo(1L);
+        // The link must be persisted on the delivery note, not merely returned
+        assertThat(deliveryNote.getRepairOrder()).isSameAs(order);
+        verify(deliveryNoteRepository).save(deliveryNote);
+        verify(repairOrderService).validateNotClosedByStatus(order);
+    }
+
+    @Test
+    void givenAttachSucceeds_whenInvoked_thenRecordsAssociationAuditRow() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        DeliveryNote deliveryNote = buildDeliveryNote(1L);
+        RepairOrder order = buildAttachableOrder(10L, client, vehicle);
+
+        when(deliveryNoteRepository.findById(1L)).thenReturn(Optional.of(deliveryNote));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+        when(deliveryNoteRepository.findByRepairOrderId(10L)).thenReturn(Optional.empty());
+        when(deliveryNoteRepository.save(deliveryNote)).thenReturn(deliveryNote);
+        when(deliveryNoteRepository.findWithDetailsById(1L)).thenReturn(Optional.of(deliveryNote));
+        when(deliveryNoteMapper.toDetailResponse(deliveryNote)).thenReturn(buildDetailResponse(1L));
+
+        deliveryNoteService.attachToRepairOrder(1L, 10L);
+
+        ArgumentCaptor<Map<String, Object>> oldCaptor = mapCaptor();
+        ArgumentCaptor<Map<String, Object>> newCaptor = mapCaptor();
+        verify(auditService).record(eq(AuditEntityType.DELIVERY_NOTE), eq(1L), eq(AuditAction.MODIFIED),
+                oldCaptor.capture(), newCaptor.capture());
+        assertThat(oldCaptor.getValue()).containsEntry("repairOrderId", null);
+        assertThat(newCaptor.getValue()).containsEntry("repairOrderId", 10L);
+    }
+
+    @Test
+    void givenDeliveryNoteAlreadyAttached_whenAttach_thenThrowBusinessException() {
+        DeliveryNote deliveryNote = buildDeliveryNote(1L);
+        deliveryNote.setRepairOrder(buildRepairOrder(11L));
+        when(deliveryNoteRepository.findById(1L)).thenReturn(Optional.of(deliveryNote));
+
+        assertThatThrownBy(() -> deliveryNoteService.attachToRepairOrder(1L, 10L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("ya está asociado");
+        verify(deliveryNoteRepository, never()).save(any(DeliveryNote.class));
+    }
+
+    @Test
+    void givenRepairOrderAlreadyHasDeliveryNote_whenAttach_thenThrowBusinessException() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        DeliveryNote deliveryNote = buildDeliveryNote(1L);
+        RepairOrder order = buildAttachableOrder(10L, client, vehicle);
+
+        when(deliveryNoteRepository.findById(1L)).thenReturn(Optional.of(deliveryNote));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+        when(deliveryNoteRepository.findByRepairOrderId(10L)).thenReturn(Optional.of(buildDeliveryNote(99L)));
+
+        assertThatThrownBy(() -> deliveryNoteService.attachToRepairOrder(1L, 10L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("ya tiene un remito");
+        verify(deliveryNoteRepository, never()).save(any(DeliveryNote.class));
+    }
+
+    @Test
+    void givenDifferentClient_whenAttach_thenThrowBusinessException() {
+        Client deliveryNoteClient = buildClient(1L, ClientType.PERSONAL);
+        Client otherClient = buildClient(5L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(9L, otherClient);
+        DeliveryNote deliveryNote = buildDeliveryNote(1L);
+        RepairOrder order = buildAttachableOrder(10L, otherClient, vehicle);
+
+        when(deliveryNoteRepository.findById(1L)).thenReturn(Optional.of(deliveryNote));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+        when(deliveryNoteRepository.findByRepairOrderId(10L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> deliveryNoteService.attachToRepairOrder(1L, 10L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("cliente");
+        verify(deliveryNoteRepository, never()).save(any(DeliveryNote.class));
+    }
+
+    @Test
+    void givenDifferentVehicle_whenAttach_thenThrowBusinessException() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle deliveryNoteVehicle = buildVehicle(2L, client);
+        Vehicle orderVehicle = buildVehicle(9L, client);
+        DeliveryNote deliveryNote = buildDeliveryNote(1L);
+        deliveryNote.setVehicle(deliveryNoteVehicle);
+        RepairOrder order = buildAttachableOrder(10L, client, orderVehicle);
+
+        when(deliveryNoteRepository.findById(1L)).thenReturn(Optional.of(deliveryNote));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+        when(deliveryNoteRepository.findByRepairOrderId(10L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> deliveryNoteService.attachToRepairOrder(1L, 10L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("vehículo");
+        verify(deliveryNoteRepository, never()).save(any(DeliveryNote.class));
+    }
+
+    @Test
+    void givenClosedRepairOrder_whenAttach_thenThrowsAndDoesNotSave() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        DeliveryNote deliveryNote = buildDeliveryNote(1L);
+        RepairOrder order = buildAttachableOrder(10L, client, vehicle);
+        order.setStatus(RepairOrderStatus.ENTREGADO);
+
+        when(deliveryNoteRepository.findById(1L)).thenReturn(Optional.of(deliveryNote));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+        when(deliveryNoteRepository.findByRepairOrderId(10L)).thenReturn(Optional.empty());
+        doThrow(new BusinessException("La orden de trabajo está cerrada"))
+                .when(repairOrderService).validateNotClosedByStatus(order);
+
+        assertThatThrownBy(() -> deliveryNoteService.attachToRepairOrder(1L, 10L))
+                .isInstanceOf(BusinessException.class);
+        verify(deliveryNoteRepository, never()).save(any(DeliveryNote.class));
+        // The D1 guard is reused, not reimplemented
+        verify(repairOrderService).validateNotClosedByStatus(order);
+    }
+
+    @Test
+    void givenPaidDeliveryNote_whenAttach_thenStillSucceedsAndAuditCarriesPaidAmount() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        DeliveryNote deliveryNote = buildDeliveryNote(1L);
+        deliveryNote.setStatus(DeliveryNoteStatus.PAGADA);
+        RepairOrder order = buildAttachableOrder(10L, client, vehicle);
+
+        when(deliveryNoteRepository.findById(1L)).thenReturn(Optional.of(deliveryNote));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+        when(deliveryNoteRepository.findByRepairOrderId(10L)).thenReturn(Optional.empty());
+        when(paymentRepository.sumAmountByDeliveryNoteId(1L)).thenReturn(BigDecimal.valueOf(400));
+        when(deliveryNoteRepository.save(deliveryNote)).thenReturn(deliveryNote);
+        when(deliveryNoteRepository.findWithDetailsById(1L)).thenReturn(Optional.of(deliveryNote));
+        when(deliveryNoteMapper.toDetailResponse(deliveryNote)).thenReturn(buildDetailResponse(1L));
+
+        DeliveryNoteDetailResponse result = deliveryNoteService.attachToRepairOrder(1L, 10L);
+
+        // A paid delivery note is allowed: paying at the counter and recording the order
+        // afterwards is exactly the use case this endpoint exists for
+        assertThat(result.id()).isEqualTo(1L);
+        assertThat(deliveryNote.getRepairOrder()).isSameAs(order);
+        ArgumentCaptor<Map<String, Object>> newCaptor = mapCaptor();
+        verify(auditService).record(eq(AuditEntityType.DELIVERY_NOTE), eq(1L), eq(AuditAction.MODIFIED),
+                any(), newCaptor.capture());
+        assertThat(newCaptor.getValue()).containsEntry("paidAmount", BigDecimal.valueOf(400));
+    }
+
+    @Test
+    void givenDeliveryNoteWithNullVehicle_whenAttach_thenVehicleIsFilledFromOrderAndAudited() {
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        Vehicle vehicle = buildVehicle(2L, client);
+        DeliveryNote deliveryNote = buildDeliveryNote(1L);
+        deliveryNote.setVehicle(null);
+        RepairOrder order = buildAttachableOrder(10L, client, vehicle);
+
+        when(deliveryNoteRepository.findById(1L)).thenReturn(Optional.of(deliveryNote));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+        when(deliveryNoteRepository.findByRepairOrderId(10L)).thenReturn(Optional.empty());
+        when(deliveryNoteRepository.save(deliveryNote)).thenReturn(deliveryNote);
+        when(deliveryNoteRepository.findWithDetailsById(1L)).thenReturn(Optional.of(deliveryNote));
+        when(deliveryNoteMapper.toDetailResponse(deliveryNote)).thenReturn(buildDetailResponse(1L));
+
+        deliveryNoteService.attachToRepairOrder(1L, 10L);
+
+        // D14: a null vehicle on the delivery note is filled from the order, a persisted mutation
+        assertThat(deliveryNote.getVehicle()).isSameAs(vehicle);
+        ArgumentCaptor<Map<String, Object>> newCaptor = mapCaptor();
+        verify(auditService).record(eq(AuditEntityType.DELIVERY_NOTE), eq(1L), eq(AuditAction.MODIFIED),
+                any(), newCaptor.capture());
+        assertThat(newCaptor.getValue()).containsEntry("vehicleId", 2L);
+    }
+
+    @SuppressWarnings("unchecked")
+    private ArgumentCaptor<Map<String, Object>> mapCaptor() {
+        return ArgumentCaptor.forClass(Map.class);
+    }
+
     // --- Builder helpers ---
+
+    private RepairOrder buildAttachableOrder(Long id, Client client, Vehicle vehicle) {
+        RepairOrder order = RepairOrder.builder()
+                .title("Test Order")
+                .status(RepairOrderStatus.INGRESO_VEHICULO)
+                .build();
+        order.setId(id);
+        order.setClient(client);
+        order.setVehicle(vehicle);
+        return order;
+    }
 
     private Client buildClient(Long id, ClientType clientType) {
         Client client = Client.builder()

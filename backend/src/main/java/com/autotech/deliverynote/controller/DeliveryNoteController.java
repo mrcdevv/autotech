@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -69,6 +70,15 @@ public class DeliveryNoteController {
         DeliveryNoteDetailResponse created = deliveryNoteService.createFromEstimate(estimateId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Remito creado desde presupuesto", created));
+    }
+
+    @PreAuthorize("hasAuthority('update_delivery_note')")
+    @PutMapping("/{id}/repair-order")
+    public ResponseEntity<ApiResponse<DeliveryNoteDetailResponse>> attachToRepairOrder(
+            @PathVariable Long id,
+            @Valid @RequestBody DeliveryNoteRequest.AttachRepairOrderRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Remito asociado a la orden de trabajo",
+                deliveryNoteService.attachToRepairOrder(id, request.repairOrderId())));
     }
 
     @PreAuthorize("hasAuthority('read_delivery_note')")
