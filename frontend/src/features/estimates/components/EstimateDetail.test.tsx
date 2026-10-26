@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
@@ -174,6 +175,47 @@ function mockEstimateState(estimate: EstimateDetailResponse | null): void {
     refetch: vi.fn(),
   });
 }
+
+describe("EstimateDetail (closed order)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetTaxConfig.mockResolvedValue({
+      data: { data: { id: 1, taxPercentage: 21, createdAt: "", updatedAt: "" } },
+    });
+  });
+
+  it("given a repair order delivered, when there is no active estimate, then creating a new one is disabled with a reason", async () => {
+    const user = userEvent.setup();
+    mockUseEstimate([]);
+    render(
+      <MemoryRouter initialEntries={["/ordenes/5"]}>
+        <EstimateDetail repairOrderId={5} repairOrderStatus="ENTREGADO" />
+      </MemoryRouter>,
+    );
+
+    const createButton = screen.getByRole("button", { name: "Crear presupuesto" });
+    expect(createButton).toBeDisabled();
+
+    // A disabled MUI button emits no pointer events, so hover the tooltip wrapper.
+    await user.hover(createButton.parentElement!);
+    expect(
+      await screen.findByText(
+        "No se puede crear un presupuesto porque la orden de trabajo está entregada.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("given a repair order not closed, when there is no active estimate, then creating a new one stays enabled", () => {
+    mockUseEstimate([]);
+    render(
+      <MemoryRouter initialEntries={["/ordenes/5"]}>
+        <EstimateDetail repairOrderId={5} repairOrderStatus="REPARACION" />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("button", { name: "Crear presupuesto" })).toBeEnabled();
+  });
+});
 
 describe("EstimateDetail (default tax)", () => {
   beforeEach(() => {

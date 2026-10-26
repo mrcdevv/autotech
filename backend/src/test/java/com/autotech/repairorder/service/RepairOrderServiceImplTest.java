@@ -5,7 +5,10 @@ import com.autotech.appointment.repository.AppointmentRepository;
 import com.autotech.client.model.Client;
 import com.autotech.client.model.ClientType;
 import com.autotech.client.repository.ClientRepository;
+import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
+import com.autotech.deliverynote.model.DeliveryNote;
+import com.autotech.deliverynote.repository.DeliveryNoteRepository;
 import com.autotech.email.service.EmailNotificationService;
 import com.autotech.employee.model.Employee;
 import com.autotech.employee.repository.EmployeeRepository;
@@ -41,6 +44,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -76,6 +80,9 @@ class RepairOrderServiceImplTest {
 
     @Mock
     private StockService stockService;
+
+    @Mock
+    private DeliveryNoteRepository deliveryNoteRepository;
 
     @InjectMocks
     private RepairOrderServiceImpl repairOrderService;
@@ -512,6 +519,67 @@ class RepairOrderServiceImplTest {
         // Assert
         assertThat(order.getDeliveredAt()).isNotNull();
         verify(emailNotificationService, never()).notifyVehicleReadyForPickup(any());
+    }
+
+    // --- New-document guards (delivery-note era: no invoices) ---
+
+    @Test
+    void givenNullOrder_whenValidateOpenForNewDocuments_thenAllowsStandaloneDocuments() {
+        assertThatCode(() -> repairOrderService.validateOpenForNewDocuments(null))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void givenNullOrder_whenValidateNotClosedByStatus_thenAllowsStandaloneDocuments() {
+        assertThatCode(() -> repairOrderService.validateNotClosedByStatus(null))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void givenOpenOrderWithoutDeliveryNote_whenValidateOpenForNewDocuments_thenAllowsNewDocuments() {
+        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
+        when(deliveryNoteRepository.findByRepairOrderId(1L)).thenReturn(Optional.empty());
+
+        assertThatCode(() -> repairOrderService.validateOpenForNewDocuments(order))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void givenDeliveredOrder_whenValidateNotClosedByStatus_thenThrowBusinessException() {
+        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
+        order.setStatus(RepairOrderStatus.ENTREGADO);
+
+        assertThatThrownBy(() -> repairOrderService.validateNotClosedByStatus(order))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void givenCancelledOrder_whenValidateNotClosedByStatus_thenThrowBusinessException() {
+        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
+        order.setStatus(RepairOrderStatus.CANCELADO);
+
+        assertThatThrownBy(() -> repairOrderService.validateNotClosedByStatus(order))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void givenDeliveredOrder_whenValidateOpenForNewDocuments_thenThrowBusinessException() {
+        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
+        order.setStatus(RepairOrderStatus.ENTREGADO);
+
+        assertThatThrownBy(() -> repairOrderService.validateOpenForNewDocuments(order))
+                .isInstanceOf(BusinessException.class);
+        verify(deliveryNoteRepository, never()).findByRepairOrderId(any());
+    }
+
+    @Test
+    void givenOrderWithExistingDeliveryNote_whenValidateOpenForNewDocuments_thenThrowBusinessException() {
+        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
+        when(deliveryNoteRepository.findByRepairOrderId(1L))
+                .thenReturn(Optional.of(DeliveryNote.builder().repairOrder(order).build()));
+
+        assertThatThrownBy(() -> repairOrderService.validateOpenForNewDocuments(order))
+                .isInstanceOf(BusinessException.class);
     }
 
     private Client buildClient(Long id) {

@@ -12,6 +12,7 @@ import {
   Paper,
   Stack,
   IconButton,
+  Tooltip,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SaveIcon from "@mui/icons-material/Save";
@@ -49,6 +50,7 @@ import type {
   StaffDecisionChannel,
 } from "@/types/estimate";
 import type { InspectionResponse } from "@/features/inspections/types";
+import type { RepairOrderStatus } from "@/features/repair-orders/types";
 
 function extractApiError(err: unknown): string {
   if (axios.isAxiosError(err) && err.response?.data) {
@@ -132,9 +134,17 @@ interface RepairOrderVehicleData {
   year: number | null;
 }
 
+// Terminal statuses where the backend refuses new estimates: the UI refuses earlier
+// by disabling "Crear presupuesto" and naming the actual state in the tooltip.
+const CREATE_BLOCKED_REASONS: Record<"ENTREGADO" | "CANCELADO", string> = {
+  ENTREGADO: "No se puede crear un presupuesto porque la orden de trabajo está entregada.",
+  CANCELADO: "No se puede crear un presupuesto porque la orden de trabajo está cancelada.",
+};
+
 interface EstimateDetailProps {
   estimateId?: number;
   repairOrderId?: number;
+  repairOrderStatus?: RepairOrderStatus;
   reason?: string | null;
   mechanicNotes?: string | null;
   repairOrderClient?: RepairOrderClientData;
@@ -217,7 +227,7 @@ function ContextSections({
   );
 }
 
-export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNotes, repairOrderClient, repairOrderVehicle, onBack }: EstimateDetailProps) {
+export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, reason, mechanicNotes, repairOrderClient, repairOrderVehicle, onBack }: EstimateDetailProps) {
   const navigate = useNavigate();
   const { estimate, allEstimates, noActiveEstimate, loading, error, clearError, createEstimate, updateEstimate, approveEstimate, rejectEstimate } =
     useEstimate(estimateId, repairOrderId);
@@ -246,6 +256,8 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
   const isReadonly = estimate != null && estimate.status !== "PENDIENTE";
   const fromRepairOrder = repairOrderId != null;
   const displayId = estimate?.id ?? estimateId;
+  const createBlocked =
+    repairOrderStatus === "ENTREGADO" || repairOrderStatus === "CANCELADO";
 
   // New estimates start with the global IVA; existing estimates keep their stored value
   useEffect(() => {
@@ -547,9 +559,22 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
           )}
 
           <Box>
-            <Button variant="contained" onClick={prepareNewEstimate}>
-              Crear presupuesto
-            </Button>
+            {createBlocked && repairOrderStatus ? (
+              // A disabled MUI button emits no pointer events, so the Tooltip must sit on a
+              // <span> wrapper; putting it directly on the disabled button never shows.
+              // The `disabled` attribute keeps the state perceivable by assistive tech.
+              <Tooltip title={CREATE_BLOCKED_REASONS[repairOrderStatus]}>
+                <span>
+                  <Button variant="contained" disabled>
+                    Crear presupuesto
+                  </Button>
+                </span>
+              </Tooltip>
+            ) : (
+              <Button variant="contained" onClick={prepareNewEstimate}>
+                Crear presupuesto
+              </Button>
+            )}
           </Box>
         </Stack>
       );
