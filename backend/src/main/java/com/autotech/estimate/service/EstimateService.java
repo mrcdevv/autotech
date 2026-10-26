@@ -39,6 +39,12 @@ public interface EstimateService {
 
     EstimateDetailResponse reject(Long id, EstimateDecisionChannel channel, String decidedByEmail);
 
+    /**
+     * Reopens an accepted estimate (ACEPTADO back to PENDIENTE) so extra work
+     * can be quoted. Refused for any other state.
+     */
+    EstimateDetailResponse reopen(Long id);
+
     PublicEstimateResponse getByApprovalToken(String token);
 
     PublicEstimateResponse approveByToken(String token);

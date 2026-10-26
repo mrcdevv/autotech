@@ -4,6 +4,9 @@ import com.autotech.catalog.repository.ProductRepository;
 import com.autotech.catalog.model.Product;
 import com.autotech.client.model.Client;
 import com.autotech.client.repository.ClientRepository;
+import com.autotech.common.audit.AuditAction;
+import com.autotech.common.audit.AuditEntityType;
+import com.autotech.common.audit.AuditService;
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.common.util.SecureTokens;
@@ -33,6 +36,7 @@ import com.autotech.inspection.model.InspectionItemStatus;
 import com.autotech.inspection.repository.InspectionRepository;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.repository.RepairOrderRepository;
+import com.autotech.repairorder.service.RepairOrderService;
 import com.autotech.tax.service.TaxConfigService;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
@@ -48,7 +52,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -69,6 +75,8 @@ public class EstimateServiceImpl implements EstimateService {
     private final EmployeeRepository employeeRepository;
     private final AppProperties appProperties;
     private final StockService stockService;
+    private final AuditService auditService;
+    private final RepairOrderService repairOrderService;
 
     @Override
     @Transactional(readOnly = true)
@@ -168,6 +176,7 @@ public class EstimateServiceImpl implements EstimateService {
         entity.setTotal(total);
 
         Estimate saved = estimateRepository.save(entity);
+        recordCreationAudit(saved.getId(), saved.getStatus(), saved.getTotal());
         log.info("Created estimate with id {}", saved.getId());
         EstimateDetailResponse response = getById(saved.getId());
         emailNotificationService.notifyEstimateCreated(response,
@@ -184,6 +193,9 @@ public class EstimateServiceImpl implements EstimateService {
         if (entity.getStatus() != EstimateStatus.PENDIENTE) {
             throw new BusinessException("Solo se pueden editar presupuestos en estado PENDIENTE");
         }
+
+        EstimateStatus previousStatus = entity.getStatus();
+        BigDecimal previousTotal = entity.getTotal();
 
         Client client = clientRepository.findById(request.clientId())
                 .orElseThrow(() -> new ResourceNotFoundException("Client", request.clientId()));
@@ -209,9 +221,29 @@ public class EstimateServiceImpl implements EstimateService {
         entity.setTotal(total);
 
         Estimate saved = estimateRepository.save(entity);
+        recordEstimateAudit(saved.getId(), previousStatus, previousTotal, saved.getStatus(), saved.getTotal());
         log.info("Updated estimate with id {}", saved.getId());
         syncRepairOrderStock(saved);
         return getById(saved.getId());
+    }
+
+    @Override
+    @Transactional
+    public EstimateDetailResponse reopen(Long id) {
+        Estimate entity = estimateRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Estimate", id));
+        if (entity.getStatus() != EstimateStatus.ACEPTADO) {
+            throw new BusinessException("Solo se pueden reabrir presupuestos en estado ACEPTADO");
+        }
+        if (entity.getRepairOrder() != null) {
+            // The repair order must be open: not closed by status and without a delivery note (D1)
+            repairOrderService.validateOpenForNewDocuments(entity.getRepairOrder());
+        }
+        entity.setStatus(EstimateStatus.PENDIENTE);
+        estimateRepository.save(entity);
+        recordEstimateAudit(id, EstimateStatus.ACEPTADO, null, EstimateStatus.PENDIENTE, null);
+        log.info("Reopened estimate with id {}", id);
+        return getById(id);
     }
 
     @Override
@@ -343,11 +375,13 @@ public class EstimateServiceImpl implements EstimateService {
                     ? "Solo se pueden aprobar presupuestos en estado PENDIENTE"
                     : "Solo se pueden rechazar presupuestos en estado PENDIENTE");
         }
+        EstimateStatus previousStatus = entity.getStatus();
         entity.setStatus(newStatus);
         entity.setDecisionChannel(channel);
         entity.setDecidedAt(LocalDateTime.now());
         entity.setDecidedByEmployee(decidedBy);
         estimateRepository.save(entity);
+        recordEstimateAudit(entity.getId(), previousStatus, null, entity.getStatus(), null);
         log.info("Estimate {} marked as {} via {}", entity.getId(), newStatus, channel);
         syncRepairOrderStock(entity);
 
@@ -418,6 +452,37 @@ public class EstimateServiceImpl implements EstimateService {
                 entity.getApprovalTokenExpiresAt(),
                 entity.getStatus() == EstimateStatus.PENDIENTE && !isLinkExpired(entity)
         );
+    }
+
+    /**
+     * Records an audit row for an estimate status/amount change. Totals are
+     * omitted when null (e.g. a status-only transition), so the whitelist stays
+     * minimal and no entity is ever serialized.
+     */
+    private void recordEstimateAudit(Long estimateId, EstimateStatus oldStatus, BigDecimal oldTotal,
+                                     EstimateStatus newStatus, BigDecimal newTotal) {
+        Map<String, Object> oldValues = new LinkedHashMap<>();
+        oldValues.put("status", oldStatus.name());
+        if (oldTotal != null) {
+            oldValues.put("total", oldTotal);
+        }
+        Map<String, Object> newValues = new LinkedHashMap<>();
+        newValues.put("status", newStatus.name());
+        if (newTotal != null) {
+            newValues.put("total", newTotal);
+        }
+        auditService.record(AuditEntityType.ESTIMATE, estimateId, AuditAction.MODIFIED, oldValues, newValues);
+    }
+
+    /**
+     * Records an audit row for the creation of an estimate: the state and
+     * total are the useful pair describing the estimate as created.
+     */
+    private void recordCreationAudit(Long estimateId, EstimateStatus status, BigDecimal total) {
+        Map<String, Object> newValues = new LinkedHashMap<>();
+        newValues.put("status", status.name());
+        newValues.put("total", total);
+        auditService.record(AuditEntityType.ESTIMATE, estimateId, AuditAction.CREATED, null, newValues);
     }
 
     private void addChildEntities(Estimate entity, EstimateRequest request) {

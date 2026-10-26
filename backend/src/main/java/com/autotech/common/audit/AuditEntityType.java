@@ -7,5 +7,5 @@ package com.autotech.common.audit;
 public enum AuditEntityType {
     REPAIR_ORDER,
     ESTIMATE,
-    INVOICE
+    DELIVERY_NOTE
 }

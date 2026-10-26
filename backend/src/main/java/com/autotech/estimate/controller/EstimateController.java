@@ -91,6 +91,12 @@ public class EstimateController {
                 estimateService.reject(id, request.channel(), currentUser != null ? currentUser.getUsername() : null)));
     }
 
+    @PreAuthorize("hasAuthority('update_estimate')")
+    @PutMapping("/{id}/reopen")
+    public ResponseEntity<ApiResponse<EstimateDetailResponse>> reopen(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success("Presupuesto reabierto", estimateService.reopen(id)));
+    }
+
     @PreAuthorize("hasAuthority('delete_estimate')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
