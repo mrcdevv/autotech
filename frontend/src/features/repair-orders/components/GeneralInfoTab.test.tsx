@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
 import { GeneralInfoTab } from "./GeneralInfoTab";
@@ -6,7 +7,7 @@ import { formatCurrency } from "@/utils/formatCurrency";
 
 import type { RepairOrderDetailResponse } from "../types";
 import type { EstimateResponse } from "@/types/estimate";
-import type { InvoiceDetailResponse } from "@/types/invoice";
+import type { DeliveryNoteDetailResponse } from "@/types/deliveryNote";
 import type { PaymentSummaryResponse } from "@/types/payment";
 
 // formatCurrency emits a non-breaking space (U+00A0) after the "$" symbol, which the
@@ -37,11 +38,16 @@ function expectRightAlignedInBlock(element: HTMLElement): void {
 }
 
 const mockGetAllEstimatesByRepairOrderId = vi.fn();
-const mockGetInvoiceByRepairOrderId = vi.fn();
+const mockGetDeliveryNoteByRepairOrderId = vi.fn();
 const mockGetPaymentSummary = vi.fn();
 
 vi.mock("@mui/x-data-grid", () => ({
   DataGrid: () => <div data-testid="mock-datagrid" />,
+}));
+
+vi.mock("./EditRepairOrderDialog", () => ({
+  EditRepairOrderDialog: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="edit-repair-order-dialog" /> : null,
 }));
 
 vi.mock("@/api/estimates", () => ({
@@ -50,9 +56,9 @@ vi.mock("@/api/estimates", () => ({
   },
 }));
 
-vi.mock("@/api/invoices", () => ({
-  invoicesApi: {
-    getByRepairOrderId: (...args: unknown[]) => mockGetInvoiceByRepairOrderId(...args),
+vi.mock("@/api/deliveryNotes", () => ({
+  deliveryNotesApi: {
+    getByRepairOrderId: (...args: unknown[]) => mockGetDeliveryNoteByRepairOrderId(...args),
   },
 }));
 
@@ -65,7 +71,7 @@ vi.mock("@/api/payments", () => ({
 // Default wiring: the API calls fail, so the financial summary shows empty states.
 // (Before this file mocked the API modules, the real HTTP calls rejected in jsdom.)
 mockGetAllEstimatesByRepairOrderId.mockRejectedValue(new Error("network"));
-mockGetInvoiceByRepairOrderId.mockRejectedValue(new Error("network"));
+mockGetDeliveryNoteByRepairOrderId.mockRejectedValue(new Error("network"));
 mockGetPaymentSummary.mockRejectedValue(new Error("network"));
 
 const sampleOrder: RepairOrderDetailResponse = {
@@ -135,7 +141,24 @@ describe("GeneralInfoTab", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: /editar/i })).toBeInTheDocument();
+    // Exact name: only the mechanics action is bare "Editar"; the order edit
+    // button is labelled "Editar orden de trabajo".
+    expect(screen.getByRole("button", { name: "Editar" })).toBeInTheDocument();
+  });
+
+  it("given order, when rendered, then shows edit action for the order details", () => {
+    render(<GeneralInfoTab order={sampleOrder} loading={false} onRefetch={vi.fn()} />);
+
+    expect(screen.getByRole("button", { name: "Editar orden de trabajo" })).toBeInTheDocument();
+  });
+
+  it("given edit action clicked, then opens the edit dialog", async () => {
+    const user = userEvent.setup();
+    render(<GeneralInfoTab order={sampleOrder} loading={false} onRefetch={vi.fn()} />);
+
+    await user.click(screen.getByRole("button", { name: "Editar orden de trabajo" }));
+
+    expect(screen.getByTestId("edit-repair-order-dialog")).toBeInTheDocument();
   });
 
   it("given order with two mechanics, when rendered, then both full names are visible without hovering", () => {
@@ -200,8 +223,9 @@ const acceptedEstimate: EstimateResponse = {
   updatedAt: "2025-01-15T10:00:00",
 };
 
-const invoiceDetail: InvoiceDetailResponse = {
+const deliveryNoteDetail: DeliveryNoteDetailResponse = {
   id: 9,
+  number: 9,
   clientId: 1,
   clientFullName: "Juan Perez",
   clientDni: null,
@@ -228,7 +252,6 @@ const invoiceDetail: InvoiceDetailResponse = {
 const paymentSummary: PaymentSummaryResponse = {
   totalServices: 0,
   totalProducts: 0,
-  taxAmount: 0,
   discountAmount: 0,
   total: 2234.567,
   totalPaid: 700.123,
@@ -238,7 +261,7 @@ const paymentSummary: PaymentSummaryResponse = {
 describe("GeneralInfoTab financial summary amounts", () => {
   beforeEach(() => {
     mockGetAllEstimatesByRepairOrderId.mockResolvedValue({ data: { data: [acceptedEstimate] } });
-    mockGetInvoiceByRepairOrderId.mockResolvedValue({ data: { data: invoiceDetail } });
+    mockGetDeliveryNoteByRepairOrderId.mockResolvedValue({ data: { data: deliveryNoteDetail } });
     mockGetPaymentSummary.mockResolvedValue({ data: { data: paymentSummary } });
   });
 

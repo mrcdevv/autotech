@@ -5,8 +5,9 @@ import type {
   EstimateResponse,
   EstimateDetailResponse,
   EstimateRequest,
-  EstimateInvoiceDataResponse,
+  EstimateDeliveryNoteDataResponse,
   EstimateStatus,
+  StaffDecisionChannel,
 } from "@/types/estimate";
 
 export const estimatesApi = {
@@ -48,11 +49,11 @@ export const estimatesApi = {
   update: (id: number, data: EstimateRequest) =>
     apiClient.put<ApiResponse<EstimateDetailResponse>>(`/estimates/${id}`, data),
 
-  approve: (id: number) =>
-    apiClient.put<ApiResponse<EstimateDetailResponse>>(`/estimates/${id}/approve`),
+  approve: (id: number, channel: StaffDecisionChannel) =>
+    apiClient.put<ApiResponse<EstimateDetailResponse>>(`/estimates/${id}/approve`, { channel }),
 
-  reject: (id: number) =>
-    apiClient.put<ApiResponse<EstimateDetailResponse>>(`/estimates/${id}/reject`),
+  reject: (id: number, channel: StaffDecisionChannel) =>
+    apiClient.put<ApiResponse<EstimateDetailResponse>>(`/estimates/${id}/reject`, { channel }),
 
   reopen: (id: number) =>
     apiClient.put<ApiResponse<EstimateDetailResponse>>(`/estimates/${id}/reopen`),
@@ -60,8 +61,8 @@ export const estimatesApi = {
   delete: (id: number) =>
     apiClient.delete<ApiResponse<void>>(`/estimates/${id}`),
 
-  getInvoiceData: (id: number) =>
-    apiClient.get<ApiResponse<EstimateInvoiceDataResponse>>(
-      `/estimates/${id}/invoice-data`,
+  getDeliveryNoteData: (id: number) =>
+    apiClient.get<ApiResponse<EstimateDeliveryNoteDataResponse>>(
+      `/estimates/${id}/delivery-note-data`,
     ),
 };

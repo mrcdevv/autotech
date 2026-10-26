@@ -14,13 +14,13 @@ import com.autotech.dashboard.dto.StaleOrderAlertResponse;
 import com.autotech.dashboard.dto.StatusCountResponse;
 import com.autotech.dashboard.dto.TodayAppointmentResponse;
 import com.autotech.dashboard.dto.TopServiceResponse;
-import com.autotech.dashboard.dto.UnpaidInvoiceResponse;
+import com.autotech.dashboard.dto.UnpaidDeliveryNoteResponse;
 import com.autotech.dashboard.model.DashboardConfig;
 import com.autotech.dashboard.repository.DashboardConfigRepository;
 import com.autotech.estimate.model.EstimateStatus;
 import com.autotech.estimate.repository.EstimateRepository;
-import com.autotech.invoice.model.InvoiceStatus;
-import com.autotech.invoice.repository.InvoiceRepository;
+import com.autotech.deliverynote.model.DeliveryNoteStatus;
+import com.autotech.deliverynote.repository.DeliveryNoteRepository;
 import com.autotech.repairorder.model.RepairOrderStatus;
 import com.autotech.repairorder.repository.RepairOrderRepository;
 import lombok.RequiredArgsConstructor;
@@ -43,7 +43,7 @@ public class DashboardServiceImpl implements DashboardService {
 
     private final RepairOrderRepository repairOrderRepository;
     private final AppointmentRepository appointmentRepository;
-    private final InvoiceRepository invoiceRepository;
+    private final DeliveryNoteRepository deliveryNoteRepository;
     private final EstimateRepository estimateRepository;
     private final DashboardConfigRepository dashboardConfigRepository;
 
@@ -123,8 +123,8 @@ public class DashboardServiceImpl implements DashboardService {
         LocalDateTime now = LocalDateTime.now();
 
         LocalDateTime rangeStart = LocalDate.now().minusMonths(months - 1).withDayOfMonth(1).atStartOfDay();
-        List<MonthlyRevenueResponse> monthlyRevenue = invoiceRepository
-                .sumTotalByStatusGroupByMonth(InvoiceStatus.PAGADA, rangeStart, now).stream()
+        List<MonthlyRevenueResponse> monthlyRevenue = deliveryNoteRepository
+                .sumTotalByStatusGroupByMonth(DeliveryNoteStatus.PAGADA, rangeStart, now).stream()
                 .map(row -> new MonthlyRevenueResponse((Integer) row[0], (Integer) row[1], (BigDecimal) row[2]))
                 .toList();
 
@@ -138,15 +138,15 @@ public class DashboardServiceImpl implements DashboardService {
                 .multiply(BigDecimal.valueOf(100))
                 : BigDecimal.ZERO;
 
-        BigDecimal totalPendingBilling = invoiceRepository.sumTotalByStatus(InvoiceStatus.PENDIENTE);
+        BigDecimal totalPendingBilling = deliveryNoteRepository.sumTotalByStatus(DeliveryNoteStatus.PENDIENTE);
         if (totalPendingBilling == null) totalPendingBilling = BigDecimal.ZERO;
 
         List<DebtAgingResponse> debtAging = calculateDebtAging();
 
-        List<UnpaidInvoiceResponse> topUnpaid = invoiceRepository
+        List<UnpaidDeliveryNoteResponse> topUnpaid = deliveryNoteRepository
                 .findByStatusWithClientAndVehicleOrderByTotalDesc(
-                        InvoiceStatus.PENDIENTE, PageRequest.of(0, 10)).stream()
-                .map(inv -> new UnpaidInvoiceResponse(
+                        DeliveryNoteStatus.PENDIENTE, PageRequest.of(0, 10)).stream()
+                .map(inv -> new UnpaidDeliveryNoteResponse(
                         inv.getId(),
                         inv.getClient().getFirstName() + " " + inv.getClient().getLastName(),
                         inv.getVehicle() != null ? inv.getVehicle().getPlate() : null,
@@ -174,8 +174,8 @@ public class DashboardServiceImpl implements DashboardService {
                 .map(row -> new MechanicProductivityResponse((Long) row[0], (String) row[1], (Long) row[2]))
                 .toList();
 
-        List<TopServiceResponse> topServices = invoiceRepository
-                .findTopServiceNames(InvoiceStatus.PAGADA, monthStart, monthEnd, PageRequest.of(0, 10)).stream()
+        List<TopServiceResponse> topServices = deliveryNoteRepository
+                .findTopServiceNames(DeliveryNoteStatus.PAGADA, monthStart, monthEnd, PageRequest.of(0, 10)).stream()
                 .map(row -> new TopServiceResponse((String) row[0], (Long) row[1]))
                 .toList();
 
@@ -208,10 +208,10 @@ public class DashboardServiceImpl implements DashboardService {
         LocalDateTime d60 = now.minusDays(60);
         LocalDateTime d90 = now.minusDays(90);
 
-        Object[] r0_30 = unwrapRow(invoiceRepository.countAndSumByStatusAndCreatedAtBetween(InvoiceStatus.PENDIENTE, d30, now));
-        Object[] r31_60 = unwrapRow(invoiceRepository.countAndSumByStatusAndCreatedAtBetween(InvoiceStatus.PENDIENTE, d60, d30));
-        Object[] r61_90 = unwrapRow(invoiceRepository.countAndSumByStatusAndCreatedAtBetween(InvoiceStatus.PENDIENTE, d90, d60));
-        Object[] r90plus = unwrapRow(invoiceRepository.countAndSumByStatusAndCreatedAtBefore(InvoiceStatus.PENDIENTE, d90));
+        Object[] r0_30 = unwrapRow(deliveryNoteRepository.countAndSumByStatusAndCreatedAtBetween(DeliveryNoteStatus.PENDIENTE, d30, now));
+        Object[] r31_60 = unwrapRow(deliveryNoteRepository.countAndSumByStatusAndCreatedAtBetween(DeliveryNoteStatus.PENDIENTE, d60, d30));
+        Object[] r61_90 = unwrapRow(deliveryNoteRepository.countAndSumByStatusAndCreatedAtBetween(DeliveryNoteStatus.PENDIENTE, d90, d60));
+        Object[] r90plus = unwrapRow(deliveryNoteRepository.countAndSumByStatusAndCreatedAtBefore(DeliveryNoteStatus.PENDIENTE, d90));
 
         return List.of(
                 new DebtAgingResponse("0-30", toLong(r0_30[0]), toBigDecimal(r0_30[1])),

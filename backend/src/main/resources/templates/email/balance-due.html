@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{email/layout :: layout(~{::content})}" lang="es">
+<body>
+<th:block th:fragment="content">
+    <div th:replace="~{email/components :: chip('Pago pendiente', 'warn')}"></div>
+    <div th:replace="~{email/components :: heading('Te queda un saldo por abonar')}"></div>
+    <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#4E545E;">Hola <span th:text="${name}">Martín</span>, te recordamos que el remito <span th:text="${number}">#0556</span><th:block th:if="${vehicle != null}"> por los trabajos en tu <span th:text="${vehicle}">Toyota Corolla</span></th:block> todavía tiene un saldo pendiente.</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="margin:0 0 16px 0;background:#FBFAF7;border:1px solid #ECE9E1;border-radius:8px;border-collapse:separate;">
+        <tr>
+            <td style="padding:11px 18px;font-size:14px;color:#646A75;border-bottom:1px solid #ECE9E1;">Fecha del remito</td>
+            <td align="right" style="padding:11px 18px;font-size:14px;font-weight:600;border-bottom:1px solid #ECE9E1;" th:text="${date}">02/10/2026</td>
+        </tr>
+        <tr>
+            <td style="padding:11px 18px;font-size:14px;color:#646A75;border-bottom:1px solid #ECE9E1;">Total</td>
+            <td align="right" style="padding:11px 18px;font-size:14px;font-weight:600;border-bottom:1px solid #ECE9E1;" th:text="${total}">$ 175.400,00</td>
+        </tr>
+        <tr>
+            <td style="padding:11px 18px;font-size:14px;color:#646A75;border-bottom:1px solid #ECE9E1;">Pagado</td>
+            <td align="right" style="padding:11px 18px;font-size:14px;font-weight:600;color:#1E6B41;border-bottom:1px solid #ECE9E1;" th:text="${paid}">$ 100.000,00</td>
+        </tr>
+        <tr>
+            <td style="padding:13px 18px;font-size:17px;font-weight:700;">Saldo pendiente</td>
+            <td align="right" style="padding:13px 18px;font-size:17px;font-weight:700;color:#A6371F;" th:text="${remaining}">$ 75.400,00</td>
+        </tr>
+    </table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 6px 0;">
+        <tr>
+            <td style="background:#EFEDE6;border-radius:4px;height:8px;font-size:0;line-height:0;">
+                <div th:style="|width:${percentPaid}%;height:8px;background:#27965A;border-radius:4px;|" style="width:57%;height:8px;background:#27965A;border-radius:4px;">&#8203;</div>
+            </td>
+        </tr>
+    </table>
+    <p style="margin:0 0 20px 0;font-size:12px;color:#646A75;">Abonaste el <span th:text="${percentPaid}">57</span> % del total</p>
+    <p style="margin:0 0 20px 0;font-size:14px;line-height:1.6;color:#4E545E;">Podés abonar en el taller o por transferencia. Si ya pagaste, ignorá este mensaje.</p>
+    <th:block th:if="${hasAttachment}">
+        <div th:replace="~{email/components :: note('Te adjuntamos el remito en PDF.', 'info')}"></div>
+    </th:block>
+</th:block>
+</body>
+</html>

@@ -1,19 +1,26 @@
 import { useState } from "react";
 
-import { Button, Alert, Snackbar } from "@mui/material";
+import { Button, Alert, Snackbar, FormControlLabel, Switch } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 
 import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { AppSearchField } from "@/components/AppSearchField";
 import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { useProducts } from "@/features/catalog/hooks/useProducts";
 import { ProductsDataGrid } from "@/features/catalog/components/ProductsDataGrid";
 import { ProductFormDialog } from "@/features/catalog/components/ProductFormDialog";
+import { StockAdjustmentDialog } from "@/features/catalog/components/StockAdjustmentDialog";
+import { StockMovementsDialog } from "@/features/catalog/components/StockMovementsDialog";
+import { apiErrorMessage } from "@/utils/apiErrorMessage";
 
-import type { ProductResponse, ProductRequest } from "@/types/catalog";
+import type { ProductResponse, ProductRequest, StockAdjustmentRequest } from "@/types/catalog";
 
 export default function ProductsPage() {
+  const { hasPermission } = useAuth();
+  const canManage = hasPermission("manage_products");
+  const canAdjustStock = hasPermission("manage_stock");
   const {
     products,
     loading,
@@ -25,9 +32,12 @@ export default function ProductsPage() {
     setPageSize,
     query,
     setQuery,
+    lowStockOnly,
+    setLowStockOnly,
     createProduct,
     updateProduct,
     deleteProduct,
+    adjustStock,
   } = useProducts();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -39,6 +49,8 @@ export default function ProductsPage() {
   });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<number | null>(null);
+  const [adjustingProduct, setAdjustingProduct] = useState<ProductResponse | null>(null);
+  const [movementsProduct, setMovementsProduct] = useState<ProductResponse | null>(null);
 
   const showSnackbar = (message: string, severity: "success" | "error") => {
     setSnackbar({ open: true, message, severity });
@@ -72,6 +84,19 @@ export default function ProductsPage() {
     }
   };
 
+  const findProduct = (id: number) => products.find((p) => p.id === id) ?? null;
+
+  const handleAdjustStock = async (data: StockAdjustmentRequest) => {
+    if (!adjustingProduct) return;
+    try {
+      await adjustStock(adjustingProduct.id, data);
+      showSnackbar("Stock ajustado", "success");
+      setAdjustingProduct(null);
+    } catch (err) {
+      showSnackbar(apiErrorMessage(err, "Error al ajustar el stock"), "error");
+    }
+  };
+
   const confirmDelete = (id: number) => {
     setProductToDelete(id);
     setDeleteDialogOpen(true);
@@ -100,19 +125,35 @@ export default function ProductsPage() {
 
       <PageToolbar
         filters={
-          <AppSearchField
-            placeholder="Buscar por nombre o descripción..."
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setPage(0);
-            }}
-          />
+          <>
+            <AppSearchField
+              placeholder="Buscar por nombre o descripción..."
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setPage(0);
+              }}
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={lowStockOnly}
+                  onChange={(e) => {
+                    setLowStockOnly(e.target.checked);
+                    setPage(0);
+                  }}
+                />
+              }
+              label="Solo stock bajo"
+            />
+          </>
         }
         actions={
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-            Agregar producto
-          </Button>
+          canManage && (
+            <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+              Agregar producto
+            </Button>
+          )
         }
       />
 
@@ -124,8 +165,23 @@ export default function ProductsPage() {
         pageSize={pageSize}
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
-        onEditRow={handleEdit}
-        onDeleteRow={confirmDelete}
+        onEditRow={canManage ? handleEdit : undefined}
+        onDeleteRow={canManage ? confirmDelete : undefined}
+        onAdjustStock={canAdjustStock ? (id) => setAdjustingProduct(findProduct(id)) : undefined}
+        onShowMovements={(id) => setMovementsProduct(findProduct(id))}
+      />
+
+      <StockAdjustmentDialog
+        open={adjustingProduct !== null}
+        product={adjustingProduct}
+        onClose={() => setAdjustingProduct(null)}
+        onSave={handleAdjustStock}
+      />
+
+      <StockMovementsDialog
+        open={movementsProduct !== null}
+        product={movementsProduct}
+        onClose={() => setMovementsProduct(null)}
       />
 
       <ProductFormDialog

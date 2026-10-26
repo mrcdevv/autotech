@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{email/layout :: layout(~{::content})}" lang="es">
+<body>
+<th:block th:fragment="content">
+    <div th:replace="~{email/components :: chip('Listo para retirar', 'ok')}"></div>
+    <div th:replace="~{email/components :: heading('¡Tu vehículo está listo!')}"></div>
+    <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#4E545E;">Hola <span th:text="${name}">Martín</span>, terminamos los trabajos de la orden <b style="color:#1D1F24;" th:text="${orderNumber}">#1042</b>. Ya podés pasar a buscar tu vehículo.</p>
+    <div th:replace="~{email/components :: details(${rows})}"></div>
+    <div th:replace="~{email/components :: note('Podés abonar en el taller con efectivo o transferencia.', 'info')}"></div>
+    <div th:replace="~{email/components :: buttons('Ver cómo llegar', ${workshopMapsUrl != null and !#strings.isEmpty(workshopMapsUrl) ? workshopMapsUrl : null}, null, null)}"></div>
+</th:block>
+</body>
+</html>

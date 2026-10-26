@@ -5,6 +5,7 @@ import { Box } from "@mui/material";
 
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
+import { ForbiddenNotifier } from "@/components/ForbiddenNotifier";
 import { shadow } from "@/theme/tokens";
 
 export default function MainLayout() {
@@ -26,6 +27,7 @@ export default function MainLayout() {
       }}
     >
       <Sidebar open={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <ForbiddenNotifier />
 
       <Box
         sx={{

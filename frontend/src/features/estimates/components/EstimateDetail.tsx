@@ -37,10 +37,13 @@ import { formatCurrency } from "@/utils/formatCurrency";
 import { clientAutocompleteApi } from "@/api/clientAutocomplete";
 import { vehiclesApi } from "@/api/vehicles";
 import { inspectionsApi } from "@/api/inspections";
+import { taxConfigApi } from "@/api/taxConfig";
 import { useEstimate } from "@/features/estimates/hooks/useEstimate";
 import { ServicesGrid } from "./ServicesGrid";
 import { ProductsGrid } from "./ProductsGrid";
 import { EstimateSummary } from "./EstimateSummary";
+import { EstimateDecisionDialog } from "./EstimateDecisionDialog";
+import { describeDecision } from "@/features/estimates/decisionChannel";
 
 import type { ClientAutocompleteResponse } from "@/types/vehicle";
 import type { VehicleResponse } from "@/types/vehicle";
@@ -48,6 +51,7 @@ import type {
   EstimateServiceItemRequest,
   EstimateProductRequest,
   EstimateRequest,
+  StaffDecisionChannel,
 } from "@/types/estimate";
 import type { InspectionResponse } from "@/features/inspections/types";
 import type { RepairOrderStatus } from "@/features/repair-orders/types";
@@ -243,6 +247,7 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
   const [products, setProducts] = useState<EstimateProductRequest[]>([]);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [taxPercentage, setTaxPercentage] = useState(0);
+  const [defaultTaxPercentage, setDefaultTaxPercentage] = useState(0);
   const [saving, setSaving] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -258,6 +263,25 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
   const displayId = estimate?.id ?? estimateId;
   const createBlocked =
     repairOrderStatus === "ENTREGADO" || repairOrderStatus === "CANCELADO";
+
+  // New estimates start with the global IVA; existing estimates keep their stored value
+  useEffect(() => {
+    if (estimateId) return;
+    let cancelled = false;
+    taxConfigApi
+      .getConfig()
+      .then((res) => {
+        if (!cancelled) setDefaultTaxPercentage(res.data.data.taxPercentage);
+      })
+      .catch(() => {
+        // non-critical: the tax field stays editable
+      });
+    return () => { cancelled = true; };
+  }, [estimateId]);
+
+  useEffect(() => {
+    if (!estimate) setTaxPercentage(defaultTaxPercentage);
+  }, [estimate, defaultTaxPercentage]);
 
   // Fetch inspection issues independently so they're always available
   useEffect(() => {
@@ -287,6 +311,7 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
           productName: p.productName,
           quantity: p.quantity,
           unitPrice: p.unitPrice,
+          productId: p.productId ?? null,
         })),
       );
       setDiscountPercentage(estimate.discountPercentage);
@@ -412,28 +437,27 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
     }
   };
 
-  const handleApprove = async () => {
-    if (!estimate?.id) return;
-    setApiError(null);
-    try {
-      await approveEstimate(estimate.id);
-      if (!fromRepairOrder) {
-        navigate("/presupuestos");
-      }
-    } catch (err) {
-      setApiError(extractApiError(err));
-    }
-  };
+  const [decisionDialog, setDecisionDialog] = useState<"approve" | "reject" | null>(null);
 
-  const handleReject = async () => {
-    if (!estimate?.id) return;
+  const handleApprove = () => setDecisionDialog("approve");
+
+  const handleReject = () => setDecisionDialog("reject");
+
+  const handleDecisionConfirm = async (channel: StaffDecisionChannel) => {
+    if (!estimate?.id || !decisionDialog) return;
     setApiError(null);
     try {
-      await rejectEstimate(estimate.id);
+      if (decisionDialog === "approve") {
+        await approveEstimate(estimate.id, channel);
+      } else {
+        await rejectEstimate(estimate.id, channel);
+      }
+      setDecisionDialog(null);
       if (!fromRepairOrder) {
         navigate("/presupuestos");
       }
     } catch (err) {
+      setDecisionDialog(null);
       setApiError(extractApiError(err));
     }
   };
@@ -490,7 +514,7 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
     setServices([]);
     setProducts([]);
     setDiscountPercentage(0);
-    setTaxPercentage(0);
+    setTaxPercentage(defaultTaxPercentage);
     clearError();
     setIsCreatingNew(true);
   };
@@ -650,6 +674,19 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
           </Typography>
         )}
       </Stack>
+
+      {estimate && describeDecision(estimate) && (
+        <Alert severity={estimate.status === "ACEPTADO" ? "success" : "error"} variant="outlined" sx={{ mb: 2 }}>
+          {describeDecision(estimate)}
+        </Alert>
+      )}
+
+      <EstimateDecisionDialog
+        open={decisionDialog !== null}
+        decision={decisionDialog ?? "approve"}
+        onClose={() => setDecisionDialog(null)}
+        onConfirm={handleDecisionConfirm}
+      />
 
       <FormPageLayout
         aside={

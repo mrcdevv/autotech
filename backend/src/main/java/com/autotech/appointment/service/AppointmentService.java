@@ -3,6 +3,7 @@ package com.autotech.appointment.service;
 import com.autotech.appointment.dto.AppointmentRequest;
 import com.autotech.appointment.dto.AppointmentResponse;
 import com.autotech.appointment.dto.AppointmentUpdateRequest;
+import com.autotech.appointment.dto.PublicAppointmentResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -27,7 +28,13 @@ public interface AppointmentService {
 
     AppointmentResponse markVehiclePickedUp(Long id);
 
-    AppointmentResponse cancel(Long id);
+    AppointmentResponse cancel(Long id, boolean notifyClient);
+
+    PublicAppointmentResponse getByConfirmationToken(String token);
+
+    PublicAppointmentResponse confirmByToken(String token);
+
+    PublicAppointmentResponse declineByToken(String token);
 
     List<AppointmentResponse> getByDateRange(LocalDateTime rangeStart, LocalDateTime rangeEnd);
 

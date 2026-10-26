@@ -7,6 +7,8 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 
 import { AppDialog } from "@/components/AppDialog";
+import { NotifyClientCheckbox } from "@/features/appointments/components/NotifyClientCheckbox";
+import { getNotifyClientDefault, hasEmail } from "@/features/appointments/notifyClient";
 
 import type { Dayjs } from "dayjs";
 import type { AppointmentResponse, AppointmentUpdateRequest } from "@/types/appointment";
@@ -27,13 +29,20 @@ export function AppointmentEditDialog({
   const [startTime, setStartTime] = useState<Dayjs | null>(null);
   const [endTime, setEndTime] = useState<Dayjs | null>(null);
   const [saving, setSaving] = useState(false);
+  const [notifyClientOverride, setNotifyClientOverride] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (appointment && open) {
       setStartTime(dayjs(appointment.startTime));
       setEndTime(dayjs(appointment.endTime));
+      setNotifyClientOverride(null);
     }
   }, [appointment, open]);
+
+  const clientHasEmail = hasEmail(appointment?.clientEmail);
+  const notifyClient =
+    notifyClientOverride ??
+    getNotifyClientDefault({ hasEmail: clientHasEmail, startTime, clientArrived: appointment?.clientArrived });
 
   const handleSave = async () => {
     if (!appointment || !startTime || !endTime) return;
@@ -48,6 +57,7 @@ export function AppointmentEditDialog({
       await onSave(appointment.id, {
         startTime: startTime.format("YYYY-MM-DDTHH:mm:ss"),
         endTime: endTime.format("YYYY-MM-DDTHH:mm:ss"),
+        notifyClient: clientHasEmail && notifyClient,
       });
       onClose();
     } catch (error) {
@@ -98,6 +108,14 @@ export function AppointmentEditDialog({
             onChange={(newValue) => setEndTime(newValue)}
             disabled={saving}
           />
+          {appointment?.clientId && (
+            <NotifyClientCheckbox
+              checked={notifyClient}
+              onChange={setNotifyClientOverride}
+              clientHasEmail={clientHasEmail}
+              disabled={saving}
+            />
+          )}
         </Stack>
       </AppDialog>
     </LocalizationProvider>

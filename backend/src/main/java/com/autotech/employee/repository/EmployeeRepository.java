@@ -32,6 +32,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @EntityGraph(attributePaths = {"roles"})
     Optional<Employee> findWithRolesById(Long id);
 
+    @EntityGraph(attributePaths = {"roles", "roles.permissions"})
+    Optional<Employee> findWithRolesAndPermissionsByEmail(String email);
+
     Page<Employee> findByStatus(EmployeeStatus status, Pageable pageable);
 
     @Query("SELECT e FROM Employee e WHERE LOWER(e.dni) LIKE LOWER(CONCAT(:dni, '%'))")

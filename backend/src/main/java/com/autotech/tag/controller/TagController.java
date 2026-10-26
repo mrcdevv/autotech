@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,22 +27,26 @@ public class TagController {
 
     private final TagService tagService;
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ApiResponse<List<TagResponse>>> getAll() {
         return ResponseEntity.ok(ApiResponse.success(tagService.getAll()));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<TagResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(tagService.getById(id)));
     }
 
+    @PreAuthorize("hasAuthority('manage_config')")
     @PostMapping
     public ResponseEntity<ApiResponse<TagResponse>> create(@Valid @RequestBody TagRequest request) {
         TagResponse created = tagService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Etiqueta creada", created));
     }
 
+    @PreAuthorize("hasAuthority('manage_config')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<TagResponse>> update(
             @PathVariable Long id,
@@ -49,6 +54,7 @@ public class TagController {
         return ResponseEntity.ok(ApiResponse.success("Etiqueta actualizada", tagService.update(id, request)));
     }
 
+    @PreAuthorize("hasAuthority('manage_config')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         tagService.delete(id);

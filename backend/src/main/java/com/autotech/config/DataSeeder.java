@@ -21,7 +21,7 @@ public class DataSeeder implements CommandLineRunner {
 
     private static final String ADMIN_EMAIL    = "admin@autotech.com";
     private static final String ADMIN_PASSWORD = "admin123";
-    private static final String ADMIN_ROLE     = "ADMINISTRADOR";
+    private static final String ADMIN_ROLE     = Role.ADMIN_ROLE_NAME;
 
     private final EmployeeRepository employeeRepository;
     private final RoleRepository     roleRepository;

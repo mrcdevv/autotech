@@ -1,5 +1,6 @@
 package com.autotech.repairorder.service;
 
+import com.autotech.stock.service.StockService;
 import com.autotech.appointment.repository.AppointmentRepository;
 import com.autotech.client.model.Client;
 import com.autotech.client.model.ClientType;
@@ -60,6 +61,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -101,17 +103,9 @@ class RepairOrderServiceImplTest {
     private EmailNotificationService emailNotificationService;
 
     @Mock
-    private InvoiceRepository invoiceRepository;
+    private StockService stockService;
 
-    @Mock
-    private AuditService auditService;
-
-    @Captor
-    private ArgumentCaptor<Map<String, Object>> oldValuesCaptor;
-
-    @Captor
-    private ArgumentCaptor<Map<String, Object>> newValuesCaptor;
-
+    @InjectMocks
     private RepairOrderServiceImpl repairOrderService;
 
     @BeforeEach
@@ -132,7 +126,7 @@ class RepairOrderServiceImplTest {
         // Arrange
         Client client = buildClient(1L);
         Vehicle vehicle = buildVehicle(1L, client);
-        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Engine noise", null, null, null);
+        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Engine noise", null, null, null, null);
         RepairOrder saved = buildRepairOrder(1L, client, vehicle);
         RepairOrderResponse response = buildResponse(1L);
 
@@ -152,7 +146,7 @@ class RepairOrderServiceImplTest {
     @Test
     void givenNonExistentClient_whenCreate_thenThrowResourceNotFoundException() {
         // Arrange
-        RepairOrderRequest request = new RepairOrderRequest(99L, 1L, null, null, null, null, null);
+        RepairOrderRequest request = new RepairOrderRequest(99L, 1L, null, null, null, null, null, null);
         when(clientRepository.findById(99L)).thenReturn(Optional.empty());
 
         // Act & Assert
@@ -165,7 +159,7 @@ class RepairOrderServiceImplTest {
     void givenNonExistentVehicle_whenCreate_thenThrowResourceNotFoundException() {
         // Arrange
         Client client = buildClient(1L);
-        RepairOrderRequest request = new RepairOrderRequest(1L, 99L, null, null, null, null, null);
+        RepairOrderRequest request = new RepairOrderRequest(1L, 99L, null, null, null, null, null, null);
         when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
         when(vehicleRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -181,7 +175,7 @@ class RepairOrderServiceImplTest {
         Client client1 = buildClient(1L);
         Client client2 = buildClient(2L);
         Vehicle vehicle = buildVehicle(1L, client2);
-        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, null, null, null, null);
+        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, null, null, null, null, null);
 
         when(clientRepository.findById(1L)).thenReturn(Optional.of(client1));
         when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
@@ -233,7 +227,7 @@ class RepairOrderServiceImplTest {
         Client client = buildClient(1L);
         Vehicle vehicle = buildVehicle(1L, client);
         RepairOrder existing = buildRepairOrder(1L, client, vehicle);
-        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Updated reason", null, null, null);
+        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Updated reason", null, null, null, null);
         RepairOrderResponse response = buildResponse(1L);
 
         when(repairOrderRepository.findWithDetailsById(1L)).thenReturn(Optional.of(existing));
@@ -261,6 +255,7 @@ class RepairOrderServiceImplTest {
 
         // Assert
         verify(repairOrderRepository).delete(order);
+        verify(stockService).releaseRepairOrder(1L);
     }
 
     @Test
@@ -292,6 +287,7 @@ class RepairOrderServiceImplTest {
         // Assert
         assertThat(result).isNotNull();
         assertThat(order.getStatus()).isEqualTo(RepairOrderStatus.REPARACION);
+        verify(stockService).syncRepairOrder(1L);
     }
 
     @Test
@@ -604,7 +600,7 @@ class RepairOrderServiceImplTest {
         RepairOrder order = buildRepairOrder(1L, client, vehicle);
         RepairOrderResponse response = buildResponse(1L);
         RepairOrderFilter filter = new RepairOrderFilter(
-                List.of(RepairOrderStatus.REPARACION), null, null, null, null, "Perez", null, null);
+                List.of(RepairOrderStatus.REPARACION), null, null, null, null, null, null, "Perez");
         Pageable pageable = PageRequest.of(0, 20);
 
         when(repairOrderRepository.findAll(any(Specification.class), eq(pageable)))
@@ -719,6 +715,74 @@ class RepairOrderServiceImplTest {
     }
 
     // --- Helpers ---
+
+    // --- Milestone emails and timestamps ---
+
+    @Test
+    void givenValidRequest_whenCreate_thenSendVehicleReceivedEmail() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(1L, client);
+        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Ruido", null, null, null, null);
+        RepairOrder saved = buildRepairOrder(1L, client, vehicle);
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
+        when(repairOrderRepository.save(any(RepairOrder.class))).thenReturn(saved);
+
+        // Act
+        repairOrderService.create(request);
+
+        // Assert
+        verify(emailNotificationService).notifyVehicleReceived(saved);
+    }
+
+    @Test
+    void givenOrderInRepair_whenUpdateStatusToReady_thenSetReadyTimestampAndSendEmail() {
+        // Arrange
+        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
+        order.setStatus(RepairOrderStatus.PRUEBAS);
+        when(repairOrderRepository.findWithDetailsById(1L)).thenReturn(Optional.of(order));
+        when(repairOrderRepository.save(order)).thenReturn(order);
+
+        // Act
+        repairOrderService.updateStatus(1L, new StatusUpdateRequest(RepairOrderStatus.LISTO_PARA_ENTREGAR));
+
+        // Assert
+        assertThat(order.getReadyForPickupAt()).isNotNull();
+        assertThat(order.getDeliveredAt()).isNull();
+        verify(emailNotificationService).notifyVehicleReadyForPickup(order);
+    }
+
+    @Test
+    void givenOrderAlreadyReady_whenUpdateStatusToReadyAgain_thenDoNotResendEmail() {
+        // Arrange
+        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
+        order.setStatus(RepairOrderStatus.LISTO_PARA_ENTREGAR);
+        when(repairOrderRepository.findWithDetailsById(1L)).thenReturn(Optional.of(order));
+        when(repairOrderRepository.save(order)).thenReturn(order);
+
+        // Act
+        repairOrderService.updateStatus(1L, new StatusUpdateRequest(RepairOrderStatus.LISTO_PARA_ENTREGAR));
+
+        // Assert
+        verify(emailNotificationService, never()).notifyVehicleReadyForPickup(any());
+    }
+
+    @Test
+    void givenReadyOrder_whenUpdateStatusToDelivered_thenSetDeliveredTimestampWithoutEmail() {
+        // Arrange
+        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
+        order.setStatus(RepairOrderStatus.LISTO_PARA_ENTREGAR);
+        when(repairOrderRepository.findWithDetailsById(1L)).thenReturn(Optional.of(order));
+        when(repairOrderRepository.save(order)).thenReturn(order);
+
+        // Act
+        repairOrderService.updateStatus(1L, new StatusUpdateRequest(RepairOrderStatus.ENTREGADO));
+
+        // Assert
+        assertThat(order.getDeliveredAt()).isNotNull();
+        verify(emailNotificationService, never()).notifyVehicleReadyForPickup(any());
+    }
 
     private Client buildClient(Long id) {
         Client client = Client.builder()

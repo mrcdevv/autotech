@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 public record PaymentResponse(
         Long id,
-        Long invoiceId,
+        Long deliveryNoteId,
         LocalDate paymentDate,
         LocalDateTime createdAt,
         BigDecimal amount,

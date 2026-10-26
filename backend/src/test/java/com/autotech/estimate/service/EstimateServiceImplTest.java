@@ -1,5 +1,6 @@
 package com.autotech.estimate.service;
 
+import com.autotech.stock.service.StockService;
 import com.autotech.client.model.Client;
 import com.autotech.client.model.ClientType;
 import com.autotech.client.repository.ClientRepository;
@@ -9,17 +10,22 @@ import com.autotech.common.audit.AuditService;
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.estimate.dto.EstimateDetailResponse;
-import com.autotech.estimate.dto.EstimateInvoiceDataResponse;
+import com.autotech.estimate.dto.EstimateDeliveryNoteDataResponse;
 import com.autotech.estimate.dto.EstimateMapper;
 import com.autotech.estimate.dto.EstimateProductRequest;
 import com.autotech.estimate.dto.EstimateRequest;
 import com.autotech.estimate.dto.EstimateResponse;
 import com.autotech.estimate.dto.EstimateServiceItemRequest;
 import com.autotech.estimate.dto.InspectionIssueResponse;
+import com.autotech.estimate.dto.PublicEstimateResponse;
+import com.autotech.config.AppProperties;
 import com.autotech.email.service.EmailNotificationService;
+import com.autotech.employee.model.Employee;
+import com.autotech.employee.repository.EmployeeRepository;
 import com.autotech.estimate.model.Estimate;
 import com.autotech.estimate.model.EstimateProduct;
 import com.autotech.estimate.model.EstimateServiceItem;
+import com.autotech.estimate.model.EstimateDecisionChannel;
 import com.autotech.estimate.model.EstimateStatus;
 import com.autotech.estimate.repository.EstimateRepository;
 import com.autotech.inspection.model.Inspection;
@@ -32,7 +38,8 @@ import com.autotech.inspection.repository.InspectionRepository;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.model.RepairOrderStatus;
 import com.autotech.repairorder.repository.RepairOrderRepository;
-import com.autotech.repairorder.service.RepairOrderService;
+import com.autotech.tax.model.TaxConfig;
+import com.autotech.tax.service.TaxConfigService;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
 import org.junit.jupiter.api.Test;
@@ -60,11 +67,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import org.mockito.ArgumentCaptor;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -92,10 +97,16 @@ class EstimateServiceImplTest {
     private EmailNotificationService emailNotificationService;
 
     @Mock
-    private AuditService auditService;
+    private TaxConfigService taxConfigService;
 
     @Mock
-    private RepairOrderService repairOrderService;
+    private EmployeeRepository employeeRepository;
+
+    @Mock
+    private AppProperties appProperties;
+
+    @Mock
+    private StockService stockService;
 
     @InjectMocks
     private EstimateServiceImpl estimateService;
@@ -194,7 +205,7 @@ class EstimateServiceImplTest {
         Vehicle vehicle = buildVehicle(2L, client);
         EstimateRequest request = new EstimateRequest(1L, 2L, null, BigDecimal.ZERO, BigDecimal.ZERO,
                 List.of(new EstimateServiceItemRequest("Service A", BigDecimal.valueOf(100))),
-                List.of(new EstimateProductRequest("Product A", 2, BigDecimal.valueOf(50))));
+                List.of(new EstimateProductRequest("Product A", 2, BigDecimal.valueOf(50), null)));
 
         Estimate mappedEntity = Estimate.builder()
                 .discountPercentage(BigDecimal.ZERO)
@@ -217,6 +228,74 @@ class EstimateServiceImplTest {
         // Assert
         assertThat(result.id()).isEqualTo(1L);
         verify(estimateRepository).save(any(Estimate.class));
+    }
+
+    @Test
+    void givenRequestWithoutTaxPercentage_whenCreate_thenUsesDefaultTax21() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        EstimateRequest request = new EstimateRequest(1L, 2L, null, BigDecimal.ZERO, null,
+                List.of(new EstimateServiceItemRequest("Service A", BigDecimal.valueOf(100))),
+                Collections.emptyList());
+
+        Estimate mappedEntity = Estimate.builder()
+                .discountPercentage(BigDecimal.ZERO)
+                .taxPercentage(BigDecimal.ZERO)
+                .build();
+        Estimate savedEntity = buildEstimate(1L);
+        EstimateDetailResponse detailResponse = buildDetailResponse(1L);
+        TaxConfig taxConfig = buildTaxConfig(BigDecimal.valueOf(21));
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(taxConfigService.getConfig()).thenReturn(taxConfig);
+        when(estimateMapper.toEntity(request)).thenReturn(mappedEntity);
+        when(estimateRepository.save(any(Estimate.class))).thenReturn(savedEntity);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(savedEntity));
+        when(estimateMapper.toDetailResponse(savedEntity)).thenReturn(detailResponse);
+
+        // Act
+        EstimateDetailResponse result = estimateService.create(request);
+
+        // Assert
+        assertThat(result.id()).isEqualTo(1L);
+        assertThat(mappedEntity.getTaxPercentage()).isEqualByComparingTo(BigDecimal.valueOf(21));
+        assertThat(mappedEntity.getTotal()).isEqualByComparingTo(BigDecimal.valueOf(121));
+        verify(taxConfigService).getConfig();
+    }
+
+    @Test
+    void givenRequestWithTaxPercentage_whenCreate_thenUsesRequestTax() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        EstimateRequest request = new EstimateRequest(1L, 2L, null, BigDecimal.ZERO, BigDecimal.valueOf(10),
+                List.of(new EstimateServiceItemRequest("Service A", BigDecimal.valueOf(100))),
+                Collections.emptyList());
+
+        Estimate mappedEntity = Estimate.builder()
+                .discountPercentage(BigDecimal.ZERO)
+                .taxPercentage(BigDecimal.ZERO)
+                .build();
+        Estimate savedEntity = buildEstimate(1L);
+        EstimateDetailResponse detailResponse = buildDetailResponse(1L);
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(estimateMapper.toEntity(request)).thenReturn(mappedEntity);
+        when(estimateRepository.save(any(Estimate.class))).thenReturn(savedEntity);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(savedEntity));
+        when(estimateMapper.toDetailResponse(savedEntity)).thenReturn(detailResponse);
+
+        // Act
+        EstimateDetailResponse result = estimateService.create(request);
+
+        // Assert
+        assertThat(result.id()).isEqualTo(1L);
+        assertThat(mappedEntity.getTaxPercentage()).isEqualByComparingTo(BigDecimal.valueOf(10));
+        assertThat(mappedEntity.getTotal()).isEqualByComparingTo(BigDecimal.valueOf(110));
+        verify(taxConfigService, never()).getConfig();
     }
 
     @Test
@@ -393,6 +472,37 @@ class EstimateServiceImplTest {
     }
 
     @Test
+    void givenRequestWithoutTaxPercentage_whenUpdate_thenKeepsStoredTax() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        Estimate existing = buildEstimate(1L);
+        existing.setStatus(EstimateStatus.PENDIENTE);
+        existing.setTaxPercentage(BigDecimal.valueOf(10.5));
+
+        EstimateRequest request = new EstimateRequest(1L, 2L, null, BigDecimal.ZERO, null,
+                List.of(new EstimateServiceItemRequest("Service A", BigDecimal.valueOf(100))),
+                Collections.emptyList());
+
+        EstimateDetailResponse detailResponse = buildDetailResponse(1L);
+
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(existing));
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(estimateRepository.save(any(Estimate.class))).thenReturn(existing);
+        when(estimateMapper.toDetailResponse(existing)).thenReturn(detailResponse);
+
+        // Act
+        EstimateDetailResponse result = estimateService.update(1L, request);
+
+        // Assert
+        assertThat(result.id()).isEqualTo(1L);
+        assertThat(existing.getTaxPercentage()).isEqualByComparingTo(BigDecimal.valueOf(10.5));
+        assertThat(existing.getTotal()).isEqualByComparingTo(BigDecimal.valueOf(110.5));
+        verify(taxConfigService, never()).getConfig();
+    }
+
+    @Test
     void givenNonPendienteEstimate_whenUpdate_thenThrowBusinessException() {
         // Arrange
         Estimate existing = buildEstimate(1L);
@@ -433,7 +543,7 @@ class EstimateServiceImplTest {
         when(estimateMapper.toDetailResponse(entity)).thenReturn(detailResponse);
 
         // Act
-        EstimateDetailResponse result = estimateService.approve(1L);
+        EstimateDetailResponse result = estimateService.approve(1L, EstimateDecisionChannel.WHATSAPP, "admin@autotech.com");
 
         // Assert
         assertThat(entity.getStatus()).isEqualTo(EstimateStatus.ACEPTADO);
@@ -471,7 +581,7 @@ class EstimateServiceImplTest {
         when(estimateRepository.findById(1L)).thenReturn(Optional.of(entity));
 
         // Act & Assert
-        assertThatThrownBy(() -> estimateService.approve(1L))
+        assertThatThrownBy(() -> estimateService.approve(1L, EstimateDecisionChannel.WHATSAPP, "admin@autotech.com"))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("PENDIENTE");
     }
@@ -489,7 +599,7 @@ class EstimateServiceImplTest {
         when(estimateMapper.toDetailResponse(entity)).thenReturn(detailResponse);
 
         // Act
-        EstimateDetailResponse result = estimateService.reject(1L);
+        EstimateDetailResponse result = estimateService.reject(1L, EstimateDecisionChannel.PHONE, "admin@autotech.com");
 
         // Assert
         assertThat(entity.getStatus()).isEqualTo(EstimateStatus.RECHAZADO);
@@ -527,7 +637,7 @@ class EstimateServiceImplTest {
         when(estimateRepository.findById(1L)).thenReturn(Optional.of(entity));
 
         // Act & Assert
-        assertThatThrownBy(() -> estimateService.reject(1L))
+        assertThatThrownBy(() -> estimateService.reject(1L, EstimateDecisionChannel.PHONE, "admin@autotech.com"))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("PENDIENTE");
     }
@@ -723,13 +833,29 @@ class EstimateServiceImplTest {
     @Test
     void givenExistingId_whenDelete_thenDeletesSuccessfully() {
         // Arrange
-        when(estimateRepository.findById(1L)).thenReturn(Optional.of(buildEstimate(1L)));
+        Estimate estimate = buildEstimate(1L);
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(estimate));
 
         // Act
         estimateService.delete(1L);
 
         // Assert
-        verify(estimateRepository).deleteById(1L);
+        verify(estimateRepository).delete(estimate);
+        verifyNoInteractions(stockService);
+    }
+
+    @Test
+    void givenEstimateOnRepairOrder_whenDelete_thenResyncsRepairOrderStock() {
+        // Arrange
+        Estimate estimate = buildEstimateWithRepairOrder(1L, 10L);
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(estimate));
+
+        // Act
+        estimateService.delete(1L);
+
+        // Assert
+        verify(estimateRepository).delete(estimate);
+        verify(stockService).syncRepairOrder(10L);
     }
 
     @Test
@@ -771,7 +897,7 @@ class EstimateServiceImplTest {
                 new EstimateServiceItemRequest("Service B", BigDecimal.valueOf(200))
         );
         List<EstimateProductRequest> products = List.of(
-                new EstimateProductRequest("Product A", 2, BigDecimal.valueOf(50))
+                new EstimateProductRequest("Product A", 2, BigDecimal.valueOf(50), null)
         );
 
         // Act
@@ -827,33 +953,33 @@ class EstimateServiceImplTest {
     }
 
     @Test
-    void givenAceptadoEstimate_whenConvertToInvoiceData_thenReturnData() {
+    void givenAceptadoEstimate_whenConvertToDeliveryNoteData_thenReturnData() {
         // Arrange
         Estimate entity = buildEstimate(1L);
         entity.setStatus(EstimateStatus.ACEPTADO);
-        EstimateInvoiceDataResponse invoiceData = new EstimateInvoiceDataResponse(
+        EstimateDeliveryNoteDataResponse deliveryNoteData = new EstimateDeliveryNoteDataResponse(
                 1L, 1L, 2L, null, Collections.emptyList(), Collections.emptyList(),
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.valueOf(400));
 
         when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(entity));
-        when(estimateMapper.toInvoiceDataResponse(entity)).thenReturn(invoiceData);
+        when(estimateMapper.toDeliveryNoteDataResponse(entity)).thenReturn(deliveryNoteData);
 
         // Act
-        EstimateInvoiceDataResponse result = estimateService.convertToInvoiceData(1L);
+        EstimateDeliveryNoteDataResponse result = estimateService.convertToDeliveryNoteData(1L);
 
         // Assert
         assertThat(result.estimateId()).isEqualTo(1L);
     }
 
     @Test
-    void givenNonAceptadoEstimate_whenConvertToInvoiceData_thenThrowBusinessException() {
+    void givenNonAceptadoEstimate_whenConvertToDeliveryNoteData_thenThrowBusinessException() {
         // Arrange
         Estimate entity = buildEstimate(1L);
         entity.setStatus(EstimateStatus.PENDIENTE);
         when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(entity));
 
         // Act & Assert
-        assertThatThrownBy(() -> estimateService.convertToInvoiceData(1L))
+        assertThatThrownBy(() -> estimateService.convertToDeliveryNoteData(1L))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("ACEPTADO");
     }
@@ -1144,6 +1270,152 @@ class EstimateServiceImplTest {
         return order;
     }
 
+    private TaxConfig buildTaxConfig(BigDecimal taxPercentage) {
+        TaxConfig config = TaxConfig.builder().taxPercentage(taxPercentage).build();
+        config.setId(1L);
+        return config;
+    }
+
+
+    @Test
+    void givenValidRequest_whenCreate_thenGenerateSevenDayApprovalLinkAndEmailIt() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        EstimateRequest request = new EstimateRequest(1L, 2L, null, BigDecimal.ZERO, BigDecimal.ZERO, List.of(), List.of());
+        Estimate mappedEntity = Estimate.builder().discountPercentage(BigDecimal.ZERO).taxPercentage(BigDecimal.ZERO).build();
+        mappedEntity.setId(1L);
+        EstimateDetailResponse detailResponse = buildDetailResponse(1L);
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(estimateMapper.toEntity(request)).thenReturn(mappedEntity);
+        when(estimateRepository.save(mappedEntity)).thenReturn(mappedEntity);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(mappedEntity));
+        when(estimateMapper.toDetailResponse(mappedEntity)).thenReturn(detailResponse);
+        when(appProperties.publicLink(org.mockito.ArgumentMatchers.startsWith("/presupuesto/")))
+                .thenReturn("http://localhost:3000/presupuesto/x");
+
+        // Act
+        estimateService.create(request);
+
+        // Assert
+        assertThat(mappedEntity.getApprovalToken()).hasSize(43);
+        assertThat(mappedEntity.getApprovalTokenExpiresAt())
+                .isAfter(LocalDateTime.now().plusDays(6)).isBefore(LocalDateTime.now().plusDays(8));
+        verify(emailNotificationService).notifyEstimateCreated(detailResponse, "http://localhost:3000/presupuesto/x", 7);
+    }
+
+    // --- Decision channel and approval link ---
+
+    @Test
+    void givenStaffApproval_whenApprove_thenStoreChannelDecisionTimeAndEmployee() {
+        // Arrange
+        Estimate entity = buildEstimate(1L);
+        entity.setStatus(EstimateStatus.PENDIENTE);
+        Employee admin = Employee.builder().firstName("Ana").lastName("Admin").email("admin@autotech.com").build();
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(employeeRepository.findByEmail("admin@autotech.com")).thenReturn(Optional.of(admin));
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(entity));
+        when(estimateMapper.toDetailResponse(entity)).thenReturn(buildDetailResponse(1L));
+
+        // Act
+        estimateService.approve(1L, EstimateDecisionChannel.IN_PERSON, "admin@autotech.com");
+
+        // Assert
+        assertThat(entity.getDecisionChannel()).isEqualTo(EstimateDecisionChannel.IN_PERSON);
+        assertThat(entity.getDecidedAt()).isNotNull();
+        assertThat(entity.getDecidedByEmployee()).isSameAs(admin);
+        verify(emailNotificationService).notifyEstimateStatusChanged(any());
+    }
+
+    @Test
+    void givenEmailLinkChannel_whenStaffApproves_thenThrowBusinessException() {
+        // Arrange
+        Estimate entity = buildEstimate(1L);
+        entity.setStatus(EstimateStatus.PENDIENTE);
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(entity));
+
+        // Act & Assert
+        assertThatThrownBy(() -> estimateService.approve(1L, EstimateDecisionChannel.EMAIL_LINK, "admin@autotech.com"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("WhatsApp");
+        assertThat(entity.getStatus()).isEqualTo(EstimateStatus.PENDIENTE);
+    }
+
+    @Test
+    void givenNullChannel_whenStaffRejects_thenThrowBusinessException() {
+        // Arrange
+        Estimate entity = buildEstimate(1L);
+        entity.setStatus(EstimateStatus.PENDIENTE);
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(entity));
+
+        // Act & Assert
+        assertThatThrownBy(() -> estimateService.reject(1L, null, "admin@autotech.com"))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void givenValidLink_whenApproveByToken_thenApprovedViaEmailLinkWithoutEmployee() {
+        // Arrange
+        Estimate entity = buildEstimate(1L);
+        entity.setStatus(EstimateStatus.PENDIENTE);
+        entity.setApprovalToken("tok");
+        entity.setApprovalTokenExpiresAt(LocalDateTime.now().plusDays(3));
+        when(estimateRepository.findByApprovalToken("tok")).thenReturn(Optional.of(entity));
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(entity));
+        when(estimateMapper.toDetailResponse(entity)).thenReturn(buildDetailResponse(1L));
+
+        // Act
+        PublicEstimateResponse result = estimateService.approveByToken("tok");
+
+        // Assert
+        assertThat(entity.getStatus()).isEqualTo(EstimateStatus.ACEPTADO);
+        assertThat(entity.getDecisionChannel()).isEqualTo(EstimateDecisionChannel.EMAIL_LINK);
+        assertThat(entity.getDecidedByEmployee()).isNull();
+        assertThat(result.status()).isEqualTo(EstimateStatus.ACEPTADO);
+        assertThat(result.canDecide()).isFalse();
+        verify(emailNotificationService).notifyEstimateStatusChanged(any());
+    }
+
+    @Test
+    void givenExpiredLink_whenRejectByToken_thenThrowBusinessException() {
+        // Arrange
+        Estimate entity = buildEstimate(1L);
+        entity.setStatus(EstimateStatus.PENDIENTE);
+        entity.setApprovalTokenExpiresAt(LocalDateTime.now().minusMinutes(1));
+        when(estimateRepository.findByApprovalToken("tok")).thenReturn(Optional.of(entity));
+
+        // Act & Assert
+        assertThatThrownBy(() -> estimateService.rejectByToken("tok"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("venció");
+        assertThat(entity.getStatus()).isEqualTo(EstimateStatus.PENDIENTE);
+    }
+
+    @Test
+    void givenAlreadyDecided_whenApproveByToken_thenThrowBusinessException() {
+        // Arrange
+        Estimate entity = buildEstimate(1L);
+        entity.setStatus(EstimateStatus.RECHAZADO);
+        entity.setApprovalTokenExpiresAt(LocalDateTime.now().plusDays(3));
+        when(estimateRepository.findByApprovalToken("tok")).thenReturn(Optional.of(entity));
+
+        // Act & Assert
+        assertThatThrownBy(() -> estimateService.approveByToken("tok"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("ya fue rechazado");
+    }
+
+    @Test
+    void givenUnknownToken_whenGetByApprovalToken_thenThrowResourceNotFoundException() {
+        // Arrange
+        when(estimateRepository.findByApprovalToken("nope")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> estimateService.getByApprovalToken("nope"))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
     private Estimate buildEstimate(Long id) {
         Client client = buildClient(1L);
         Vehicle vehicle = buildVehicle(2L, client);
@@ -1185,7 +1457,7 @@ class EstimateServiceImplTest {
                 null, Collections.emptyList(), EstimateStatus.PENDIENTE,
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.valueOf(400),
                 Collections.emptyList(), Collections.emptyList(),
-                LocalDateTime.now(), LocalDateTime.now()
+                LocalDateTime.now(), LocalDateTime.now(), null, null, null
         );
     }
 
@@ -1196,7 +1468,7 @@ class EstimateServiceImplTest {
                 "Some notes", Collections.emptyList(), EstimateStatus.PENDIENTE,
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.valueOf(400),
                 Collections.emptyList(), Collections.emptyList(),
-                LocalDateTime.now(), LocalDateTime.now()
+                LocalDateTime.now(), LocalDateTime.now(), null, null, null
         );
     }
 }

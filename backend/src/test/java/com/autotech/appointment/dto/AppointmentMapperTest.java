@@ -128,7 +128,7 @@ class AppointmentMapperTest {
         // Arrange
         AppointmentRequest request = new AppointmentRequest(
                 "Test", 1L, 1L, "Purpose", startTime, endTime,
-                VehicleDeliveryMethod.GRUA, java.util.List.of(1L), java.util.List.of(1L));
+                VehicleDeliveryMethod.GRUA, java.util.List.of(1L), java.util.List.of(1L), null);
 
         // Act
         Appointment entity = mapper.toEntity(request);

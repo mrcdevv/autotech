@@ -1,5 +1,6 @@
 package com.autotech.appointment.dto;
 
+import com.autotech.appointment.model.AppointmentConfirmationStatus;
 import com.autotech.appointment.model.AppointmentStatus;
 import com.autotech.appointment.model.VehicleDeliveryMethod;
 
@@ -11,6 +12,7 @@ public record AppointmentResponse(
         String title,
         Long clientId,
         String clientFullName,
+        String clientEmail,
         Long vehicleId,
         String vehiclePlate,
         String vehicleBrand,
@@ -23,6 +25,8 @@ public record AppointmentResponse(
         LocalDateTime vehicleArrivedAt,
         LocalDateTime vehiclePickedUpAt,
         Boolean clientArrived,
+        AppointmentConfirmationStatus confirmationStatus,
+        LocalDateTime confirmedAt,
         List<EmployeeSummaryResponse> employees,
         List<AppointmentTagResponse> tags,
         LocalDateTime createdAt,

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{email/layout :: layout(~{::content})}" lang="es">
+<body>
+<th:block th:fragment="content">
+    <div th:replace="~{email/components :: chip('Remito emitido', 'info')}"></div>
+    <div th:replace="~{email/components :: heading('Remito ' + ${number})}"></div>
+    <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#4E545E;">Hola <span th:text="${name}">Martín</span>, emitimos el remito por los trabajos en tu <span th:text="${vehicle}">Toyota Corolla (AB 123 CD)</span>.</p>
+    <div th:replace="~{email/components :: items(${items}, 'Total', ${total})}"></div>
+    <th:block th:if="${hasAttachment}">
+        <div th:replace="~{email/components :: note('Te adjuntamos el remito en PDF.', 'info')}"></div>
+    </th:block>
+</th:block>
+</body>
+</html>

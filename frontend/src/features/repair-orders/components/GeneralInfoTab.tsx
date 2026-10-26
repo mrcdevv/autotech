@@ -14,10 +14,12 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 
 import { AssignMechanicsDialog } from "./AssignMechanicsDialog";
+import { EditRepairOrderDialog } from "./EditRepairOrderDialog";
 import { estimatesApi } from "@/api/estimates";
-import { invoicesApi } from "@/api/invoices";
+import { deliveryNotesApi } from "@/api/deliveryNotes";
 import { paymentsApi } from "@/api/payments";
 import { AppDataGrid } from "@/components/AppDataGrid";
 import { MonoText } from "@/components/MonoText";
@@ -29,7 +31,7 @@ import type { GridColDef } from "@mui/x-data-grid";
 import type { ReactNode } from "react";
 import type { RepairOrderDetailResponse } from "../types";
 import type { EstimateResponse } from "@/types/estimate";
-import type { InvoiceDetailResponse } from "@/types/invoice";
+import type { DeliveryNoteDetailResponse } from "@/types/deliveryNote";
 import type { PaymentSummaryResponse } from "@/types/payment";
 import { STATUS_META } from "../statusMeta";
 
@@ -41,8 +43,9 @@ interface GeneralInfoTabProps {
 
 export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProps) {
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [estimates, setEstimates] = useState<EstimateResponse[]>([]);
-  const [invoice, setInvoice] = useState<InvoiceDetailResponse | null>(null);
+  const [deliveryNote, setDeliveryNote] = useState<DeliveryNoteDetailResponse | null>(null);
   const [paymentSummary, setPaymentSummary] = useState<PaymentSummaryResponse | null>(null);
   const [financialLoading, setFinancialLoading] = useState(false);
 
@@ -54,7 +57,7 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
       try {
         const [estRes, invRes] = await Promise.allSettled([
           estimatesApi.getAllByRepairOrderId(order.id),
-          invoicesApi.getByRepairOrderId(order.id),
+          deliveryNotesApi.getByRepairOrderId(order.id),
         ]);
 
         if (estRes.status === "fulfilled") {
@@ -63,7 +66,7 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
 
         if (invRes.status === "fulfilled") {
           const inv = invRes.value.data.data;
-          setInvoice(inv);
+          setDeliveryNote(inv);
           try {
             const summaryRes = await paymentsApi.getSummary(inv.id);
             setPaymentSummary(summaryRes.data.data);
@@ -138,7 +141,18 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
     <>
       <Stack spacing={2} sx={{ py: 3 }}>
       {/* Estado y seguimiento */}
-      <Panel title="Estado y seguimiento">
+      <Panel
+        title="Estado y seguimiento"
+        action={
+          <Button
+            size="small"
+            startIcon={<EditOutlinedIcon />}
+            onClick={() => setEditDialogOpen(true)}
+          >
+            Editar orden de trabajo
+          </Button>
+        }
+      >
         <Stack direction="row" flexWrap="wrap" useFlexGap spacing={{ xs: 2, sm: 3.5 }}>
           <InfoBlock label="Estado">
             <StatusBadge tone={meta.tone} label={meta.label} />
@@ -260,21 +274,21 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
             <Grid size={{ xs: 12, md: 4 }}>
               <Box sx={{ p: 2, bgcolor: "grey.50", borderRadius: 1.5, border: 1, borderColor: "divider", height: "100%" }}>
                 <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.5 }}>
-                  Factura
+                  Remito
                 </Typography>
-                {invoice ? (
+                {deliveryNote ? (
                   <>
                     <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5, textAlign: "right" }}>
-                      <MonoText>{invoice.total != null ? formatCurrency(invoice.total) : "—"}</MonoText>
+                      <MonoText>{deliveryNote.total != null ? formatCurrency(deliveryNote.total) : "—"}</MonoText>
                     </Typography>
                     <StatusBadge
-                      tone={invoice.status === "PAGADA" ? "ok" : "warn"}
-                      label={invoice.status === "PAGADA" ? "Pagada" : "Pendiente"}
+                      tone={deliveryNote.status === "PAGADA" ? "ok" : "warn"}
+                      label={deliveryNote.status === "PAGADA" ? "Pagada" : "Pendiente"}
                     />
                   </>
                 ) : (
                   <Typography variant="body2" color="text.secondary">
-                    Sin factura
+                    Sin remito
                   </Typography>
                 )}
               </Box>
@@ -303,7 +317,7 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
                       <StatusBadge tone="ok" label="Saldado" />
                     )}
                   </>
-                ) : invoice ? (
+                ) : deliveryNote ? (
                   <Typography variant="body2" color="text.secondary">
                     Sin pagos registrados
                   </Typography>
@@ -400,6 +414,15 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
           orderId={order.id}
           assigned={order.employees}
           onClose={() => setAssignDialogOpen(false)}
+          onSuccess={onRefetch}
+        />
+      )}
+
+      {order && (
+        <EditRepairOrderDialog
+          open={editDialogOpen}
+          order={order}
+          onClose={() => setEditDialogOpen(false)}
           onSuccess={onRefetch}
         />
       )}

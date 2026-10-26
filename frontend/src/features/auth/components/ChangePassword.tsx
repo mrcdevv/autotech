@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { isAxiosError } from "axios";
 import {
   Box,
   Card,
@@ -68,9 +69,9 @@ export function ChangePassword() {
       await authApi.changePassword({ currentPassword, newPassword });
       clearMustChangePassword();
       navigate("/", { replace: true });
-    } catch (err: any) {
+    } catch (err: unknown) {
       const message =
-        err.response?.data?.message ||
+        (isAxiosError<{ message?: string }>(err) && err.response?.data?.message) ||
         "Ocurrió un error al cambiar la contraseña. Intentá nuevamente.";
       setServerError(message);
     } finally {

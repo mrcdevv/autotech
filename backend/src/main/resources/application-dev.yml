@@ -20,3 +20,8 @@ logging:
     org.hibernate: WARN
     org.hibernate.SQL: WARN
     org.hibernate.orm.jdbc.bind: WARN
+
+autotech:
+  mail:
+    # Mailpit (docker compose up mailpit) captures every email locally: http://localhost:8025
+    enabled: ${AUTOTECH_MAIL_ENABLED:true}

@@ -19,7 +19,7 @@ const stats = [
   { label: "Órdenes activas", value: 12, icon: <BuildIcon fontSize="large" color="primary" /> },
   { label: "Clientes registrados", value: 48, icon: <PeopleIcon fontSize="large" color="primary" /> },
   { label: "Vehículos en taller", value: 7, icon: <DirectionsCarIcon fontSize="large" color="primary" /> },
-  { label: "Facturas pendientes", value: 3, icon: <ReceiptLongIcon fontSize="large" color="secondary" /> },
+  { label: "Remitos pendientes", value: 3, icon: <ReceiptLongIcon fontSize="large" color="secondary" /> },
 ];
 
 export default function HomePage() {

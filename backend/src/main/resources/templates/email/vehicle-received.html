@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{email/layout :: layout(~{::content})}" lang="es">
+<body>
+<th:block th:fragment="content">
+    <div th:replace="~{email/components :: chip('Ingreso del vehículo', 'neutral')}"></div>
+    <div th:replace="~{email/components :: heading('Tu vehículo ya está en el taller')}"></div>
+    <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#4E545E;">Hola <span th:text="${name}">Martín</span>, registramos el ingreso de tu vehículo. Vamos a revisarlo y te mandamos el presupuesto antes de hacer cualquier trabajo.</p>
+    <div th:replace="~{email/components :: details(${rows})}"></div>
+    <p style="margin:0 0 10px 0;font-size:13px;font-weight:600;color:#1D1F24;">Próximos pasos</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px 0;">
+        <tr>
+            <td style="padding:0 12px 10px 0;"><div style="width:24px;height:24px;line-height:24px;border-radius:12px;background:#FF7A1A;color:#17181C;font-size:12px;font-weight:700;text-align:center;">1</div></td>
+            <td style="padding:0 0 10px 0;font-size:14px;color:#4E545E;">Revisamos el vehículo</td>
+        </tr>
+        <tr>
+            <td style="padding:0 12px 10px 0;"><div style="width:24px;height:24px;line-height:24px;border-radius:12px;background:#EFEDE6;color:#4E545E;font-size:12px;font-weight:700;text-align:center;">2</div></td>
+            <td style="padding:0 0 10px 0;font-size:14px;color:#4E545E;">Te enviamos el presupuesto para que lo apruebes</td>
+        </tr>
+        <tr>
+            <td style="padding:0 12px 0 0;"><div style="width:24px;height:24px;line-height:24px;border-radius:12px;background:#EFEDE6;color:#4E545E;font-size:12px;font-weight:700;text-align:center;">3</div></td>
+            <td style="font-size:14px;color:#4E545E;">Te avisamos cuando esté listo para retirar</td>
+        </tr>
+    </table>
+</th:block>
+</body>
+</html>

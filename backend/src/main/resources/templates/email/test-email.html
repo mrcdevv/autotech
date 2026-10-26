@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{email/layout :: layout(~{::content})}" lang="es">
+<body>
+<th:block th:fragment="content">
+    <div th:replace="~{email/components :: chip('Prueba', 'info')}"></div>
+    <div th:replace="~{email/components :: heading('El envío de emails funciona')}"></div>
+    <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#4E545E;">Este es un email de prueba enviado desde la configuración de notificaciones de <span th:text="${workshopName}">Autotech</span>.</p>
+    <p style="margin:0 0 20px 0;font-size:13px;line-height:1.6;color:#646A75;">Enviado el <span th:text="${sentAt}">17/10/2026 18:00</span>.</p>
+</th:block>
+</body>
+</html>

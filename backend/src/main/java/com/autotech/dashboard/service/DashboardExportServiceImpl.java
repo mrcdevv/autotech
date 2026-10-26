@@ -6,7 +6,7 @@ import com.autotech.dashboard.dto.DebtAgingResponse;
 import com.autotech.dashboard.dto.MechanicProductivityResponse;
 import com.autotech.dashboard.dto.MonthlyRevenueResponse;
 import com.autotech.dashboard.dto.TopServiceResponse;
-import com.autotech.dashboard.dto.UnpaidInvoiceResponse;
+import com.autotech.dashboard.dto.UnpaidDeliveryNoteResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.util.AreaReference;
@@ -39,7 +39,7 @@ public class DashboardExportServiceImpl implements DashboardExportService {
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
             createMonthlyRevenueSheet(workbook, data.monthlyRevenue());
             createDebtAgingSheet(workbook, data.debtAging());
-            createUnpaidInvoicesSheet(workbook, data.topUnpaidInvoices());
+            createUnpaidDeliveryNotesSheet(workbook, data.topUnpaidDeliveryNotes());
             createFinancieroSummarySheet(workbook, data);
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -90,7 +90,7 @@ public class DashboardExportServiceImpl implements DashboardExportService {
     }
 
     private void createDebtAgingSheet(XSSFWorkbook workbook, List<DebtAgingResponse> data) {
-        String[] headers = {"Rango", "Cantidad de Facturas", "Monto Total"};
+        String[] headers = {"Rango", "Cantidad de Remitos", "Monto Total"};
         XSSFSheet sheet = workbook.createSheet("Antigüedad de Deuda");
         XSSFCellStyle currencyStyle = createCurrencyStyle(workbook);
 
@@ -103,7 +103,7 @@ public class DashboardExportServiceImpl implements DashboardExportService {
             DebtAgingResponse item = data.get(i);
             XSSFRow row = sheet.createRow(i + 1);
             row.createCell(0).setCellValue(item.range() + " días");
-            row.createCell(1).setCellValue(item.invoiceCount());
+            row.createCell(1).setCellValue(item.deliveryNoteCount());
             var cell = row.createCell(2);
             cell.setCellValue(item.totalAmount().doubleValue());
             cell.setCellStyle(currencyStyle);
@@ -112,9 +112,9 @@ public class DashboardExportServiceImpl implements DashboardExportService {
         createTableInSheet(sheet, "AntiguedadDeuda", headers, data.size());
     }
 
-    private void createUnpaidInvoicesSheet(XSSFWorkbook workbook, List<UnpaidInvoiceResponse> data) {
-        String[] headers = {"ID Factura", "Cliente", "Patente", "Total", "Fecha"};
-        XSSFSheet sheet = workbook.createSheet("Facturas Impagas");
+    private void createUnpaidDeliveryNotesSheet(XSSFWorkbook workbook, List<UnpaidDeliveryNoteResponse> data) {
+        String[] headers = {"ID Remito", "Cliente", "Patente", "Total", "Fecha"};
+        XSSFSheet sheet = workbook.createSheet("Remitos Impagos");
         XSSFCellStyle currencyStyle = createCurrencyStyle(workbook);
 
         XSSFRow headerRow = sheet.createRow(0);
@@ -123,9 +123,9 @@ public class DashboardExportServiceImpl implements DashboardExportService {
         }
 
         for (int i = 0; i < data.size(); i++) {
-            UnpaidInvoiceResponse item = data.get(i);
+            UnpaidDeliveryNoteResponse item = data.get(i);
             XSSFRow row = sheet.createRow(i + 1);
-            row.createCell(0).setCellValue(item.invoiceId());
+            row.createCell(0).setCellValue(item.deliveryNoteId());
             row.createCell(1).setCellValue(item.clientFullName());
             row.createCell(2).setCellValue(item.vehiclePlate() != null ? item.vehiclePlate() : "");
             var cell = row.createCell(3);
@@ -134,7 +134,7 @@ public class DashboardExportServiceImpl implements DashboardExportService {
             row.createCell(4).setCellValue(item.createdAt() != null ? item.createdAt().format(DATE_FORMATTER) : "");
         }
 
-        createTableInSheet(sheet, "FacturasImpagas", headers, data.size());
+        createTableInSheet(sheet, "RemitosImpagos", headers, data.size());
     }
 
     private void createFinancieroSummarySheet(XSSFWorkbook workbook, DashboardFinancieroResponse data) {
@@ -159,7 +159,7 @@ public class DashboardExportServiceImpl implements DashboardExportService {
         row3.createCell(1).setCellValue(data.estimatesTotal());
 
         XSSFRow row4 = sheet.createRow(4);
-        row4.createCell(0).setCellValue("Facturación pendiente total");
+        row4.createCell(0).setCellValue("Remitos pendientes totales");
         row4.createCell(1).setCellValue("$" + data.totalPendingBilling().toPlainString());
 
         createTableInSheet(sheet, "ResumenFinanciero", headers, 4);
@@ -207,7 +207,7 @@ public class DashboardExportServiceImpl implements DashboardExportService {
 
     private void createTopServicesSheet(XSSFWorkbook workbook, List<TopServiceResponse> data) {
         String[] headers = {"Servicio", "Cantidad"};
-        XSSFSheet sheet = workbook.createSheet("Servicios Más Facturados");
+        XSSFSheet sheet = workbook.createSheet("Servicios Más Remitidos");
 
         XSSFRow headerRow = sheet.createRow(0);
         for (int i = 0; i < headers.length; i++) {
@@ -221,7 +221,7 @@ public class DashboardExportServiceImpl implements DashboardExportService {
             row.createCell(1).setCellValue(item.count());
         }
 
-        createTableInSheet(sheet, "ServiciosMasFacturados", headers, data.size());
+        createTableInSheet(sheet, "ServiciosMasRemitidos", headers, data.size());
     }
 
     private void createTableInSheet(XSSFSheet sheet, String tableName,

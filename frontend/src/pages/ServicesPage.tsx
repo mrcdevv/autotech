@@ -7,6 +7,7 @@ import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { AppSearchField } from "@/components/AppSearchField";
 import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { useCatalogServices } from "@/features/catalog/hooks/useCatalogServices";
 import { ServicesDataGrid } from "@/features/catalog/components/ServicesDataGrid";
 import { ServiceFormDialog } from "@/features/catalog/components/ServiceFormDialog";
@@ -14,6 +15,8 @@ import { ServiceFormDialog } from "@/features/catalog/components/ServiceFormDial
 import type { CatalogServiceResponse, CatalogServiceRequest } from "@/types/catalog";
 
 export default function ServicesPage() {
+  const { hasPermission } = useAuth();
+  const canManage = hasPermission("manage_services");
   const {
     services,
     loading,
@@ -110,9 +113,11 @@ export default function ServicesPage() {
           />
         }
         actions={
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-            Agregar servicio
-          </Button>
+          canManage && (
+            <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+              Agregar servicio
+            </Button>
+          )
         }
       />
 
@@ -124,8 +129,8 @@ export default function ServicesPage() {
         pageSize={pageSize}
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
-        onEditRow={handleEdit}
-        onDeleteRow={confirmDelete}
+        onEditRow={canManage ? handleEdit : undefined}
+        onDeleteRow={canManage ? confirmDelete : undefined}
       />
 
       <ServiceFormDialog

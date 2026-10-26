@@ -1,12 +1,28 @@
 import apiClient from "./client";
 
 import type { ApiResponse, PageResponse } from "@/types/api";
-import type { ProductResponse, ProductRequest } from "@/types/catalog";
+import type {
+  ProductResponse,
+  ProductRequest,
+  StockAdjustmentRequest,
+  StockMovementResponse,
+} from "@/types/catalog";
 
 export const productsApi = {
-  search: (query?: string, page = 0, size = 12) =>
+  search: (query?: string, page = 0, size = 12, lowStock = false) =>
     apiClient.get<ApiResponse<PageResponse<ProductResponse>>>("/products", {
-      params: { query, page, size, sort: "name,asc" },
+      params: { query, page, size, sort: "name,asc", ...(lowStock ? { lowStock: true } : {}) },
+    }),
+
+  getLowStock: () =>
+    apiClient.get<ApiResponse<ProductResponse[]>>("/products/low-stock"),
+
+  adjustStock: (id: number, data: StockAdjustmentRequest) =>
+    apiClient.post<ApiResponse<ProductResponse>>(`/products/${id}/stock-adjustments`, data),
+
+  getStockMovements: (id: number, page = 0, size = 10) =>
+    apiClient.get<ApiResponse<PageResponse<StockMovementResponse>>>(`/products/${id}/stock-movements`, {
+      params: { page, size },
     }),
 
   getById: (id: number) =>

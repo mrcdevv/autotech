@@ -1,13 +1,20 @@
 package com.autotech.estimate.controller;
 
 import com.autotech.common.exception.GlobalExceptionHandler;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.estimate.dto.EstimateDetailResponse;
-import com.autotech.estimate.dto.EstimateInvoiceDataResponse;
+import com.autotech.estimate.dto.EstimateDeliveryNoteDataResponse;
 import com.autotech.estimate.dto.EstimateRequest;
 import com.autotech.estimate.dto.EstimateResponse;
+import com.autotech.estimate.model.EstimateDecisionChannel;
 import com.autotech.estimate.model.EstimateStatus;
 import com.autotech.estimate.service.EstimateService;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
+import com.autotech.security.SecurityConfig;
+import com.autotech.security.WithAllPermissions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +24,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -40,8 +46,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(EstimateController.class)
-@Import(GlobalExceptionHandler.class)
-@WithMockUser
+@Import({GlobalExceptionHandler.class, SecurityConfig.class})
+@WithAllPermissions
 class EstimateControllerTest {
 
     @Autowired
@@ -52,6 +58,12 @@ class EstimateControllerTest {
 
     @MockitoBean
     private EstimateService estimateService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     private final EstimateResponse sampleResponse = new EstimateResponse(
             1L, 1L, "Juan Perez", 2L, "ABC123", "Corolla", null,
@@ -65,7 +77,7 @@ class EstimateControllerTest {
             null, Collections.emptyList(), EstimateStatus.PENDIENTE,
             BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.valueOf(400),
             Collections.emptyList(), Collections.emptyList(),
-            LocalDateTime.now(), LocalDateTime.now()
+            LocalDateTime.now(), LocalDateTime.now(), null, null, null
     );
 
     @Test
@@ -160,18 +172,22 @@ class EstimateControllerTest {
 
     @Test
     void givenPendienteEstimate_whenApprove_thenReturn200() throws Exception {
-        when(estimateService.approve(1L)).thenReturn(sampleDetailResponse);
+        when(estimateService.approve(eq(1L), eq(EstimateDecisionChannel.WHATSAPP), any())).thenReturn(sampleDetailResponse);
 
-        mockMvc.perform(put("/api/estimates/1/approve").with(csrf()))
+        mockMvc.perform(put("/api/estimates/1/approve").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"channel\":\"WHATSAPP\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Presupuesto aceptado"));
     }
 
     @Test
     void givenPendienteEstimate_whenReject_thenReturn200() throws Exception {
-        when(estimateService.reject(1L)).thenReturn(sampleDetailResponse);
+        when(estimateService.reject(eq(1L), eq(EstimateDecisionChannel.PHONE), any())).thenReturn(sampleDetailResponse);
 
-        mockMvc.perform(put("/api/estimates/1/reject").with(csrf()))
+        mockMvc.perform(put("/api/estimates/1/reject").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"channel\":\"PHONE\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Presupuesto rechazado"));
     }
@@ -194,15 +210,23 @@ class EstimateControllerTest {
     }
 
     @Test
-    void givenAceptadoEstimate_whenGetInvoiceData_thenReturn200() throws Exception {
-        EstimateInvoiceDataResponse invoiceData = new EstimateInvoiceDataResponse(
+    void givenAceptadoEstimate_whenGetDeliveryNoteData_thenReturn200() throws Exception {
+        EstimateDeliveryNoteDataResponse deliveryNoteData = new EstimateDeliveryNoteDataResponse(
                 1L, 1L, 2L, null, Collections.emptyList(), Collections.emptyList(),
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.valueOf(400)
         );
-        when(estimateService.convertToInvoiceData(1L)).thenReturn(invoiceData);
+        when(estimateService.convertToDeliveryNoteData(1L)).thenReturn(deliveryNoteData);
 
-        mockMvc.perform(get("/api/estimates/1/invoice-data"))
+        mockMvc.perform(get("/api/estimates/1/delivery-note-data"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.estimateId").value(1));
+    }
+
+    @Test
+    void givenNoChannel_whenApprove_thenReturn400() throws Exception {
+        mockMvc.perform(put("/api/estimates/1/approve").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
     }
 }

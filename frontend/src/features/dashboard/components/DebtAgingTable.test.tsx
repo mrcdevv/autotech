@@ -5,10 +5,10 @@ import { DebtAgingTable } from "./DebtAgingTable";
 describe("DebtAgingTable", () => {
   it("given data, when rendered, then shows all four ranges", () => {
     const data = [
-      { range: "0-30", invoiceCount: 3, totalAmount: 9000 },
-      { range: "31-60", invoiceCount: 1, totalAmount: 3000 },
-      { range: "61-90", invoiceCount: 0, totalAmount: 0 },
-      { range: "90+", invoiceCount: 1, totalAmount: 2000 },
+      { range: "0-30", deliveryNoteCount: 3, totalAmount: 9000 },
+      { range: "31-60", deliveryNoteCount: 1, totalAmount: 3000 },
+      { range: "61-90", deliveryNoteCount: 0, totalAmount: 0 },
+      { range: "90+", deliveryNoteCount: 1, totalAmount: 2000 },
     ];
 
     render(<DebtAgingTable data={data} />);

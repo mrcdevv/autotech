@@ -17,6 +17,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,6 +29,7 @@ public class ClientController {
 
     private final ClientService clientService;
 
+    @PreAuthorize("hasAuthority('read_client')")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ClientResponse>>> getAll(
             @RequestParam(defaultValue = "0") int page,
@@ -42,11 +44,13 @@ public class ClientController {
         return ResponseEntity.ok(ApiResponse.success(clientService.getAll(pageable)));
     }
 
+    @PreAuthorize("hasAuthority('read_client')")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ClientResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(clientService.getById(id)));
     }
 
+    @PreAuthorize("hasAuthority('create_client')")
     @PostMapping
     public ResponseEntity<ApiResponse<ClientResponse>> create(
             @Valid @RequestBody ClientRequest request) {
@@ -55,6 +59,7 @@ public class ClientController {
                 .body(ApiResponse.success("Cliente creado exitosamente", created));
     }
 
+    @PreAuthorize("hasAuthority('update_client')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ClientResponse>> update(
             @PathVariable Long id,
@@ -63,12 +68,14 @@ public class ClientController {
                 ApiResponse.success("Cliente actualizado exitosamente", clientService.update(id, request)));
     }
 
+    @PreAuthorize("hasAuthority('delete_client')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         clientService.delete(id);
         return ResponseEntity.ok(ApiResponse.success("Cliente eliminado exitosamente", null));
     }
 
+    @PreAuthorize("hasAuthority('read_client')")
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<Page<ClientResponse>>> search(
             @RequestParam String query,
@@ -78,6 +85,7 @@ public class ClientController {
         return ResponseEntity.ok(ApiResponse.success(clientService.search(query, pageable)));
     }
 
+    @PreAuthorize("hasAuthority('read_client')")
     @GetMapping("/by-type")
     public ResponseEntity<ApiResponse<Page<ClientResponse>>> findByType(
             @RequestParam ClientType clientType,
@@ -87,6 +95,7 @@ public class ClientController {
         return ResponseEntity.ok(ApiResponse.success(clientService.findByClientType(clientType, pageable)));
     }
 
+    @PreAuthorize("hasAuthority('update_client')")
     @PatchMapping("/{id}/upgrade")
     public ResponseEntity<ApiResponse<ClientResponse>> upgrade(
             @PathVariable Long id,
@@ -96,12 +105,14 @@ public class ClientController {
                         clientService.upgradeToRegistered(id, request)));
     }
 
+    @PreAuthorize("hasAuthority('read_client')")
     @GetMapping("/autocomplete")
     public ResponseEntity<ApiResponse<List<ClientAutocompleteResponse>>> autocomplete(
             @RequestParam(required = false) String query) {
         return ResponseEntity.ok(ApiResponse.success(clientService.autocomplete(query)));
     }
 
+    @PreAuthorize("hasAuthority('read_client')")
     @GetMapping("/export")
     public ResponseEntity<byte[]> exportToExcel() {
         byte[] excelBytes = clientService.exportToExcel();

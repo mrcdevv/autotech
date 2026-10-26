@@ -6,12 +6,15 @@ import com.autotech.catalog.dto.ProductResponse;
 import com.autotech.catalog.model.Product;
 import com.autotech.catalog.repository.ProductRepository;
 import com.autotech.common.exception.ResourceNotFoundException;
+import com.autotech.stock.service.StockService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Slf4j
 @Service
@@ -20,11 +23,17 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
+    private final StockService stockService;
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductResponse> search(String query, Pageable pageable) {
-        log.debug("Searching products with query: '{}'", query);
+    public Page<ProductResponse> search(String query, boolean lowStock, Pageable pageable) {
+        log.debug("Searching products with query: '{}', lowStock: {}", query, lowStock);
+        if (lowStock) {
+            String pattern = "%" + (query == null ? "" : query.trim().toLowerCase()) + "%";
+            return productRepository.findLowStock(pattern, pageable)
+                    .map(productMapper::toResponse);
+        }
         if (query == null || query.isBlank()) {
             return productRepository.findAll(pageable)
                     .map(productMapper::toResponse);
@@ -32,6 +41,14 @@ public class ProductServiceImpl implements ProductService {
         return productRepository
                 .findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(query, query, pageable)
                 .map(productMapper::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductResponse> getLowStock() {
+        return productRepository.findAllLowStock().stream()
+                .map(productMapper::toResponse)
+                .toList();
     }
 
     @Override
@@ -48,6 +65,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse create(ProductRequest request) {
         Product entity = productMapper.toEntity(request);
         Product saved = productRepository.save(entity);
+        stockService.recordInitial(saved);
         log.info("Created product with id {}", saved.getId());
         return productMapper.toResponse(saved);
     }

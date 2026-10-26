@@ -23,6 +23,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -63,6 +64,12 @@ public class RepairOrder extends BaseEntity {
 
     @Column(name = "mechanic_notes", columnDefinition = "TEXT")
     private String mechanicNotes;
+
+    @Column(name = "ready_for_pickup_at")
+    private LocalDateTime readyForPickupAt;
+
+    @Column(name = "delivered_at")
+    private LocalDateTime deliveredAt;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

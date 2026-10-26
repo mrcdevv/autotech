@@ -13,6 +13,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -34,17 +35,20 @@ public class AppointmentController {
 
     private final AppointmentService appointmentService;
 
+    @PreAuthorize("hasAuthority('read_appointment')")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<AppointmentResponse>>> getAll(
             @PageableDefault(size = 12, sort = "startTime") Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(appointmentService.getAll(pageable)));
     }
 
+    @PreAuthorize("hasAuthority('read_appointment')")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<AppointmentResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(appointmentService.getById(id)));
     }
 
+    @PreAuthorize("hasAuthority('create_appointment')")
     @PostMapping
     public ResponseEntity<ApiResponse<AppointmentResponse>> create(
             @Valid @RequestBody AppointmentRequest request) {
@@ -52,6 +56,7 @@ public class AppointmentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Cita creada", created));
     }
 
+    @PreAuthorize("hasAuthority('update_appointment')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<AppointmentResponse>> update(
             @PathVariable Long id,
@@ -59,12 +64,14 @@ public class AppointmentController {
         return ResponseEntity.ok(ApiResponse.success("Cita actualizada", appointmentService.update(id, request)));
     }
 
+    @PreAuthorize("hasAuthority('delete_appointment')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         appointmentService.delete(id);
         return ResponseEntity.ok(ApiResponse.success("Cita eliminada", null));
     }
 
+    @PreAuthorize("hasAuthority('update_appointment')")
     @PatchMapping("/{id}/client-arrived")
     public ResponseEntity<ApiResponse<AppointmentResponse>> markClientArrived(
             @PathVariable Long id,
@@ -74,24 +81,30 @@ public class AppointmentController {
                 appointmentService.markClientArrived(id, arrived)));
     }
 
+    @PreAuthorize("hasAuthority('update_appointment')")
     @PatchMapping("/{id}/vehicle-arrived")
     public ResponseEntity<ApiResponse<AppointmentResponse>> markVehicleArrived(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success("Vehículo marcado como recibido",
                 appointmentService.markVehicleArrived(id)));
     }
 
+    @PreAuthorize("hasAuthority('update_appointment')")
     @PatchMapping("/{id}/vehicle-picked-up")
     public ResponseEntity<ApiResponse<AppointmentResponse>> markVehiclePickedUp(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success("Vehículo marcado como retirado",
                 appointmentService.markVehiclePickedUp(id)));
     }
 
+    @PreAuthorize("hasAuthority('update_appointment')")
     @PatchMapping("/{id}/cancel")
-    public ResponseEntity<ApiResponse<AppointmentResponse>> cancel(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<AppointmentResponse>> cancel(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "false") boolean notifyClient) {
         return ResponseEntity.ok(ApiResponse.success("Cita cancelada",
-                appointmentService.cancel(id)));
+                appointmentService.cancel(id, notifyClient)));
     }
 
+    @PreAuthorize("hasAuthority('read_appointment')")
     @GetMapping("/range")
     public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getByDateRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,

@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,16 +27,19 @@ public class CommonProblemController {
 
     private final CommonProblemService commonProblemService;
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ApiResponse<List<CommonProblemResponse>>> getAll() {
         return ResponseEntity.ok(ApiResponse.success(commonProblemService.getAll()));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<CommonProblemResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(commonProblemService.getById(id)));
     }
 
+    @PreAuthorize("hasAuthority('manage_services')")
     @PostMapping
     public ResponseEntity<ApiResponse<CommonProblemResponse>> create(
             @Valid @RequestBody CommonProblemRequest request) {
@@ -44,6 +48,7 @@ public class CommonProblemController {
                 .body(ApiResponse.success("Problema común creado", created));
     }
 
+    @PreAuthorize("hasAuthority('manage_services')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<CommonProblemResponse>> update(
             @PathVariable Long id,
@@ -52,6 +57,7 @@ public class CommonProblemController {
                 commonProblemService.update(id, request)));
     }
 
+    @PreAuthorize("hasAuthority('manage_services')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         commonProblemService.delete(id);

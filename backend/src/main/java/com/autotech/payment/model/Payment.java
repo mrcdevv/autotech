@@ -3,7 +3,7 @@ package com.autotech.payment.model;
 import com.autotech.bankaccount.model.BankAccount;
 import com.autotech.common.model.BaseEntity;
 import com.autotech.employee.model.Employee;
-import com.autotech.invoice.model.Invoice;
+import com.autotech.deliverynote.model.DeliveryNote;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -32,8 +32,8 @@ import java.time.LocalDate;
 public class Payment extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "invoice_id", nullable = false)
-    private Invoice invoice;
+    @JoinColumn(name = "delivery_note_id", nullable = false)
+    private DeliveryNote deliveryNote;
 
     @Column(name = "payment_date", nullable = false)
     private LocalDate paymentDate;

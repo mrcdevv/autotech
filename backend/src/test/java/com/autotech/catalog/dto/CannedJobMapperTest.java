@@ -79,7 +79,7 @@ class CannedJobMapperTest {
         // Arrange
         CannedJobRequest request = new CannedJobRequest("Full Service", "Desc",
                 java.util.List.of(new CannedJobServiceRequest("Oil Change", new BigDecimal("50.00"))),
-                java.util.List.of(new CannedJobProductRequest("Oil Filter", 1, new BigDecimal("15.00"))));
+                java.util.List.of(new CannedJobProductRequest("Oil Filter", 1, new BigDecimal("15.00"), null)));
 
         // Act
         CannedJob entity = mapper.toEntity(request);

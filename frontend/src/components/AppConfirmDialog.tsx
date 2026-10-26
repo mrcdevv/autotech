@@ -21,6 +21,8 @@ interface AppConfirmDialogProps {
   iconTone?: StatusTone;
   confirmColor?: "primary" | "error" | "warning" | "success" | "info";
   className?: string;
+  /** Optional extra content rendered below the message (e.g. an option checkbox). */
+  children?: ReactNode;
 }
 
 export function AppConfirmDialog({
@@ -37,6 +39,7 @@ export function AppConfirmDialog({
   iconTone,
   confirmColor,
   className,
+  children,
 }: AppConfirmDialogProps) {
   const resolvedIcon =
     icon ??
@@ -89,6 +92,7 @@ export function AppConfirmDialog({
       <Typography variant="body1" sx={{ color: "text.secondary" }}>
         {message}
       </Typography>
+      {children}
     </AppDialog>
   );
 }

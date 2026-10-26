@@ -1,28 +1,20 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback } from "react";
+
 import { dashboardApi } from "@/api/dashboard";
+import { useGuardedRequest } from "@/hooks/useGuardedRequest";
+
 import type { DashboardFinancieroResponse } from "@/features/dashboard/types";
 
 export function useFinanciero(months: number = 6) {
-  const [data, setData] = useState<DashboardFinancieroResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  const { data, loading, error, refetch, setError } =
+    useGuardedRequest<DashboardFinancieroResponse>(
+    async () => {
       const res = await dashboardApi.getFinanciero(months);
-      setData(res.data.data);
-    } catch {
-      setError("Error al cargar los datos financieros");
-    } finally {
-      setLoading(false);
-    }
-  }, [months]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+      return res.data.data;
+    },
+    "Error al cargar los datos financieros",
+    [months],
+  );
 
   const exportToExcel = useCallback(async () => {
     try {
@@ -36,7 +28,7 @@ export function useFinanciero(months: number = 6) {
     } catch {
       setError("Error al exportar a Excel");
     }
-  }, [months]);
+  }, [months, setError]);
 
-  return { data, loading, error, refetch: fetchData, exportToExcel };
+  return { data, loading, error, refetch, exportToExcel };
 }

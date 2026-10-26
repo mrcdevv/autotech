@@ -4,6 +4,10 @@ import com.autotech.catalog.dto.ProductRequest;
 import com.autotech.catalog.dto.ProductResponse;
 import com.autotech.catalog.service.ProductService;
 import com.autotech.common.exception.GlobalExceptionHandler;
+import com.autotech.security.CustomUserDetailsService;
+import com.autotech.security.JwtTokenProvider;
+import com.autotech.security.SecurityConfig;
+import com.autotech.security.WithAllPermissions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +16,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -21,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -32,8 +36,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ProductController.class)
-@Import(GlobalExceptionHandler.class)
-@WithMockUser
+@Import({GlobalExceptionHandler.class, SecurityConfig.class})
+@WithAllPermissions
 class ProductControllerTest {
 
     @Autowired
@@ -45,14 +49,20 @@ class ProductControllerTest {
     @MockitoBean
     private ProductService productService;
 
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
+
     private final ProductResponse sampleResponse = new ProductResponse(
             1L, "Brake Pad", "Ceramic brake pad", 10, new BigDecimal("25.00"),
-            LocalDateTime.now(), LocalDateTime.now());
+            LocalDateTime.now(), LocalDateTime.now(), null, 0, 0, false);
 
     @Test
     void givenRequest_whenSearch_thenReturn200() throws Exception {
         // Arrange
-        when(productService.search(any(), any(Pageable.class)))
+        when(productService.search(any(), anyBoolean(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(sampleResponse)));
 
         // Act & Assert
@@ -75,7 +85,7 @@ class ProductControllerTest {
     @Test
     void givenValidRequest_whenCreate_thenReturn201() throws Exception {
         // Arrange
-        ProductRequest request = new ProductRequest("Brake Pad", "Ceramic", 10, new BigDecimal("25.00"));
+        ProductRequest request = new ProductRequest("Brake Pad", "Ceramic", 10, new BigDecimal("25.00"), null);
         when(productService.create(any(ProductRequest.class))).thenReturn(sampleResponse);
 
         // Act & Assert
@@ -89,7 +99,7 @@ class ProductControllerTest {
     @Test
     void givenInvalidRequest_whenCreate_thenReturn400() throws Exception {
         // Arrange
-        ProductRequest request = new ProductRequest("", null, -1, null);
+        ProductRequest request = new ProductRequest("", null, -1, null, null);
 
         // Act & Assert
         mockMvc.perform(post("/api/products").with(csrf())
@@ -101,7 +111,7 @@ class ProductControllerTest {
     @Test
     void givenValidRequest_whenUpdate_thenReturn200() throws Exception {
         // Arrange
-        ProductRequest request = new ProductRequest("Updated", "Updated desc", 20, new BigDecimal("30.00"));
+        ProductRequest request = new ProductRequest("Updated", "Updated desc", 20, new BigDecimal("30.00"), null);
         when(productService.update(eq(1L), any(ProductRequest.class))).thenReturn(sampleResponse);
 
         // Act & Assert

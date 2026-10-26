@@ -13,7 +13,7 @@ export interface PaymentRequest {
 
 export interface PaymentResponse {
   id: number;
-  invoiceId: number;
+  deliveryNoteId: number;
   paymentDate: string;
   createdAt: string;
   amount: number;
@@ -29,7 +29,6 @@ export interface PaymentResponse {
 export interface PaymentSummaryResponse {
   totalServices: number;
   totalProducts: number;
-  taxAmount: number;
   discountAmount: number;
   total: number;
   totalPaid: number;

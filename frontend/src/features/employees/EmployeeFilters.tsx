@@ -10,6 +10,7 @@ import {
 
 import { AppSearchField } from "@/components/AppSearchField";
 import { rolesApi } from "@/api/roles";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import type { RoleResponse } from "@/types/role";
 
 interface EmployeeFiltersProps {
@@ -25,10 +26,14 @@ export function EmployeeFilters({ onFilterChange }: EmployeeFiltersProps) {
   const [roleId, setRoleId] = useState<number | "">("");
   const [status, setStatus] = useState("");
   const [roles, setRoles] = useState<RoleResponse[]>([]);
+  const { hasPermission } = useAuth();
+  // The role list is only readable with manage_roles; others filter by status and DNI only.
+  const canListRoles = hasPermission("manage_roles");
 
   useEffect(() => {
+    if (!canListRoles) return;
     rolesApi.getAll().then((res) => setRoles(res.data.data)).catch(() => {});
-  }, []);
+  }, [canListRoles]);
 
   useEffect(() => {
     onFilterChange({ dni, roleId, status });
@@ -48,21 +53,23 @@ export function EmployeeFilters({ onFilterChange }: EmployeeFiltersProps) {
         sx={{ width: { xs: "100%", md: 260 }, minWidth: 260 }}
       />
 
-      <FormControl size="small" sx={{ minWidth: 180 }}>
-        <InputLabel>Filtrar por cargo</InputLabel>
-        <Select
-          value={roleId}
-          label="Filtrar por cargo"
-          onChange={(e) => setRoleId(e.target.value as number | "")}
-        >
-          <MenuItem value="">Todos</MenuItem>
-          {roles.map((role) => (
-            <MenuItem key={role.id} value={role.id}>
-              {role.name}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      {canListRoles && (
+        <FormControl size="small" sx={{ minWidth: 180 }}>
+          <InputLabel>Filtrar por cargo</InputLabel>
+          <Select
+            value={roleId}
+            label="Filtrar por cargo"
+            onChange={(e) => setRoleId(e.target.value as number | "")}
+          >
+            <MenuItem value="">Todos</MenuItem>
+            {roles.map((role) => (
+              <MenuItem key={role.id} value={role.id}>
+                {role.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      )}
 
       <FormControl size="small" sx={{ minWidth: 180 }}>
         <InputLabel>Filtrar por estado</InputLabel>

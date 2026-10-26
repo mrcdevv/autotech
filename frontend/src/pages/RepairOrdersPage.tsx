@@ -19,6 +19,8 @@ import { PageShell } from "@/components/PageShell";
 import { PageToolbar } from "@/components/PageToolbar";
 import { employeesApi } from "@/api/employees";
 import { tagsApi } from "@/api/tags";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { BoardTruncationNotice } from "@/features/repair-orders/components/BoardTruncationNotice";
 import { KanbanBoard } from "@/features/repair-orders/components/KanbanBoard";
 import { RepairOrderHistory } from "@/features/repair-orders/components/RepairOrderHistory";
 import { useRepairOrders } from "@/features/repair-orders/hooks/useRepairOrders";
@@ -43,6 +45,8 @@ function daysAgoIso(days: number): string {
 }
 
 export default function RepairOrdersPage() {
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission("create_order");
   const navigate = useNavigate();
 
   const [tab, setTab] = useState<TabKey>("kanban");
@@ -50,8 +54,8 @@ export default function RepairOrdersPage() {
   const [employeeId, setEmployeeId] = useState<number | null>(null);
   const [tagId, setTagId] = useState<number | null>(null);
   const [showFinished, setShowFinished] = useState(true);
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const [createdFrom, setCreatedFrom] = useState("");
+  const [createdTo, setCreatedTo] = useState("");
   const [historyPagination, setHistoryPagination] = useState<GridPaginationModel>({
     page: 0,
     pageSize: 12,
@@ -86,15 +90,15 @@ export default function RepairOrdersPage() {
     q: query,
     employeeId: employeeId ?? undefined,
     tagId: tagId ?? undefined,
-    from: closedSince,
+    updatedFrom: closedSince,
     size: BOARD_LIMIT,
   };
 
   const historyParams: RepairOrderListParams = {
     statuses: CLOSED_STATUSES,
     q: query,
-    from: from || undefined,
-    to: to || undefined,
+    createdFrom: createdFrom || undefined,
+    createdTo: createdTo || undefined,
     page: historyPagination.page,
     size: historyPagination.pageSize,
   };
@@ -107,6 +111,12 @@ export default function RepairOrdersPage() {
     ? [...active.orders, ...recentClosed.orders]
     : active.orders;
   const boardLoading = active.loading || recentClosed.loading;
+  // The board caps each query at BOARD_LIMIT; totalElements says how many the
+  // filters actually match. When the total exceeds what was loaded, the board
+  // is silently truncated, so we tell the user instead of hiding it.
+  const boardTotal = showFinished
+    ? active.totalElements + recentClosed.totalElements
+    : active.totalElements;
 
   const refetchBoard = () => {
     active.refetch();
@@ -128,7 +138,7 @@ export default function RepairOrdersPage() {
         filters={
           <>
             <AppSearchField
-              placeholder="Buscar por título, nombre, patente, marca, modelo..."
+              placeholder="Buscar por título, nombre, patente, marca, modelo, teléfono, DNI, chasis o motor..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -176,24 +186,24 @@ export default function RepairOrdersPage() {
             ) : (
               <>
                 <TextField
-                  label="Desde"
+                  label="Ingreso desde"
                   type="date"
                   size="small"
-                  value={from}
+                  value={createdFrom}
                   onChange={(e) => {
-                    setFrom(e.target.value);
+                    setCreatedFrom(e.target.value);
                     setHistoryPagination((prev) => ({ ...prev, page: 0 }));
                   }}
                   slotProps={{ inputLabel: { shrink: true } }}
                   sx={{ minWidth: 170 }}
                 />
                 <TextField
-                  label="Hasta"
+                  label="Ingreso hasta"
                   type="date"
                   size="small"
-                  value={to}
+                  value={createdTo}
                   onChange={(e) => {
-                    setTo(e.target.value);
+                    setCreatedTo(e.target.value);
                     setHistoryPagination((prev) => ({ ...prev, page: 0 }));
                   }}
                   slotProps={{ inputLabel: { shrink: true } }}
@@ -207,13 +217,15 @@ export default function RepairOrdersPage() {
           </>
         }
         actions={
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => navigate("/ordenes-trabajo/nueva")}
-          >
-            Nueva orden
-          </Button>
+          canCreate && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => navigate("/ordenes-trabajo/nueva")}
+            >
+              Nueva orden
+            </Button>
+          )
         }
       />
 
@@ -225,12 +237,15 @@ export default function RepairOrdersPage() {
       </Box>
 
       {tab === "kanban" ? (
-        <KanbanBoard
-          orders={boardOrders}
-          loading={boardLoading}
-          onUpdateStatus={updateBoardStatus}
-          onRefetch={refetchBoard}
-        />
+        <>
+          <BoardTruncationNotice shown={boardOrders.length} total={boardTotal} />
+          <KanbanBoard
+            orders={boardOrders}
+            loading={boardLoading}
+            onUpdateStatus={updateBoardStatus}
+            onRefetch={refetchBoard}
+          />
+        </>
       ) : (
         <RepairOrderHistory
           rows={history.orders}

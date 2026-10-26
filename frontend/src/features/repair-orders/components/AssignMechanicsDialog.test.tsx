@@ -34,8 +34,8 @@ function buildMechanic(
     maritalStatus: null,
     childrenCount: 0,
     entryDate: null,
-    status,
-    roles: [{ id: 3, name: "MECANICO", description: "" }],
+    status: "ACTIVO",
+    roles: [{ id: 3, name: "MECANICO", description: "", permissions: [], createdAt: null, updatedAt: null }],
     createdAt: "",
     updatedAt: "",
   };

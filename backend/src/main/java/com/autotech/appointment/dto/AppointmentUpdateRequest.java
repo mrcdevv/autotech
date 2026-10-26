@@ -10,5 +10,7 @@ public record AppointmentUpdateRequest(
         LocalDateTime startTime,
 
         @NotNull(message = "La fecha y hora de fin es obligatoria")
-        LocalDateTime endTime
+        LocalDateTime endTime,
+
+        Boolean notifyClient
 ) {}

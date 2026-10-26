@@ -6,5 +6,6 @@ public record CannedJobProductResponse(
         Long id,
         String productName,
         Integer quantity,
-        BigDecimal unitPrice
+        BigDecimal unitPrice,
+        Long productId
 ) {}

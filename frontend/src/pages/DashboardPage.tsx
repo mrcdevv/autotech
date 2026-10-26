@@ -16,7 +16,7 @@ import {
 } from "@/features/dashboard/utils/homeView";
 
 export default function DashboardPage() {
-  const { summary, orders, appointments, invoices, loading, error } = useHomeDashboard();
+  const { summary, orders, appointments, deliveryNotes, loading, error } = useHomeDashboard();
   const navigate = useNavigate();
 
   if (loading) {
@@ -33,7 +33,7 @@ export default function DashboardPage() {
   const carousel = buildWorkshopCarousel(orders);
   const queue = buildWorkQueue(orders);
   const upcomingAppointments = buildUpcomingAppointments(appointments);
-  const cash = buildDailyCash(invoices);
+  const cash = buildDailyCash(deliveryNotes);
 
   return (
     <Box>

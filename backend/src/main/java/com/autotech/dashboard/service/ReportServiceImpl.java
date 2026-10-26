@@ -8,7 +8,7 @@ import com.autotech.dashboard.dto.ServiceRevenueResponse;
 import com.autotech.dashboard.dto.TopServiceResponse;
 import com.autotech.inspection.model.InspectionItemStatus;
 import com.autotech.inspection.repository.InspectionItemRepository;
-import com.autotech.invoice.repository.InvoiceRepository;
+import com.autotech.deliverynote.repository.DeliveryNoteRepository;
 import com.autotech.repairorder.repository.RepairOrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +28,7 @@ public class ReportServiceImpl implements ReportService {
     private static final List<InspectionItemStatus> FAULT_STATUSES =
             List.of(InspectionItemStatus.PROBLEMA, InspectionItemStatus.REVISAR);
 
-    private final InvoiceRepository invoiceRepository;
+    private final DeliveryNoteRepository deliveryNoteRepository;
     private final RepairOrderRepository repairOrderRepository;
     private final InspectionItemRepository inspectionItemRepository;
 
@@ -38,17 +38,17 @@ public class ReportServiceImpl implements ReportService {
         LocalDateTime start = from.atStartOfDay();
         LocalDateTime end = to.plusDays(1).atStartOfDay();
 
-        List<MonthlyRevenueResponse> monthlyBilling = invoiceRepository
+        List<MonthlyRevenueResponse> monthlyBilling = deliveryNoteRepository
                 .sumTotalGroupByMonth(start, end).stream()
                 .map(row -> new MonthlyRevenueResponse((Integer) row[0], (Integer) row[1], (BigDecimal) row[2]))
                 .toList();
 
-        List<TopServiceResponse> topServices = invoiceRepository
+        List<TopServiceResponse> topServices = deliveryNoteRepository
                 .countServiceOccurrences(start, end).stream()
                 .map(row -> new TopServiceResponse((String) row[0], (Long) row[1]))
                 .toList();
 
-        List<ServiceRevenueResponse> serviceRevenue = invoiceRepository
+        List<ServiceRevenueResponse> serviceRevenue = deliveryNoteRepository
                 .sumServiceRevenue(start, end).stream()
                 .map(row -> new ServiceRevenueResponse((String) row[0], (BigDecimal) row[1]))
                 .toList();

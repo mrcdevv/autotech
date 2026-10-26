@@ -22,6 +22,19 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     @EntityGraph(attributePaths = {"client", "vehicle"})
     Page<Appointment> findAll(Pageable pageable);
 
+    @EntityGraph(attributePaths = {"client", "vehicle", "vehicle.brand"})
+    Optional<Appointment> findByConfirmationToken(String confirmationToken);
+
+    /** Reminder candidates: scheduled appointments starting in [from, to). */
+    @Query("""
+            SELECT a FROM Appointment a
+            WHERE a.status = com.autotech.appointment.model.AppointmentStatus.SCHEDULED
+              AND a.startTime >= :from AND a.startTime < :to
+            ORDER BY a.startTime ASC
+            """)
+    @EntityGraph(attributePaths = {"client", "vehicle", "vehicle.brand"})
+    List<Appointment> findScheduledStartingBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
     @Query("""
             SELECT a FROM Appointment a
             WHERE a.startTime < :rangeEnd AND a.endTime > :rangeStart

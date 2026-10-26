@@ -17,7 +17,7 @@ export function TopServicesTable({ data }: TopServicesTableProps) {
   return (
     <>
       <Typography variant="h6" sx={{ mb: 2 }}>
-        Servicios más facturados
+        Servicios más remitodos
       </Typography>
       {data.length === 0 ? (
         <Typography color="text.secondary">Sin datos este mes</Typography>
@@ -27,7 +27,7 @@ export function TopServicesTable({ data }: TopServicesTableProps) {
             <TableHead>
               <TableRow>
                 <TableCell>Servicio</TableCell>
-                <TableCell align="right">Veces facturado</TableCell>
+                <TableCell align="right">Veces remitodo</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

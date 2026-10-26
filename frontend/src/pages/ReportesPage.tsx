@@ -58,7 +58,7 @@ export default function ReportesPage() {
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, lg: 8 }}>
           <ReportChartCard
-            title="Facturación por mes"
+            title="Remitos por mes"
             loading={loading}
             error={error}
             isEmpty={monthlyBilling.length === 0}

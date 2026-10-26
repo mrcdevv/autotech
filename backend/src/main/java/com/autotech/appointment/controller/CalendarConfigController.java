@@ -7,6 +7,7 @@ import com.autotech.common.dto.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,11 +21,13 @@ public class CalendarConfigController {
 
     private final CalendarConfigService calendarConfigService;
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ApiResponse<CalendarConfigResponse>> getConfig() {
         return ResponseEntity.ok(ApiResponse.success(calendarConfigService.getConfig()));
     }
 
+    @PreAuthorize("hasAuthority('manage_config')")
     @PutMapping
     public ResponseEntity<ApiResponse<CalendarConfigResponse>> updateConfig(
             @Valid @RequestBody CalendarConfigRequest request) {

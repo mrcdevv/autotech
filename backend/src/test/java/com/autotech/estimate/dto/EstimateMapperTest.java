@@ -125,12 +125,12 @@ class EstimateMapperTest {
     }
 
     @Test
-    void givenEstimate_whenToInvoiceDataResponse_thenMapsAllFields() {
+    void givenEstimate_whenToDeliveryNoteDataResponse_thenMapsAllFields() {
         // Arrange
         Estimate estimate = buildFullEstimate();
 
         // Act
-        EstimateInvoiceDataResponse result = mapper.toInvoiceDataResponse(estimate);
+        EstimateDeliveryNoteDataResponse result = mapper.toDeliveryNoteDataResponse(estimate);
 
         // Assert
         assertThat(result.estimateId()).isEqualTo(1L);

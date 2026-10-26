@@ -79,7 +79,7 @@ describe("EstimateList", () => {
     onPageSizeChange: vi.fn(),
     onRowClick: vi.fn(),
     onDelete: vi.fn(),
-    onInvoice: vi.fn(),
+    onDeliveryNote: vi.fn(),
   };
 
   it("given estimates, when rendered, then shows DataGrid", () => {

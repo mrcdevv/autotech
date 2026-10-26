@@ -51,7 +51,7 @@ describe("ReportesPage", () => {
   it("given page loaded, when rendered, then shows the five report cards", () => {
     render(<ReportesPage />);
 
-    expect(screen.getByText("Facturación por mes")).toBeInTheDocument();
+    expect(screen.getByText("Remitos por mes")).toBeInTheDocument();
     expect(screen.getByText("Servicios más realizados")).toBeInTheDocument();
     expect(screen.getByText("Ingresos generados por servicio")).toBeInTheDocument();
     expect(screen.getByText("Marcas de vehículos más atendidas")).toBeInTheDocument();

@@ -8,31 +8,31 @@ import type {
 } from "@/types/payment";
 
 export const paymentsApi = {
-  getByInvoice: (invoiceId: number) =>
+  getByDeliveryNote: (deliveryNoteId: number) =>
     apiClient.get<ApiResponse<PaymentResponse[]>>(
-      `/invoices/${invoiceId}/payments`,
+      `/delivery-notes/${deliveryNoteId}/payments`,
     ),
 
-  getSummary: (invoiceId: number) =>
+  getSummary: (deliveryNoteId: number) =>
     apiClient.get<ApiResponse<PaymentSummaryResponse>>(
-      `/invoices/${invoiceId}/payments/summary`,
+      `/delivery-notes/${deliveryNoteId}/payments/summary`,
     ),
 
-  create: (invoiceId: number, data: PaymentRequest) =>
+  create: (deliveryNoteId: number, data: PaymentRequest) =>
     apiClient.post<ApiResponse<PaymentResponse>>(
-      `/invoices/${invoiceId}/payments`,
+      `/delivery-notes/${deliveryNoteId}/payments`,
       data,
     ),
 
-  update: (invoiceId: number, paymentId: number, data: PaymentRequest) =>
+  update: (deliveryNoteId: number, paymentId: number, data: PaymentRequest) =>
     apiClient.put<ApiResponse<PaymentResponse>>(
-      `/invoices/${invoiceId}/payments/${paymentId}`,
+      `/delivery-notes/${deliveryNoteId}/payments/${paymentId}`,
       data,
     ),
 
-  delete: (invoiceId: number, paymentId: number, performedBy: number) =>
+  delete: (deliveryNoteId: number, paymentId: number, performedBy: number) =>
     apiClient.delete<ApiResponse<void>>(
-      `/invoices/${invoiceId}/payments/${paymentId}`,
+      `/delivery-notes/${deliveryNoteId}/payments/${paymentId}`,
       { params: { performedBy } },
     ),
 };

@@ -8,7 +8,7 @@ import type { PaymentResponse } from "@/types/payment";
 
 const buildPayment = (overrides?: Partial<PaymentResponse>): PaymentResponse => ({
   id: 1,
-  invoiceId: 10,
+  deliveryNoteId: 10,
   paymentDate: "2025-01-15",
   createdAt: "2025-01-15T10:30:00",
   amount: 500,
@@ -34,7 +34,7 @@ describe("PaymentHistoryGrid", () => {
     );
 
     expect(
-      screen.getByText("No se registraron pagos para esta factura."),
+      screen.getByText("No se registraron pagos para esta remito."),
     ).toBeInTheDocument();
   });
 

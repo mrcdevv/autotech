@@ -1,51 +1,51 @@
 package com.autotech.security;
 
 import com.autotech.employee.model.Employee;
+import com.autotech.employee.model.EmployeeStatus;
 import com.autotech.employee.repository.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
+    private static final String ROLE_PREFIX = "ROLE_";
+
     private final EmployeeRepository employeeRepository;
 
     @Override
     @Transactional(readOnly = true)
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Employee employee = employeeRepository.findByEmail(email)
+    public AuthenticatedEmployee loadUserByUsername(String email) throws UsernameNotFoundException {
+        Employee employee = employeeRepository.findWithRolesAndPermissionsByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Employee not found with email: " + email));
 
-        List<SimpleGrantedAuthority> authorities = employee.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName().toUpperCase()))
-                .collect(Collectors.toList());
+        boolean enabled = EmployeeStatus.ACTIVO.equals(employee.getStatus());
 
-        // Asignamos un rol por defecto si la lista viene vacía (ej. usuario insertado manualmente sin roles)
-        if (authorities.isEmpty()) {
-            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
-        }
+        return new AuthenticatedEmployee(
+                employee.getEmail(),
+                employee.getPassword(),
+                enabled,
+                Boolean.TRUE.equals(employee.getMustChangePassword()),
+                buildAuthorities(employee));
+    }
 
-        // Mapeamos el boolean 'enabled' basado en el status del empleado
-        boolean isEnabled = com.autotech.employee.model.EmployeeStatus.ACTIVO.equals(employee.getStatus());
-
-        return new User(
-                employee.getEmail(), 
-                employee.getPassword(), 
-                isEnabled, 
-                true, // accountNonExpired
-                true, // credentialsNonExpired
-                true, // accountNonLocked
-                authorities
-        );
+    /** Authorities = ROLE_<name> for each role plus every permission code granted by those roles. */
+    private Set<GrantedAuthority> buildAuthorities(Employee employee) {
+        Set<GrantedAuthority> authorities = new LinkedHashSet<>();
+        employee.getRoles().forEach(role -> {
+            authorities.add(new SimpleGrantedAuthority(ROLE_PREFIX + role.getName().toUpperCase()));
+            role.getPermissions().forEach(permission ->
+                    authorities.add(new SimpleGrantedAuthority(permission.getCode())));
+        });
+        return authorities;
     }
 }

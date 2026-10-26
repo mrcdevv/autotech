@@ -1,0 +1,88 @@
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { vi, describe, it, expect } from "vitest";
+
+import { ServicesGrid } from "./ServicesGrid";
+import { CURRENCY_SYMBOL } from "@/components/MoneyInput";
+import { formatCurrency } from "@/utils/formatCurrency";
+
+import type { DeliveryNoteServiceItemRequest } from "@/types/deliveryNote";
+
+// formatCurrency emits a non-breaking space (U+00A0) after the "$" symbol, which the
+// testing-library normalizer collapses to a plain space in the DOM text. Normalize the
+// expectation the same way so exact string matching works.
+const money = (value: number) => formatCurrency(value).replace(/\u00A0/g, " ");
+
+vi.mock("@/api/catalogServices", () => ({
+  catalogServicesApi: {
+    search: vi.fn().mockResolvedValue({ data: { data: { content: [] } } }),
+  },
+}));
+
+describe("ServicesGrid", () => {
+  const defaultServices: DeliveryNoteServiceItemRequest[] = [
+    { serviceName: "Oil change", price: 100 },
+    { serviceName: "Brake inspection", price: 200 },
+  ];
+
+  it("given services, when rendered, then shows subtotal", () => {
+    render(<ServicesGrid services={defaultServices} onChange={vi.fn()} />);
+
+    expect(screen.getByText("Subtotal servicios:")).toBeInTheDocument();
+    expect(screen.getByText(money(300))).toBeInTheDocument();
+  });
+
+  it("given services, when rendered, then the subtotal amount is explicitly right-aligned", () => {
+    render(<ServicesGrid services={defaultServices} onChange={vi.fn()} />);
+
+    const element = screen.getByText(money(300));
+    expect(getComputedStyle(element).textAlign).toBe("right");
+  });
+
+  it("given services, when clicking add, then calls onChange with new row", async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(<ServicesGrid services={defaultServices} onChange={onChange} />);
+
+    await user.click(screen.getByText("Agregar"));
+
+    expect(onChange).toHaveBeenCalledWith([
+      ...defaultServices,
+      { serviceName: "", price: 0 },
+    ]);
+  });
+
+  it("given readonly mode, when rendered, then hides add and delete buttons", () => {
+    render(<ServicesGrid services={defaultServices} onChange={vi.fn()} readonly />);
+
+    expect(screen.queryByText("Agregar")).not.toBeInTheDocument();
+  });
+
+  it("given services, when rendered, then shows Servicios title", () => {
+    render(<ServicesGrid services={defaultServices} onChange={vi.fn()} />);
+
+    expect(screen.getByText("Servicios")).toBeInTheDocument();
+  });
+
+  it("given a price input, when not focused it shows the shared 2-decimal currency value and when focused the symbol followed by the plain number (decision D15, supersedes the D14 symbol-less focus state)", async () => {
+    const user = userEvent.setup();
+    render(
+      <ServicesGrid
+        services={[{ serviceName: "Align check", price: 1234.5 }]}
+        onChange={vi.fn()}
+      />,
+    );
+
+    const priceInput = screen.getByLabelText("Precio");
+    // Not focused: exactly the shared formatter output (2 decimals, single "$"),
+    // never a raw "1234.5".
+    expect(priceInput).toHaveValue(formatCurrency(1234.5));
+    // Positive assertion: the inline style is reflected in jsdom's getComputedStyle.
+    expect(getComputedStyle(priceInput).textAlign).toBe("right");
+
+    await user.click(priceInput);
+    // D15: while focused the symbol STAYS, adjacent to the plain number being
+    // edited — only the thousands separator and decimal separator are dropped.
+    expect(priceInput).toHaveValue(CURRENCY_SYMBOL + "1234.5");
+  });
+});

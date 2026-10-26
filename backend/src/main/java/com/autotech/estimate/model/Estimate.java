@@ -2,6 +2,7 @@ package com.autotech.estimate.model;
 
 import com.autotech.client.model.Client;
 import com.autotech.common.model.BaseEntity;
+import com.autotech.employee.model.Employee;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.vehicle.model.Vehicle;
 import jakarta.persistence.CascadeType;
@@ -22,6 +23,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -61,6 +63,23 @@ public class Estimate extends BaseEntity {
 
     @Column(name = "total", precision = 12, scale = 2)
     private BigDecimal total;
+
+    @Column(name = "approval_token", unique = true, length = 64)
+    private String approvalToken;
+
+    @Column(name = "approval_token_expires_at")
+    private LocalDateTime approvalTokenExpiresAt;
+
+    @Column(name = "decision_channel", length = 20)
+    @Enumerated(EnumType.STRING)
+    private EstimateDecisionChannel decisionChannel;
+
+    @Column(name = "decided_at")
+    private LocalDateTime decidedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "decided_by_employee_id")
+    private Employee decidedByEmployee;
 
     @OneToMany(mappedBy = "estimate", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
