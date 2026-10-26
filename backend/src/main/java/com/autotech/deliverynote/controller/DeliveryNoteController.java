@@ -1,6 +1,7 @@
 package com.autotech.deliverynote.controller;
 
 import com.autotech.common.dto.ApiResponse;
+import com.autotech.deliverynote.dto.AttachRepairOrderRequest;
 import com.autotech.deliverynote.dto.DeliveryNoteDetailResponse;
 import com.autotech.deliverynote.dto.DeliveryNoteRequest;
 import com.autotech.deliverynote.dto.DeliveryNoteResponse;
@@ -79,7 +80,7 @@ public class DeliveryNoteController {
     @PutMapping("/{id}/repair-order")
     public ResponseEntity<ApiResponse<DeliveryNoteDetailResponse>> attachToRepairOrder(
             @PathVariable Long id,
-            @Valid @RequestBody DeliveryNoteRequest.AttachRepairOrderRequest request) {
+            @Valid @RequestBody AttachRepairOrderRequest request) {
         return ResponseEntity.ok(ApiResponse.success("Remito asociado a la orden de trabajo",
                 deliveryNoteService.attachToRepairOrder(id, request.repairOrderId())));
     }

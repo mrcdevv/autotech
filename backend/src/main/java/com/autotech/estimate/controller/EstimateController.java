@@ -1,6 +1,7 @@
 package com.autotech.estimate.controller;
 
 import com.autotech.common.dto.ApiResponse;
+import com.autotech.estimate.dto.AttachRepairOrderRequest;
 import com.autotech.estimate.dto.EstimateDecisionRequest;
 import com.autotech.estimate.dto.EstimateDetailResponse;
 import com.autotech.estimate.dto.EstimateDeliveryNoteDataResponse;
@@ -101,7 +102,7 @@ public class EstimateController {
     @PutMapping("/{id}/repair-order")
     public ResponseEntity<ApiResponse<EstimateDetailResponse>> attachToRepairOrder(
             @PathVariable Long id,
-            @Valid @RequestBody EstimateRequest.AttachRepairOrderRequest request) {
+            @Valid @RequestBody AttachRepairOrderRequest request) {
         return ResponseEntity.ok(ApiResponse.success("Presupuesto asociado a la orden de trabajo",
                 estimateService.attachToRepairOrder(id, request.repairOrderId())));
     }
