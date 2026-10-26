@@ -107,5 +107,6 @@ describe("AppointmentFormDialog", () => {
     // The active-only candidates must come from the server-side status filter,
     // not from client-side filtering of an unfiltered page.
     expect(mockFilterByStatus).toHaveBeenCalledWith("ACTIVO", 0, 100);
+    expect(mockGetAllEmployees).not.toHaveBeenCalled();
   });
 });
