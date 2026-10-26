@@ -59,8 +59,6 @@ public class RepairOrderController {
             @RequestParam(required = false) Long employeeId,
             @RequestParam(required = false) Long tagId,
             @RequestParam(required = false) String q,
-            @RequestParam(required = false) Long clientId,
-            @RequestParam(required = false) Long vehicleId,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         RepairOrderFilter filter = new RepairOrderFilter(
                 statuses, createdFrom, createdTo, updatedFrom, updatedTo, employeeId, tagId, q);

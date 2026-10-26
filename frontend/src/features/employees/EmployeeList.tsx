@@ -1,5 +1,6 @@
 import { GridActionsCellItem } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import LockResetIcon from "@mui/icons-material/LockReset";
 
@@ -29,6 +30,7 @@ export function EmployeeList({
   onPaginationChange,
   onView,
   onEdit,
+  onDelete,
   onResetPassword,
 }: EmployeeListProps) {
   const columns: GridColDef[] = [

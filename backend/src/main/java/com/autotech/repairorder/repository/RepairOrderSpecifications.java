@@ -60,14 +60,6 @@ public final class RepairOrderSpecifications {
                 predicates.add(root.get("id").in(subquery));
             }
 
-            if (filter.clientId() != null) {
-                predicates.add(cb.equal(root.get("client").get("id"), filter.clientId()));
-            }
-
-            if (filter.vehicleId() != null) {
-                predicates.add(cb.equal(root.get("vehicle").get("id"), filter.vehicleId()));
-            }
-
             if (filter.query() != null && !filter.query().isBlank()) {
                 String like = "%" + filter.query().trim().toLowerCase() + "%";
                 var clientJoin = root.join("client", JoinType.INNER);

@@ -8,6 +8,8 @@ import {
   Stack,
   Chip,
   Avatar,
+  AvatarGroup,
+  Tooltip,
   Divider,
   LinearProgress,
   Button,
@@ -174,20 +176,15 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
           <InfoBlock label="Mecánicos asignados">
             <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
               {order.employees.length > 0 ? (
-                <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                <AvatarGroup max={4} sx={{ justifyContent: "flex-start" }}>
                   {order.employees.map((emp) => (
-                    <Chip
-                      key={emp.id}
-                      size="small"
-                      avatar={
-                        <Avatar sx={{ width: 24, height: 24, fontSize: 11, bgcolor: "primary.main" }}>
-                          {emp.firstName[0]}{emp.lastName[0]}
-                        </Avatar>
-                      }
-                      label={`${emp.firstName} ${emp.lastName}`}
-                    />
+                    <Tooltip key={emp.id} title={`${emp.firstName} ${emp.lastName}`}>
+                      <Avatar sx={{ width: 28, height: 28, fontSize: 12, bgcolor: "primary.main" }}>
+                        {emp.firstName[0]}{emp.lastName[0]}
+                      </Avatar>
+                    </Tooltip>
                   ))}
-                </Stack>
+                </AvatarGroup>
               ) : (
                 <Typography variant="body2" color="text.secondary">
                   Sin asignar

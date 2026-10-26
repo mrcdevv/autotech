@@ -12,7 +12,6 @@ import {
   Paper,
   Stack,
   IconButton,
-  Tooltip,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SaveIcon from "@mui/icons-material/Save";
@@ -22,17 +21,13 @@ import PersonIcon from "@mui/icons-material/Person";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import EngineeringIcon from "@mui/icons-material/Engineering";
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
-import DescriptionIcon from "@mui/icons-material/Description";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
-import UndoIcon from "@mui/icons-material/Undo";
 import { useNavigate } from "react-router";
 import axios from "axios";
 
 import { FormPageLayout } from "@/components/FormPageLayout";
 import { FormSection } from "@/components/FormSection";
 import { InfoList } from "@/components/InfoList";
-import { AppConfirmDialog } from "@/components/AppConfirmDialog";
-import { EmptyState } from "@/components/EmptyState";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { clientAutocompleteApi } from "@/api/clientAutocomplete";
 import { vehiclesApi } from "@/api/vehicles";
@@ -54,7 +49,6 @@ import type {
   StaffDecisionChannel,
 } from "@/types/estimate";
 import type { InspectionResponse } from "@/features/inspections/types";
-import type { RepairOrderStatus } from "@/features/repair-orders/types";
 
 function extractApiError(err: unknown): string {
   if (axios.isAxiosError(err) && err.response?.data) {
@@ -138,17 +132,9 @@ interface RepairOrderVehicleData {
   year: number | null;
 }
 
-// Terminal statuses where the backend (T3a) refuses new estimates: the UI refuses earlier
-// by disabling "Crear presupuesto" and naming the actual state in the tooltip.
-const CREATE_BLOCKED_REASONS: Record<"ENTREGADO" | "CANCELADO", string> = {
-  ENTREGADO: "No se puede crear un presupuesto porque la orden de trabajo está entregada.",
-  CANCELADO: "No se puede crear un presupuesto porque la orden de trabajo está cancelada.",
-};
-
 interface EstimateDetailProps {
   estimateId?: number;
   repairOrderId?: number;
-  repairOrderStatus?: RepairOrderStatus;
   reason?: string | null;
   mechanicNotes?: string | null;
   repairOrderClient?: RepairOrderClientData;
@@ -231,9 +217,9 @@ function ContextSections({
   );
 }
 
-export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, reason, mechanicNotes, repairOrderClient, repairOrderVehicle, onBack }: EstimateDetailProps) {
+export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNotes, repairOrderClient, repairOrderVehicle, onBack }: EstimateDetailProps) {
   const navigate = useNavigate();
-  const { estimate, allEstimates, noActiveEstimate, loading, error, clearError, createEstimate, updateEstimate, approveEstimate, rejectEstimate, reopenEstimate } =
+  const { estimate, allEstimates, noActiveEstimate, loading, error, clearError, createEstimate, updateEstimate, approveEstimate, rejectEstimate } =
     useEstimate(estimateId, repairOrderId);
 
   const [clients, setClients] = useState<ClientAutocompleteResponse[]>([]);
@@ -253,7 +239,6 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
   const [formError, setFormError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
-  const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
 
   const [inspectionIssues, setInspectionIssues] = useState<InspectionIssue[]>([]);
 
@@ -261,8 +246,6 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
   const isReadonly = estimate != null && estimate.status !== "PENDIENTE";
   const fromRepairOrder = repairOrderId != null;
   const displayId = estimate?.id ?? estimateId;
-  const createBlocked =
-    repairOrderStatus === "ENTREGADO" || repairOrderStatus === "CANCELADO";
 
   // New estimates start with the global IVA; existing estimates keep their stored value
   useEffect(() => {
@@ -462,18 +445,6 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
     }
   };
 
-  const handleReopen = async () => {
-    if (!estimate?.id) return;
-    setApiError(null);
-    try {
-      await reopenEstimate(estimate.id);
-    } catch (err) {
-      setApiError(extractApiError(err));
-    } finally {
-      setReopenDialogOpen(false);
-    }
-  };
-
   const prepareNewEstimate = () => {
     if (repairOrderClient) {
       setSelectedClient({
@@ -569,30 +540,17 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
                 </Box>
               ))}
             </Box>
-          ) : null}
+          ) : (
+            <Typography color="text.secondary">
+              No hay presupuesto asociado a esta orden de trabajo.
+            </Typography>
+          )}
 
-          <EmptyState
-            icon={<DescriptionIcon sx={{ color: "text.disabled" }} />}
-            title="Aún no hay presupuesto"
-            description="Creá el presupuesto para que el cliente lo apruebe."
-          >
-            {createBlocked && repairOrderStatus ? (
-              // A disabled MUI button emits no pointer events, so the Tooltip must sit on a
-              // <span> wrapper; putting it directly on the disabled button never shows.
-              // The `disabled` attribute keeps the state perceivable by assistive tech.
-              <Tooltip title={CREATE_BLOCKED_REASONS[repairOrderStatus]}>
-                <span>
-                  <Button variant="contained" disabled>
-                    Crear presupuesto
-                  </Button>
-                </span>
-              </Tooltip>
-            ) : (
-              <Button variant="contained" onClick={prepareNewEstimate}>
-                Crear presupuesto
-              </Button>
-            )}
-          </EmptyState>
+          <Box>
+            <Button variant="contained" onClick={prepareNewEstimate}>
+              Crear presupuesto
+            </Button>
+          </Box>
         </Stack>
       );
     }
@@ -600,7 +558,7 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
   }
 
   // ── Main form ──
-  const actions = (!isReadonly || (estimate?.id && (estimate.status === "PENDIENTE" || estimate.status === "ACEPTADO"))) && (
+  const actions = (!isReadonly || (estimate?.id && estimate.status === "PENDIENTE")) && (
     <Paper
       sx={{
         p: 2,
@@ -610,11 +568,6 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
         bgcolor: "grey.50",
       }}
     >
-      {estimate?.id && estimate.status === "ACEPTADO" && (
-        <Button variant="outlined" color="warning" startIcon={<UndoIcon />} onClick={() => setReopenDialogOpen(true)} fullWidth>
-          Revisar presupuesto
-        </Button>
-      )}
       {estimate?.id && estimate.status === "PENDIENTE" && (
         <>
           <Button variant="outlined" color="error" startIcon={<CloseIcon />} onClick={handleReject} fullWidth>
@@ -835,20 +788,6 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
 
         </Stack>
       </FormPageLayout>
-
-      <AppConfirmDialog
-        open={reopenDialogOpen}
-        title="Revisar presupuesto"
-        message={
-          estimate?.repairOrderId != null
-            ? "El presupuesto volverá al estado Pendiente y deberá ser aprobado nuevamente. Solo podrá reabrirse mientras la orden de trabajo no tenga una factura asociada."
-            : "El presupuesto volverá al estado Pendiente y deberá ser aprobado nuevamente."
-        }
-        confirmLabel="Revisar"
-        confirmColor="warning"
-        onConfirm={handleReopen}
-        onCancel={() => setReopenDialogOpen(false)}
-      />
     </>
   );
 }

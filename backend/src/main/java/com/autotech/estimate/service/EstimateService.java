@@ -45,10 +45,6 @@ public interface EstimateService {
 
     PublicEstimateResponse rejectByToken(String token);
 
-    EstimateDetailResponse reopen(Long id);
-
-    EstimateDetailResponse attachToRepairOrder(Long id, Long repairOrderId);
-
     void delete(Long id);
 
     BigDecimal calculateTotal(List<EstimateServiceItemRequest> services,

@@ -18,7 +18,6 @@ import com.autotech.email.service.EmailFormats;
 import com.autotech.email.service.EmailNotificationService;
 import com.autotech.employee.model.Employee;
 import com.autotech.employee.repository.EmployeeRepository;
-import com.autotech.employee.service.EmployeeService;
 import com.autotech.tag.model.Tag;
 import com.autotech.tag.repository.TagRepository;
 import com.autotech.vehicle.model.Vehicle;
@@ -45,7 +44,6 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final ClientRepository clientRepository;
     private final VehicleRepository vehicleRepository;
     private final EmployeeRepository employeeRepository;
-    private final EmployeeService employeeService;
     private final TagRepository tagRepository;
     private final EmailNotificationService emailNotificationService;
     private final AppProperties appProperties;
@@ -94,7 +92,6 @@ public class AppointmentServiceImpl implements AppointmentService {
             if (employees.size() != request.employeeIds().size()) {
                 throw new ResourceNotFoundException("Uno o más empleados no fueron encontrados");
             }
-            employeeService.validateActiveAssignees(employees, Set.of());
             entity.setEmployees(employees);
         }
 

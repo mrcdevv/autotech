@@ -161,38 +161,6 @@ describe("GeneralInfoTab", () => {
     expect(screen.getByTestId("edit-repair-order-dialog")).toBeInTheDocument();
   });
 
-  it("given order with two mechanics, when rendered, then both full names are visible without hovering", () => {
-    render(
-      <GeneralInfoTab
-        order={{
-          ...sampleOrder,
-          employees: [
-            { id: 1, firstName: "Carlos", lastName: "Lopez" },
-            { id: 2, firstName: "Maria", lastName: "Gomez" },
-          ],
-        }}
-        loading={false}
-        onRefetch={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText("Carlos Lopez")).toBeInTheDocument();
-    expect(screen.getByText("Maria Gomez")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /editar/i })).toBeInTheDocument();
-  });
-
-  it("given order with one mechanic, when rendered, then shows the full name as text", () => {
-    render(
-      <GeneralInfoTab
-        order={{ ...sampleOrder, employees: [{ id: 1, firstName: "Carlos", lastName: "Lopez" }] }}
-        loading={false}
-        onRefetch={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText("Carlos Lopez")).toBeInTheDocument();
-  });
-
   it("given null order, when rendered, then shows not found message", () => {
     render(<GeneralInfoTab order={null} loading={false} onRefetch={vi.fn()} />);
 

@@ -5,20 +5,10 @@ import com.autotech.appointment.repository.AppointmentRepository;
 import com.autotech.client.model.Client;
 import com.autotech.client.model.ClientType;
 import com.autotech.client.repository.ClientRepository;
-import com.autotech.common.audit.AuditAction;
-import com.autotech.common.audit.AuditEntityType;
-import com.autotech.common.audit.AuditService;
-import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.email.service.EmailNotificationService;
-import com.autotech.employee.dto.EmployeeMapper;
 import com.autotech.employee.model.Employee;
-import com.autotech.employee.model.EmployeeStatus;
 import com.autotech.employee.repository.EmployeeRepository;
-import com.autotech.employee.service.EmployeeService;
-import com.autotech.employee.service.EmployeeServiceImpl;
-import com.autotech.invoice.model.Invoice;
-import com.autotech.invoice.repository.InvoiceRepository;
 import com.autotech.repairorder.dto.RepairOrderDetailResponse;
 import com.autotech.repairorder.dto.RepairOrderFilter;
 import com.autotech.repairorder.dto.RepairOrderMapper;
@@ -29,20 +19,16 @@ import com.autotech.repairorder.dto.TitleUpdateRequest;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.model.RepairOrderStatus;
 import com.autotech.repairorder.repository.RepairOrderRepository;
-import com.autotech.role.repository.RoleRepository;
 import com.autotech.tag.model.Tag;
 import com.autotech.tag.repository.TagRepository;
 import com.autotech.vehicle.model.Brand;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -50,20 +36,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -91,15 +72,6 @@ class RepairOrderServiceImplTest {
     private TagRepository tagRepository;
 
     @Mock
-    private EmployeeMapper employeeMapper;
-
-    @Mock
-    private RoleRepository roleRepository;
-
-    @Mock
-    private PasswordEncoder passwordEncoder;
-
-    @Mock
     private EmailNotificationService emailNotificationService;
 
     @Mock
@@ -107,19 +79,6 @@ class RepairOrderServiceImplTest {
 
     @InjectMocks
     private RepairOrderServiceImpl repairOrderService;
-
-    @BeforeEach
-    void setUp() {
-        // Real employee service so the inactive-assignment guard (D12) is exercised for real;
-        // only its repositories/collaborators are mocked.
-        EmployeeService employeeService = new EmployeeServiceImpl(
-                employeeRepository, employeeMapper, roleRepository, passwordEncoder,
-                emailNotificationService);
-        repairOrderService = new RepairOrderServiceImpl(
-                repairOrderRepository, repairOrderMapper, clientRepository, vehicleRepository,
-                appointmentRepository, employeeRepository, employeeService, tagRepository,
-                invoiceRepository, emailNotificationService, auditService);
-    }
 
     @Test
     void givenValidRequest_whenCreate_thenReturnCreatedOrder() {
@@ -379,48 +338,6 @@ class RepairOrderServiceImplTest {
     }
 
     @Test
-    void givenValidStatusChange_whenUpdateStatus_thenRecordsAuditWithPreviousAndNewStatus() {
-        // Arrange
-        Client client = buildClient(1L);
-        Vehicle vehicle = buildVehicle(1L, client);
-        RepairOrder order = buildRepairOrder(1L, client, vehicle);
-        order.setStatus(RepairOrderStatus.REPARACION);
-        StatusUpdateRequest request = new StatusUpdateRequest(RepairOrderStatus.ENTREGADO);
-        RepairOrderResponse response = buildResponse(1L);
-
-        when(repairOrderRepository.findWithDetailsById(1L)).thenReturn(Optional.of(order));
-        when(repairOrderRepository.save(order)).thenReturn(order);
-        when(repairOrderMapper.toResponse(order)).thenReturn(response);
-
-        // Act
-        repairOrderService.updateStatus(1L, request);
-
-        // Assert
-        verify(auditService).record(eq(AuditEntityType.REPAIR_ORDER), eq(1L), eq(AuditAction.MODIFIED),
-                oldValuesCaptor.capture(), newValuesCaptor.capture());
-        assertThat(oldValuesCaptor.getValue()).containsEntry("status", "REPARACION");
-        assertThat(newValuesCaptor.getValue()).containsEntry("status", "ENTREGADO");
-    }
-
-    @Test
-    void givenRejectedStatusChange_whenUpdateStatus_thenNoAuditRecorded() {
-        // Arrange
-        Client client = buildClient(1L);
-        Vehicle vehicle = buildVehicle(1L, client);
-        RepairOrder order = buildRepairOrder(1L, client, vehicle);
-        order.setStatus(RepairOrderStatus.CANCELADO);
-        StatusUpdateRequest request = new StatusUpdateRequest(RepairOrderStatus.REPARACION);
-
-        when(repairOrderRepository.findWithDetailsById(1L)).thenReturn(Optional.of(order));
-
-        // Act & Assert
-        assertThatThrownBy(() -> repairOrderService.updateStatus(1L, request))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("terminal");
-        verifyNoInteractions(auditService);
-    }
-
-    @Test
     void givenValidTitle_whenUpdateTitle_thenReturnUpdatedOrder() {
         // Arrange
         Client client = buildClient(1L);
@@ -461,113 +378,6 @@ class RepairOrderServiceImplTest {
         // Assert
         assertThat(result).isNotNull();
         assertThat(order.getEmployees()).contains(employee);
-    }
-
-    @Test
-    void givenInactiveEmployee_whenCreate_thenThrowBusinessException() {
-        // Arrange
-        Client client = buildClient(1L);
-        Vehicle vehicle = buildVehicle(1L, client);
-        Employee inactive = buildEmployee(2L);
-        inactive.setStatus(EmployeeStatus.INACTIVO);
-        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Reason", null, List.of(2L), null);
-
-        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
-        when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
-        when(repairOrderRepository.save(any(RepairOrder.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(employeeRepository.findById(2L)).thenReturn(Optional.of(inactive));
-
-        // Act & Assert
-        assertThatThrownBy(() -> repairOrderService.create(request))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("inactivo")
-                .hasMessageContaining("Carlos");
-    }
-
-    @Test
-    void givenInactiveEmployeeNotAssigned_whenUpdate_thenThrowBusinessException() {
-        // Arrange
-        Client client = buildClient(1L);
-        Vehicle vehicle = buildVehicle(1L, client);
-        RepairOrder existing = buildRepairOrder(1L, client, vehicle);
-        Employee inactive = buildEmployee(2L);
-        inactive.setStatus(EmployeeStatus.INACTIVO);
-        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Reason", null, List.of(2L), null);
-
-        when(repairOrderRepository.findWithDetailsById(1L)).thenReturn(Optional.of(existing));
-        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
-        when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
-        when(employeeRepository.findById(2L)).thenReturn(Optional.of(inactive));
-
-        // Act & Assert
-        assertThatThrownBy(() -> repairOrderService.update(1L, request))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("inactivo")
-                .hasMessageContaining("Carlos");
-    }
-
-    @Test
-    void givenInactiveEmployeeNotAssigned_whenAssignEmployees_thenThrowBusinessException() {
-        // Arrange
-        Client client = buildClient(1L);
-        Vehicle vehicle = buildVehicle(1L, client);
-        RepairOrder order = buildRepairOrder(1L, client, vehicle);
-        Employee inactive = buildEmployee(2L);
-        inactive.setStatus(EmployeeStatus.INACTIVO);
-
-        when(repairOrderRepository.findWithDetailsById(1L)).thenReturn(Optional.of(order));
-        when(employeeRepository.findById(2L)).thenReturn(Optional.of(inactive));
-
-        // Act & Assert
-        assertThatThrownBy(() -> repairOrderService.assignEmployees(1L, List.of(2L)))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("inactivo")
-                .hasMessageContaining("Carlos");
-    }
-
-    @Test
-    void givenAlreadyAssignedInactiveEmployee_whenUpdate_thenKeepsInactiveAssignment() {
-        // Arrange
-        Client client = buildClient(1L);
-        Vehicle vehicle = buildVehicle(1L, client);
-        RepairOrder existing = buildRepairOrder(1L, client, vehicle);
-        Employee inactive = buildEmployee(2L);
-        inactive.setStatus(EmployeeStatus.INACTIVO);
-        Employee active = buildEmployee(3L);
-        existing.setEmployees(new HashSet<>(Set.of(inactive)));
-        RepairOrderRequest request = new RepairOrderRequest(1L, 1L, null, "Reason", null, List.of(2L, 3L), null);
-        RepairOrderResponse response = buildResponse(1L);
-
-        when(repairOrderRepository.findWithDetailsById(1L)).thenReturn(Optional.of(existing));
-        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
-        when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
-        when(employeeRepository.findById(2L)).thenReturn(Optional.of(inactive));
-        when(employeeRepository.findById(3L)).thenReturn(Optional.of(active));
-        when(repairOrderRepository.save(existing)).thenReturn(existing);
-        when(repairOrderMapper.toResponse(existing)).thenReturn(response);
-
-        // Act
-        RepairOrderResponse result = repairOrderService.update(1L, request);
-
-        // Assert
-        assertThat(result).isNotNull();
-        assertThat(existing.getEmployees()).contains(inactive, active);
-    }
-
-    @Test
-    void givenNonExistentEmployee_whenAssignEmployees_thenThrowResourceNotFoundException() {
-        // Arrange
-        Client client = buildClient(1L);
-        Vehicle vehicle = buildVehicle(1L, client);
-        RepairOrder order = buildRepairOrder(1L, client, vehicle);
-
-        when(repairOrderRepository.findWithDetailsById(1L)).thenReturn(Optional.of(order));
-        when(employeeRepository.findById(99L)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThatThrownBy(() -> repairOrderService.assignEmployees(1L, List.of(99L)))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("99");
     }
 
     @Test
@@ -632,86 +442,6 @@ class RepairOrderServiceImplTest {
         // Assert
         assertThat(result.getTotalElements()).isZero();
         assertThat(result.getContent()).isEmpty();
-    }
-
-    @Test
-    void givenEntregadoRepairOrder_whenValidateOpenForNewDocuments_thenThrowBusinessException() {
-        // Arrange
-        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
-        order.setStatus(RepairOrderStatus.ENTREGADO);
-
-        // Act & Assert
-        assertThatThrownBy(() -> repairOrderService.validateOpenForNewDocuments(order))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("cerrada")
-                .hasMessageContaining("ENTREGADO");
-    }
-
-    @Test
-    void givenCanceladoRepairOrder_whenValidateOpenForNewDocuments_thenThrowBusinessException() {
-        // Arrange
-        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
-        order.setStatus(RepairOrderStatus.CANCELADO);
-
-        // Act & Assert
-        assertThatThrownBy(() -> repairOrderService.validateOpenForNewDocuments(order))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("cerrada")
-                .hasMessageContaining("CANCELADO");
-    }
-
-    @Test
-    void givenRepairOrderWithInvoice_whenValidateOpenForNewDocuments_thenThrowBusinessException() {
-        // Arrange
-        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
-        when(invoiceRepository.findByRepairOrderId(1L)).thenReturn(Optional.of(Invoice.builder().build()));
-
-        // Act & Assert
-        assertThatThrownBy(() -> repairOrderService.validateOpenForNewDocuments(order))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("factura");
-    }
-
-    @Test
-    void givenOpenRepairOrderWithoutInvoice_whenValidateOpenForNewDocuments_thenDoesNotThrow() {
-        // Arrange
-        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
-        when(invoiceRepository.findByRepairOrderId(1L)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThatCode(() -> repairOrderService.validateOpenForNewDocuments(order))
-                .doesNotThrowAnyException();
-    }
-
-    @Test
-    void givenNullRepairOrder_whenValidateOpenForNewDocuments_thenDoesNotThrow() {
-        // Act & Assert
-        assertThatCode(() -> repairOrderService.validateOpenForNewDocuments(null))
-                .doesNotThrowAnyException();
-        verifyNoInteractions(invoiceRepository);
-    }
-
-    @Test
-    void givenEntregadoRepairOrder_whenValidateNotClosedByStatus_thenThrowBusinessException() {
-        // Arrange
-        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
-        order.setStatus(RepairOrderStatus.ENTREGADO);
-
-        // Act & Assert
-        assertThatThrownBy(() -> repairOrderService.validateNotClosedByStatus(order))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("cerrada");
-    }
-
-    @Test
-    void givenOpenRepairOrder_whenValidateNotClosedByStatus_thenDoesNotThrowAndDoesNotQueryInvoices() {
-        // Arrange
-        RepairOrder order = buildRepairOrder(1L, buildClient(1L), buildVehicle(1L, buildClient(1L)));
-
-        // Act & Assert
-        assertThatCode(() -> repairOrderService.validateNotClosedByStatus(order))
-                .doesNotThrowAnyException();
-        verifyNoInteractions(invoiceRepository);
     }
 
     // --- Helpers ---

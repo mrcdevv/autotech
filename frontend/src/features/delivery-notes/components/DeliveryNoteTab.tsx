@@ -33,15 +33,6 @@ type EstimateState =
 
 interface DeliveryNoteTabProps {
   repairOrderId: number;
-  clientId: number;
-  clientFirstName: string;
-  clientLastName: string;
-  clientDni: string | null;
-  vehicleId: number;
-  vehiclePlate: string;
-  vehicleBrandName: string | null;
-  vehicleModel: string | null;
-  vehicleYear: number | null;
 }
 
 export function DeliveryNoteTab({ repairOrderId }: DeliveryNoteTabProps) {
@@ -50,8 +41,6 @@ export function DeliveryNoteTab({ repairOrderId }: DeliveryNoteTabProps) {
   const [estimateState, setEstimateState] = useState<EstimateState>({ kind: "loading" });
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
-  const [confirmNoEstimateOpen, setConfirmNoEstimateOpen] = useState(false);
-  const [creatingWithoutEstimate, setCreatingWithoutEstimate] = useState(false);
 
   const fetchData = useCallback(async () => {
     setDeliveryNoteLoading(true);
@@ -132,10 +121,9 @@ export function DeliveryNoteTab({ repairOrderId }: DeliveryNoteTabProps) {
       )}
 
       {estimateState.kind === "none" && (
-        <EmptyState
-          icon={<ReceiptLongIcon sx={{ color: "text.disabled" }} />}
-          title="Aún no hay factura"
-          description="Podés generarla directamente, sin necesidad de un presupuesto."
+        <Paper
+          elevation={0}
+          sx={{ p: 4, textAlign: "center", border: 1, borderColor: "divider", borderRadius: 2 }}
         >
           <ReceiptLongIcon sx={{ fontSize: 48, color: "text.disabled", mb: 2 }} />
           <Typography variant="h6" sx={{ mb: 1, fontWeight: 500 }}>
@@ -223,18 +211,6 @@ export function DeliveryNoteTab({ repairOrderId }: DeliveryNoteTabProps) {
           </Typography>
         </Paper>
       )}
-
-      <AppConfirmDialog
-        open={confirmNoEstimateOpen}
-        title="Crear factura sin presupuesto"
-        message="Esta orden de trabajo no tiene un presupuesto. La factura se creará sin presupuesto y quedará vinculada a esta orden."
-        confirmLabel="Crear factura"
-        onConfirm={() => {
-          setConfirmNoEstimateOpen(false);
-          setCreatingWithoutEstimate(true);
-        }}
-        onCancel={() => setConfirmNoEstimateOpen(false)}
-      />
     </Box>
   );
 }

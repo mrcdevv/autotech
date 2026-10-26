@@ -6,7 +6,7 @@ This feature implements full management for **Estimates (Presupuestos)** — doc
 
 Key capabilities:
 - CRUD for estimates with nested line items (services and products).
-- Status workflow: `PENDIENTE` → `ACEPTADO` or `RECHAZADO`. `ACEPTADO` can be explicitly reopened back to `PENDIENTE` (while its repair order has no invoice); `RECHAZADO` is terminal.
+- Status workflow: `PENDIENTE` → `ACEPTADO` or `RECHAZADO` (one-way, no reverting).
 - Integration with the **Services** and **Products** catalogs via autocomplete (names and prices are **snapshotted** — copied by value at creation time, not FK references).
 - Read-only display of **mechanic observations** (`repair_orders.mechanic_notes`) and **inspection issues** (items with `PROBLEMA` or `REVISAR` status) when the estimate belongs to a repair order.
 - "Facturar" action: converts an `ACEPTADO` estimate into an invoice by pre-loading its data into the invoice creation screen.
@@ -927,7 +927,6 @@ The `RepairOrderService` injects `EstimateService` to coordinate, as per the cro
 | `PUT` | `/api/estimates/{id}` | Update estimate (only if PENDIENTE) |
 | `PUT` | `/api/estimates/{id}/approve` | Approve estimate (PENDIENTE → ACEPTADO) |
 | `PUT` | `/api/estimates/{id}/reject` | Reject estimate (PENDIENTE → RECHAZADO) |
-| `PUT` | `/api/estimates/{id}/reopen` | Reopen an ACEPTADO estimate (ACEPTADO → PENDIENTE, only while the repair order is open and has no invoice) |
 | `DELETE` | `/api/estimates/{id}` | Delete estimate |
 | `GET` | `/api/estimates/{id}/invoice-data` | Get pre-loaded data for invoice creation (only if ACEPTADO) |
 | `GET` | `/api/repair-orders/{id}/estimate` | Get estimate linked to a repair order |
@@ -1795,7 +1794,7 @@ const EstimateDetailPage = lazy(() => import("@/pages/EstimateDetailPage"));
 | # | Rule | Implementation |
 |---|---|---|
 | 1 | **Snapshot line items** | `estimate_services.service_name` and `estimate_products.product_name` store plain strings (not FK references). When a service/product is selected from the catalog autocomplete, its name and price are **copied by value** at creation time. Later changes to the catalog item do not retroactively affect existing estimates. |
-| 2 | **Status workflow is one-way, except by explicit reopening** | An estimate starts as `PENDIENTE`. It can transition to `ACEPTADO` or `RECHAZADO`. An `ACEPTADO` estimate **can** be returned to `PENDIENTE` only through the explicit `PUT /api/estimates/{id}/reopen` transition (`EstimateServiceImpl.reopen()`), which is refused while the repair order is closed (`ENTREGADO`/`CANCELADO`) or already has an invoice (reuses the D1 guard). There is still **no** `ACEPTADO` → `RECHAZADO` transition, and `RECHAZADO` is terminal (never back to `PENDIENTE`). Enforced in `EstimateServiceImpl.approve()`, `reject()` and `reopen()` via `status` checks. Every reopen and every later `update()` of the estimate is audited (`MODIFIED` rows on `ESTIMATE` with the previous and new `status`/`total`). |
+| 2 | **Status workflow is one-way** | An estimate starts as `PENDIENTE`. It can transition to `ACEPTADO` or `RECHAZADO`, but **never back** to `PENDIENTE` or from `ACEPTADO` to `RECHAZADO` (or vice versa). Enforced in `EstimateServiceImpl.approve()` and `reject()` which check `status == PENDIENTE`. |
 | 3 | **Only PENDIENTE estimates can be edited** | `update()` throws `BusinessRuleException` if `status != PENDIENTE`. |
 | 4 | **Discount and tax validation** | Both `discount_percentage` and `tax_percentage` must be between 0 and 100 (inclusive). Enforced by DB CHECK constraints and DTO `@DecimalMin`/`@DecimalMax` annotations. |
 | 5 | **Total calculation** | `total = (servicesSum + productsSum) - discount + tax`. Where: `servicesSum = sum of all service prices`, `productsSum = sum of (quantity × unitPrice) for all products`, `discount = subtotal × discountPercentage / 100`, `tax = (subtotal - discount) × taxPercentage / 100`. Computed server-side on create/update. |

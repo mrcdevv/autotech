@@ -4,15 +4,9 @@ import com.autotech.appointment.model.Appointment;
 import com.autotech.appointment.repository.AppointmentRepository;
 import com.autotech.client.model.Client;
 import com.autotech.client.repository.ClientRepository;
-import com.autotech.common.audit.AuditAction;
-import com.autotech.common.audit.AuditEntityType;
-import com.autotech.common.audit.AuditService;
-import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
-import com.autotech.invoice.repository.InvoiceRepository;
 import com.autotech.employee.model.Employee;
 import com.autotech.employee.repository.EmployeeRepository;
-import com.autotech.employee.service.EmployeeService;
 import com.autotech.email.service.EmailNotificationService;
 import com.autotech.repairorder.dto.NotesUpdateRequest;
 import com.autotech.repairorder.dto.RepairOrderDetailResponse;
@@ -41,7 +35,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,9 +52,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
     private final VehicleRepository vehicleRepository;
     private final AppointmentRepository appointmentRepository;
     private final EmployeeRepository employeeRepository;
-    private final EmployeeService employeeService;
     private final TagRepository tagRepository;
-    private final InvoiceRepository invoiceRepository;
     private final EmailNotificationService emailNotificationService;
     private final StockService stockService;
 
@@ -151,7 +142,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         saved.setTitle(autoTitle);
 
         if (request.employeeIds() != null && !request.employeeIds().isEmpty()) {
-            saved.setEmployees(resolveEmployees(request.employeeIds(), Set.of()));
+            saved.setEmployees(resolveEmployees(request.employeeIds()));
         }
 
         if (request.tagIds() != null && !request.tagIds().isEmpty()) {
@@ -193,10 +184,9 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         existing.setMechanicNotes(request.mechanicNotes());
 
         if (request.employeeIds() != null) {
-            Set<Long> alreadyAssignedIds = alreadyAssignedEmployeeIds(existing);
             existing.getEmployees().clear();
             if (!request.employeeIds().isEmpty()) {
-                existing.setEmployees(resolveEmployees(request.employeeIds(), alreadyAssignedIds));
+                existing.setEmployees(resolveEmployees(request.employeeIds()));
             }
         }
 
@@ -268,14 +258,6 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         return repairOrderMapper.toResponse(saved);
     }
 
-    private void recordStatusAudit(Long repairOrderId, RepairOrderStatus previousStatus, RepairOrderStatus newStatus) {
-        Map<String, Object> oldValues = new LinkedHashMap<>();
-        oldValues.put("status", previousStatus.name());
-        Map<String, Object> newValues = new LinkedHashMap<>();
-        newValues.put("status", newStatus.name());
-        auditService.record(AuditEntityType.REPAIR_ORDER, repairOrderId, AuditAction.MODIFIED, oldValues, newValues);
-    }
-
     @Override
     @Transactional
     public RepairOrderResponse updateTitle(Long id, TitleUpdateRequest request) {
@@ -294,10 +276,9 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         RepairOrder order = repairOrderRepository.findWithDetailsById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", id));
 
-        Set<Long> alreadyAssignedIds = alreadyAssignedEmployeeIds(order);
         order.getEmployees().clear();
         if (employeeIds != null && !employeeIds.isEmpty()) {
-            order.setEmployees(resolveEmployees(employeeIds, alreadyAssignedIds));
+            order.setEmployees(resolveEmployees(employeeIds));
         }
 
         RepairOrder saved = repairOrderRepository.save(order);
@@ -334,25 +315,13 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         return getById(id);
     }
 
-    /**
-     * Ids of the employees currently assigned to the order, captured before the assignment set
-     * is replaced. Re-sending them on update is an edit, not a new assignment, so an inactive
-     * employee already assigned may be kept (D12).
-     */
-    private Set<Long> alreadyAssignedEmployeeIds(RepairOrder order) {
-        return order.getEmployees().stream()
-                .map(Employee::getId)
-                .collect(Collectors.toSet());
-    }
-
-    private Set<Employee> resolveEmployees(List<Long> employeeIds, Set<Long> alreadyAssignedIds) {
+    private Set<Employee> resolveEmployees(List<Long> employeeIds) {
         Set<Employee> employees = new HashSet<>();
         for (Long empId : employeeIds) {
             Employee emp = employeeRepository.findById(empId)
                     .orElseThrow(() -> new ResourceNotFoundException("Employee", empId));
             employees.add(emp);
         }
-        employeeService.validateActiveAssignees(employees, alreadyAssignedIds);
         return employees;
     }
 
@@ -364,30 +333,5 @@ public class RepairOrderServiceImpl implements RepairOrderService {
             tags.add(tag);
         }
         return tags;
-    }
-
-    @Override
-    public void validateOpenForNewDocuments(RepairOrder repairOrder) {
-        if (repairOrder == null) {
-            return;
-        }
-        validateNotClosedByStatus(repairOrder);
-        if (invoiceRepository.findByRepairOrderId(repairOrder.getId()).isPresent()) {
-            throw new BusinessException(
-                    "No se pueden agregar más documentos a la orden de trabajo porque ya tiene una factura asociada");
-        }
-    }
-
-    @Override
-    public void validateNotClosedByStatus(RepairOrder repairOrder) {
-        if (repairOrder == null) {
-            return;
-        }
-        RepairOrderStatus status = repairOrder.getStatus();
-        if (status == RepairOrderStatus.ENTREGADO || status == RepairOrderStatus.CANCELADO) {
-            throw new BusinessException(
-                    "No se pueden agregar más documentos a la orden de trabajo porque está cerrada (estado "
-                    + status + ")");
-        }
     }
 }

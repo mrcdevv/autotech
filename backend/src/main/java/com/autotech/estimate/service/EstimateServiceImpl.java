@@ -4,9 +4,6 @@ import com.autotech.catalog.repository.ProductRepository;
 import com.autotech.catalog.model.Product;
 import com.autotech.client.model.Client;
 import com.autotech.client.repository.ClientRepository;
-import com.autotech.common.audit.AuditAction;
-import com.autotech.common.audit.AuditEntityType;
-import com.autotech.common.audit.AuditService;
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.common.util.SecureTokens;
@@ -51,9 +48,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -68,7 +63,6 @@ public class EstimateServiceImpl implements EstimateService {
     private final ClientRepository clientRepository;
     private final VehicleRepository vehicleRepository;
     private final RepairOrderRepository repairOrderRepository;
-    private final RepairOrderService repairOrderService;
     private final InspectionRepository inspectionRepository;
     private final EmailNotificationService emailNotificationService;
     private final TaxConfigService taxConfigService;
@@ -147,9 +141,6 @@ public class EstimateServiceImpl implements EstimateService {
             repairOrder = repairOrderRepository.findById(request.repairOrderId())
                     .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", request.repairOrderId()));
 
-            // The OT must be open: not closed by status and without an invoice (D1)
-            repairOrderService.validateOpenForNewDocuments(repairOrder);
-
             boolean hasActiveEstimate = estimateRepository.findAllByRepairOrderId(request.repairOrderId()).stream()
                     .anyMatch(e -> e.getStatus() == EstimateStatus.PENDIENTE || e.getStatus() == EstimateStatus.ACEPTADO);
             if (hasActiveEstimate) {
@@ -177,7 +168,6 @@ public class EstimateServiceImpl implements EstimateService {
         entity.setTotal(total);
 
         Estimate saved = estimateRepository.save(entity);
-        recordCreationAudit(saved.getId(), saved.getStatus(), saved.getTotal());
         log.info("Created estimate with id {}", saved.getId());
         EstimateDetailResponse response = getById(saved.getId());
         emailNotificationService.notifyEstimateCreated(response,
@@ -194,9 +184,6 @@ public class EstimateServiceImpl implements EstimateService {
         if (entity.getStatus() != EstimateStatus.PENDIENTE) {
             throw new BusinessException("Solo se pueden editar presupuestos en estado PENDIENTE");
         }
-
-        EstimateStatus previousStatus = entity.getStatus();
-        BigDecimal previousTotal = entity.getTotal();
 
         Client client = clientRepository.findById(request.clientId())
                 .orElseThrow(() -> new ResourceNotFoundException("Client", request.clientId()));
@@ -222,7 +209,6 @@ public class EstimateServiceImpl implements EstimateService {
         entity.setTotal(total);
 
         Estimate saved = estimateRepository.save(entity);
-        recordEstimateAudit(saved.getId(), previousStatus, previousTotal, saved.getStatus(), saved.getTotal());
         log.info("Updated estimate with id {}", saved.getId());
         syncRepairOrderStock(saved);
         return getById(saved.getId());

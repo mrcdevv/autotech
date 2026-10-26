@@ -1,6 +1,5 @@
 package com.autotech.employee.service;
 
-import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.DuplicateResourceException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.employee.dto.EmployeeMapper;
@@ -29,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.SecureRandom;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -131,6 +129,16 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee saved = employeeRepository.save(employee);
         log.info("Employee updated with id: {}", saved.getId());
         return employeeMapper.toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public void delete(Long id) {
+        log.info("Deleting employee with id: {}", id);
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Empleado", id));
+        employeeRepository.delete(employee);
+        log.info("Employee deleted with id: {}", id);
     }
 
     @Override
@@ -237,19 +245,6 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         log.info("Password reset for employee id: {}", id);
         emailNotificationService.notifyPasswordReset(employee, tempPassword);
-    }
-
-    @Override
-    public void validateActiveAssignees(Collection<Employee> candidates, Set<Long> alreadyAssignedIds) {
-        for (Employee employee : candidates) {
-            boolean alreadyAssigned = employee.getId() != null && alreadyAssignedIds.contains(employee.getId());
-            if (employee.getStatus() != EmployeeStatus.ACTIVO && !alreadyAssigned) {
-                throw new BusinessException(
-                        "No se puede asignar al empleado inactivo " + employee.getFirstName() + " "
-                        + employee.getLastName() + " (DNI " + employee.getDni() + "). "
-                        + "Solo se pueden asignar empleados activos");
-            }
-        }
     }
 
     private String generateTempPassword() {

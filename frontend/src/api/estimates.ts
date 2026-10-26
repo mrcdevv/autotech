@@ -55,9 +55,6 @@ export const estimatesApi = {
   reject: (id: number, channel: StaffDecisionChannel) =>
     apiClient.put<ApiResponse<EstimateDetailResponse>>(`/estimates/${id}/reject`, { channel }),
 
-  reopen: (id: number) =>
-    apiClient.put<ApiResponse<EstimateDetailResponse>>(`/estimates/${id}/reopen`),
-
   delete: (id: number) =>
     apiClient.delete<ApiResponse<void>>(`/estimates/${id}`),
 

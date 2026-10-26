@@ -89,7 +89,6 @@ function mockUseEstimate(allEstimates: EstimateResponse[]): void {
     updateEstimate: vi.fn(),
     approveEstimate: vi.fn(),
     rejectEstimate: vi.fn(),
-    reopenEstimate: vi.fn(),
     refetch: vi.fn(),
   });
 }
