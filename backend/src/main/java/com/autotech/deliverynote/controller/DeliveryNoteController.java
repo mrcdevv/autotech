@@ -42,9 +42,12 @@ public class DeliveryNoteController {
             @RequestParam(required = false) String clientName,
             @RequestParam(required = false) String plate,
             @RequestParam(required = false) DeliveryNoteStatus status,
+            @RequestParam(required = false) Long clientId,
+            @RequestParam(required = false) Long vehicleId,
             @PageableDefault(size = 12, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        if (clientName != null || plate != null || status != null) {
-            return ResponseEntity.ok(ApiResponse.success(deliveryNoteService.search(clientName, plate, status, pageable)));
+        if (clientName != null || plate != null || status != null || clientId != null || vehicleId != null) {
+            return ResponseEntity.ok(ApiResponse.success(
+                    deliveryNoteService.search(clientName, plate, status, clientId, vehicleId, pageable)));
         }
         return ResponseEntity.ok(ApiResponse.success(deliveryNoteService.getAll(pageable)));
     }

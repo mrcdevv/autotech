@@ -123,10 +123,10 @@ class DeliveryNoteServiceImplTest {
         DeliveryNote deliveryNote = buildDeliveryNote(1L);
         DeliveryNoteResponse response = buildDeliveryNoteResponse(1L);
         Page<DeliveryNote> page = new PageImpl<>(List.of(deliveryNote), pageable, 1);
-        when(deliveryNoteRepository.search("Juan", null, null, pageable)).thenReturn(page);
+        when(deliveryNoteRepository.search("Juan", null, null, null, null, pageable)).thenReturn(page);
         when(deliveryNoteMapper.toResponse(deliveryNote)).thenReturn(response);
 
-        Page<DeliveryNoteResponse> result = deliveryNoteService.search("Juan", null, null, pageable);
+        Page<DeliveryNoteResponse> result = deliveryNoteService.search("Juan", null, null, null, null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
     }
@@ -137,10 +137,10 @@ class DeliveryNoteServiceImplTest {
         DeliveryNote deliveryNote = buildDeliveryNote(1L);
         DeliveryNoteResponse response = buildDeliveryNoteResponse(1L);
         Page<DeliveryNote> page = new PageImpl<>(List.of(deliveryNote), pageable, 1);
-        when(deliveryNoteRepository.search(null, "ABC", null, pageable)).thenReturn(page);
+        when(deliveryNoteRepository.search(null, "ABC", null, null, null, pageable)).thenReturn(page);
         when(deliveryNoteMapper.toResponse(deliveryNote)).thenReturn(response);
 
-        Page<DeliveryNoteResponse> result = deliveryNoteService.search(null, "ABC", null, pageable);
+        Page<DeliveryNoteResponse> result = deliveryNoteService.search(null, "ABC", null, null, null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
     }
@@ -151,10 +151,53 @@ class DeliveryNoteServiceImplTest {
         DeliveryNote deliveryNote = buildDeliveryNote(1L);
         DeliveryNoteResponse response = buildDeliveryNoteResponse(1L);
         Page<DeliveryNote> page = new PageImpl<>(List.of(deliveryNote), pageable, 1);
-        when(deliveryNoteRepository.search(null, null, DeliveryNoteStatus.PENDIENTE, pageable)).thenReturn(page);
+        when(deliveryNoteRepository.search(null, null, DeliveryNoteStatus.PENDIENTE, null, null, pageable)).thenReturn(page);
         when(deliveryNoteMapper.toResponse(deliveryNote)).thenReturn(response);
 
-        Page<DeliveryNoteResponse> result = deliveryNoteService.search(null, null, DeliveryNoteStatus.PENDIENTE, pageable);
+        Page<DeliveryNoteResponse> result = deliveryNoteService.search(null, null, DeliveryNoteStatus.PENDIENTE, null, null, pageable);
+
+        assertThat(result.getContent()).hasSize(1);
+    }
+
+    @Test
+    void givenFilterByClientId_whenSearch_thenPassesClientIdToRepository() {
+        Pageable pageable = PageRequest.of(0, 12);
+        DeliveryNote deliveryNote = buildDeliveryNote(1L);
+        DeliveryNoteResponse response = buildDeliveryNoteResponse(1L);
+        Page<DeliveryNote> page = new PageImpl<>(List.of(deliveryNote), pageable, 1);
+        when(deliveryNoteRepository.search(null, null, null, 7L, null, pageable)).thenReturn(page);
+        when(deliveryNoteMapper.toResponse(deliveryNote)).thenReturn(response);
+
+        Page<DeliveryNoteResponse> result = deliveryNoteService.search(null, null, null, 7L, null, pageable);
+
+        assertThat(result.getContent()).hasSize(1);
+    }
+
+    @Test
+    void givenFilterByVehicleId_whenSearch_thenPassesVehicleIdToRepository() {
+        Pageable pageable = PageRequest.of(0, 12);
+        DeliveryNote deliveryNote = buildDeliveryNote(1L);
+        DeliveryNoteResponse response = buildDeliveryNoteResponse(1L);
+        Page<DeliveryNote> page = new PageImpl<>(List.of(deliveryNote), pageable, 1);
+        when(deliveryNoteRepository.search(null, null, null, null, 3L, pageable)).thenReturn(page);
+        when(deliveryNoteMapper.toResponse(deliveryNote)).thenReturn(response);
+
+        Page<DeliveryNoteResponse> result = deliveryNoteService.search(null, null, null, null, 3L, pageable);
+
+        assertThat(result.getContent()).hasSize(1);
+    }
+
+    @Test
+    void givenClientIdAndStatusFilters_whenSearch_thenBothPassedToRepository() {
+        Pageable pageable = PageRequest.of(0, 12);
+        DeliveryNote deliveryNote = buildDeliveryNote(1L);
+        DeliveryNoteResponse response = buildDeliveryNoteResponse(1L);
+        Page<DeliveryNote> page = new PageImpl<>(List.of(deliveryNote), pageable, 1);
+        when(deliveryNoteRepository.search(null, null, DeliveryNoteStatus.PENDIENTE, 7L, null, pageable)).thenReturn(page);
+        when(deliveryNoteMapper.toResponse(deliveryNote)).thenReturn(response);
+
+        Page<DeliveryNoteResponse> result =
+                deliveryNoteService.search(null, null, DeliveryNoteStatus.PENDIENTE, 7L, null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
     }

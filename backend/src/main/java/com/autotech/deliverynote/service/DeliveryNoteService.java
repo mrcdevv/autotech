@@ -16,7 +16,8 @@ public interface DeliveryNoteService {
 
     Page<DeliveryNoteResponse> getAll(Pageable pageable);
 
-    Page<DeliveryNoteResponse> search(String clientName, String plate, DeliveryNoteStatus status, Pageable pageable);
+    Page<DeliveryNoteResponse> search(String clientName, String plate, DeliveryNoteStatus status,
+                                      Long clientId, Long vehicleId, Pageable pageable);
 
     DeliveryNoteDetailResponse getById(Long id);
 

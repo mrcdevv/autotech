@@ -74,9 +74,11 @@ public class DeliveryNoteServiceImpl implements DeliveryNoteService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<DeliveryNoteResponse> search(String clientName, String plate, DeliveryNoteStatus status, Pageable pageable) {
-        log.debug("Searching delivery notes - clientName: '{}', plate: '{}', status: '{}'", clientName, plate, status);
-        return deliveryNoteRepository.search(clientName, plate, status, pageable)
+    public Page<DeliveryNoteResponse> search(String clientName, String plate, DeliveryNoteStatus status,
+                                             Long clientId, Long vehicleId, Pageable pageable) {
+        log.debug("Searching delivery notes - clientName: '{}', plate: '{}', status: '{}', clientId: {}, vehicleId: {}",
+                clientName, plate, status, clientId, vehicleId);
+        return deliveryNoteRepository.search(clientName, plate, status, clientId, vehicleId, pageable)
                 .map(deliveryNoteMapper::toResponse);
     }
 
