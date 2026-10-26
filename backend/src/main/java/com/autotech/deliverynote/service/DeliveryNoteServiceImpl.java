@@ -125,6 +125,12 @@ public class DeliveryNoteServiceImpl implements DeliveryNoteService {
             repairOrder = repairOrderRepository.findById(request.repairOrderId())
                     .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", request.repairOrderId()));
 
+            // The order must not be closed by status (ENTREGADO/CANCELADO). The
+            // status-only variant matches the attach path; the one-remito-per-order rule
+            // below is the delivery-note-specific check. Standalone creation (null
+            // repairOrderId) never reaches this.
+            repairOrderService.validateNotClosedByStatus(repairOrder);
+
             // One delivery note per repair order: covers both create and createFromEstimate (which delegates here)
             if (deliveryNoteRepository.findByRepairOrderId(request.repairOrderId()).isPresent()) {
                 throw new BusinessException("La orden de trabajo ya tiene un remito asociado");

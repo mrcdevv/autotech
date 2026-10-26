@@ -339,6 +339,85 @@ class EstimateServiceImplTest {
         assertThat(result.repairOrderId()).isEqualTo(10L);
     }
 
+    // --- D1 close-out guard on create: a closed order is not a place to start a new quote ---
+
+    @Test
+    void givenEntregadoRepairOrder_whenCreate_thenThrowBusinessException() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        RepairOrder repairOrder = buildRepairOrder(10L, client, vehicle);
+        repairOrder.setStatus(RepairOrderStatus.ENTREGADO);
+        EstimateRequest request = new EstimateRequest(1L, 2L, 10L, BigDecimal.ZERO, BigDecimal.ZERO,
+                Collections.emptyList(), Collections.emptyList());
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(repairOrder));
+        doThrow(new BusinessException("La orden de trabajo está cerrada"))
+                .when(repairOrderService).validateOpenForNewDocuments(repairOrder);
+
+        // Act & Assert: creation must be refused before anything is persisted
+        assertThatThrownBy(() -> estimateService.create(request))
+                .isInstanceOf(BusinessException.class);
+        verify(repairOrderService).validateOpenForNewDocuments(repairOrder);
+        verify(estimateRepository, never()).save(any(Estimate.class));
+    }
+
+    @Test
+    void givenCanceladoRepairOrder_whenCreate_thenThrowBusinessException() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        RepairOrder repairOrder = buildRepairOrder(10L, client, vehicle);
+        repairOrder.setStatus(RepairOrderStatus.CANCELADO);
+        EstimateRequest request = new EstimateRequest(1L, 2L, 10L, BigDecimal.ZERO, BigDecimal.ZERO,
+                Collections.emptyList(), Collections.emptyList());
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(repairOrder));
+        doThrow(new BusinessException("La orden de trabajo está cerrada"))
+                .when(repairOrderService).validateOpenForNewDocuments(repairOrder);
+
+        // Act & Assert: creation must be refused before anything is persisted
+        assertThatThrownBy(() -> estimateService.create(request))
+                .isInstanceOf(BusinessException.class);
+        verify(repairOrderService).validateOpenForNewDocuments(repairOrder);
+        verify(estimateRepository, never()).save(any(Estimate.class));
+    }
+
+    @Test
+    void givenStandaloneRequest_whenCreate_thenDoesNotInvokeRepairOrderGuard() {
+        // Arrange: no repairOrderId, the guard must never fire for a standalone quote
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        EstimateRequest request = new EstimateRequest(1L, 2L, null, BigDecimal.ZERO, BigDecimal.ZERO,
+                List.of(new EstimateServiceItemRequest("Service A", BigDecimal.valueOf(100))),
+                Collections.emptyList());
+
+        Estimate mappedEntity = Estimate.builder()
+                .discountPercentage(BigDecimal.ZERO)
+                .taxPercentage(BigDecimal.ZERO)
+                .build();
+        Estimate savedEntity = buildEstimate(1L);
+        EstimateDetailResponse detailResponse = buildDetailResponse(1L);
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(estimateMapper.toEntity(request)).thenReturn(mappedEntity);
+        when(estimateRepository.save(any(Estimate.class))).thenReturn(savedEntity);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(savedEntity));
+        when(estimateMapper.toDetailResponse(savedEntity)).thenReturn(detailResponse);
+
+        // Act
+        EstimateDetailResponse result = estimateService.create(request);
+
+        // Assert: standalone creation keeps working and never touches the guard
+        assertThat(result.id()).isEqualTo(1L);
+        verify(repairOrderService, never()).validateOpenForNewDocuments(any());
+    }
+
     @Test
     void givenPendienteEstimate_whenUpdate_thenReturnUpdatedResponse() {
         // Arrange

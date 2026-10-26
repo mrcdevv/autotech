@@ -301,6 +301,80 @@ class DeliveryNoteServiceImplTest {
                 .hasMessageContaining("ya tiene un remito");
     }
 
+    // --- D1 close-out guard on create: a closed order is not a place to emit a new remito ---
+
+    @Test
+    void givenEntregadoRepairOrder_whenCreate_thenThrowBusinessException() {
+        // Arrange
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        RepairOrder repairOrder = buildRepairOrder(10L);
+        repairOrder.setStatus(RepairOrderStatus.ENTREGADO);
+        DeliveryNoteRequest request = new DeliveryNoteRequest(1L, null, 10L, null,
+                BigDecimal.ZERO, BigDecimal.ZERO, Collections.emptyList(), Collections.emptyList());
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(repairOrder));
+        doThrow(new BusinessException("La orden de trabajo está cerrada"))
+                .when(repairOrderService).validateNotClosedByStatus(repairOrder);
+
+        // Act & Assert: creation must be refused before anything is persisted
+        assertThatThrownBy(() -> deliveryNoteService.create(request))
+                .isInstanceOf(BusinessException.class);
+        verify(repairOrderService).validateNotClosedByStatus(repairOrder);
+        verify(deliveryNoteRepository, never()).save(any(DeliveryNote.class));
+    }
+
+    @Test
+    void givenCanceladoRepairOrder_whenCreate_thenThrowBusinessException() {
+        // Arrange
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        RepairOrder repairOrder = buildRepairOrder(10L);
+        repairOrder.setStatus(RepairOrderStatus.CANCELADO);
+        DeliveryNoteRequest request = new DeliveryNoteRequest(1L, null, 10L, null,
+                BigDecimal.ZERO, BigDecimal.ZERO, Collections.emptyList(), Collections.emptyList());
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(repairOrder));
+        doThrow(new BusinessException("La orden de trabajo está cerrada"))
+                .when(repairOrderService).validateNotClosedByStatus(repairOrder);
+
+        // Act & Assert: creation must be refused before anything is persisted
+        assertThatThrownBy(() -> deliveryNoteService.create(request))
+                .isInstanceOf(BusinessException.class);
+        verify(repairOrderService).validateNotClosedByStatus(repairOrder);
+        verify(deliveryNoteRepository, never()).save(any(DeliveryNote.class));
+    }
+
+    @Test
+    void givenStandaloneRequest_whenCreate_thenDoesNotInvokeRepairOrderGuard() {
+        // Arrange: no repairOrderId, the guard must never fire for a standalone remito
+        Client client = buildClient(1L, ClientType.PERSONAL);
+        DeliveryNoteRequest request = new DeliveryNoteRequest(1L, null, null, null,
+                BigDecimal.ZERO, BigDecimal.ZERO,
+                List.of(new DeliveryNoteServiceItemRequest("Service A", BigDecimal.valueOf(100))),
+                Collections.emptyList());
+
+        DeliveryNote mappedEntity = DeliveryNote.builder()
+                .discountPercentage(BigDecimal.ZERO)
+                .build();
+        DeliveryNote savedEntity = buildDeliveryNote(1L);
+        DeliveryNoteDetailResponse detailResponse = buildDetailResponse(1L);
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(deliveryNoteMapper.toEntity(request)).thenReturn(mappedEntity);
+        when(deliveryNoteRepository.nextNumber()).thenReturn(1L);
+        when(deliveryNoteRepository.save(any(DeliveryNote.class))).thenReturn(savedEntity);
+        when(deliveryNoteRepository.findWithDetailsById(1L)).thenReturn(Optional.of(savedEntity));
+        when(deliveryNoteMapper.toDetailResponse(savedEntity)).thenReturn(detailResponse);
+
+        // Act
+        DeliveryNoteDetailResponse result = deliveryNoteService.create(request);
+
+        // Assert: standalone creation keeps working and never touches the guard
+        assertThat(result.id()).isEqualTo(1L);
+        verify(repairOrderService, never()).validateNotClosedByStatus(any());
+    }
+
     @Test
     void givenEstimateAlreadyRemitted_whenCreate_thenThrowBusinessException() {
         Client client = buildClient(1L, ClientType.PERSONAL);

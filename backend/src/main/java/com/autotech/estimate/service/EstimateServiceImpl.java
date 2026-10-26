@@ -149,6 +149,11 @@ public class EstimateServiceImpl implements EstimateService {
             repairOrder = repairOrderRepository.findById(request.repairOrderId())
                     .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", request.repairOrderId()));
 
+            // The order must be open: not closed by status and without a remito. The full
+            // variant applies because an order that already delivered is not a place to
+            // start a new quote either. Standalone creation (null repairOrderId) never reaches this.
+            repairOrderService.validateOpenForNewDocuments(repairOrder);
+
             boolean hasActiveEstimate = estimateRepository.findAllByRepairOrderId(request.repairOrderId()).stream()
                     .anyMatch(e -> e.getStatus() == EstimateStatus.PENDIENTE || e.getStatus() == EstimateStatus.ACEPTADO);
             if (hasActiveEstimate) {
