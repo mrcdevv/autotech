@@ -13,6 +13,8 @@ import type { NotesUpdateRequest } from "@/features/inspections/types";
 
 export interface RepairOrderListParams {
   statuses?: RepairOrderStatus[];
+  clientId?: number;
+  vehicleId?: number;
   createdFrom?: string;
   createdTo?: string;
   updatedFrom?: string;
@@ -38,6 +40,8 @@ export const repairOrdersApi = {
         ...(params.updatedTo ? { updatedTo: params.updatedTo } : {}),
         ...(params.employeeId != null ? { employeeId: params.employeeId } : {}),
         ...(params.tagId != null ? { tagId: params.tagId } : {}),
+        ...(params.clientId != null ? { clientId: params.clientId } : {}),
+        ...(params.vehicleId != null ? { vehicleId: params.vehicleId } : {}),
         ...(params.q ? { q: params.q } : {}),
         page: params.page ?? 0,
         size: params.size ?? 20,

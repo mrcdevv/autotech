@@ -24,6 +24,7 @@ import EngineeringIcon from "@mui/icons-material/Engineering";
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import UndoIcon from "@mui/icons-material/Undo";
+import LinkIcon from "@mui/icons-material/Link";
 import DescriptionIcon from "@mui/icons-material/Description";
 import { useNavigate } from "react-router";
 import axios from "axios";
@@ -43,6 +44,7 @@ import { ServicesGrid } from "./ServicesGrid";
 import { ProductsGrid } from "./ProductsGrid";
 import { EstimateSummary } from "./EstimateSummary";
 import { EstimateDecisionDialog } from "./EstimateDecisionDialog";
+import { AttachRepairOrderDialog } from "./AttachRepairOrderDialog";
 import { describeDecision } from "@/features/estimates/decisionChannel";
 
 import type { ClientAutocompleteResponse } from "@/types/vehicle";
@@ -233,7 +235,7 @@ function ContextSections({
 
 export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, reason, mechanicNotes, repairOrderClient, repairOrderVehicle, onBack }: EstimateDetailProps) {
   const navigate = useNavigate();
-  const { estimate, allEstimates, noActiveEstimate, loading, error, clearError, createEstimate, updateEstimate, approveEstimate, rejectEstimate, reopenEstimate } =
+  const { estimate, allEstimates, noActiveEstimate, loading, error, clearError, createEstimate, updateEstimate, approveEstimate, rejectEstimate, reopenEstimate, refetch } =
     useEstimate(estimateId, repairOrderId);
 
   const [clients, setClients] = useState<ClientAutocompleteResponse[]>([]);
@@ -254,6 +256,7 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
   const [apiError, setApiError] = useState<string | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
+  const [attachDialogOpen, setAttachDialogOpen] = useState(false);
 
   const [inspectionIssues, setInspectionIssues] = useState<InspectionIssue[]>([]);
 
@@ -617,6 +620,19 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
       )}
       {estimate?.id && estimate.status === "PENDIENTE" && (
         <>
+          {/* Gated exactly like the service: only a pending estimate that is not yet
+              attached can be linked to an order. Inside a repair order the estimate is
+              attached by definition, so the action never appears there. */}
+          {!fromRepairOrder && estimate.repairOrderId == null && (
+            <Button
+              variant="outlined"
+              startIcon={<LinkIcon />}
+              onClick={() => setAttachDialogOpen(true)}
+              fullWidth
+            >
+              Asociar a una orden de trabajo
+            </Button>
+          )}
           <Button variant="outlined" color="error" startIcon={<CloseIcon />} onClick={handleReject} fullWidth>
             Rechazar
           </Button>
@@ -835,6 +851,20 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
 
         </Stack>
       </FormPageLayout>
+
+      {estimate && (
+        <AttachRepairOrderDialog
+          open={attachDialogOpen}
+          estimateId={estimate.id}
+          clientId={estimate.clientId}
+          vehicleId={estimate.vehicleId}
+          onClose={() => setAttachDialogOpen(false)}
+          onAttached={() => {
+            setAttachDialogOpen(false);
+            refetch();
+          }}
+        />
+      )}
 
       <AppConfirmDialog
         open={reopenDialogOpen}

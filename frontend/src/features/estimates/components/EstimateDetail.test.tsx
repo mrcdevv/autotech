@@ -83,6 +83,26 @@ vi.mock("@/api/inspections", () => ({
   },
 }));
 
+// Used by the attach-to-repair-order picker, which only loads candidates when opened.
+vi.mock("@/api/repairOrders", () => ({
+  repairOrdersApi: {
+    search: vi.fn().mockResolvedValue({
+      data: {
+        data: {
+          content: [],
+          totalElements: 0,
+          totalPages: 0,
+          size: 20,
+          number: 0,
+          first: true,
+          last: true,
+          empty: true,
+        },
+      },
+    }),
+  },
+}));
+
 const rejectedEstimate = (total: number | null): EstimateResponse => ({
   id: 9,
   clientId: 1,
@@ -313,6 +333,70 @@ describe("EstimateDetail (default tax)", () => {
       expect(screen.getByLabelText("Impuesto (%)")).toHaveValue(10.5);
     });
     expect(mockGetTaxConfig).not.toHaveBeenCalled();
+  });
+});
+
+// ── Attach a standalone estimate to a repair order ──
+
+const ATTACH_BUTTON = "Asociar a una orden de trabajo";
+
+describe("EstimateDetail (attach standalone estimate)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("given a standalone pending estimate, when rendered, then shows the attach action", () => {
+    const estimate = detailEstimate({ status: "PENDIENTE", repairOrderId: null });
+    mockDetailUseEstimate(() => estimate);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail estimateId={3} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("button", { name: ATTACH_BUTTON })).toBeInTheDocument();
+  });
+
+  it("given an estimate already attached to an order, when rendered, then does not show the attach action", () => {
+    const estimate = detailEstimate({ status: "PENDIENTE", repairOrderId: 5 });
+    mockDetailUseEstimate(() => estimate);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail estimateId={3} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole("button", { name: ATTACH_BUTTON })).not.toBeInTheDocument();
+  });
+
+  it("given an accepted estimate, when rendered, then does not show the attach action", () => {
+    const estimate = detailEstimate({ status: "ACEPTADO", repairOrderId: null });
+    mockDetailUseEstimate(() => estimate);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail estimateId={3} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole("button", { name: ATTACH_BUTTON })).not.toBeInTheDocument();
+  });
+
+  it("given a standalone pending estimate, when clicking the attach action, then opens the picker dialog", async () => {
+    const user = userEvent.setup();
+    const estimate = detailEstimate({ status: "PENDIENTE", repairOrderId: null });
+    mockDetailUseEstimate(() => estimate);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail estimateId={3} />
+      </MemoryRouter>,
+    );
+    await user.click(screen.getByRole("button", { name: ATTACH_BUTTON }));
+
+    expect(await screen.findByRole("button", { name: "Cancelar" })).toBeInTheDocument();
   });
 });
 

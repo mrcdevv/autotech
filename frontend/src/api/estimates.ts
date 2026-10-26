@@ -58,6 +58,11 @@ export const estimatesApi = {
   reopen: (id: number) =>
     apiClient.put<ApiResponse<EstimateDetailResponse>>(`/estimates/${id}/reopen`),
 
+  attachToRepairOrder: (id: number, repairOrderId: number) =>
+    apiClient.put<ApiResponse<EstimateDetailResponse>>(`/estimates/${id}/repair-order`, {
+      repairOrderId,
+    }),
+
   delete: (id: number) =>
     apiClient.delete<ApiResponse<void>>(`/estimates/${id}`),
 
