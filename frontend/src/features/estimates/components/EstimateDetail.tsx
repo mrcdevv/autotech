@@ -23,6 +23,7 @@ import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import EngineeringIcon from "@mui/icons-material/Engineering";
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
+import UndoIcon from "@mui/icons-material/Undo";
 import DescriptionIcon from "@mui/icons-material/Description";
 import { useNavigate } from "react-router";
 import axios from "axios";
@@ -30,6 +31,7 @@ import axios from "axios";
 import { FormPageLayout } from "@/components/FormPageLayout";
 import { FormSection } from "@/components/FormSection";
 import { InfoList } from "@/components/InfoList";
+import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { clientAutocompleteApi } from "@/api/clientAutocomplete";
@@ -231,7 +233,7 @@ function ContextSections({
 
 export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, reason, mechanicNotes, repairOrderClient, repairOrderVehicle, onBack }: EstimateDetailProps) {
   const navigate = useNavigate();
-  const { estimate, allEstimates, noActiveEstimate, loading, error, clearError, createEstimate, updateEstimate, approveEstimate, rejectEstimate } =
+  const { estimate, allEstimates, noActiveEstimate, loading, error, clearError, createEstimate, updateEstimate, approveEstimate, rejectEstimate, reopenEstimate } =
     useEstimate(estimateId, repairOrderId);
 
   const [clients, setClients] = useState<ClientAutocompleteResponse[]>([]);
@@ -251,6 +253,7 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
   const [formError, setFormError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
 
   const [inspectionIssues, setInspectionIssues] = useState<InspectionIssue[]>([]);
 
@@ -459,6 +462,18 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
     }
   };
 
+  const handleReopen = async () => {
+    if (!estimate?.id) return;
+    setApiError(null);
+    try {
+      await reopenEstimate(estimate.id);
+    } catch (err) {
+      setApiError(extractApiError(err));
+    } finally {
+      setReopenDialogOpen(false);
+    }
+  };
+
   const prepareNewEstimate = () => {
     if (repairOrderClient) {
       setSelectedClient({
@@ -585,7 +600,7 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
   }
 
   // ── Main form ──
-  const actions = (!isReadonly || (estimate?.id && estimate.status === "PENDIENTE")) && (
+  const actions = (!isReadonly || (estimate?.id && (estimate.status === "PENDIENTE" || estimate.status === "ACEPTADO"))) && (
     <Paper
       sx={{
         p: 2,
@@ -595,6 +610,11 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
         bgcolor: "grey.50",
       }}
     >
+      {estimate?.id && estimate.status === "ACEPTADO" && (
+        <Button variant="outlined" color="warning" startIcon={<UndoIcon />} onClick={() => setReopenDialogOpen(true)} fullWidth>
+          Revisar presupuesto
+        </Button>
+      )}
       {estimate?.id && estimate.status === "PENDIENTE" && (
         <>
           <Button variant="outlined" color="error" startIcon={<CloseIcon />} onClick={handleReject} fullWidth>
@@ -815,6 +835,20 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
 
         </Stack>
       </FormPageLayout>
+
+      <AppConfirmDialog
+        open={reopenDialogOpen}
+        title="Revisar presupuesto"
+        message={
+          estimate?.repairOrderId != null
+            ? "El presupuesto volverá al estado Pendiente y deberá ser aprobado nuevamente. Solo podrá reabrirse mientras la orden de trabajo no tenga un remito asociado."
+            : "El presupuesto volverá al estado Pendiente y deberá ser aprobado nuevamente."
+        }
+        confirmLabel="Revisar"
+        confirmColor="warning"
+        onConfirm={handleReopen}
+        onCancel={() => setReopenDialogOpen(false)}
+      />
     </>
   );
 }
