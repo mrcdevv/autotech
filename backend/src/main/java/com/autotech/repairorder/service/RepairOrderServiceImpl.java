@@ -9,6 +9,7 @@ import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.deliverynote.repository.DeliveryNoteRepository;
 import com.autotech.employee.model.Employee;
 import com.autotech.employee.repository.EmployeeRepository;
+import com.autotech.employee.service.EmployeeService;
 import com.autotech.email.service.EmailNotificationService;
 import com.autotech.repairorder.dto.NotesUpdateRequest;
 import com.autotech.repairorder.dto.RepairOrderDetailResponse;
@@ -54,6 +55,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
     private final VehicleRepository vehicleRepository;
     private final AppointmentRepository appointmentRepository;
     private final EmployeeRepository employeeRepository;
+    private final EmployeeService employeeService;
     private final TagRepository tagRepository;
     private final EmailNotificationService emailNotificationService;
     private final StockService stockService;
@@ -145,7 +147,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         saved.setTitle(autoTitle);
 
         if (request.employeeIds() != null && !request.employeeIds().isEmpty()) {
-            saved.setEmployees(resolveEmployees(request.employeeIds()));
+            saved.setEmployees(resolveEmployees(request.employeeIds(), Set.of()));
         }
 
         if (request.tagIds() != null && !request.tagIds().isEmpty()) {
@@ -187,9 +189,10 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         existing.setMechanicNotes(request.mechanicNotes());
 
         if (request.employeeIds() != null) {
+            Set<Long> alreadyAssignedIds = alreadyAssignedEmployeeIds(existing);
             existing.getEmployees().clear();
             if (!request.employeeIds().isEmpty()) {
-                existing.setEmployees(resolveEmployees(request.employeeIds()));
+                existing.setEmployees(resolveEmployees(request.employeeIds(), alreadyAssignedIds));
             }
         }
 
@@ -279,9 +282,10 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         RepairOrder order = repairOrderRepository.findWithDetailsById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", id));
 
+        Set<Long> alreadyAssignedIds = alreadyAssignedEmployeeIds(order);
         order.getEmployees().clear();
         if (employeeIds != null && !employeeIds.isEmpty()) {
-            order.setEmployees(resolveEmployees(employeeIds));
+            order.setEmployees(resolveEmployees(employeeIds, alreadyAssignedIds));
         }
 
         RepairOrder saved = repairOrderRepository.save(order);
@@ -318,13 +322,25 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         return getById(id);
     }
 
-    private Set<Employee> resolveEmployees(List<Long> employeeIds) {
+    /**
+     * Ids of the employees currently assigned to the order, captured before the assignment set
+     * is replaced. Re-sending them on update is an edit, not a new assignment, so an inactive
+     * employee already assigned may be kept (D12).
+     */
+    private Set<Long> alreadyAssignedEmployeeIds(RepairOrder order) {
+        return order.getEmployees().stream()
+                .map(Employee::getId)
+                .collect(Collectors.toSet());
+    }
+
+    private Set<Employee> resolveEmployees(List<Long> employeeIds, Set<Long> alreadyAssignedIds) {
         Set<Employee> employees = new HashSet<>();
         for (Long empId : employeeIds) {
             Employee emp = employeeRepository.findById(empId)
                     .orElseThrow(() -> new ResourceNotFoundException("Employee", empId));
             employees.add(emp);
         }
+        employeeService.validateActiveAssignees(employees, alreadyAssignedIds);
         return employees;
     }
 
