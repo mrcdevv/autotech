@@ -18,15 +18,19 @@ import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.config.AppProperties;
 import com.autotech.email.service.EmailNotificationService;
 import com.autotech.employee.model.Employee;
+import com.autotech.employee.model.EmployeeStatus;
 import com.autotech.employee.repository.EmployeeRepository;
+import com.autotech.employee.service.EmployeeService;
 import com.autotech.tag.model.Tag;
 import com.autotech.tag.repository.TagRepository;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -35,11 +39,13 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -61,6 +67,9 @@ class AppointmentServiceImplTest {
 
     @Mock
     private EmployeeRepository employeeRepository;
+
+    @Mock
+    private EmployeeService employeeService;
 
     @Mock
     private TagRepository tagRepository;
@@ -224,6 +233,58 @@ class AppointmentServiceImplTest {
         assertThat(result.id()).isEqualTo(1L);
         assertThat(entity.getEmployees()).containsExactly(emp);
         assertThat(entity.getTags()).containsExactly(tag);
+    }
+
+    @Test
+    void givenInactiveEmployee_whenCreate_thenDelegatesToSharedValidatorAndRejects() {
+        // Arrange
+        Employee inactive = buildEmployee(1L);
+        inactive.setStatus(EmployeeStatus.INACTIVO);
+        AppointmentRequest request = new AppointmentRequest(
+                "Test", null, null, null, startTime, endTime, null, List.of(1L), null, null);
+        Appointment entity = buildAppointment(null);
+
+        when(appointmentMapper.toEntity(request)).thenReturn(entity);
+        when(employeeRepository.findAllById(List.of(1L))).thenReturn(List.of(inactive));
+        Mockito.lenient().doThrow(new BusinessException("No se puede asignar al empleado inactivo Carlos Lopez"))
+                .when(employeeService).validateActiveAssignees(any(), any());
+
+        // Act & Assert
+        assertThatThrownBy(() -> appointmentService.create(request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("empleado inactivo");
+        assertThat(entity.getEmployees()).isEmpty();
+        verify(appointmentRepository, never()).save(any());
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<java.util.Collection<Employee>> candidates = ArgumentCaptor.forClass(java.util.Collection.class);
+        verify(employeeService).validateActiveAssignees(candidates.capture(), eq(Set.of()));
+        assertThat(candidates.getValue()).containsExactly(inactive);
+    }
+
+    @Test
+    void givenActiveEmployee_whenCreate_thenAssignsEmployee() {
+        // Arrange
+        Employee active = buildEmployee(1L);
+        active.setStatus(EmployeeStatus.ACTIVO);
+        AppointmentRequest request = new AppointmentRequest(
+                "Test", null, null, null, startTime, endTime, null, List.of(1L), null, null);
+        Appointment entity = buildAppointment(null);
+        Appointment saved = buildAppointment(1L);
+        AppointmentResponse response = buildResponse(1L);
+
+        when(appointmentMapper.toEntity(request)).thenReturn(entity);
+        when(employeeRepository.findAllById(List.of(1L))).thenReturn(List.of(active));
+        when(appointmentRepository.save(entity)).thenReturn(saved);
+        when(appointmentMapper.toResponse(saved)).thenReturn(response);
+
+        // Act
+        AppointmentResponse result = appointmentService.create(request);
+
+        // Assert
+        assertThat(entity.getEmployees()).containsExactly(active);
+        assertThat(result.id()).isEqualTo(1L);
+        verify(employeeService).validateActiveAssignees(any(), eq(Set.of()));
     }
 
     @Test
