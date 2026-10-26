@@ -32,7 +32,7 @@ public class AuditLogService {
             return AuditEntityType.valueOf(entityType);
         } catch (IllegalArgumentException | NullPointerException e) {
             throw new BusinessException("Tipo de entidad no válido: " + entityType
-                    + ". Valores permitidos: REPAIR_ORDER, ESTIMATE, INVOICE");
+                    + ". Valores permitidos: REPAIR_ORDER, ESTIMATE, DELIVERY_NOTE");
         }
     }
 }

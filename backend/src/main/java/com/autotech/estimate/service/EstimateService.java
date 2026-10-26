@@ -45,6 +45,8 @@ public interface EstimateService {
      */
     EstimateDetailResponse reopen(Long id);
 
+    EstimateDetailResponse attachToRepairOrder(Long id, Long repairOrderId);
+
     PublicEstimateResponse getByApprovalToken(String token);
 
     PublicEstimateResponse approveByToken(String token);

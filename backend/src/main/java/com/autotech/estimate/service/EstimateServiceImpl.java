@@ -248,6 +248,53 @@ public class EstimateServiceImpl implements EstimateService {
 
     @Override
     @Transactional
+    public EstimateDetailResponse attachToRepairOrder(Long id, Long repairOrderId) {
+        Estimate entity = estimateRepository.findWithDetailsById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Estimate", id));
+
+        // The estimate must be PENDIENTE: an ACEPTADO one must be reopened first,
+        // a RECHAZADO one can never be attached
+        if (entity.getStatus() != EstimateStatus.PENDIENTE) {
+            throw new BusinessException("Solo se pueden asociar presupuestos en estado PENDIENTE");
+        }
+
+        // Attaching is a one-time act: there is no detach, so re-attaching (even to the
+        // same order) is refused
+        if (entity.getRepairOrder() != null) {
+            throw new BusinessException("El presupuesto ya está asociado a una orden de trabajo");
+        }
+
+        RepairOrder order = repairOrderRepository.findById(repairOrderId)
+                .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", repairOrderId));
+
+        // The estimate's client and vehicle must match the order's; the estimate's
+        // vehicle is never overwritten to make it fit
+        if (!entity.getClient().getId().equals(order.getClient().getId())) {
+            throw new BusinessException("El cliente del presupuesto no coincide con el cliente de la orden de trabajo");
+        }
+        if (!entity.getVehicle().getId().equals(order.getVehicle().getId())) {
+            throw new BusinessException("El vehículo del presupuesto no coincide con el vehículo de la orden de trabajo");
+        }
+
+        // The order must be open: not closed by status and without a delivery note (remito)
+        repairOrderService.validateOpenForNewDocuments(order);
+
+        // Consistent with the creation rule: no active estimate (PENDIENTE or ACEPTADO) on the order
+        boolean hasActiveEstimate = estimateRepository.findAllByRepairOrderId(repairOrderId).stream()
+                .anyMatch(e -> e.getStatus() == EstimateStatus.PENDIENTE || e.getStatus() == EstimateStatus.ACEPTADO);
+        if (hasActiveEstimate) {
+            throw new BusinessException("Ya existe un presupuesto pendiente o aceptado para esta orden de trabajo");
+        }
+
+        entity.setRepairOrder(order);
+        Estimate saved = estimateRepository.save(entity);
+        recordAssociationAudit(saved.getId(), repairOrderId);
+        log.info("Attached estimate {} to repair order {}", id, repairOrderId);
+        return getById(saved.getId());
+    }
+
+    @Override
+    @Transactional
     public EstimateDetailResponse approve(Long id, EstimateDecisionChannel channel, String decidedByEmail) {
         Estimate entity = estimateRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Estimate", id));
@@ -294,6 +341,7 @@ public class EstimateServiceImpl implements EstimateService {
         Estimate entity = estimateRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Estimate", id));
         RepairOrder repairOrder = entity.getRepairOrder();
+        recordDeletionAudit(entity);
         estimateRepository.delete(entity);
         estimateRepository.flush();
         log.info("Deleted estimate with id {}", id);
@@ -483,6 +531,34 @@ public class EstimateServiceImpl implements EstimateService {
         newValues.put("status", status.name());
         newValues.put("total", total);
         auditService.record(AuditEntityType.ESTIMATE, estimateId, AuditAction.CREATED, null, newValues);
+    }
+
+    /**
+     * Records an audit row for the association of an estimate to a repair order:
+     * the before/after shows the association appearing
+     * ({"repairOrderId": null} → {"repairOrderId": X}).
+     */
+    private void recordAssociationAudit(Long estimateId, Long repairOrderId) {
+        Map<String, Object> oldValues = new LinkedHashMap<>();
+        oldValues.put("repairOrderId", null);
+        Map<String, Object> newValues = new LinkedHashMap<>();
+        newValues.put("repairOrderId", repairOrderId);
+        auditService.record(AuditEntityType.ESTIMATE, estimateId, AuditAction.MODIFIED, oldValues, newValues);
+    }
+
+    /**
+     * Records an audit row for the deletion of an estimate: the audit table
+     * deliberately has no foreign key to the entity, so the row outlives the
+     * record and the pre-deletion state is the only trace that the quote ever
+     * existed.
+     */
+    private void recordDeletionAudit(Estimate entity) {
+        Map<String, Object> oldValues = new LinkedHashMap<>();
+        oldValues.put("status", entity.getStatus().name());
+        if (entity.getTotal() != null) {
+            oldValues.put("total", entity.getTotal());
+        }
+        auditService.record(AuditEntityType.ESTIMATE, entity.getId(), AuditAction.DELETED, oldValues, null);
     }
 
     private void addChildEntities(Estimate entity, EstimateRequest request) {

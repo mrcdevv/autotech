@@ -97,6 +97,15 @@ public class EstimateController {
         return ResponseEntity.ok(ApiResponse.success("Presupuesto reabierto", estimateService.reopen(id)));
     }
 
+    @PreAuthorize("hasAuthority('update_estimate')")
+    @PutMapping("/{id}/repair-order")
+    public ResponseEntity<ApiResponse<EstimateDetailResponse>> attachToRepairOrder(
+            @PathVariable Long id,
+            @Valid @RequestBody EstimateRequest.AttachRepairOrderRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Presupuesto asociado a la orden de trabajo",
+                estimateService.attachToRepairOrder(id, request.repairOrderId())));
+    }
+
     @PreAuthorize("hasAuthority('delete_estimate')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
