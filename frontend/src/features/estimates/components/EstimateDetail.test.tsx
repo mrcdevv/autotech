@@ -63,6 +63,16 @@ const { mockGetTaxConfig } = vi.hoisted(() => ({
   mockGetTaxConfig: vi.fn(),
 }));
 
+const { mockGetAuditLogs } = vi.hoisted(() => ({
+  // Default wiring: an empty history renders nothing, so the audit panel is
+  // invisible in every pre-existing test.
+  mockGetAuditLogs: vi.fn().mockResolvedValue({ data: { data: [] } }),
+}));
+
+vi.mock("@/api/auditLogs", () => ({
+  auditLogsApi: { getByEntity: mockGetAuditLogs },
+}));
+
 vi.mock("@/api/taxConfig", () => ({
   taxConfigApi: { getConfig: mockGetTaxConfig },
 }));
@@ -602,5 +612,78 @@ describe("EstimateDetail (reopen accepted estimate)", () => {
     // findByRole (not getByRole): the dialog is still in its MUI exit transition at this
     // point, which keeps the page content aria-hidden until it unmounts.
     expect(await screen.findByRole("button", { name: REOPEN_BUTTON })).toBeInTheDocument();
+  });
+});
+
+// ── Audit history of the estimate ("who changed the approved amount") ──
+
+describe("EstimateDetail (audit history)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("given a stored estimate, when rendered, then the audit history sits collapsed and is fetched as ESTIMATE", async () => {
+    mockGetAuditLogs.mockResolvedValue({
+      data: {
+        data: [
+          {
+            id: 12,
+            entityType: "ESTIMATE",
+            entityId: 3,
+            action: "ACTUALIZAR",
+            oldValues: '{"status":"PENDIENTE","total":1200}',
+            newValues: '{"status":"ACEPTADO","total":1500}',
+            performedByEmployeeId: 7,
+            performedByEmployeeName: "Marta Gomez",
+            createdAt: "2025-03-02T12:00:00",
+          },
+        ],
+      },
+    });
+    const estimate = detailEstimate({ status: "ACEPTADO" });
+    mockDetailUseEstimate(() => estimate);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail estimateId={3} />
+      </MemoryRouter>,
+    );
+
+    expect(mockGetAuditLogs).toHaveBeenCalledWith("ESTIMATE", 3);
+    expect(await screen.findByText("Marta Gomez")).toBeInTheDocument();
+
+    const summary = screen.getByText("Historial de cambios");
+    const accordion = summary.closest(".MuiAccordion-root");
+    expect(accordion).toBeInTheDocument();
+    // Collapsed by default: the history must not compete with the form for attention.
+    expect(accordion).not.toHaveClass("Mui-expanded");
+  });
+
+  it("given a failed audit fetch, when rendered, then the load failure is still shown inside the collapsed section", async () => {
+    mockGetAuditLogs.mockRejectedValue(new Error("network"));
+    const estimate = detailEstimate({ status: "ACEPTADO" });
+    mockDetailUseEstimate(() => estimate);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail estimateId={3} />
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByText("No se pudo cargar el historial de cambios."),
+    ).toBeInTheDocument();
+  });
+
+  it("given a new estimate, when rendered, then no audit history section appears", () => {
+    mockEstimateState(null);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByText("Historial de cambios")).not.toBeInTheDocument();
   });
 });

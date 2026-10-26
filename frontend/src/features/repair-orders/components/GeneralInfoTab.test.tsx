@@ -40,6 +40,7 @@ function expectRightAlignedInBlock(element: HTMLElement): void {
 const mockGetAllEstimatesByRepairOrderId = vi.fn();
 const mockGetDeliveryNoteByRepairOrderId = vi.fn();
 const mockGetPaymentSummary = vi.fn();
+const mockGetAuditLogs = vi.fn();
 
 vi.mock("@mui/x-data-grid", () => ({
   DataGrid: () => <div data-testid="mock-datagrid" />,
@@ -68,11 +69,20 @@ vi.mock("@/api/payments", () => ({
   },
 }));
 
+vi.mock("@/api/auditLogs", () => ({
+  auditLogsApi: {
+    getByEntity: (...args: unknown[]) => mockGetAuditLogs(...args),
+  },
+}));
+
 // Default wiring: the API calls fail, so the financial summary shows empty states.
 // (Before this file mocked the API modules, the real HTTP calls rejected in jsdom.)
 mockGetAllEstimatesByRepairOrderId.mockRejectedValue(new Error("network"));
 mockGetDeliveryNoteByRepairOrderId.mockRejectedValue(new Error("network"));
 mockGetPaymentSummary.mockRejectedValue(new Error("network"));
+// Default wiring: an empty audit history renders nothing, so the audit panel is
+// invisible in every pre-existing test.
+mockGetAuditLogs.mockResolvedValue({ data: { data: [] } });
 
 const sampleOrder: RepairOrderDetailResponse = {
   id: 1,
@@ -171,6 +181,48 @@ describe("GeneralInfoTab", () => {
     const { container } = render(<GeneralInfoTab order={null} loading={true} onRefetch={vi.fn()} />);
 
     expect(container.querySelector(".MuiCircularProgress-root")).toBeInTheDocument();
+  });
+});
+
+describe("GeneralInfoTab audit history", () => {
+  beforeEach(() => {
+    mockGetAuditLogs.mockReset();
+  });
+
+  it("given an order, when rendered, then fetches its audit history as REPAIR_ORDER and shows the actor", async () => {
+    mockGetAuditLogs.mockResolvedValue({
+      data: {
+        data: [
+          {
+            id: 2,
+            entityType: "REPAIR_ORDER",
+            entityId: 1,
+            action: "ENTREGA",
+            oldValues: null,
+            newValues: '{"status":"ENTREGADO"}',
+            performedByEmployeeId: 7,
+            performedByEmployeeName: "Marta Gomez",
+            createdAt: "2025-02-01T12:00:00",
+          },
+        ],
+      },
+    });
+
+    render(<GeneralInfoTab order={sampleOrder} loading={false} onRefetch={vi.fn()} />);
+
+    expect(await screen.findByText("Historial de cambios")).toBeInTheDocument();
+    expect(mockGetAuditLogs).toHaveBeenCalledWith("REPAIR_ORDER", 1);
+    expect(screen.getByText("Marta Gomez")).toBeInTheDocument();
+  });
+
+  it("given a failed audit fetch, when rendered, then the load failure is shown inside the panel", async () => {
+    mockGetAuditLogs.mockRejectedValue(new Error("network"));
+
+    render(<GeneralInfoTab order={sampleOrder} loading={false} onRefetch={vi.fn()} />);
+
+    expect(
+      await screen.findByText("No se pudo cargar el historial de cambios."),
+    ).toBeInTheDocument();
   });
 });
 

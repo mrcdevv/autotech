@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Box,
   Typography,
   TextField,
@@ -14,6 +17,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SaveIcon from "@mui/icons-material/Save";
 import CheckIcon from "@mui/icons-material/Check";
@@ -40,6 +44,7 @@ import { vehiclesApi } from "@/api/vehicles";
 import { inspectionsApi } from "@/api/inspections";
 import { taxConfigApi } from "@/api/taxConfig";
 import { useEstimate } from "@/features/estimates/hooks/useEstimate";
+import { AuditHistoryPanel } from "@/features/repair-orders/components/AuditHistoryPanel";
 import { ServicesGrid } from "./ServicesGrid";
 import { ProductsGrid } from "./ProductsGrid";
 import { EstimateSummary } from "./EstimateSummary";
@@ -851,6 +856,19 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
 
         </Stack>
       </FormPageLayout>
+
+      {/* Historial de cambios ("quién cambió el monto aprobado"): secundario y plegado,
+          para no competir con el formulario. El panel no titula porque el acordeón ya lo hace. */}
+      {estimate && (
+        <Accordion sx={{ mt: 3 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="subtitle2">Historial de cambios</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <AuditHistoryPanel entityType="ESTIMATE" entityId={estimate.id} title={null} />
+          </AccordionDetails>
+        </Accordion>
+      )}
 
       {estimate && (
         <AttachRepairOrderDialog
