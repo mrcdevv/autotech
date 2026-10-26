@@ -20,6 +20,7 @@ import { deliveryNotesApi } from "@/api/deliveryNotes";
 import { repairOrdersApi } from "@/api/repairOrders";
 import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { EmptyState } from "@/components/EmptyState";
+import { AttachDeliveryNoteDialog } from "./AttachDeliveryNoteDialog";
 import { DeliveryNoteDetail } from "./DeliveryNoteDetail";
 
 import { formatCurrency } from "@/utils/formatCurrency";
@@ -48,6 +49,7 @@ export function DeliveryNoteTab({ repairOrderId }: DeliveryNoteTabProps) {
   const [order, setOrder] = useState<RepairOrderDetailResponse | null>(null);
   const [confirmNoEstimateOpen, setConfirmNoEstimateOpen] = useState(false);
   const [creatingWithoutEstimate, setCreatingWithoutEstimate] = useState(false);
+  const [attachDialogOpen, setAttachDialogOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     setDeliveryNoteLoading(true);
@@ -172,9 +174,18 @@ export function DeliveryNoteTab({ repairOrderId }: DeliveryNoteTabProps) {
           title="Todavía no hay remito para esta orden"
           description="Podés generar el remito de esta orden de trabajo desde esta solapa."
         >
-          <Button variant="contained" onClick={() => setConfirmNoEstimateOpen(true)}>
-            Generar remito sin presupuesto
-          </Button>
+          <Stack direction="row" spacing={2} justifyContent="center">
+            <Button variant="contained" onClick={() => setConfirmNoEstimateOpen(true)}>
+              Generar remito sin presupuesto
+            </Button>
+            {/* Only reachable while the order has no remito: the whole branch below
+                renders exclusively when no delivery note is loaded for the order. */}
+            {order && (
+              <Button variant="outlined" onClick={() => setAttachDialogOpen(true)}>
+                Asociar remito existente
+              </Button>
+            )}
+          </Stack>
         </EmptyState>
       )}
 
@@ -265,6 +276,20 @@ export function DeliveryNoteTab({ repairOrderId }: DeliveryNoteTabProps) {
         }}
         onCancel={() => setConfirmNoEstimateOpen(false)}
       />
+
+      {order && (
+        <AttachDeliveryNoteDialog
+          open={attachDialogOpen}
+          repairOrderId={repairOrderId}
+          clientId={order.clientId}
+          vehicleId={order.vehicleId}
+          onClose={() => setAttachDialogOpen(false)}
+          onAttached={() => {
+            setAttachDialogOpen(false);
+            fetchData();
+          }}
+        />
+      )}
     </Box>
   );
 }

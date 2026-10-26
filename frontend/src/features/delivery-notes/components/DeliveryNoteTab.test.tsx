@@ -54,6 +54,30 @@ vi.mock("@/api/deliveryNotes", () => ({
   },
 }));
 
+// The attach dialog is probed through the props the tab passes it: the candidate
+// request must be scoped to the order's client and vehicle identity.
+vi.mock("./AttachDeliveryNoteDialog", () => ({
+  AttachDeliveryNoteDialog: ({
+    open,
+    repairOrderId,
+    clientId,
+    vehicleId,
+  }: {
+    open?: boolean;
+    repairOrderId?: number;
+    clientId?: number;
+    vehicleId?: number | null;
+  }) =>
+    open ? (
+      <div
+        data-testid="attach-delivery-note-dialog"
+        data-repair-order-id={repairOrderId}
+        data-client-id={clientId}
+        data-vehicle-id={vehicleId ?? ""}
+      />
+    ) : null,
+}));
+
 vi.mock("@/api/estimates", () => ({
   estimatesApi: {
     getByRepairOrderId: vi.fn().mockRejectedValue(new Error("no estimate")),
@@ -139,5 +163,37 @@ describe("DeliveryNoteTab", () => {
     expect(detail).toHaveAttribute("data-repair-order-id", "7");
     expect(detail).toHaveAttribute("data-order-client-id", "3");
     expect(detail).toHaveAttribute("data-order-vehicle-id", "9");
+  });
+
+  it("given the order has no remito, when rendered, then the empty state offers an action to attach an existing remito", async () => {
+    vi.mocked(deliveryNotesApi.getByRepairOrderId).mockRejectedValue(new Error("not found"));
+
+    render(<DeliveryNoteTab repairOrderId={7} />);
+
+    const emptyState = await screen.findByTestId("empty-state");
+    expect(
+      within(emptyState).getByRole("button", { name: "Asociar remito existente" }),
+    ).toBeInTheDocument();
+  });
+
+  it("given the order already has a remito, when rendered, then no attach action is offered", async () => {
+    render(<DeliveryNoteTab repairOrderId={7} />);
+
+    await screen.findByTestId("deliveryNote-detail");
+    expect(screen.queryByRole("button", { name: "Asociar remito existente" })).not.toBeInTheDocument();
+  });
+
+  it("given the attach action, when clicked, then opens the attach dialog scoped to the order's client and vehicle", async () => {
+    const user = userEvent.setup();
+    vi.mocked(deliveryNotesApi.getByRepairOrderId).mockRejectedValue(new Error("not found"));
+
+    render(<DeliveryNoteTab repairOrderId={7} />);
+
+    await user.click(await screen.findByRole("button", { name: "Asociar remito existente" }));
+
+    const dialog = await screen.findByTestId("attach-delivery-note-dialog");
+    expect(dialog).toHaveAttribute("data-repair-order-id", "7");
+    expect(dialog).toHaveAttribute("data-client-id", "3");
+    expect(dialog).toHaveAttribute("data-vehicle-id", "9");
   });
 });
