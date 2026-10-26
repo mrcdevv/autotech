@@ -3,6 +3,7 @@ package com.autotech.common.exception;
 import com.autotech.common.dto.ApiResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
@@ -113,6 +114,16 @@ public class GlobalExceptionHandler {
         log.warn("No resource found: {}", ex.getResourcePath());
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error("Recurso no encontrado"));
+    }
+
+    // A unique-constraint rejection usually means two concurrent requests raced
+    // past a service-level guard: it is a client conflict, not a server fault.
+    // The SQL/cause detail (constraint and column names) goes to the log only.
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        log.warn("Data integrity violation: {}", ex.getMostSpecificCause().getMessage(), ex);
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error("La operación entra en conflicto con datos ya existentes. Verificá la información e intentá nuevamente"));
     }
 
     @ExceptionHandler(Exception.class)
