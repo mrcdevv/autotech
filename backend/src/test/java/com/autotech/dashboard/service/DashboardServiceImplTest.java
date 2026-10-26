@@ -1,5 +1,7 @@
 package com.autotech.dashboard.service;
 
+import com.autotech.catalog.model.Product;
+import com.autotech.catalog.repository.ProductRepository;
 import com.autotech.appointment.model.Appointment;
 import com.autotech.appointment.repository.AppointmentRepository;
 import com.autotech.client.model.Client;
@@ -54,6 +56,9 @@ class DashboardServiceImplTest {
 
     @Mock
     private DashboardConfigRepository dashboardConfigRepository;
+
+    @Mock
+    private ProductRepository productRepository;
 
     @InjectMocks
     private DashboardServiceImpl dashboardService;
@@ -205,6 +210,35 @@ class DashboardServiceImplTest {
         // Assert
         assertThat(result.pendingEstimateAlerts()).hasSize(1);
         assertThat(result.pendingEstimateAlerts().getFirst().estimateId()).isEqualTo(1L);
+    }
+
+    @Test
+    void givenProductsBelowMinimum_whenGetSummary_thenReturnLowStockAlerts() {
+        // Arrange
+        DashboardConfig config = buildConfig();
+        when(dashboardConfigRepository.findAll()).thenReturn(List.of(config));
+        when(repairOrderRepository.countByStatusNotIn(any())).thenReturn(0L);
+        when(repairOrderRepository.countByStatus(any())).thenReturn(0L);
+        when(appointmentRepository.countByStartTimeBetween(any(), any())).thenReturn(0L);
+        when(estimateRepository.countByStatus(any())).thenReturn(0L);
+        when(repairOrderRepository.countGroupByStatus()).thenReturn(Collections.emptyList());
+        when(appointmentRepository.findByDateRange(any(), any())).thenReturn(Collections.emptyList());
+        when(repairOrderRepository.findByStatusWithClientAndVehicle(any())).thenReturn(Collections.emptyList());
+        when(repairOrderRepository.findStaleOrders(any(), any())).thenReturn(Collections.emptyList());
+        when(estimateRepository.findPendingOlderThan(any(), any())).thenReturn(Collections.emptyList());
+
+        Product oil = Product.builder().name("Aceite").quantity(4).reservedQuantity(3).minStock(2).build();
+        oil.setId(9L);
+        when(productRepository.findAllLowStock()).thenReturn(List.of(oil));
+
+        // Act
+        DashboardSummaryResponse result = dashboardService.getSummary();
+
+        // Assert
+        assertThat(result.lowStockAlerts()).hasSize(1);
+        assertThat(result.lowStockAlerts().getFirst().productId()).isEqualTo(9L);
+        assertThat(result.lowStockAlerts().getFirst().availableQuantity()).isEqualTo(1);
+        assertThat(result.lowStockAlerts().getFirst().minStock()).isEqualTo(2);
     }
 
     // --- getFinanciero tests ---
