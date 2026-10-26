@@ -17,11 +17,14 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
 import { estimatesApi } from "@/api/estimates";
 import { deliveryNotesApi } from "@/api/deliveryNotes";
+import { repairOrdersApi } from "@/api/repairOrders";
+import { AppConfirmDialog } from "@/components/AppConfirmDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { DeliveryNoteDetail } from "./DeliveryNoteDetail";
 
 import { formatCurrency } from "@/utils/formatCurrency";
 
+import type { RepairOrderDetailResponse } from "@/features/repair-orders/types";
 import type { EstimateDetailResponse } from "@/types/estimate";
 import type { DeliveryNoteDetailResponse } from "@/types/deliveryNote";
 
@@ -42,15 +45,21 @@ export function DeliveryNoteTab({ repairOrderId }: DeliveryNoteTabProps) {
   const [estimateState, setEstimateState] = useState<EstimateState>({ kind: "loading" });
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [order, setOrder] = useState<RepairOrderDetailResponse | null>(null);
+  const [confirmNoEstimateOpen, setConfirmNoEstimateOpen] = useState(false);
+  const [creatingWithoutEstimate, setCreatingWithoutEstimate] = useState(false);
 
   const fetchData = useCallback(async () => {
     setDeliveryNoteLoading(true);
     setEstimateState({ kind: "loading" });
 
-    const [deliveryNoteRes, estimateRes] = await Promise.allSettled([
+    const [deliveryNoteRes, estimateRes, orderRes] = await Promise.allSettled([
       deliveryNotesApi.getByRepairOrderId(repairOrderId),
       estimatesApi.getByRepairOrderId(repairOrderId),
+      repairOrdersApi.getById(repairOrderId),
     ]);
+
+    setOrder(orderRes.status === "fulfilled" ? orderRes.value.data.data : null);
 
     if (deliveryNoteRes.status === "fulfilled") {
       setDeliveryNote(deliveryNoteRes.value.data.data);
@@ -108,7 +117,41 @@ export function DeliveryNoteTab({ repairOrderId }: DeliveryNoteTabProps) {
   if (deliveryNote) {
     return (
       <Box>
-        <DeliveryNoteDetail repairOrderId={repairOrderId} />
+        <DeliveryNoteDetail
+          repairOrderId={repairOrderId}
+          orderClientId={order?.clientId}
+          orderClientFirstName={order?.clientFirstName}
+          orderClientLastName={order?.clientLastName}
+          orderClientDni={order?.clientDni}
+          orderVehicleId={order?.vehicleId}
+          orderVehiclePlate={order?.vehiclePlate}
+          orderVehicleBrandName={order?.vehicleBrandName}
+          orderVehicleModel={order?.vehicleModel}
+          orderVehicleYear={order?.vehicleYear}
+        />
+      </Box>
+    );
+  }
+
+  // Create mode is handled by DeliveryNoteDetail itself: with no delivery note loaded it
+  // renders its create form bound to this order (client/vehicle prefilled and locked).
+  if (creatingWithoutEstimate) {
+    return (
+      <Box>
+        <DeliveryNoteDetail
+          repairOrderId={repairOrderId}
+          orderClientId={order?.clientId}
+          orderClientFirstName={order?.clientFirstName}
+          orderClientLastName={order?.clientLastName}
+          orderClientDni={order?.clientDni}
+          orderVehicleId={order?.vehicleId}
+          orderVehiclePlate={order?.vehiclePlate}
+          orderVehicleBrandName={order?.vehicleBrandName}
+          orderVehicleModel={order?.vehicleModel}
+          orderVehicleYear={order?.vehicleYear}
+          onBack={() => setCreatingWithoutEstimate(false)}
+          onCreated={() => fetchData()}
+        />
       </Box>
     );
   }
@@ -128,7 +171,11 @@ export function DeliveryNoteTab({ repairOrderId }: DeliveryNoteTabProps) {
           icon={<ReceiptLongIcon sx={{ color: "text.disabled" }} />}
           title="Todavía no hay remito para esta orden"
           description="Podés generar el remito de esta orden de trabajo desde esta solapa."
-        />
+        >
+          <Button variant="contained" onClick={() => setConfirmNoEstimateOpen(true)}>
+            Generar remito sin presupuesto
+          </Button>
+        </EmptyState>
       )}
 
       {estimateState.kind === "pending" && (
@@ -206,6 +253,18 @@ export function DeliveryNoteTab({ repairOrderId }: DeliveryNoteTabProps) {
           </Typography>
         </Paper>
       )}
+
+      <AppConfirmDialog
+        open={confirmNoEstimateOpen}
+        title="Generar remito sin presupuesto"
+        message="Esta orden de trabajo no tiene un presupuesto. El remito se creará sin presupuesto y quedará vinculado a esta orden, con el cliente y el vehículo de la orden."
+        confirmLabel="Generar remito"
+        onConfirm={() => {
+          setConfirmNoEstimateOpen(false);
+          setCreatingWithoutEstimate(true);
+        }}
+        onCancel={() => setConfirmNoEstimateOpen(false)}
+      />
     </Box>
   );
 }
