@@ -16,7 +16,11 @@ vi.mock("@/features/inspections/InspectionsTab", () => ({
 }));
 
 vi.mock("@/features/estimates/components/EstimateTab", () => ({
-  EstimateTab: () => <div data-testid="estimate-tab">EstimateTab</div>,
+  EstimateTab: (props: { repairOrderStatus?: string }) => (
+    <div data-testid="estimate-tab" data-status={props.repairOrderStatus ?? ""}>
+      EstimateTab
+    </div>
+  ),
 }));
 
 vi.mock("@/features/delivery-notes/components/DeliveryNoteTab", () => ({
@@ -58,12 +62,12 @@ function LocationProbe({ record }: { record: { search: string } }) {
   return null;
 }
 
-function renderTabs(search = "") {
+function renderTabs(search = "", order: RepairOrderDetailResponse = sampleOrder) {
   const record = { search: "" };
   const utils = render(
     <MemoryRouter initialEntries={[`/ordenes-trabajo/1${search}`]}>
       <LocationProbe record={record} />
-      <RepairOrderDetailTabs order={sampleOrder} loading={false} onRefetch={mockRefetch} />
+      <RepairOrderDetailTabs order={order} loading={false} onRefetch={mockRefetch} />
     </MemoryRouter>,
   );
   return { ...utils, record };
@@ -103,6 +107,27 @@ describe("RepairOrderDetailTabs", () => {
     await user.click(screen.getByText("Presupuesto"));
 
     expect(screen.getByTestId("estimate-tab")).toBeInTheDocument();
+  });
+
+  it("given order, when clicking Presupuesto tab, then EstimateTab receives the order status", async () => {
+    const user = userEvent.setup();
+    renderTabs();
+
+    await user.click(screen.getByText("Presupuesto"));
+
+    expect(screen.getByTestId("estimate-tab")).toHaveAttribute(
+      "data-status",
+      "INGRESO_VEHICULO",
+    );
+  });
+
+  it("given a closed order, when clicking Presupuesto tab, then EstimateTab receives the closed status", async () => {
+    const user = userEvent.setup();
+    renderTabs("", { ...sampleOrder, status: "ENTREGADO" });
+
+    await user.click(screen.getByText("Presupuesto"));
+
+    expect(screen.getByTestId("estimate-tab")).toHaveAttribute("data-status", "ENTREGADO");
   });
 
   it("given order, when clicking Remito tab, then shows DeliveryNoteTab", async () => {

@@ -38,6 +38,26 @@ vi.mock("@/features/estimates/hooks/useEstimate", () => ({
   useEstimate: vi.fn(),
 }));
 
+// Probe the shared container instead of its MUI internals: the assertion is that the
+// empty branch renders its title and description INSIDE the shared EmptyState.
+vi.mock("@/components/EmptyState", () => ({
+  EmptyState: ({
+    title,
+    description,
+    children,
+  }: {
+    title: string;
+    description: string;
+    children?: React.ReactNode;
+  }) => (
+    <div data-testid="empty-state">
+      <h6>{title}</h6>
+      <p>{description}</p>
+      {children}
+    </div>
+  ),
+}));
+
 const { mockGetTaxConfig } = vi.hoisted(() => ({
   mockGetTaxConfig: vi.fn(),
 }));
@@ -214,6 +234,46 @@ describe("EstimateDetail (closed order)", () => {
     );
 
     expect(screen.getByRole("button", { name: "Crear presupuesto" })).toBeEnabled();
+  });
+});
+
+describe("EstimateDetail (empty state)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetTaxConfig.mockResolvedValue({
+      data: { data: { id: 1, taxPercentage: 21, createdAt: "", updatedAt: "" } },
+    });
+  });
+
+  it("given a repair order with no estimate and no rejected history, when rendered, then shows the shared empty state with title and description and an enabled create button", () => {
+    mockUseEstimate([]);
+    render(
+      <MemoryRouter initialEntries={["/ordenes/5"]}>
+        <EstimateDetail repairOrderId={5} repairOrderStatus="REPARACION" />
+      </MemoryRouter>,
+    );
+
+    const emptyState = screen.getByTestId("empty-state");
+    expect(emptyState).toHaveTextContent("Todavía no hay presupuesto para esta orden");
+    expect(emptyState).toHaveTextContent(
+      "Creá un presupuesto para cotizar los servicios y repuestos de esta orden.",
+    );
+    expect(screen.getByRole("button", { name: "Crear presupuesto" })).toBeEnabled();
+  });
+
+  it("given a rejected estimate and no active one, when rendered, then the rejected list still renders above the shared empty state", () => {
+    mockUseEstimate([rejectedEstimate(1234.5)]);
+    render(
+      <MemoryRouter initialEntries={["/ordenes/5"]}>
+        <EstimateDetail repairOrderId={5} />
+      </MemoryRouter>,
+    );
+
+    const emptyState = screen.getByTestId("empty-state");
+    const rejectedList = screen.getByText(money(1234.5)).closest(".MuiBox-root");
+    expect(rejectedList).toBeInTheDocument();
+    expect(rejectedList!.contains(emptyState)).toBe(false);
+    expect(emptyState.contains(screen.getByText(money(1234.5)))).toBe(false);
   });
 });
 

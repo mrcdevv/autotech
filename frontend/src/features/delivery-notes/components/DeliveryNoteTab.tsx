@@ -17,6 +17,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
 import { estimatesApi } from "@/api/estimates";
 import { deliveryNotesApi } from "@/api/deliveryNotes";
+import { EmptyState } from "@/components/EmptyState";
 import { DeliveryNoteDetail } from "./DeliveryNoteDetail";
 
 import { formatCurrency } from "@/utils/formatCurrency";
@@ -121,19 +122,13 @@ export function DeliveryNoteTab({ repairOrderId }: DeliveryNoteTabProps) {
       )}
 
       {estimateState.kind === "none" && (
-        <Paper
-          elevation={0}
-          sx={{ p: 4, textAlign: "center", border: 1, borderColor: "divider", borderRadius: 2 }}
-        >
-          <ReceiptLongIcon sx={{ fontSize: 48, color: "text.disabled", mb: 2 }} />
-          <Typography variant="h6" sx={{ mb: 1, fontWeight: 500 }}>
-            No se puede generar una remito aún
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400, mx: "auto" }}>
-            Para generar una remito dentro de una orden de trabajo, primero debe crear y aprobar un
-            presupuesto en la solapa "Presupuesto".
-          </Typography>
-        </Paper>
+        // Honest copy: this tab generates the remito itself, so the description must not
+        // claim that an approved estimate is required first.
+        <EmptyState
+          icon={<ReceiptLongIcon sx={{ color: "text.disabled" }} />}
+          title="Todavía no hay remito para esta orden"
+          description="Podés generar el remito de esta orden de trabajo desde esta solapa."
+        />
       )}
 
       {estimateState.kind === "pending" && (

@@ -417,7 +417,7 @@ class RepairOrderServiceImplTest {
         RepairOrder order = buildRepairOrder(1L, client, vehicle);
         RepairOrderResponse response = buildResponse(1L);
         RepairOrderFilter filter = new RepairOrderFilter(
-                List.of(RepairOrderStatus.REPARACION), null, null, null, null, null, null, "Perez");
+                List.of(RepairOrderStatus.REPARACION), null, null, null, null, null, null, "Perez", null, null);
         Pageable pageable = PageRequest.of(0, 20);
 
         when(repairOrderRepository.findAll(any(Specification.class), eq(pageable)))
@@ -437,7 +437,7 @@ class RepairOrderServiceImplTest {
     @Test
     void givenFilterMatchingNothing_whenSearch_thenReturnEmptyPage() {
         // Arrange
-        RepairOrderFilter filter = new RepairOrderFilter(null, null, null, null, null, null, null, null);
+        RepairOrderFilter filter = new RepairOrderFilter(null, null, null, null, null, null, null, null, null, null);
         Pageable pageable = PageRequest.of(0, 20);
 
         when(repairOrderRepository.findAll(any(Specification.class), eq(pageable)))

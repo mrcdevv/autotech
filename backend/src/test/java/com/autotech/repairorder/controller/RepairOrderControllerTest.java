@@ -97,6 +97,17 @@ class RepairOrderControllerTest {
     }
 
     @Test
+    void search_withClientAndVehicleFilters_returns200WithPage() throws Exception {
+        when(repairOrderService.search(any(RepairOrderFilter.class), any()))
+                .thenReturn(new PageImpl<>(List.of(sampleResponse)));
+
+        mockMvc.perform(get("/api/repair-orders?clientId=3&vehicleId=7"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].title").value("OT-1 Perez - ABC123"))
+                .andExpect(jsonPath("$.data.totalElements").value(1));
+    }
+
+    @Test
     void getById_returns200WithDetail() throws Exception {
         when(repairOrderService.getById(1L)).thenReturn(sampleDetailResponse);
 
