@@ -13,6 +13,10 @@ export const deliveryNotesApi = {
     clientName?: string;
     plate?: string;
     status?: DeliveryNoteStatus;
+    /** Identity filter: exact client match. Preferred over clientName to avoid homonym omissions. */
+    clientId?: number;
+    /** Identity filter: exact vehicle match. Note it excludes remitos with no vehicle. */
+    vehicleId?: number;
     page?: number;
     size?: number;
     sort?: string;
@@ -22,6 +26,8 @@ export const deliveryNotesApi = {
         clientName: params.clientName,
         plate: params.plate,
         status: params.status,
+        clientId: params.clientId,
+        vehicleId: params.vehicleId,
         page: params.page ?? 0,
         size: params.size ?? 12,
         sort: params.sort ?? "createdAt,desc",
@@ -46,6 +52,13 @@ export const deliveryNotesApi = {
 
   delete: (id: number) =>
     apiClient.delete<ApiResponse<void>>(`/delivery-notes/${id}`),
+
+  /** Attaches an existing standalone remito to a repair order. */
+  attachToRepairOrder: (id: number, repairOrderId: number) =>
+    apiClient.put<ApiResponse<DeliveryNoteDetailResponse>>(
+      `/delivery-notes/${id}/repair-order`,
+      { repairOrderId },
+    ),
 
   downloadPdf: (id: number) =>
     apiClient.get<Blob>(`/delivery-notes/${id}/pdf`, { responseType: "blob" }),

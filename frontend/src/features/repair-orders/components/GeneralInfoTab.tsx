@@ -19,6 +19,7 @@ import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 
 import { AssignMechanicsDialog } from "./AssignMechanicsDialog";
+import { AuditHistoryPanel } from "./AuditHistoryPanel";
 import { EditRepairOrderDialog } from "./EditRepairOrderDialog";
 import { estimatesApi } from "@/api/estimates";
 import { deliveryNotesApi } from "@/api/deliveryNotes";
@@ -403,6 +404,9 @@ export function GeneralInfoTab({ order, loading, onRefetch }: GeneralInfoTabProp
           />
         </Panel>
       )}
+
+      {/* Historial de cambios: responde "quién entregó sin remito" y "quién editó la orden". */}
+      <AuditHistoryPanel entityType="REPAIR_ORDER" entityId={order.id} />
       </Stack>
 
       {order && (

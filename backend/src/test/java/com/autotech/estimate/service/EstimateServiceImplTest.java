@@ -4,6 +4,9 @@ import com.autotech.stock.service.StockService;
 import com.autotech.client.model.Client;
 import com.autotech.client.model.ClientType;
 import com.autotech.client.repository.ClientRepository;
+import com.autotech.common.audit.AuditAction;
+import com.autotech.common.audit.AuditEntityType;
+import com.autotech.common.audit.AuditService;
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.estimate.dto.EstimateDetailResponse;
@@ -54,15 +57,19 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.mockito.ArgumentCaptor;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -102,6 +109,12 @@ class EstimateServiceImplTest {
 
     @Mock
     private StockService stockService;
+
+    @Mock
+    private AuditService auditService;
+
+    @Mock
+    private com.autotech.repairorder.service.RepairOrderService repairOrderService;
 
     @InjectMocks
     private EstimateServiceImpl estimateService;
@@ -326,6 +339,85 @@ class EstimateServiceImplTest {
         assertThat(result.repairOrderId()).isEqualTo(10L);
     }
 
+    // --- D1 close-out guard on create: a closed order is not a place to start a new quote ---
+
+    @Test
+    void givenEntregadoRepairOrder_whenCreate_thenThrowBusinessException() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        RepairOrder repairOrder = buildRepairOrder(10L, client, vehicle);
+        repairOrder.setStatus(RepairOrderStatus.ENTREGADO);
+        EstimateRequest request = new EstimateRequest(1L, 2L, 10L, BigDecimal.ZERO, BigDecimal.ZERO,
+                Collections.emptyList(), Collections.emptyList());
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(repairOrder));
+        doThrow(new BusinessException("La orden de trabajo está cerrada"))
+                .when(repairOrderService).validateOpenForNewDocuments(repairOrder);
+
+        // Act & Assert: creation must be refused before anything is persisted
+        assertThatThrownBy(() -> estimateService.create(request))
+                .isInstanceOf(BusinessException.class);
+        verify(repairOrderService).validateOpenForNewDocuments(repairOrder);
+        verify(estimateRepository, never()).save(any(Estimate.class));
+    }
+
+    @Test
+    void givenCanceladoRepairOrder_whenCreate_thenThrowBusinessException() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        RepairOrder repairOrder = buildRepairOrder(10L, client, vehicle);
+        repairOrder.setStatus(RepairOrderStatus.CANCELADO);
+        EstimateRequest request = new EstimateRequest(1L, 2L, 10L, BigDecimal.ZERO, BigDecimal.ZERO,
+                Collections.emptyList(), Collections.emptyList());
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(repairOrder));
+        doThrow(new BusinessException("La orden de trabajo está cerrada"))
+                .when(repairOrderService).validateOpenForNewDocuments(repairOrder);
+
+        // Act & Assert: creation must be refused before anything is persisted
+        assertThatThrownBy(() -> estimateService.create(request))
+                .isInstanceOf(BusinessException.class);
+        verify(repairOrderService).validateOpenForNewDocuments(repairOrder);
+        verify(estimateRepository, never()).save(any(Estimate.class));
+    }
+
+    @Test
+    void givenStandaloneRequest_whenCreate_thenDoesNotInvokeRepairOrderGuard() {
+        // Arrange: no repairOrderId, the guard must never fire for a standalone quote
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        EstimateRequest request = new EstimateRequest(1L, 2L, null, BigDecimal.ZERO, BigDecimal.ZERO,
+                List.of(new EstimateServiceItemRequest("Service A", BigDecimal.valueOf(100))),
+                Collections.emptyList());
+
+        Estimate mappedEntity = Estimate.builder()
+                .discountPercentage(BigDecimal.ZERO)
+                .taxPercentage(BigDecimal.ZERO)
+                .build();
+        Estimate savedEntity = buildEstimate(1L);
+        EstimateDetailResponse detailResponse = buildDetailResponse(1L);
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(estimateMapper.toEntity(request)).thenReturn(mappedEntity);
+        when(estimateRepository.save(any(Estimate.class))).thenReturn(savedEntity);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(savedEntity));
+        when(estimateMapper.toDetailResponse(savedEntity)).thenReturn(detailResponse);
+
+        // Act
+        EstimateDetailResponse result = estimateService.create(request);
+
+        // Assert: standalone creation keeps working and never touches the guard
+        assertThat(result.id()).isEqualTo(1L);
+        verify(repairOrderService, never()).validateOpenForNewDocuments(any());
+    }
+
     @Test
     void givenPendienteEstimate_whenUpdate_thenReturnUpdatedResponse() {
         // Arrange
@@ -478,6 +570,159 @@ class EstimateServiceImplTest {
                 .hasMessageContaining("PENDIENTE");
     }
 
+    // --- Reopen an accepted estimate (ACEPTADO -> PENDIENTE) ---
+
+    @Test
+    void givenAceptadoEstimate_whenReopen_thenStatusIsPendienteAndAuditRecorded() {
+        // Arrange
+        Estimate entity = buildEstimate(1L);
+        entity.setStatus(EstimateStatus.ACEPTADO);
+        EstimateDetailResponse detailResponse = buildDetailResponse(1L);
+
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(estimateRepository.save(entity)).thenReturn(entity);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(entity));
+        when(estimateMapper.toDetailResponse(entity)).thenReturn(detailResponse);
+
+        // Act
+        EstimateDetailResponse result = estimateService.reopen(1L);
+
+        // Assert
+        assertThat(entity.getStatus()).isEqualTo(EstimateStatus.PENDIENTE);
+        assertThat(result).isNotNull();
+
+        Map<String, Object> oldValues = new LinkedHashMap<>();
+        oldValues.put("status", "ACEPTADO");
+        Map<String, Object> newValues = new LinkedHashMap<>();
+        newValues.put("status", "PENDIENTE");
+        verify(auditService).record(AuditEntityType.ESTIMATE, 1L, AuditAction.MODIFIED, oldValues, newValues);
+    }
+
+    @Test
+    void givenAceptadoEstimateWithRepairOrder_whenReopen_thenInvokesRepairOrderGuard() {
+        // Arrange
+        Estimate entity = buildEstimateWithRepairOrder(1L, 10L);
+        entity.setStatus(EstimateStatus.ACEPTADO);
+        EstimateDetailResponse detailResponse = buildDetailResponseWithRepairOrder(1L, 10L);
+
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(estimateRepository.save(entity)).thenReturn(entity);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(entity));
+        when(estimateMapper.toDetailResponse(entity)).thenReturn(detailResponse);
+        when(inspectionRepository.findByRepairOrderId(10L)).thenReturn(Collections.emptyList());
+
+        // Act
+        estimateService.reopen(1L);
+
+        // Assert: the D1 close-out guard is reused, not reimplemented
+        verify(repairOrderService).validateOpenForNewDocuments(entity.getRepairOrder());
+    }
+
+    @Test
+    void givenStandaloneAceptadoEstimate_whenReopen_thenDoesNotInvokeRepairOrderGuard() {
+        // Arrange
+        Estimate entity = buildEstimate(1L);
+        entity.setStatus(EstimateStatus.ACEPTADO);
+        EstimateDetailResponse detailResponse = buildDetailResponse(1L);
+
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(estimateRepository.save(entity)).thenReturn(entity);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(entity));
+        when(estimateMapper.toDetailResponse(entity)).thenReturn(detailResponse);
+
+        // Act
+        estimateService.reopen(1L);
+
+        // Assert
+        verify(repairOrderService, never()).validateOpenForNewDocuments(any());
+    }
+
+    @Test
+    void givenPendienteEstimate_whenReopen_thenThrowBusinessException() {
+        // Arrange
+        Estimate entity = buildEstimate(1L);
+        entity.setStatus(EstimateStatus.PENDIENTE);
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(entity));
+
+        // Act & Assert: PENDIENTE is already editable, reopening is meaningless
+        assertThatThrownBy(() -> estimateService.reopen(1L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("ACEPTADO");
+        verify(estimateRepository, never()).save(any(Estimate.class));
+    }
+
+    @Test
+    void givenRechazadoEstimate_whenReopen_thenThrowBusinessException() {
+        // Arrange
+        Estimate entity = buildEstimate(1L);
+        entity.setStatus(EstimateStatus.RECHAZADO);
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(entity));
+
+        // Act & Assert: RECHAZADO stays terminal
+        assertThatThrownBy(() -> estimateService.reopen(1L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("ACEPTADO");
+        verify(estimateRepository, never()).save(any(Estimate.class));
+    }
+
+    @Test
+    void givenClosedRepairOrder_whenReopen_thenThrowBusinessException() {
+        // Arrange
+        Estimate entity = buildEstimateWithRepairOrder(1L, 10L);
+        entity.setStatus(EstimateStatus.ACEPTADO);
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(entity));
+        doThrow(new BusinessException("La orden de trabajo está cerrada"))
+                .when(repairOrderService).validateOpenForNewDocuments(entity.getRepairOrder());
+
+        // Act & Assert
+        assertThatThrownBy(() -> estimateService.reopen(1L))
+                .isInstanceOf(BusinessException.class);
+        verify(estimateRepository, never()).save(any(Estimate.class));
+    }
+
+    @Test
+    void givenRepairOrderWithDeliveryNote_whenReopen_thenThrowBusinessException() {
+        // Arrange
+        Estimate entity = buildEstimateWithRepairOrder(1L, 10L);
+        entity.setStatus(EstimateStatus.ACEPTADO);
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(entity));
+        doThrow(new BusinessException("La orden de trabajo ya tiene un remito asociado"))
+                .when(repairOrderService).validateOpenForNewDocuments(entity.getRepairOrder());
+
+        // Act & Assert: once the order has a remito, the approved amount must not change
+        assertThatThrownBy(() -> estimateService.reopen(1L))
+                .isInstanceOf(BusinessException.class);
+        verify(estimateRepository, never()).save(any(Estimate.class));
+    }
+
+    @Test
+    void givenReopenedEstimate_whenUpdateAndApprove_thenRevisionCycleSucceeds() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        Estimate entity = buildEstimate(1L);
+        entity.setStatus(EstimateStatus.ACEPTADO);
+        EstimateRequest request = new EstimateRequest(1L, 2L, null, BigDecimal.ZERO, BigDecimal.ZERO,
+                Collections.emptyList(), Collections.emptyList());
+        EstimateDetailResponse detailResponse = buildDetailResponse(1L);
+
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(estimateRepository.save(any(Estimate.class))).thenReturn(entity);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(entity));
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(estimateMapper.toDetailResponse(entity)).thenReturn(detailResponse);
+
+        // Act: reopen -> edit -> re-approve (revise the same estimate, never a second one)
+        estimateService.reopen(1L);
+
+        // Assert
+        assertThat(entity.getStatus()).isEqualTo(EstimateStatus.PENDIENTE);
+        estimateService.update(1L, request);
+        estimateService.approve(1L, EstimateDecisionChannel.WHATSAPP, "admin@autotech.com");
+        assertThat(entity.getStatus()).isEqualTo(EstimateStatus.ACEPTADO);
+    }
+
     @Test
     void givenExistingId_whenDelete_thenDeletesSuccessfully() {
         // Arrange
@@ -577,6 +822,129 @@ class EstimateServiceImplTest {
 
         // Assert
         assertThat(total).isEqualByComparingTo(BigDecimal.valueOf(1089));
+    }
+
+    @Test
+    void givenValidRequest_whenCreate_thenRecordsCreatedAuditWithStateAndTotal() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        EstimateRequest request = new EstimateRequest(1L, 2L, null, BigDecimal.ZERO, BigDecimal.ZERO,
+                List.of(new EstimateServiceItemRequest("Service A", BigDecimal.valueOf(100))),
+                List.of(new EstimateProductRequest("Product A", 2, BigDecimal.valueOf(50), null)));
+
+        Estimate mappedEntity = Estimate.builder()
+                .discountPercentage(BigDecimal.ZERO)
+                .taxPercentage(BigDecimal.ZERO)
+                .build();
+
+        Estimate savedEntity = buildEstimate(1L); // PENDIENTE, total 400
+        EstimateDetailResponse detailResponse = buildDetailResponse(1L);
+
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(estimateMapper.toEntity(request)).thenReturn(mappedEntity);
+        when(estimateRepository.save(any(Estimate.class))).thenReturn(savedEntity);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(savedEntity));
+        when(estimateMapper.toDetailResponse(savedEntity)).thenReturn(detailResponse);
+
+        // Act
+        estimateService.create(request);
+
+        // Assert: the creation itself must leave a trace on the history
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, Object>> oldCaptor = ArgumentCaptor.forClass(Map.class);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, Object>> newCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(auditService).record(eq(AuditEntityType.ESTIMATE), eq(1L), eq(AuditAction.CREATED),
+                oldCaptor.capture(), newCaptor.capture());
+        assertThat(oldCaptor.getValue()).isNull();
+        assertThat(newCaptor.getValue())
+                .containsEntry("status", "PENDIENTE");
+        assertThat((BigDecimal) newCaptor.getValue().get("total")).isEqualByComparingTo("400");
+    }
+
+    @Test
+    void givenPendienteEstimate_whenApprove_thenRecordsModifiedAuditWithStatusTransition() {
+        // Arrange
+        Estimate entity = buildEstimate(1L);
+        entity.setStatus(EstimateStatus.PENDIENTE);
+        EstimateDetailResponse detailResponse = buildDetailResponse(1L);
+
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(estimateRepository.save(entity)).thenReturn(entity);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(entity));
+        when(estimateMapper.toDetailResponse(entity)).thenReturn(detailResponse);
+
+        // Act
+        estimateService.approve(1L, EstimateDecisionChannel.WHATSAPP, "admin@autotech.com");
+
+        // Assert: the approval is the key event on a quote, it must leave a trace
+        Map<String, Object> oldValues = new LinkedHashMap<>();
+        oldValues.put("status", "PENDIENTE");
+        Map<String, Object> newValues = new LinkedHashMap<>();
+        newValues.put("status", "ACEPTADO");
+        verify(auditService).record(AuditEntityType.ESTIMATE, 1L, AuditAction.MODIFIED, oldValues, newValues);
+    }
+
+    @Test
+    void givenPendienteEstimate_whenReject_thenRecordsModifiedAuditWithStatusTransition() {
+        // Arrange
+        Estimate entity = buildEstimate(1L);
+        entity.setStatus(EstimateStatus.PENDIENTE);
+        EstimateDetailResponse detailResponse = buildDetailResponse(1L);
+
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(estimateRepository.save(entity)).thenReturn(entity);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(entity));
+        when(estimateMapper.toDetailResponse(entity)).thenReturn(detailResponse);
+
+        // Act
+        estimateService.reject(1L, EstimateDecisionChannel.PHONE, "admin@autotech.com");
+
+        // Assert: the rejection must also leave a trace on the history
+        Map<String, Object> oldValues = new LinkedHashMap<>();
+        oldValues.put("status", "PENDIENTE");
+        Map<String, Object> newValues = new LinkedHashMap<>();
+        newValues.put("status", "RECHAZADO");
+        verify(auditService).record(AuditEntityType.ESTIMATE, 1L, AuditAction.MODIFIED, oldValues, newValues);
+    }
+
+    @Test
+    void givenPendienteEstimate_whenUpdate_thenRecordsAuditWithPreviousAndNewTotal() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        Estimate existing = buildEstimate(1L);
+        existing.setStatus(EstimateStatus.PENDIENTE);
+
+        EstimateRequest request = new EstimateRequest(1L, 2L, null, BigDecimal.valueOf(10), BigDecimal.ZERO,
+                Collections.emptyList(), Collections.emptyList());
+
+        EstimateDetailResponse detailResponse = buildDetailResponse(1L);
+
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(existing));
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(vehicleRepository.findById(2L)).thenReturn(Optional.of(vehicle));
+        when(estimateRepository.save(any(Estimate.class))).thenReturn(existing);
+        when(estimateMapper.toDetailResponse(existing)).thenReturn(detailResponse);
+
+        // Act
+        estimateService.update(1L, request);
+
+        // Assert: whoever changes an amount on an estimate leaves a trace
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, Object>> oldCaptor = ArgumentCaptor.forClass(Map.class);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, Object>> newCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(auditService).record(eq(AuditEntityType.ESTIMATE), eq(1L), eq(AuditAction.MODIFIED),
+                oldCaptor.capture(), newCaptor.capture());
+        assertThat(oldCaptor.getValue())
+                .containsEntry("status", "PENDIENTE");
+        assertThat((BigDecimal) oldCaptor.getValue().get("total")).isEqualByComparingTo("400");
+        assertThat(newCaptor.getValue())
+                .containsEntry("status", "PENDIENTE");
+        assertThat((BigDecimal) newCaptor.getValue().get("total")).isEqualByComparingTo("0");
     }
 
     @Test
@@ -696,6 +1064,190 @@ class EstimateServiceImplTest {
         assertThat(issues).hasSize(2);
         assertThat(issues).extracting(InspectionIssueResponse::status)
                 .containsExactlyInAnyOrder("PROBLEMA", "REVISAR");
+    }
+
+    // --- Attach an existing estimate to a repair order ---
+
+    @Test
+    void givenStandalonePendienteEstimateWithMatchingClientAndVehicle_whenAttachToRepairOrder_thenAssociationIsPersistedAndAudited() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        Estimate estimate = buildEstimate(1L); // PENDIENTE, standalone, same client and vehicle
+        RepairOrder order = buildRepairOrder(10L, client, vehicle);
+        EstimateDetailResponse detailResponse = buildDetailResponseWithRepairOrder(1L, 10L);
+
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(estimate));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+        when(estimateRepository.findAllByRepairOrderId(10L)).thenReturn(Collections.emptyList());
+        when(estimateRepository.save(estimate)).thenReturn(estimate);
+        when(estimateMapper.toDetailResponse(estimate)).thenReturn(detailResponse);
+        when(inspectionRepository.findByRepairOrderId(10L)).thenReturn(Collections.emptyList());
+
+        // Act
+        EstimateDetailResponse result = estimateService.attachToRepairOrder(1L, 10L);
+
+        // Assert: the order is persisted on the estimate and visible from the order
+        assertThat(result.repairOrderId()).isEqualTo(10L);
+        ArgumentCaptor<Estimate> savedCaptor = ArgumentCaptor.forClass(Estimate.class);
+        verify(estimateRepository).save(savedCaptor.capture());
+        assertThat(savedCaptor.getValue().getRepairOrder()).isNotNull();
+        assertThat(savedCaptor.getValue().getRepairOrder().getId()).isEqualTo(10L);
+        verify(repairOrderService).validateOpenForNewDocuments(order);
+
+        Map<String, Object> oldValues = new LinkedHashMap<>();
+        oldValues.put("repairOrderId", null);
+        Map<String, Object> newValues = new LinkedHashMap<>();
+        newValues.put("repairOrderId", 10L);
+        verify(auditService).record(AuditEntityType.ESTIMATE, 1L, AuditAction.MODIFIED, oldValues, newValues);
+    }
+
+    @Test
+    void givenAceptadoEstimate_whenAttachToRepairOrder_thenThrowBusinessException() {
+        // Arrange
+        Estimate estimate = buildEstimate(1L);
+        estimate.setStatus(EstimateStatus.ACEPTADO);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(estimate));
+
+        // Act & Assert: an accepted estimate must be reopened first
+        assertThatThrownBy(() -> estimateService.attachToRepairOrder(1L, 10L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("PENDIENTE");
+        verify(estimateRepository, never()).save(any(Estimate.class));
+    }
+
+    @Test
+    void givenRechazadoEstimate_whenAttachToRepairOrder_thenThrowBusinessException() {
+        // Arrange
+        Estimate estimate = buildEstimate(1L);
+        estimate.setStatus(EstimateStatus.RECHAZADO);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(estimate));
+
+        // Act & Assert: a rejected estimate can never be attached
+        assertThatThrownBy(() -> estimateService.attachToRepairOrder(1L, 10L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("PENDIENTE");
+        verify(estimateRepository, never()).save(any(Estimate.class));
+    }
+
+    @Test
+    void givenAlreadyAttachedEstimate_whenAttachToRepairOrder_thenThrowBusinessException() {
+        // Arrange: attaching is a one-time act, even re-attaching to the same order is refused
+        Estimate estimate = buildEstimateWithRepairOrder(1L, 10L);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(estimate));
+
+        // Act & Assert
+        assertThatThrownBy(() -> estimateService.attachToRepairOrder(1L, 10L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("ya está asociado");
+        verify(estimateRepository, never()).save(any(Estimate.class));
+    }
+
+    @Test
+    void givenEstimateOfDifferentClient_whenAttachToRepairOrder_thenThrowBusinessException() {
+        // Arrange
+        Client otherClient = buildClient(9L);
+        Vehicle vehicle = buildVehicle(2L, otherClient);
+        Estimate estimate = buildEstimate(1L); // client 1
+        RepairOrder order = buildRepairOrder(10L, otherClient, vehicle); // client 9
+
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(estimate));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+
+        // Act & Assert: an order must never show another customer's quote
+        assertThatThrownBy(() -> estimateService.attachToRepairOrder(1L, 10L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("cliente");
+        verify(estimateRepository, never()).save(any(Estimate.class));
+    }
+
+    @Test
+    void givenEstimateOfDifferentVehicle_whenAttachToRepairOrder_thenThrowBusinessException() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle otherVehicle = buildVehicle(7L, client);
+        Estimate estimate = buildEstimate(1L); // vehicle 2
+        RepairOrder order = buildRepairOrder(10L, client, otherVehicle); // vehicle 7
+
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(estimate));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+
+        // Act & Assert: the estimate's vehicle is never overwritten to make it fit
+        assertThatThrownBy(() -> estimateService.attachToRepairOrder(1L, 10L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("vehículo");
+        verify(estimateRepository, never()).save(any(Estimate.class));
+    }
+
+    @Test
+    void givenClosedRepairOrder_whenAttachToRepairOrder_thenThrowBusinessException() {
+        // Arrange: the D1 close-out guard is reused, not reimplemented
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        Estimate estimate = buildEstimate(1L);
+        RepairOrder order = buildRepairOrder(10L, client, vehicle);
+
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(estimate));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+        doThrow(new BusinessException("La orden de trabajo está cerrada"))
+                .when(repairOrderService).validateOpenForNewDocuments(order);
+
+        // Act & Assert
+        assertThatThrownBy(() -> estimateService.attachToRepairOrder(1L, 10L))
+                .isInstanceOf(BusinessException.class);
+        verify(estimateRepository, never()).save(any(Estimate.class));
+    }
+
+    @Test
+    void givenRepairOrderWithActiveEstimate_whenAttachToRepairOrder_thenThrowBusinessException() {
+        // Arrange
+        Client client = buildClient(1L);
+        Vehicle vehicle = buildVehicle(2L, client);
+        Estimate estimate = buildEstimate(1L);
+        RepairOrder order = buildRepairOrder(10L, client, vehicle);
+        Estimate existingActive = buildEstimate(2L); // PENDIENTE estimate already on the order
+
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(estimate));
+        when(repairOrderRepository.findById(10L)).thenReturn(Optional.of(order));
+        when(estimateRepository.findAllByRepairOrderId(10L)).thenReturn(List.of(existingActive));
+
+        // Act & Assert: consistent with the creation rule
+        assertThatThrownBy(() -> estimateService.attachToRepairOrder(1L, 10L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("presupuesto pendiente o aceptado");
+        verify(estimateRepository, never()).save(any(Estimate.class));
+    }
+
+    @Test
+    void givenNonExistentRepairOrder_whenAttachToRepairOrder_thenThrowResourceNotFoundException() {
+        // Arrange
+        Estimate estimate = buildEstimate(1L);
+        when(estimateRepository.findWithDetailsById(1L)).thenReturn(Optional.of(estimate));
+        when(repairOrderRepository.findById(99L)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> estimateService.attachToRepairOrder(1L, 99L))
+                .isInstanceOf(ResourceNotFoundException.class);
+        verify(estimateRepository, never()).save(any(Estimate.class));
+    }
+
+    // --- Delete audit ---
+
+    @Test
+    void givenExistingEstimate_whenDelete_thenRecordsDeletedAuditWithPreDeletionState() {
+        // Arrange
+        Estimate estimate = buildEstimate(1L); // PENDIENTE, total 400
+        when(estimateRepository.findById(1L)).thenReturn(Optional.of(estimate));
+
+        // Act
+        estimateService.delete(1L);
+
+        // Assert: the audit table has no FK to the entity, so this row is the only
+        // trace that the deleted quote ever existed
+        Map<String, Object> oldValues = new LinkedHashMap<>();
+        oldValues.put("status", "PENDIENTE");
+        oldValues.put("total", BigDecimal.valueOf(400));
+        verify(auditService).record(AuditEntityType.ESTIMATE, 1L, AuditAction.DELETED, oldValues, null);
     }
 
     // --- Builder helpers ---

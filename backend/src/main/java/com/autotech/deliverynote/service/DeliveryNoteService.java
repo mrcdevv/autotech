@@ -16,7 +16,8 @@ public interface DeliveryNoteService {
 
     Page<DeliveryNoteResponse> getAll(Pageable pageable);
 
-    Page<DeliveryNoteResponse> search(String clientName, String plate, DeliveryNoteStatus status, Pageable pageable);
+    Page<DeliveryNoteResponse> search(String clientName, String plate, DeliveryNoteStatus status,
+                                      Long clientId, Long vehicleId, Pageable pageable);
 
     DeliveryNoteDetailResponse getById(Long id);
 
@@ -25,6 +26,8 @@ public interface DeliveryNoteService {
     DeliveryNoteDetailResponse create(DeliveryNoteRequest request);
 
     DeliveryNoteDetailResponse createFromEstimate(Long estimateId);
+
+    DeliveryNoteDetailResponse attachToRepairOrder(Long id, Long repairOrderId);
 
     void delete(Long id);
 

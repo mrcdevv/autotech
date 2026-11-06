@@ -89,7 +89,7 @@ class DeliveryNoteControllerTest {
     @Test
     void givenFilters_whenGetAllWithFilters_thenReturn200() throws Exception {
         Page<DeliveryNoteResponse> page = new PageImpl<>(List.of(sampleResponse), PageRequest.of(0, 12), 1);
-        when(deliveryNoteService.search(any(), any(), any(), any())).thenReturn(page);
+        when(deliveryNoteService.search(any(), any(), any(), any(), any(), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/delivery-notes").param("clientName", "Juan"))
                 .andExpect(status().isOk())

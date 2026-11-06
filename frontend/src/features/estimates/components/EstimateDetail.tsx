@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Box,
   Typography,
   TextField,
@@ -12,7 +15,9 @@ import {
   Paper,
   Stack,
   IconButton,
+  Tooltip,
 } from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SaveIcon from "@mui/icons-material/Save";
 import CheckIcon from "@mui/icons-material/Check";
@@ -22,22 +27,29 @@ import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import EngineeringIcon from "@mui/icons-material/Engineering";
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
+import UndoIcon from "@mui/icons-material/Undo";
+import LinkIcon from "@mui/icons-material/Link";
+import DescriptionIcon from "@mui/icons-material/Description";
 import { useNavigate } from "react-router";
 import axios from "axios";
 
 import { FormPageLayout } from "@/components/FormPageLayout";
 import { FormSection } from "@/components/FormSection";
 import { InfoList } from "@/components/InfoList";
+import { AppConfirmDialog } from "@/components/AppConfirmDialog";
+import { EmptyState } from "@/components/EmptyState";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { clientAutocompleteApi } from "@/api/clientAutocomplete";
 import { vehiclesApi } from "@/api/vehicles";
 import { inspectionsApi } from "@/api/inspections";
 import { taxConfigApi } from "@/api/taxConfig";
 import { useEstimate } from "@/features/estimates/hooks/useEstimate";
+import { AuditHistoryPanel } from "@/features/repair-orders/components/AuditHistoryPanel";
 import { ServicesGrid } from "./ServicesGrid";
 import { ProductsGrid } from "./ProductsGrid";
 import { EstimateSummary } from "./EstimateSummary";
 import { EstimateDecisionDialog } from "./EstimateDecisionDialog";
+import { AttachRepairOrderDialog } from "./AttachRepairOrderDialog";
 import { describeDecision } from "@/features/estimates/decisionChannel";
 
 import type { ClientAutocompleteResponse } from "@/types/vehicle";
@@ -49,6 +61,7 @@ import type {
   StaffDecisionChannel,
 } from "@/types/estimate";
 import type { InspectionResponse } from "@/features/inspections/types";
+import type { RepairOrderStatus } from "@/features/repair-orders/types";
 
 function extractApiError(err: unknown): string {
   if (axios.isAxiosError(err) && err.response?.data) {
@@ -132,9 +145,17 @@ interface RepairOrderVehicleData {
   year: number | null;
 }
 
+// Terminal statuses where the backend refuses new estimates: the UI refuses earlier
+// by disabling "Crear presupuesto" and naming the actual state in the tooltip.
+const CREATE_BLOCKED_REASONS: Record<"ENTREGADO" | "CANCELADO", string> = {
+  ENTREGADO: "No se puede crear un presupuesto porque la orden de trabajo está entregada.",
+  CANCELADO: "No se puede crear un presupuesto porque la orden de trabajo está cancelada.",
+};
+
 interface EstimateDetailProps {
   estimateId?: number;
   repairOrderId?: number;
+  repairOrderStatus?: RepairOrderStatus;
   reason?: string | null;
   mechanicNotes?: string | null;
   repairOrderClient?: RepairOrderClientData;
@@ -217,9 +238,9 @@ function ContextSections({
   );
 }
 
-export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNotes, repairOrderClient, repairOrderVehicle, onBack }: EstimateDetailProps) {
+export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, reason, mechanicNotes, repairOrderClient, repairOrderVehicle, onBack }: EstimateDetailProps) {
   const navigate = useNavigate();
-  const { estimate, allEstimates, noActiveEstimate, loading, error, clearError, createEstimate, updateEstimate, approveEstimate, rejectEstimate } =
+  const { estimate, allEstimates, noActiveEstimate, loading, error, clearError, createEstimate, updateEstimate, approveEstimate, rejectEstimate, reopenEstimate, refetch } =
     useEstimate(estimateId, repairOrderId);
 
   const [clients, setClients] = useState<ClientAutocompleteResponse[]>([]);
@@ -239,6 +260,8 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
   const [formError, setFormError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
+  const [attachDialogOpen, setAttachDialogOpen] = useState(false);
 
   const [inspectionIssues, setInspectionIssues] = useState<InspectionIssue[]>([]);
 
@@ -246,6 +269,8 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
   const isReadonly = estimate != null && estimate.status !== "PENDIENTE";
   const fromRepairOrder = repairOrderId != null;
   const displayId = estimate?.id ?? estimateId;
+  const createBlocked =
+    repairOrderStatus === "ENTREGADO" || repairOrderStatus === "CANCELADO";
 
   // New estimates start with the global IVA; existing estimates keep their stored value
   useEffect(() => {
@@ -445,6 +470,18 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
     }
   };
 
+  const handleReopen = async () => {
+    if (!estimate?.id) return;
+    setApiError(null);
+    try {
+      await reopenEstimate(estimate.id);
+    } catch (err) {
+      setApiError(extractApiError(err));
+    } finally {
+      setReopenDialogOpen(false);
+    }
+  };
+
   const prepareNewEstimate = () => {
     if (repairOrderClient) {
       setSelectedClient({
@@ -511,7 +548,7 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
         <Stack spacing={3} sx={{ mt: 2 }}>
           <ContextSections reason={reason} mechanicNotes={mechanicNotes} inspectionIssues={inspectionIssues} />
 
-          {rejectedEstimates.length > 0 ? (
+          {rejectedEstimates.length > 0 && (
             <Box>
               <Alert severity="info" sx={{ mb: 2 }}>
                 {rejectedEstimates.length === 1
@@ -540,17 +577,30 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
                 </Box>
               ))}
             </Box>
-          ) : (
-            <Typography color="text.secondary">
-              No hay presupuesto asociado a esta orden de trabajo.
-            </Typography>
           )}
 
-          <Box>
-            <Button variant="contained" onClick={prepareNewEstimate}>
-              Crear presupuesto
-            </Button>
-          </Box>
+          <EmptyState
+            icon={<DescriptionIcon sx={{ color: "text.disabled" }} />}
+            title="Todavía no hay presupuesto para esta orden"
+            description="Creá un presupuesto para cotizar los servicios y repuestos de esta orden."
+          >
+            {createBlocked && repairOrderStatus ? (
+              // A disabled MUI button emits no pointer events, so the Tooltip must sit on a
+              // <span> wrapper; putting it directly on the disabled button never shows.
+              // The `disabled` attribute keeps the state perceivable by assistive tech.
+              <Tooltip title={CREATE_BLOCKED_REASONS[repairOrderStatus]}>
+                <span>
+                  <Button variant="contained" disabled>
+                    Crear presupuesto
+                  </Button>
+                </span>
+              </Tooltip>
+            ) : (
+              <Button variant="contained" onClick={prepareNewEstimate}>
+                Crear presupuesto
+              </Button>
+            )}
+          </EmptyState>
         </Stack>
       );
     }
@@ -558,7 +608,7 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
   }
 
   // ── Main form ──
-  const actions = (!isReadonly || (estimate?.id && estimate.status === "PENDIENTE")) && (
+  const actions = (!isReadonly || (estimate?.id && (estimate.status === "PENDIENTE" || estimate.status === "ACEPTADO"))) && (
     <Paper
       sx={{
         p: 2,
@@ -568,8 +618,26 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
         bgcolor: "grey.50",
       }}
     >
+      {estimate?.id && estimate.status === "ACEPTADO" && (
+        <Button variant="outlined" color="warning" startIcon={<UndoIcon />} onClick={() => setReopenDialogOpen(true)} fullWidth>
+          Revisar presupuesto
+        </Button>
+      )}
       {estimate?.id && estimate.status === "PENDIENTE" && (
         <>
+          {/* Gated exactly like the service: only a pending estimate that is not yet
+              attached can be linked to an order. Inside a repair order the estimate is
+              attached by definition, so the action never appears there. */}
+          {!fromRepairOrder && estimate.repairOrderId == null && (
+            <Button
+              variant="outlined"
+              startIcon={<LinkIcon />}
+              onClick={() => setAttachDialogOpen(true)}
+              fullWidth
+            >
+              Asociar a una orden de trabajo
+            </Button>
+          )}
           <Button variant="outlined" color="error" startIcon={<CloseIcon />} onClick={handleReject} fullWidth>
             Rechazar
           </Button>
@@ -788,6 +856,47 @@ export function EstimateDetail({ estimateId, repairOrderId, reason, mechanicNote
 
         </Stack>
       </FormPageLayout>
+
+      {/* Historial de cambios ("quién cambió el monto aprobado"): secundario y plegado,
+          para no competir con el formulario. El panel no titula porque el acordeón ya lo hace. */}
+      {estimate && (
+        <Accordion sx={{ mt: 3 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="subtitle2">Historial de cambios</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <AuditHistoryPanel entityType="ESTIMATE" entityId={estimate.id} title={null} />
+          </AccordionDetails>
+        </Accordion>
+      )}
+
+      {estimate && (
+        <AttachRepairOrderDialog
+          open={attachDialogOpen}
+          estimateId={estimate.id}
+          clientId={estimate.clientId}
+          vehicleId={estimate.vehicleId}
+          onClose={() => setAttachDialogOpen(false)}
+          onAttached={() => {
+            setAttachDialogOpen(false);
+            refetch();
+          }}
+        />
+      )}
+
+      <AppConfirmDialog
+        open={reopenDialogOpen}
+        title="Revisar presupuesto"
+        message={
+          estimate?.repairOrderId != null
+            ? "El presupuesto volverá al estado Pendiente y deberá ser aprobado nuevamente. Solo podrá reabrirse mientras la orden de trabajo no tenga un remito asociado."
+            : "El presupuesto volverá al estado Pendiente y deberá ser aprobado nuevamente."
+        }
+        confirmLabel="Revisar"
+        confirmColor="warning"
+        onConfirm={handleReopen}
+        onCancel={() => setReopenDialogOpen(false)}
+      />
     </>
   );
 }

@@ -4,6 +4,9 @@ import com.autotech.catalog.repository.ProductRepository;
 import com.autotech.catalog.model.Product;
 import com.autotech.client.model.Client;
 import com.autotech.client.repository.ClientRepository;
+import com.autotech.common.audit.AuditAction;
+import com.autotech.common.audit.AuditEntityType;
+import com.autotech.common.audit.AuditService;
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.common.util.SecureTokens;
@@ -33,6 +36,7 @@ import com.autotech.inspection.model.InspectionItemStatus;
 import com.autotech.inspection.repository.InspectionRepository;
 import com.autotech.repairorder.model.RepairOrder;
 import com.autotech.repairorder.repository.RepairOrderRepository;
+import com.autotech.repairorder.service.RepairOrderService;
 import com.autotech.tax.service.TaxConfigService;
 import com.autotech.vehicle.model.Vehicle;
 import com.autotech.vehicle.repository.VehicleRepository;
@@ -48,7 +52,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -69,6 +75,8 @@ public class EstimateServiceImpl implements EstimateService {
     private final EmployeeRepository employeeRepository;
     private final AppProperties appProperties;
     private final StockService stockService;
+    private final AuditService auditService;
+    private final RepairOrderService repairOrderService;
 
     @Override
     @Transactional(readOnly = true)
@@ -141,6 +149,11 @@ public class EstimateServiceImpl implements EstimateService {
             repairOrder = repairOrderRepository.findById(request.repairOrderId())
                     .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", request.repairOrderId()));
 
+            // The order must be open: not closed by status and without a remito. The full
+            // variant applies because an order that already delivered is not a place to
+            // start a new quote either. Standalone creation (null repairOrderId) never reaches this.
+            repairOrderService.validateOpenForNewDocuments(repairOrder);
+
             boolean hasActiveEstimate = estimateRepository.findAllByRepairOrderId(request.repairOrderId()).stream()
                     .anyMatch(e -> e.getStatus() == EstimateStatus.PENDIENTE || e.getStatus() == EstimateStatus.ACEPTADO);
             if (hasActiveEstimate) {
@@ -168,6 +181,7 @@ public class EstimateServiceImpl implements EstimateService {
         entity.setTotal(total);
 
         Estimate saved = estimateRepository.save(entity);
+        recordCreationAudit(saved.getId(), saved.getStatus(), saved.getTotal());
         log.info("Created estimate with id {}", saved.getId());
         EstimateDetailResponse response = getById(saved.getId());
         emailNotificationService.notifyEstimateCreated(response,
@@ -184,6 +198,9 @@ public class EstimateServiceImpl implements EstimateService {
         if (entity.getStatus() != EstimateStatus.PENDIENTE) {
             throw new BusinessException("Solo se pueden editar presupuestos en estado PENDIENTE");
         }
+
+        EstimateStatus previousStatus = entity.getStatus();
+        BigDecimal previousTotal = entity.getTotal();
 
         Client client = clientRepository.findById(request.clientId())
                 .orElseThrow(() -> new ResourceNotFoundException("Client", request.clientId()));
@@ -209,8 +226,75 @@ public class EstimateServiceImpl implements EstimateService {
         entity.setTotal(total);
 
         Estimate saved = estimateRepository.save(entity);
+        recordEstimateAudit(saved.getId(), previousStatus, previousTotal, saved.getStatus(), saved.getTotal());
         log.info("Updated estimate with id {}", saved.getId());
         syncRepairOrderStock(saved);
+        return getById(saved.getId());
+    }
+
+    @Override
+    @Transactional
+    public EstimateDetailResponse reopen(Long id) {
+        Estimate entity = estimateRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Estimate", id));
+        if (entity.getStatus() != EstimateStatus.ACEPTADO) {
+            throw new BusinessException("Solo se pueden reabrir presupuestos en estado ACEPTADO");
+        }
+        if (entity.getRepairOrder() != null) {
+            // The repair order must be open: not closed by status and without a delivery note (D1)
+            repairOrderService.validateOpenForNewDocuments(entity.getRepairOrder());
+        }
+        entity.setStatus(EstimateStatus.PENDIENTE);
+        estimateRepository.save(entity);
+        recordEstimateAudit(id, EstimateStatus.ACEPTADO, null, EstimateStatus.PENDIENTE, null);
+        log.info("Reopened estimate with id {}", id);
+        return getById(id);
+    }
+
+    @Override
+    @Transactional
+    public EstimateDetailResponse attachToRepairOrder(Long id, Long repairOrderId) {
+        Estimate entity = estimateRepository.findWithDetailsById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Estimate", id));
+
+        // The estimate must be PENDIENTE: an ACEPTADO one must be reopened first,
+        // a RECHAZADO one can never be attached
+        if (entity.getStatus() != EstimateStatus.PENDIENTE) {
+            throw new BusinessException("Solo se pueden asociar presupuestos en estado PENDIENTE");
+        }
+
+        // Attaching is a one-time act: there is no detach, so re-attaching (even to the
+        // same order) is refused
+        if (entity.getRepairOrder() != null) {
+            throw new BusinessException("El presupuesto ya está asociado a una orden de trabajo");
+        }
+
+        RepairOrder order = repairOrderRepository.findById(repairOrderId)
+                .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", repairOrderId));
+
+        // The estimate's client and vehicle must match the order's; the estimate's
+        // vehicle is never overwritten to make it fit
+        if (!entity.getClient().getId().equals(order.getClient().getId())) {
+            throw new BusinessException("El cliente del presupuesto no coincide con el cliente de la orden de trabajo");
+        }
+        if (!entity.getVehicle().getId().equals(order.getVehicle().getId())) {
+            throw new BusinessException("El vehículo del presupuesto no coincide con el vehículo de la orden de trabajo");
+        }
+
+        // The order must be open: not closed by status and without a delivery note (remito)
+        repairOrderService.validateOpenForNewDocuments(order);
+
+        // Consistent with the creation rule: no active estimate (PENDIENTE or ACEPTADO) on the order
+        boolean hasActiveEstimate = estimateRepository.findAllByRepairOrderId(repairOrderId).stream()
+                .anyMatch(e -> e.getStatus() == EstimateStatus.PENDIENTE || e.getStatus() == EstimateStatus.ACEPTADO);
+        if (hasActiveEstimate) {
+            throw new BusinessException("Ya existe un presupuesto pendiente o aceptado para esta orden de trabajo");
+        }
+
+        entity.setRepairOrder(order);
+        Estimate saved = estimateRepository.save(entity);
+        recordAssociationAudit(saved.getId(), repairOrderId);
+        log.info("Attached estimate {} to repair order {}", id, repairOrderId);
         return getById(saved.getId());
     }
 
@@ -262,6 +346,7 @@ public class EstimateServiceImpl implements EstimateService {
         Estimate entity = estimateRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Estimate", id));
         RepairOrder repairOrder = entity.getRepairOrder();
+        recordDeletionAudit(entity);
         estimateRepository.delete(entity);
         estimateRepository.flush();
         log.info("Deleted estimate with id {}", id);
@@ -343,11 +428,13 @@ public class EstimateServiceImpl implements EstimateService {
                     ? "Solo se pueden aprobar presupuestos en estado PENDIENTE"
                     : "Solo se pueden rechazar presupuestos en estado PENDIENTE");
         }
+        EstimateStatus previousStatus = entity.getStatus();
         entity.setStatus(newStatus);
         entity.setDecisionChannel(channel);
         entity.setDecidedAt(LocalDateTime.now());
         entity.setDecidedByEmployee(decidedBy);
         estimateRepository.save(entity);
+        recordEstimateAudit(entity.getId(), previousStatus, null, entity.getStatus(), null);
         log.info("Estimate {} marked as {} via {}", entity.getId(), newStatus, channel);
         syncRepairOrderStock(entity);
 
@@ -418,6 +505,65 @@ public class EstimateServiceImpl implements EstimateService {
                 entity.getApprovalTokenExpiresAt(),
                 entity.getStatus() == EstimateStatus.PENDIENTE && !isLinkExpired(entity)
         );
+    }
+
+    /**
+     * Records an audit row for an estimate status/amount change. Totals are
+     * omitted when null (e.g. a status-only transition), so the whitelist stays
+     * minimal and no entity is ever serialized.
+     */
+    private void recordEstimateAudit(Long estimateId, EstimateStatus oldStatus, BigDecimal oldTotal,
+                                     EstimateStatus newStatus, BigDecimal newTotal) {
+        Map<String, Object> oldValues = new LinkedHashMap<>();
+        oldValues.put("status", oldStatus.name());
+        if (oldTotal != null) {
+            oldValues.put("total", oldTotal);
+        }
+        Map<String, Object> newValues = new LinkedHashMap<>();
+        newValues.put("status", newStatus.name());
+        if (newTotal != null) {
+            newValues.put("total", newTotal);
+        }
+        auditService.record(AuditEntityType.ESTIMATE, estimateId, AuditAction.MODIFIED, oldValues, newValues);
+    }
+
+    /**
+     * Records an audit row for the creation of an estimate: the state and
+     * total are the useful pair describing the estimate as created.
+     */
+    private void recordCreationAudit(Long estimateId, EstimateStatus status, BigDecimal total) {
+        Map<String, Object> newValues = new LinkedHashMap<>();
+        newValues.put("status", status.name());
+        newValues.put("total", total);
+        auditService.record(AuditEntityType.ESTIMATE, estimateId, AuditAction.CREATED, null, newValues);
+    }
+
+    /**
+     * Records an audit row for the association of an estimate to a repair order:
+     * the before/after shows the association appearing
+     * ({"repairOrderId": null} → {"repairOrderId": X}).
+     */
+    private void recordAssociationAudit(Long estimateId, Long repairOrderId) {
+        Map<String, Object> oldValues = new LinkedHashMap<>();
+        oldValues.put("repairOrderId", null);
+        Map<String, Object> newValues = new LinkedHashMap<>();
+        newValues.put("repairOrderId", repairOrderId);
+        auditService.record(AuditEntityType.ESTIMATE, estimateId, AuditAction.MODIFIED, oldValues, newValues);
+    }
+
+    /**
+     * Records an audit row for the deletion of an estimate: the audit table
+     * deliberately has no foreign key to the entity, so the row outlives the
+     * record and the pre-deletion state is the only trace that the quote ever
+     * existed.
+     */
+    private void recordDeletionAudit(Estimate entity) {
+        Map<String, Object> oldValues = new LinkedHashMap<>();
+        oldValues.put("status", entity.getStatus().name());
+        if (entity.getTotal() != null) {
+            oldValues.put("total", entity.getTotal());
+        }
+        auditService.record(AuditEntityType.ESTIMATE, entity.getId(), AuditAction.DELETED, oldValues, null);
     }
 
     private void addChildEntities(Estimate entity, EstimateRequest request) {

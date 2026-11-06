@@ -1,6 +1,7 @@
 package com.autotech.estimate.controller;
 
 import com.autotech.common.dto.ApiResponse;
+import com.autotech.estimate.dto.AttachRepairOrderRequest;
 import com.autotech.estimate.dto.EstimateDecisionRequest;
 import com.autotech.estimate.dto.EstimateDetailResponse;
 import com.autotech.estimate.dto.EstimateDeliveryNoteDataResponse;
@@ -89,6 +90,21 @@ public class EstimateController {
             @AuthenticationPrincipal UserDetails currentUser) {
         return ResponseEntity.ok(ApiResponse.success("Presupuesto rechazado",
                 estimateService.reject(id, request.channel(), currentUser != null ? currentUser.getUsername() : null)));
+    }
+
+    @PreAuthorize("hasAuthority('update_estimate')")
+    @PutMapping("/{id}/reopen")
+    public ResponseEntity<ApiResponse<EstimateDetailResponse>> reopen(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success("Presupuesto reabierto", estimateService.reopen(id)));
+    }
+
+    @PreAuthorize("hasAuthority('update_estimate')")
+    @PutMapping("/{id}/repair-order")
+    public ResponseEntity<ApiResponse<EstimateDetailResponse>> attachToRepairOrder(
+            @PathVariable Long id,
+            @Valid @RequestBody AttachRepairOrderRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Presupuesto asociado a la orden de trabajo",
+                estimateService.attachToRepairOrder(id, request.repairOrderId())));
     }
 
     @PreAuthorize("hasAuthority('delete_estimate')")

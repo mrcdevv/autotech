@@ -28,7 +28,6 @@ export default function EmployeesPage() {
   const { hasPermission } = useAuth();
   const canCreate = hasPermission("create_employee");
   const canUpdate = hasPermission("update_employee");
-  const canDelete = hasPermission("delete_employee");
   const canManageRoles = hasPermission("manage_roles");
   const [data, setData] = useState<PageResponse<EmployeeResponse> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,8 +46,6 @@ export default function EmployeesPage() {
     severity: "success",
   });
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
-  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
-  const [employeeToDelete, setEmployeeToDelete] = useState<number | null>(null);
   const [tempPasswordDialog, setTempPasswordDialog] = useState<{
     open: boolean;
     employeeName: string;
@@ -104,25 +101,6 @@ export default function EmployeesPage() {
   const handleView = (employee: EmployeeResponse) => {
     setSelectedEmployee(employee);
     setDetailOpen(true);
-  };
-
-  const handleDelete = (id: number) => {
-    setEmployeeToDelete(id);
-    setDeleteConfirmationOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (employeeToDelete) {
-      try {
-        await employeesApi.delete(employeeToDelete);
-        showSnackbar("Empleado eliminado", "success");
-        fetchData();
-      } catch {
-        showSnackbar("Error al eliminar el empleado", "error");
-      }
-    }
-    setDeleteConfirmationOpen(false);
-    setEmployeeToDelete(null);
   };
 
   const handleSave = async (request: EmployeeRequest) => {
@@ -205,7 +183,6 @@ export default function EmployeesPage() {
         onPaginationChange={handlePaginationChange}
         onView={handleView}
         onEdit={canUpdate ? handleEdit : undefined}
-        onDelete={canDelete ? handleDelete : undefined}
         onResetPassword={canManageRoles ? handleResetPassword : undefined}
       />
 
@@ -243,14 +220,6 @@ export default function EmployeesPage() {
         onConfirm={() => setWarningDialogOpen(false)}
         title="DNI ya registrado"
         message="El DNI que ha ingresado ya se encuentra registrado en el sistema. Por favor, verifique los datos e intente nuevamente."
-      />
-
-      <WarningDialog
-        open={deleteConfirmationOpen}
-        onClose={() => setDeleteConfirmationOpen(false)}
-        onConfirm={confirmDelete}
-        title="Confirmar Eliminación"
-        message="¿Está seguro de que desea eliminar este empleado? Esta acción no se puede deshacer."
       />
 
       <AppDialog

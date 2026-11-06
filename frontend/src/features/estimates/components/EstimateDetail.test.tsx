@@ -1,5 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
+import { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from "axios";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
 import { EstimateDetail } from "./EstimateDetail";
@@ -37,8 +39,38 @@ vi.mock("@/features/estimates/hooks/useEstimate", () => ({
   useEstimate: vi.fn(),
 }));
 
+// Probe the shared container instead of its MUI internals: the assertion is that the
+// empty branch renders its title and description INSIDE the shared EmptyState.
+vi.mock("@/components/EmptyState", () => ({
+  EmptyState: ({
+    title,
+    description,
+    children,
+  }: {
+    title: string;
+    description: string;
+    children?: React.ReactNode;
+  }) => (
+    <div data-testid="empty-state">
+      <h6>{title}</h6>
+      <p>{description}</p>
+      {children}
+    </div>
+  ),
+}));
+
 const { mockGetTaxConfig } = vi.hoisted(() => ({
   mockGetTaxConfig: vi.fn(),
+}));
+
+const { mockGetAuditLogs } = vi.hoisted(() => ({
+  // Default wiring: an empty history renders nothing, so the audit panel is
+  // invisible in every pre-existing test.
+  mockGetAuditLogs: vi.fn().mockResolvedValue({ data: { data: [] } }),
+}));
+
+vi.mock("@/api/auditLogs", () => ({
+  auditLogsApi: { getByEntity: mockGetAuditLogs },
 }));
 
 vi.mock("@/api/taxConfig", () => ({
@@ -58,6 +90,26 @@ vi.mock("@/api/inspections", () => ({
     // Never resolves: the inspection-issue fetch is irrelevant to the banner tests and
     // this avoids a post-render state update (act warning).
     getByRepairOrder: vi.fn().mockReturnValue(new Promise(() => {})),
+  },
+}));
+
+// Used by the attach-to-repair-order picker, which only loads candidates when opened.
+vi.mock("@/api/repairOrders", () => ({
+  repairOrdersApi: {
+    search: vi.fn().mockResolvedValue({
+      data: {
+        data: {
+          content: [],
+          totalElements: 0,
+          totalPages: 0,
+          size: 20,
+          number: 0,
+          first: true,
+          last: true,
+          empty: true,
+        },
+      },
+    }),
   },
 }));
 
@@ -89,6 +141,7 @@ function mockUseEstimate(allEstimates: EstimateResponse[]): void {
     updateEstimate: vi.fn(),
     approveEstimate: vi.fn(),
     rejectEstimate: vi.fn(),
+    reopenEstimate: vi.fn(),
     refetch: vi.fn(),
   });
 }
@@ -171,9 +224,91 @@ function mockEstimateState(estimate: EstimateDetailResponse | null): void {
     updateEstimate: vi.fn(),
     approveEstimate: vi.fn(),
     rejectEstimate: vi.fn(),
+    reopenEstimate: vi.fn(),
     refetch: vi.fn(),
   });
 }
+
+describe("EstimateDetail (closed order)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetTaxConfig.mockResolvedValue({
+      data: { data: { id: 1, taxPercentage: 21, createdAt: "", updatedAt: "" } },
+    });
+  });
+
+  it("given a repair order delivered, when there is no active estimate, then creating a new one is disabled with a reason", async () => {
+    const user = userEvent.setup();
+    mockUseEstimate([]);
+    render(
+      <MemoryRouter initialEntries={["/ordenes/5"]}>
+        <EstimateDetail repairOrderId={5} repairOrderStatus="ENTREGADO" />
+      </MemoryRouter>,
+    );
+
+    const createButton = screen.getByRole("button", { name: "Crear presupuesto" });
+    expect(createButton).toBeDisabled();
+
+    // A disabled MUI button emits no pointer events, so hover the tooltip wrapper.
+    await user.hover(createButton.parentElement!);
+    expect(
+      await screen.findByText(
+        "No se puede crear un presupuesto porque la orden de trabajo está entregada.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("given a repair order not closed, when there is no active estimate, then creating a new one stays enabled", () => {
+    mockUseEstimate([]);
+    render(
+      <MemoryRouter initialEntries={["/ordenes/5"]}>
+        <EstimateDetail repairOrderId={5} repairOrderStatus="REPARACION" />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("button", { name: "Crear presupuesto" })).toBeEnabled();
+  });
+});
+
+describe("EstimateDetail (empty state)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetTaxConfig.mockResolvedValue({
+      data: { data: { id: 1, taxPercentage: 21, createdAt: "", updatedAt: "" } },
+    });
+  });
+
+  it("given a repair order with no estimate and no rejected history, when rendered, then shows the shared empty state with title and description and an enabled create button", () => {
+    mockUseEstimate([]);
+    render(
+      <MemoryRouter initialEntries={["/ordenes/5"]}>
+        <EstimateDetail repairOrderId={5} repairOrderStatus="REPARACION" />
+      </MemoryRouter>,
+    );
+
+    const emptyState = screen.getByTestId("empty-state");
+    expect(emptyState).toHaveTextContent("Todavía no hay presupuesto para esta orden");
+    expect(emptyState).toHaveTextContent(
+      "Creá un presupuesto para cotizar los servicios y repuestos de esta orden.",
+    );
+    expect(screen.getByRole("button", { name: "Crear presupuesto" })).toBeEnabled();
+  });
+
+  it("given a rejected estimate and no active one, when rendered, then the rejected list still renders above the shared empty state", () => {
+    mockUseEstimate([rejectedEstimate(1234.5)]);
+    render(
+      <MemoryRouter initialEntries={["/ordenes/5"]}>
+        <EstimateDetail repairOrderId={5} />
+      </MemoryRouter>,
+    );
+
+    const emptyState = screen.getByTestId("empty-state");
+    const rejectedList = screen.getByText(money(1234.5)).closest(".MuiBox-root");
+    expect(rejectedList).toBeInTheDocument();
+    expect(rejectedList!.contains(emptyState)).toBe(false);
+    expect(emptyState.contains(screen.getByText(money(1234.5)))).toBe(false);
+  });
+});
 
 describe("EstimateDetail (default tax)", () => {
   beforeEach(() => {
@@ -208,5 +343,347 @@ describe("EstimateDetail (default tax)", () => {
       expect(screen.getByLabelText("Impuesto (%)")).toHaveValue(10.5);
     });
     expect(mockGetTaxConfig).not.toHaveBeenCalled();
+  });
+});
+
+// ── Attach a standalone estimate to a repair order ──
+
+const ATTACH_BUTTON = "Asociar a una orden de trabajo";
+
+describe("EstimateDetail (attach standalone estimate)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("given a standalone pending estimate, when rendered, then shows the attach action", () => {
+    const estimate = detailEstimate({ status: "PENDIENTE", repairOrderId: null });
+    mockDetailUseEstimate(() => estimate);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail estimateId={3} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("button", { name: ATTACH_BUTTON })).toBeInTheDocument();
+  });
+
+  it("given an estimate already attached to an order, when rendered, then does not show the attach action", () => {
+    const estimate = detailEstimate({ status: "PENDIENTE", repairOrderId: 5 });
+    mockDetailUseEstimate(() => estimate);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail estimateId={3} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole("button", { name: ATTACH_BUTTON })).not.toBeInTheDocument();
+  });
+
+  it("given an accepted estimate, when rendered, then does not show the attach action", () => {
+    const estimate = detailEstimate({ status: "ACEPTADO", repairOrderId: null });
+    mockDetailUseEstimate(() => estimate);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail estimateId={3} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole("button", { name: ATTACH_BUTTON })).not.toBeInTheDocument();
+  });
+
+  it("given a standalone pending estimate, when clicking the attach action, then opens the picker dialog", async () => {
+    const user = userEvent.setup();
+    const estimate = detailEstimate({ status: "PENDIENTE", repairOrderId: null });
+    mockDetailUseEstimate(() => estimate);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail estimateId={3} />
+      </MemoryRouter>,
+    );
+    await user.click(screen.getByRole("button", { name: ATTACH_BUTTON }));
+
+    expect(await screen.findByRole("button", { name: "Cancelar" })).toBeInTheDocument();
+  });
+});
+
+// ── Reopen an accepted estimate ("Revisar presupuesto") ──
+
+function detailEstimate(overrides: Partial<EstimateDetailResponse> = {}): EstimateDetailResponse {
+  return {
+    id: 3,
+    clientId: 1,
+    clientFullName: "Juan Perez",
+    clientDni: null,
+    clientPhone: "555-1234",
+    clientEmail: null,
+    vehicleId: 1,
+    vehiclePlate: "AB123CD",
+    vehicleBrand: "Chevrolet",
+    vehicleModel: "Corsa",
+    vehicleYear: 2010,
+    repairOrderId: 5,
+    mechanicNotes: null,
+    inspectionIssues: [],
+    status: "ACEPTADO",
+    discountPercentage: 0,
+    taxPercentage: 0,
+    total: 1000,
+    services: [{ id: 1, serviceName: "Cambio de aceite", price: 800 }],
+    products: [{ id: 1, productName: "Filtro de aceite", quantity: 1, unitPrice: 200, totalPrice: 200 }],
+    createdAt: "2025-03-01T10:00:00",
+    updatedAt: "2025-03-01T10:00:00",
+    decisionChannel: null,
+    decidedAt: null,
+    decidedByEmployeeName: null,
+    ...overrides,
+  };
+}
+
+function axiosRefusal(message: string): AxiosError {
+  return new AxiosError(
+    "Request failed with status code 409",
+    "ERR_BAD_REQUEST",
+    undefined,
+    undefined,
+    {
+      data: { message },
+      status: 409,
+      statusText: "Conflict",
+      headers: {},
+      config: {} as InternalAxiosRequestConfig,
+    } as AxiosResponse,
+  );
+}
+
+function mockDetailUseEstimate(
+  getEstimate: () => EstimateDetailResponse,
+  reopenEstimate: ReturnType<typeof vi.fn> = vi.fn(),
+): ReturnType<typeof vi.fn> {
+  const mocked = vi.fn(() => ({
+    estimate: getEstimate(),
+    allEstimates: [],
+    noActiveEstimate: false,
+    loading: false,
+    error: null,
+    clearError: vi.fn(),
+    createEstimate: vi.fn(),
+    updateEstimate: vi.fn(),
+    approveEstimate: vi.fn(),
+    rejectEstimate: vi.fn(),
+    reopenEstimate,
+    refetch: vi.fn(),
+  }));
+  vi.mocked(useEstimate).mockImplementation(mocked);
+  return reopenEstimate;
+}
+
+const REOPEN_BUTTON = "Revisar presupuesto";
+const REOPEN_CONFIRM = "Revisar";
+
+describe("EstimateDetail (reopen accepted estimate)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("given an accepted estimate, when rendered, then shows the reopen action", () => {
+    // Stable identity across renders: EstimateDetail re-populates its form state from
+    // `estimate` in an effect, so a getter returning a fresh object every render would
+    // loop forever.
+    const estimate = detailEstimate({ status: "ACEPTADO" });
+    mockDetailUseEstimate(() => estimate);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail estimateId={3} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("button", { name: REOPEN_BUTTON })).toBeInTheDocument();
+  });
+
+  it("given a pending estimate, when rendered, then does not show the reopen action", () => {
+    const estimate = detailEstimate({ status: "PENDIENTE" });
+    mockDetailUseEstimate(() => estimate);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail estimateId={3} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole("button", { name: REOPEN_BUTTON })).not.toBeInTheDocument();
+  });
+
+  it("given a rejected estimate, when rendered, then does not show the reopen action", () => {
+    const estimate = detailEstimate({ status: "RECHAZADO" });
+    mockDetailUseEstimate(() => estimate);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail estimateId={3} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole("button", { name: REOPEN_BUTTON })).not.toBeInTheDocument();
+  });
+
+  it("given an accepted estimate attached to a repair order, when the reopen dialog opens, then the message mentions the delivery-note restriction", async () => {
+    const user = userEvent.setup();
+    const estimate = detailEstimate({ status: "ACEPTADO", repairOrderId: 5 });
+    mockDetailUseEstimate(() => estimate);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail estimateId={3} />
+      </MemoryRouter>,
+    );
+    await user.click(screen.getByRole("button", { name: REOPEN_BUTTON }));
+
+    expect(screen.getByText(/volverá al estado Pendiente/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/mientras la orden de trabajo no tenga un remito asociado/),
+    ).toBeInTheDocument();
+  });
+
+  it("given a standalone accepted estimate, when the reopen dialog opens, then the message does not mention a repair order", async () => {
+    const user = userEvent.setup();
+    const estimate = detailEstimate({ status: "ACEPTADO", repairOrderId: null });
+    mockDetailUseEstimate(() => estimate);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail estimateId={3} />
+      </MemoryRouter>,
+    );
+    await user.click(screen.getByRole("button", { name: REOPEN_BUTTON }));
+
+    expect(screen.getByText(/volverá al estado Pendiente/)).toBeInTheDocument();
+    expect(screen.queryByText(/orden de trabajo/i)).not.toBeInTheDocument();
+  });
+
+  it("given an accepted estimate, when the reopen is confirmed, then the reopen endpoint is called and the view ends up pending and editable", async () => {
+    const user = userEvent.setup();
+    let current = detailEstimate({ status: "ACEPTADO" });
+    const reopenEstimate = vi.fn(async () => {
+      // Simulates the hook refetching the estimate after a successful reopen.
+      current = detailEstimate({ status: "PENDIENTE" });
+      return current;
+    });
+    mockDetailUseEstimate(() => current, reopenEstimate);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail estimateId={3} />
+      </MemoryRouter>,
+    );
+    await user.click(screen.getByRole("button", { name: REOPEN_BUTTON }));
+    await user.click(screen.getByRole("button", { name: REOPEN_CONFIRM }));
+
+    expect(reopenEstimate).toHaveBeenCalledWith(3);
+    expect(await screen.findByText("Pendiente")).toBeInTheDocument();
+    const saveButton = await screen.findByRole("button", { name: "Guardar" });
+    await waitFor(() => expect(saveButton).toBeEnabled());
+    expect(screen.queryByRole("button", { name: REOPEN_BUTTON })).not.toBeInTheDocument();
+  });
+
+  it("given the backend refuses the reopen, when the reopen is confirmed, then the refusal message is shown to the user", async () => {
+    const user = userEvent.setup();
+    const refusalMessage =
+      "No se puede reabrir el presupuesto porque la orden de trabajo ya tiene un remito asociado";
+    const reopenEstimate = vi.fn(async () => {
+      throw axiosRefusal(refusalMessage);
+    });
+    const estimate = detailEstimate({ status: "ACEPTADO" });
+    mockDetailUseEstimate(() => estimate, reopenEstimate);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail estimateId={3} />
+      </MemoryRouter>,
+    );
+    await user.click(screen.getByRole("button", { name: REOPEN_BUTTON }));
+    await user.click(screen.getByRole("button", { name: REOPEN_CONFIRM }));
+
+    expect(await screen.findByText(refusalMessage)).toBeInTheDocument();
+    // findByRole (not getByRole): the dialog is still in its MUI exit transition at this
+    // point, which keeps the page content aria-hidden until it unmounts.
+    expect(await screen.findByRole("button", { name: REOPEN_BUTTON })).toBeInTheDocument();
+  });
+});
+
+// ── Audit history of the estimate ("who changed the approved amount") ──
+
+describe("EstimateDetail (audit history)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("given a stored estimate, when rendered, then the audit history sits collapsed and is fetched as ESTIMATE", async () => {
+    mockGetAuditLogs.mockResolvedValue({
+      data: {
+        data: [
+          {
+            id: 12,
+            entityType: "ESTIMATE",
+            entityId: 3,
+            action: "ACTUALIZAR",
+            oldValues: '{"status":"PENDIENTE","total":1200}',
+            newValues: '{"status":"ACEPTADO","total":1500}',
+            performedByEmployeeId: 7,
+            performedByEmployeeName: "Marta Gomez",
+            createdAt: "2025-03-02T12:00:00",
+          },
+        ],
+      },
+    });
+    const estimate = detailEstimate({ status: "ACEPTADO" });
+    mockDetailUseEstimate(() => estimate);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail estimateId={3} />
+      </MemoryRouter>,
+    );
+
+    expect(mockGetAuditLogs).toHaveBeenCalledWith("ESTIMATE", 3);
+    expect(await screen.findByText("Marta Gomez")).toBeInTheDocument();
+
+    const summary = screen.getByText("Historial de cambios");
+    const accordion = summary.closest(".MuiAccordion-root");
+    expect(accordion).toBeInTheDocument();
+    // Collapsed by default: the history must not compete with the form for attention.
+    expect(accordion).not.toHaveClass("Mui-expanded");
+  });
+
+  it("given a failed audit fetch, when rendered, then the load failure is still shown inside the collapsed section", async () => {
+    mockGetAuditLogs.mockRejectedValue(new Error("network"));
+    const estimate = detailEstimate({ status: "ACEPTADO" });
+    mockDetailUseEstimate(() => estimate);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail estimateId={3} />
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByText("No se pudo cargar el historial de cambios."),
+    ).toBeInTheDocument();
+  });
+
+  it("given a new estimate, when rendered, then no audit history section appears", () => {
+    mockEstimateState(null);
+
+    render(
+      <MemoryRouter>
+        <EstimateDetail />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByText("Historial de cambios")).not.toBeInTheDocument();
   });
 });

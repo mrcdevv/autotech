@@ -35,3 +35,4 @@ public record DeliveryNoteRequest(
         @Valid
         List<DeliveryNoteProductRequest> products
 ) {}
+

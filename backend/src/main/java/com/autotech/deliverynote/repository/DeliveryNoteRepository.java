@@ -45,15 +45,19 @@ public interface DeliveryNoteRepository extends JpaRepository<DeliveryNote, Long
     @Query("""
             SELECT DISTINCT i FROM DeliveryNote i
             JOIN i.client c
-            JOIN i.vehicle v
+            LEFT JOIN i.vehicle v
             WHERE (:clientName IS NULL OR :clientName = '' OR LOWER(CONCAT(c.firstName, ' ', c.lastName)) LIKE LOWER(CONCAT('%', :clientName, '%')))
             AND (:plate IS NULL OR :plate = '' OR REPLACE(LOWER(v.plate), ' ', '') LIKE LOWER(CONCAT('%', REPLACE(:plate, ' ', ''), '%')))
             AND (:status IS NULL OR i.status = :status)
+            AND (:clientId IS NULL OR c.id = :clientId)
+            AND (:vehicleId IS NULL OR v.id = :vehicleId)
             """)
     Page<DeliveryNote> search(
             @Param("clientName") String clientName,
             @Param("plate") String plate,
             @Param("status") DeliveryNoteStatus status,
+            @Param("clientId") Long clientId,
+            @Param("vehicleId") Long vehicleId,
             Pageable pageable);
 
     @Query("SELECT COALESCE(SUM(i.total), 0) FROM DeliveryNote i WHERE i.status = :status")

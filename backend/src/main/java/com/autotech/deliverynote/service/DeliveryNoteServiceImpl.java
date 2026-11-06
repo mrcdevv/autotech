@@ -5,6 +5,9 @@ import com.autotech.catalog.model.Product;
 import com.autotech.client.model.Client;
 import com.autotech.client.model.ClientType;
 import com.autotech.client.repository.ClientRepository;
+import com.autotech.common.audit.AuditAction;
+import com.autotech.common.audit.AuditEntityType;
+import com.autotech.common.audit.AuditService;
 import com.autotech.common.exception.BusinessException;
 import com.autotech.common.exception.ResourceNotFoundException;
 import com.autotech.estimate.dto.EstimateDeliveryNoteDataResponse;
@@ -21,7 +24,9 @@ import com.autotech.deliverynote.model.DeliveryNoteProduct;
 import com.autotech.deliverynote.model.DeliveryNoteServiceItem;
 import com.autotech.deliverynote.model.DeliveryNoteStatus;
 import com.autotech.deliverynote.repository.DeliveryNoteRepository;
+import com.autotech.payment.repository.PaymentRepository;
 import com.autotech.repairorder.model.RepairOrder;
+import com.autotech.repairorder.service.RepairOrderService;
 import com.autotech.tax.service.TaxConfigService;
 import com.autotech.repairorder.repository.RepairOrderRepository;
 import com.autotech.vehicle.model.Vehicle;
@@ -36,7 +41,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -53,6 +60,9 @@ public class DeliveryNoteServiceImpl implements DeliveryNoteService {
     private final EmailNotificationService emailNotificationService;
     private final TaxConfigService taxConfigService;
     private final StockService stockService;
+    private final RepairOrderService repairOrderService;
+    private final AuditService auditService;
+    private final PaymentRepository paymentRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -64,9 +74,11 @@ public class DeliveryNoteServiceImpl implements DeliveryNoteService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<DeliveryNoteResponse> search(String clientName, String plate, DeliveryNoteStatus status, Pageable pageable) {
-        log.debug("Searching delivery notes - clientName: '{}', plate: '{}', status: '{}'", clientName, plate, status);
-        return deliveryNoteRepository.search(clientName, plate, status, pageable)
+    public Page<DeliveryNoteResponse> search(String clientName, String plate, DeliveryNoteStatus status,
+                                             Long clientId, Long vehicleId, Pageable pageable) {
+        log.debug("Searching delivery notes - clientName: '{}', plate: '{}', status: '{}', clientId: {}, vehicleId: {}",
+                clientName, plate, status, clientId, vehicleId);
+        return deliveryNoteRepository.search(clientName, plate, status, clientId, vehicleId, pageable)
                 .map(deliveryNoteMapper::toResponse);
     }
 
@@ -112,10 +124,25 @@ public class DeliveryNoteServiceImpl implements DeliveryNoteService {
         if (request.repairOrderId() != null) {
             repairOrder = repairOrderRepository.findById(request.repairOrderId())
                     .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", request.repairOrderId()));
+
+            // The order must not be closed by status (ENTREGADO/CANCELADO). The
+            // status-only variant matches the attach path; the one-remito-per-order rule
+            // below is the delivery-note-specific check. Standalone creation (null
+            // repairOrderId) never reaches this.
+            repairOrderService.validateNotClosedByStatus(repairOrder);
+
+            // One delivery note per repair order: covers both create and createFromEstimate (which delegates here)
+            if (deliveryNoteRepository.findByRepairOrderId(request.repairOrderId()).isPresent()) {
+                throw new BusinessException("La orden de trabajo ya tiene un remito asociado");
+            }
         }
 
         // Validate estimate existence via EstimateService (cross-module boundary)
         if (request.estimateId() != null) {
+            // One delivery note per estimate: covers both create and createFromEstimate (which delegates here)
+            if (deliveryNoteRepository.findByEstimateId(request.estimateId()).isPresent()) {
+                throw new BusinessException("El presupuesto ya tiene un remito asociado");
+            }
             estimateService.getById(request.estimateId());
         }
 
@@ -176,6 +203,94 @@ public class DeliveryNoteServiceImpl implements DeliveryNoteService {
         );
 
         return create(request);
+    }
+
+    /**
+     * Attaches an existing standalone remito to a repair order: the workshop
+     * collects at the counter and records the order afterwards, so the remito
+     * would otherwise stay orphaned. One-way and one-time: there is no unlink
+     * and re-attaching is refused. The V21 partial unique index on
+     * delivery_notes.repair_order_id is the authority if two requests race;
+     * the in-memory guard below is only the fast path.
+     */
+    @Override
+    @Transactional
+    public DeliveryNoteDetailResponse attachToRepairOrder(Long id, Long repairOrderId) {
+        DeliveryNote deliveryNote = deliveryNoteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("DeliveryNote", id));
+
+        // Rule 1: attaching is a one-time act; there is no unlink in this version,
+        // so re-attaching (even to the same order) is refused
+        if (deliveryNote.getRepairOrder() != null) {
+            throw new BusinessException("El remito ya está asociado a una orden de trabajo");
+        }
+
+        RepairOrder order = repairOrderRepository.findById(repairOrderId)
+                .orElseThrow(() -> new ResourceNotFoundException("RepairOrder", repairOrderId));
+
+        // Rule 2: one delivery note per repair order. The V21 partial unique index is
+        // the authority if two requests race; this guard is only the fast path.
+        if (deliveryNoteRepository.findByRepairOrderId(repairOrderId).isPresent()) {
+            throw new BusinessException("La orden de trabajo ya tiene un remito asociado");
+        }
+
+        // Rule 3: the remito's client must match the order's client
+        if (!deliveryNote.getClient().getId().equals(order.getClient().getId())) {
+            throw new BusinessException(
+                    "El cliente del remito no coincide con el cliente de la orden de trabajo");
+        }
+
+        // Rule 4 (D14): the vehicle must match, or be null on the remito and is then
+        // filled from the order — a deliberate second field mutation, declared here and
+        // carried in the audit row so the remito never vanishes from per-vehicle reports
+        boolean vehicleFilled = false;
+        if (deliveryNote.getVehicle() == null) {
+            deliveryNote.setVehicle(order.getVehicle());
+            vehicleFilled = true;
+        } else if (order.getVehicle() == null
+                || !deliveryNote.getVehicle().getId().equals(order.getVehicle().getId())) {
+            throw new BusinessException(
+                    "El vehículo del remito no coincide con el vehículo de la orden de trabajo");
+        }
+
+        // Rule 5: the order must be open — the D1 guard is reused, never reimplemented
+        repairOrderService.validateNotClosedByStatus(order);
+
+        // Rule 6: a paid or partially paid remito is allowed — that is the whole point
+        // of this endpoint (pay at the counter, record the order afterwards). The payment
+        // sum is carried in the audit trail, never used to refuse the attachment.
+        BigDecimal paidAmount = paymentRepository.sumAmountByDeliveryNoteId(id);
+
+        deliveryNote.setRepairOrder(order);
+        DeliveryNote saved = deliveryNoteRepository.save(deliveryNote);
+        recordAssociationAudit(saved.getId(), repairOrderId,
+                vehicleFilled && order.getVehicle() != null ? order.getVehicle().getId() : null, paidAmount);
+        log.info("Attached delivery note {} to repair order {}", id, repairOrderId);
+        return getById(saved.getId());
+    }
+
+    /**
+     * Records an audit row for the association of a remito to a repair order,
+     * mirroring the invoice association shape with AuditEntityType.DELIVERY_NOTE.
+     * The completed vehicleId is carried on both sides when the D14 fill happened,
+     * and the payment sum is carried (when present) so the audit shows the remito
+     * was already paid at attach time.
+     */
+    private void recordAssociationAudit(Long deliveryNoteId, Long repairOrderId,
+                                        Long filledVehicleId, BigDecimal paidAmount) {
+        Map<String, Object> oldValues = new LinkedHashMap<>();
+        oldValues.put("repairOrderId", null);
+        Map<String, Object> newValues = new LinkedHashMap<>();
+        newValues.put("repairOrderId", repairOrderId);
+        if (filledVehicleId != null) {
+            oldValues.put("vehicleId", null);
+            newValues.put("vehicleId", filledVehicleId);
+        }
+        if (paidAmount != null && paidAmount.compareTo(BigDecimal.ZERO) > 0) {
+            newValues.put("paidAmount", paidAmount);
+        }
+        auditService.record(AuditEntityType.DELIVERY_NOTE, deliveryNoteId, AuditAction.MODIFIED,
+                oldValues, newValues);
     }
 
     @Override

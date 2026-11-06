@@ -13,6 +13,8 @@ public record RepairOrderFilter(
         LocalDate updatedTo,
         Long employeeId,
         Long tagId,
-        String query
+        String query,
+        Long clientId,
+        Long vehicleId
 ) {
 }
