@@ -16,7 +16,7 @@ interface AuthContextType {
   user: UserInfo | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (data: LoginResponse) => void;
+  login: (data: LoginResponse, remember?: boolean) => void;
   logout: () => void;
   clearMustChangePassword: () => void;
   hasPermission: (permission: PermissionCode) => boolean;
@@ -26,8 +26,9 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 function readStoredUser(): UserInfo | null {
-  const storedUser = localStorage.getItem("user");
-  if (!storedUser || !localStorage.getItem("token")) return null;
+  const storedUser = localStorage.getItem("user") ?? sessionStorage.getItem("user");
+  const token = localStorage.getItem("token") ?? sessionStorage.getItem("token");
+  if (!storedUser || !token) return null;
   const parsed = JSON.parse(storedUser) as Partial<UserInfo>;
   // Sessions stored before permissions existed have no roles/permissions yet;
   // they are filled in by the /auth/me refresh below.
@@ -52,8 +53,12 @@ function toUserInfo(data: LoginResponse | CurrentUserResponse): UserInfo {
   };
 }
 
+function activeStorage(): Storage {
+  return localStorage.getItem("token") ? localStorage : sessionStorage;
+}
+
 function persistUser(userInfo: UserInfo) {
-  localStorage.setItem("user", JSON.stringify(userInfo));
+  activeStorage().setItem("user", JSON.stringify(userInfo));
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -86,14 +91,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setIsLoading(false));
   }, []);
 
-  const login = (data: LoginResponse) => {
-    localStorage.setItem("token", data.accessToken);
+  const login = (data: LoginResponse, remember = true) => {
+    const target = remember ? localStorage : sessionStorage;
+    const other = remember ? sessionStorage : localStorage;
+    other.removeItem("token");
+    other.removeItem("user");
+    target.setItem("token", data.accessToken);
     storeUser(toUserInfo(data));
   };
 
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("user");
     setUser(null);
   };
 
