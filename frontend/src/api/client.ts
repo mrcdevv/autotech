@@ -14,7 +14,7 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token") ?? sessionStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -24,9 +24,10 @@ apiClient.interceptors.request.use(
 );
 
 function redirectToChangePassword() {
-  const storedUser = localStorage.getItem("user");
+  const storedUser = localStorage.getItem("user") ?? sessionStorage.getItem("user");
   if (storedUser) {
-    localStorage.setItem(
+    const storage = localStorage.getItem("user") ? localStorage : sessionStorage;
+    storage.setItem(
       "user",
       JSON.stringify({ ...JSON.parse(storedUser), mustChangePassword: true })
     );
@@ -42,6 +43,8 @@ apiClient.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
       // Basic redirect that avoids circular dependencies with react-router
       if (window.location.pathname !== "/login") {
         window.location.href = "/login";

@@ -3,20 +3,21 @@ import { Link as RouterLink, useNavigate } from "react-router";
 import { isAxiosError } from "axios";
 
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  TextField,
-  Button,
   Alert,
-  InputAdornment,
+  Box,
+  Button,
+  Checkbox,
+  FormControlLabel,
   IconButton,
+  InputAdornment,
   Link,
-  Stack
+  Stack,
+  TextField,
+  Typography
 } from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { Handyman, Visibility, VisibilityOff } from "@mui/icons-material";
 
+import loginHero from "@/assets/login-hero.png";
 import { useAuth } from "../context/AuthContext";
 import { authApi } from "../api/authApi";
 
@@ -31,10 +32,11 @@ function getLoginErrorMessage(error: unknown) {
 export function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -49,7 +51,7 @@ export function Login() {
 
     try {
       const response = await authApi.login({ email, password });
-      login(response.data);
+      login(response.data, remember);
       if (response.data.mustChangePassword) {
         navigate("/change-password", { replace: true });
       } else {
@@ -63,84 +65,182 @@ export function Login() {
   };
 
   return (
-    <Box 
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        bgcolor: "background.default",
-        px: 2,
-      }}
-    >
-      <Card sx={{ maxWidth: 480, width: "100%" }}>
-        <CardContent sx={{ p: { xs: 3, sm: 5 } }}>
-          <Stack spacing={1.5} alignItems="center" sx={{ mb: 3 }}>
-            <Box sx={{ textAlign: "center" }}>
-              <Typography variant="h3" component="h1">
+    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#FFFFFF" }}>
+      <Box
+        sx={{
+          display: { xs: "none", md: "flex" },
+          width: "64%",
+          flexDirection: "column",
+          justifyContent: "flex-end",
+          backgroundImage: `url(${loginHero})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          borderRight: "1px solid #E4E7EA",
+          overflow: "hidden",
+        }}
+      >
+        <Box sx={{ px: { md: 5, lg: 8 }, pb: { md: 6, lg: 7 }, maxWidth: 760 }}>
+          <Typography
+            component="h1"
+            sx={{
+              fontSize: { md: "1.65rem", lg: "1.9rem" },
+              fontWeight: 700,
+              letterSpacing: "-0.02em",
+              lineHeight: 1.25,
+              color: "text.primary",
+              mb: 1,
+            }}
+          >
+            Gestioná tu taller con precisión
+          </Typography>
+          <Typography sx={{ fontSize: "0.9375rem", lineHeight: 1.6, color: "text.secondary" }}>
+            Órdenes de reparación, presupuestos, inspecciones y remitos en un solo lugar.
+          </Typography>
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          minWidth: 0,
+          bgcolor: "#FFFFFF",
+        }}
+      >
+        <Box
+          sx={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            px: { xs: 3, sm: 5 },
+            py: 4,
+          }}
+        >
+          <Box sx={{ width: "100%", maxWidth: 372 }}>
+            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 4 }}>
+              <Box
+                sx={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: "12px",
+                  display: "grid",
+                  placeItems: "center",
+                  background: "linear-gradient(145deg, #FFA24D 0%, #FF6A00 100%)",
+                  boxShadow: "0 6px 14px rgba(255, 122, 26, 0.28)",
+                  color: "#1D1F24",
+                }}
+              >
+                <Handyman sx={{ fontSize: 24 }} />
+              </Box>
+              <Typography sx={{ fontSize: "1.3125rem", fontWeight: 700, letterSpacing: "-0.02em" }}>
                 Autotech
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Inicio de sesión
-              </Typography>
-            </Box>
-          </Stack>
-
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
-          <form onSubmit={handleSubmit}>
-            <Stack spacing={2.5}>
-              <TextField
-                label="Correo electrónico"
-                type="email"
-                fullWidth
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoFocus
-              />
-              <TextField
-                label="Contraseña"
-                type={showPassword ? "text" : "password"}
-                fullWidth
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                slotProps={{
-                  input: {
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                          onClick={() => setShowPassword(!showPassword)}
-                          edge="end"
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    )
-                  }
-                }}
-              />
-              <Button
-                type="submit"
-                variant="contained"
-                fullWidth
-                size="large"
-                disabled={loading}
-              >
-                {loading ? "Iniciando sesión..." : "Ingresar"}
-              </Button>
             </Stack>
 
-            <Typography variant="body2" textAlign="center" sx={{ mt: 2 }}>
-              <Link component={RouterLink} to="/recuperar-contrasena">
-                ¿Olvidaste tu contraseña?
-              </Link>
+            <Typography sx={{ fontSize: "1.375rem", fontWeight: 700, letterSpacing: "-0.02em", mb: 0.5 }}>
+              Iniciar sesión
             </Typography>
-          </form>
-        </CardContent>
-      </Card>
+            <Typography sx={{ fontSize: "0.8125rem", color: "text.secondary", mb: 3 }}>
+              ¿No tenés acceso?{" "}
+              <Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
+                Contactá al administrador.
+              </Box>
+            </Typography>
+
+            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+            <form onSubmit={handleSubmit}>
+              <Stack spacing={2}>
+                <TextField
+                  type="email"
+                  fullWidth
+                  placeholder="Correo electrónico"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  autoFocus
+                  required
+                  slotProps={{ htmlInput: { "aria-label": "Correo electrónico" } }}
+                />
+                <TextField
+                  type={showPassword ? "text" : "password"}
+                  fullWidth
+                  placeholder="Contraseña"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                  slotProps={{
+                    htmlInput: { "aria-label": "Contraseña" },
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                            onClick={() => setShowPassword(!showPassword)}
+                            edge="end"
+                          >
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      )
+                    }
+                  }}
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={remember}
+                      onChange={(e) => setRemember(e.target.checked)}
+                    />
+                  }
+                  label="Recordarme"
+                  slotProps={{ typography: { fontSize: "0.8125rem", color: "text.secondary" } }}
+                  sx={{ mx: 0, mt: 0.5 }}
+                />
+                <Button
+                  type="submit"
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  disabled={loading}
+                  sx={{ py: 1.1, fontSize: "0.875rem" }}
+                >
+                  {loading ? "Iniciando sesión..." : "Ingresar"}
+                </Button>
+              </Stack>
+            </form>
+
+            <Typography sx={{ mt: 2.5, fontSize: "0.8125rem", color: "text.secondary" }}>
+              <Link
+                component={RouterLink}
+                to="/recuperar-contrasena"
+                sx={{
+                  color: "primary.main",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  "&:hover": { textDecoration: "underline" },
+                }}
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>{" "}
+              <Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
+                Contactá al administrador
+              </Box>
+            </Typography>
+          </Box>
+        </Box>
+
+        <Box sx={{ px: { xs: 3, sm: 5 }, pb: 3, display: "flex", justifyContent: "center" }}>
+          <Typography sx={{ width: "100%", maxWidth: 372, fontSize: "0.75rem", color: "text.secondary" }}>
+            © {new Date().getFullYear()} Autotech · Sistema de gestión para taller mecánico.
+          </Typography>
+        </Box>
+      </Box>
     </Box>
   );
 }
