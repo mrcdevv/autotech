@@ -374,7 +374,7 @@ export function DeliveryNoteDetail({ deliveryNoteId, repairOrderId, estimateId, 
       return (
         <Box sx={{ mt: 2 }} className="no-print">
           <Typography color="text.secondary" sx={{ mb: 2 }}>
-            No hay remito asociada a esta orden de trabajo.
+            No hay remito asociado a esta orden de trabajo.
           </Typography>
           <Button variant="contained" onClick={() => clearError()}>
             Crear remito

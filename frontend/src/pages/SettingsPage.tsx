@@ -82,7 +82,7 @@ export default function SettingsPage() {
 
         {canManageConfig && (
           <SettingsSection
-            id="remitocion"
+            id="remitos"
             title="Remitos"
             subtitle="Impuestos"
             icon={<ReceiptOutlinedIcon />}

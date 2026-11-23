@@ -25,7 +25,7 @@ export function useDeliveryNote(id?: number, repairOrderId?: number) {
         setDeliveryNote(res.data.data);
       }
     } catch {
-      setError("Error al cargar la remito");
+      setError("Error al cargar el remito");
       setDeliveryNote(null);
     } finally {
       setLoading(false);
