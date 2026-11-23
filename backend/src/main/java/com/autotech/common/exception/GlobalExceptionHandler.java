@@ -63,12 +63,12 @@ public class GlobalExceptionHandler {
         Map<String, String> errors = ex.getBindingResult().getFieldErrors().stream()
                 .collect(Collectors.toMap(
                         FieldError::getField,
-                        fieldError -> fieldError.getDefaultMessage() != null ? fieldError.getDefaultMessage() : "Invalid value",
+                        fieldError -> fieldError.getDefaultMessage() != null ? fieldError.getDefaultMessage() : "Valor inválido",
                         (first, second) -> first
                 ));
         log.warn("Validation failed: {}", errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse<>("error", "Validation failed", errors));
+                .body(new ApiResponse<>("error", "La solicitud no es válida", errors));
     }
 
     // DisabledException is raised before the password check, so it gets the same
@@ -111,6 +111,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleGeneral(Exception ex) {
         log.error("Unexpected error", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("An unexpected error occurred"));
+                .body(ApiResponse.error("Ocurrió un error inesperado"));
     }
 }
