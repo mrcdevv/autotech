@@ -148,7 +148,7 @@ export function DeliveryNoteList({
       }}
       pageSizeOptions={[12, 24, 48]}
       onRowClick={(params) => onRowClick(params.row)}
-      emptyMessage="No se encuentra cargada una remito con esos datos."
+      emptyMessage="No se encuentra cargado un remito con esos datos."
     />
   );
 }

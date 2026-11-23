@@ -80,6 +80,9 @@ public class Appointment extends BaseEntity {
     @Builder.Default
     private String confirmationToken = SecureTokens.generate();
 
+    @Column(name = "confirmation_token_expires_at")
+    private LocalDateTime confirmationTokenExpiresAt;
+
     @Column(name = "confirmation_status", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     @Builder.Default

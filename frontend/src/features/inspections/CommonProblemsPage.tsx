@@ -131,10 +131,10 @@ export default function CommonProblemsPage() {
             key={problem.id}
             secondaryAction={
               <>
-                <IconButton onClick={() => openEditDialog(problem)} title="Editar">
+                <IconButton onClick={() => openEditDialog(problem)} title="Editar" aria-label="Editar">
                   <EditIcon />
                 </IconButton>
-                <IconButton onClick={() => handleDeleteClick(problem.id)} color="error" title="Eliminar">
+                <IconButton onClick={() => handleDeleteClick(problem.id)} color="error" title="Eliminar" aria-label="Eliminar">
                   <DeleteIcon />
                 </IconButton>
               </>

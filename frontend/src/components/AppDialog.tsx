@@ -99,7 +99,7 @@ export function AppDialog({
             )}
           </Box>
         </Stack>
-        <IconButton onClick={onClose} size="small" sx={{ color: "text.secondary", mt: -0.25 }}>
+        <IconButton onClick={onClose} size="small" aria-label="Cerrar" sx={{ color: "text.secondary", mt: -0.25 }}>
           <CloseIcon fontSize="small" />
         </IconButton>
       </DialogTitle>

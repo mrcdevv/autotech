@@ -21,7 +21,7 @@ const TAB_LABELS = [
   "Remito",
 ];
 
-const TAB_SLUGS = ["general", "inspecciones", "presupuesto", "factura"] as const;
+const TAB_SLUGS = ["general", "inspecciones", "presupuesto", "remito"] as const;
 
 const SLUG_TO_INDEX = new Map<string, number>(TAB_SLUGS.map((slug, index) => [slug, index]));
 

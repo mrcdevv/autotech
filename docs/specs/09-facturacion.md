@@ -1,19 +1,19 @@
-# 09 — Facturación (Invoices)
+﻿# 09 — Remitos (Delivery Notes)
 
 ## 1. Overview
 
-This feature implements full management for **Invoices (Facturas)** — documents that record the final billing for services and products provided to a client's vehicle. Invoices can be created as **standalone** (from the `/facturas` list), **within a repair order** (from the "Factura" tab in repair order detail, replacing the placeholder from spec 06), or **pre-loaded from an approved estimate** (via the "Facturar" action in spec 08).
+This feature implements full management for **Delivery Notes (Remitos)** — documents that record the billing for services and products provided to a client's vehicle. Remitos can be created as **standalone** (from the `/remitos` list), **within a repair order** (from the "Remito" tab in repair order detail, replacing the placeholder from spec 06), or **pre-loaded from an approved estimate** (via the "remitir" action in spec 08).
 
 Key capabilities:
-- Create invoices with nested line items (services and products), snapshotted at creation time.
-- Status workflow: `PENDIENTE` → `PAGADA` (auto-transitions when total payments equal the invoice total; see spec 10 for payment details).
-- **Immutable after creation**: once an invoice is created, its data (client, vehicle, line items, discount, tax, total) cannot be edited.
+- Create delivery notes with nested line items (services and products), snapshotted at creation time.
+- Status workflow: `PENDIENTE` → `PAGADA` (auto-transitions when total payments equal the delivery note total; see spec 10 for payment details).
+- **Immutable after creation**: once a delivery note is created, its data (client, vehicle, line items, discount, tax, total) cannot be edited.
 - Integration with the **Services** and **Products** catalogs via autocomplete (names and prices are **snapshotted** — copied by value at creation time, not FK references).
-- "Factura anónima" support: for **TEMPORAL** clients, only products are allowed (no services). The client must exist in the system (created with type `TEMPORAL` — name + phone only).
-- Pre-loading from an **ACEPTADO** estimate: copies client, vehicle, repair order, services, products, discount, and tax into the invoice creation form.
-- Download / print invoice.
+- "Remito anónimo" support: for **TEMPORAL** clients, only products are allowed (no services). The client must exist in the system (created with type `TEMPORAL` — name + phone only).
+- Pre-loading from an **ACEPTADO** estimate: copies client, vehicle, repair order, services, products, discount, and tax into the delivery note creation form.
+- Download / print delivery note.
 - Summary calculation: subtotals for services and products, discount %, tax %, and final price.
-- Two-tab detail view: **Datos de la Factura** (invoice data) and **Pagos** (payments, handled by spec 10).
+- Two-tab detail view: **Datos del Remito** (delivery note data) and **Pagos** (payments, handled by spec 10).
 
 **Dependencies**: Clients (spec 02), Vehicles (spec 03), Services & Products catalog (spec 04), Repair Orders (spec 06), Estimates (spec 08), Payments (spec 10).
 
@@ -23,19 +23,19 @@ Key capabilities:
 
 | Item | Value |
 |---|---|
-| Branch | `feature/facturacion` |
+| Branch | `feature/delivery-notes` |
 | Base | `develop` |
 | Commit style | Conventional commits (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`) |
 
 Example commits:
-- `feat: add Invoice, InvoiceServiceItem, InvoiceProduct entities`
-- `feat: add invoice CRUD endpoints`
-- `feat: add InvoicesPage with DataGrid`
-- `feat: add InvoiceDetailPage with invoice data and payments tabs`
-- `feat: add InvoiceTab component for repair order detail`
+- `feat: add DeliveryNote, DeliveryNoteServiceItem, DeliveryNoteProduct entities`
+- `feat: add delivery note CRUD endpoints`
+- `feat: add DeliveryNotesPage with DataGrid`
+- `feat: add DeliveryNoteDetailPage with delivery note data and payments tabs`
+- `feat: add DeliveryNoteTab component for repair order detail`
 - `feat: add createFromEstimate pre-loading logic`
 - `feat: add TEMPORAL client restriction (products only)`
-- `test: add unit tests for InvoiceService`
+- `test: add unit tests for DeliveryNoteService`
 
 ---
 
@@ -43,7 +43,7 @@ Example commits:
 
 All tables already exist in `V1__init_schema.sql`. No new migration needed.
 
-### 3.1 `invoices`
+### 3.1 `delivery_notes`
 
 | Column | Type | Constraints |
 |---|---|---|
@@ -59,27 +59,27 @@ All tables already exist in `V1__init_schema.sql`. No new migration needed.
 | `created_at` | `TIMESTAMP` | NOT NULL, DEFAULT NOW() |
 | `updated_at` | `TIMESTAMP` | NOT NULL, DEFAULT NOW() |
 
-**Indexes**: `idx_invoices_client_id`, `idx_invoices_repair_order_id`.
+**Indexes**: `idx_delivery_notes_client_id`, `idx_delivery_notes_repair_order_id`.
 
-### 3.2 `invoice_services`
+### 3.2 `delivery_note_services`
 
 | Column | Type | Constraints |
 |---|---|---|
 | `id` | `BIGSERIAL` | PK |
-| `invoice_id` | `BIGINT` | NOT NULL, FK → `invoices(id)` ON DELETE CASCADE |
+| `delivery_note_id` | `BIGINT` | NOT NULL, FK → `delivery_notes(id)` ON DELETE CASCADE |
 | `service_name` | `VARCHAR(255)` | NOT NULL |
 | `price` | `NUMERIC(12,2)` | NOT NULL |
 | `created_at` | `TIMESTAMP` | NOT NULL, DEFAULT NOW() |
 | `updated_at` | `TIMESTAMP` | NOT NULL, DEFAULT NOW() |
 
-**Index**: `idx_invoice_services_invoice_id`.
+**Index**: `idx_delivery_note_services_delivery_note_id`.
 
-### 3.3 `invoice_products`
+### 3.3 `delivery_note_products`
 
 | Column | Type | Constraints |
 |---|---|---|
 | `id` | `BIGSERIAL` | PK |
-| `invoice_id` | `BIGINT` | NOT NULL, FK → `invoices(id)` ON DELETE CASCADE |
+| `delivery_note_id` | `BIGINT` | NOT NULL, FK → `delivery_notes(id)` ON DELETE CASCADE |
 | `product_name` | `VARCHAR(255)` | NOT NULL |
 | `quantity` | `INTEGER` | NOT NULL |
 | `unit_price` | `NUMERIC(12,2)` | NOT NULL |
@@ -87,7 +87,7 @@ All tables already exist in `V1__init_schema.sql`. No new migration needed.
 | `created_at` | `TIMESTAMP` | NOT NULL, DEFAULT NOW() |
 | `updated_at` | `TIMESTAMP` | NOT NULL, DEFAULT NOW() |
 
-**Index**: `idx_invoice_products_invoice_id`.
+**Index**: `idx_delivery_note_products_delivery_note_id`.
 
 ---
 
@@ -96,42 +96,42 @@ All tables already exist in `V1__init_schema.sql`. No new migration needed.
 ### 4.1 Package Structure
 
 ```
-com.autotech.invoice/
+com.autotech.deliverynote/
 ├── controller/
-│   └── InvoiceController.java
+│   └── DeliveryNoteController.java
 ├── service/
-│   ├── InvoiceService.java               (interface)
-│   └── InvoiceServiceImpl.java           (implementation)
+│   ├── DeliveryNoteService.java               (interface)
+│   └── DeliveryNoteServiceImpl.java           (implementation)
 ├── repository/
-│   ├── InvoiceRepository.java
-│   ├── InvoiceServiceItemRepository.java
-│   └── InvoiceProductRepository.java
+│   ├── DeliveryNoteRepository.java
+│   ├── DeliveryNoteServiceItemRepository.java
+│   └── DeliveryNoteProductRepository.java
 ├── model/
-│   ├── Invoice.java
-│   ├── InvoiceStatus.java                (enum)
-│   ├── InvoiceServiceItem.java
-│   └── InvoiceProduct.java
+│   ├── DeliveryNote.java
+│   ├── DeliveryNoteStatus.java                (enum)
+│   ├── DeliveryNoteServiceItem.java
+│   └── DeliveryNoteProduct.java
 └── dto/
-    ├── InvoiceRequest.java
-    ├── InvoiceServiceItemRequest.java
-    ├── InvoiceProductRequest.java
-    ├── InvoiceResponse.java
-    ├── InvoiceDetailResponse.java
-    ├── InvoiceServiceItemResponse.java
-    ├── InvoiceProductResponse.java
-    └── InvoiceMapper.java
+    ├── DeliveryNoteRequest.java
+    ├── DeliveryNoteServiceItemRequest.java
+    ├── DeliveryNoteProductRequest.java
+    ├── DeliveryNoteResponse.java
+    ├── DeliveryNoteDetailResponse.java
+    ├── DeliveryNoteServiceItemResponse.java
+    ├── DeliveryNoteProductResponse.java
+    └── DeliveryNoteMapper.java
 ```
 
-> **Naming rationale**: The line-item entity is named `InvoiceServiceItem` (not `InvoiceService`) to avoid clashing with the service-layer interface `InvoiceService`.
+> **Naming rationale**: The line-item entity is named `DeliveryNoteServiceItem` (not `DeliveryNoteService`) to avoid clashing with the service-layer interface `DeliveryNoteService`.
 
 ---
 
-### 4.2 Enum — `InvoiceStatus`
+### 4.2 Enum — `DeliveryNoteStatus`
 
 ```java
-package com.autotech.invoice.model;
+package com.autotech.deliverynote.model;
 
-public enum InvoiceStatus {
+public enum DeliveryNoteStatus {
     PENDIENTE,
     PAGADA
 }
@@ -141,15 +141,15 @@ public enum InvoiceStatus {
 
 ### 4.3 Entities
 
-#### `Invoice`
+#### `DeliveryNote`
 
 ```java
 @Entity
-@Table(name = "invoices")
+@Table(name = "delivery_notes")
 @Getter @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor @Builder
-public class Invoice extends BaseEntity {
+public class DeliveryNote extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id", nullable = false)
@@ -181,20 +181,20 @@ public class Invoice extends BaseEntity {
     @Column(name = "status", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     @Builder.Default
-    private InvoiceStatus status = InvoiceStatus.PENDIENTE;
+    private DeliveryNoteStatus status = DeliveryNoteStatus.PENDIENTE;
 
-    @OneToMany(mappedBy = "invoice", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "deliveryNote", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private Set<InvoiceServiceItem> services = new HashSet<>();
+    private Set<DeliveryNoteServiceItem> services = new HashSet<>();
 
-    @OneToMany(mappedBy = "invoice", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "deliveryNote", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private Set<InvoiceProduct> products = new HashSet<>();
+    private Set<DeliveryNoteProduct> products = new HashSet<>();
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Invoice other)) return false;
+        if (!(o instanceof DeliveryNote other)) return false;
         return getId() != null && getId().equals(other.getId());
     }
 
@@ -205,19 +205,19 @@ public class Invoice extends BaseEntity {
 }
 ```
 
-#### `InvoiceServiceItem`
+#### `DeliveryNoteServiceItem`
 
 ```java
 @Entity
-@Table(name = "invoice_services")
+@Table(name = "delivery_note_services")
 @Getter @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor @Builder
-public class InvoiceServiceItem extends BaseEntity {
+public class DeliveryNoteServiceItem extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "invoice_id", nullable = false)
-    private Invoice invoice;
+    @JoinColumn(name = "delivery_note_id", nullable = false)
+    private DeliveryNote deliveryNote;
 
     @Column(name = "service_name", nullable = false, length = 255)
     private String serviceName;
@@ -228,7 +228,7 @@ public class InvoiceServiceItem extends BaseEntity {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof InvoiceServiceItem other)) return false;
+        if (!(o instanceof DeliveryNoteServiceItem other)) return false;
         return getId() != null && getId().equals(other.getId());
     }
 
@@ -239,19 +239,19 @@ public class InvoiceServiceItem extends BaseEntity {
 }
 ```
 
-#### `InvoiceProduct`
+#### `DeliveryNoteProduct`
 
 ```java
 @Entity
-@Table(name = "invoice_products")
+@Table(name = "delivery_note_products")
 @Getter @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor @Builder
-public class InvoiceProduct extends BaseEntity {
+public class DeliveryNoteProduct extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "invoice_id", nullable = false)
-    private Invoice invoice;
+    @JoinColumn(name = "delivery_note_id", nullable = false)
+    private DeliveryNote deliveryNote;
 
     @Column(name = "product_name", nullable = false, length = 255)
     private String productName;
@@ -268,7 +268,7 @@ public class InvoiceProduct extends BaseEntity {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof InvoiceProduct other)) return false;
+        if (!(o instanceof DeliveryNoteProduct other)) return false;
         return getId() != null && getId().equals(other.getId());
     }
 
@@ -283,24 +283,24 @@ public class InvoiceProduct extends BaseEntity {
 
 ### 4.4 Repositories
 
-#### `InvoiceRepository`
+#### `DeliveryNoteRepository`
 
 ```java
 @Repository
-public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
+public interface DeliveryNoteRepository extends JpaRepository<DeliveryNote, Long> {
 
     @EntityGraph(attributePaths = {"services", "products", "client", "vehicle", "repairOrder", "estimate"})
-    Optional<Invoice> findWithDetailsById(Long id);
+    Optional<DeliveryNote> findWithDetailsById(Long id);
 
-    Optional<Invoice> findByRepairOrderId(Long repairOrderId);
+    Optional<DeliveryNote> findByRepairOrderId(Long repairOrderId);
 
-    Optional<Invoice> findByEstimateId(Long estimateId);
+    Optional<DeliveryNote> findByestimateId(Long estimateId);
 
     @EntityGraph(attributePaths = {"services", "products", "client", "vehicle", "repairOrder", "estimate"})
-    Page<Invoice> findAll(Pageable pageable);
+    Page<DeliveryNote> findAll(Pageable pageable);
 
     @Query("""
-        SELECT i FROM Invoice i
+        SELECT i FROM DeliveryNote i
         LEFT JOIN i.client c
         LEFT JOIN i.vehicle v
         WHERE (:clientName IS NULL OR LOWER(c.firstName) LIKE LOWER(CONCAT('%', :clientName, '%'))
@@ -308,35 +308,35 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
         AND (:plate IS NULL OR LOWER(v.plate) LIKE LOWER(CONCAT('%', :plate, '%')))
         AND (:status IS NULL OR i.status = :status)
     """)
-    Page<Invoice> search(
+    Page<DeliveryNote> search(
             @Param("clientName") String clientName,
             @Param("plate") String plate,
-            @Param("status") InvoiceStatus status,
+            @Param("status") DeliveryNoteStatus status,
             Pageable pageable);
 }
 ```
 
-#### `InvoiceServiceItemRepository`
+#### `DeliveryNoteServiceItemRepository`
 
 ```java
 @Repository
-public interface InvoiceServiceItemRepository extends JpaRepository<InvoiceServiceItem, Long> {
+public interface DeliveryNoteServiceItemRepository extends JpaRepository<DeliveryNoteServiceItem, Long> {
 
-    List<InvoiceServiceItem> findByInvoiceId(Long invoiceId);
+    List<DeliveryNoteServiceItem> findByDeliveryNoteId(Long deliveryNoteId);
 
-    void deleteByInvoiceId(Long invoiceId);
+    void deleteByDeliveryNoteId(Long deliveryNoteId);
 }
 ```
 
-#### `InvoiceProductRepository`
+#### `DeliveryNoteProductRepository`
 
 ```java
 @Repository
-public interface InvoiceProductRepository extends JpaRepository<InvoiceProduct, Long> {
+public interface DeliveryNoteProductRepository extends JpaRepository<DeliveryNoteProduct, Long> {
 
-    List<InvoiceProduct> findByInvoiceId(Long invoiceId);
+    List<DeliveryNoteProduct> findByDeliveryNoteId(Long deliveryNoteId);
 
-    void deleteByInvoiceId(Long invoiceId);
+    void deleteByDeliveryNoteId(Long deliveryNoteId);
 }
 ```
 
@@ -347,7 +347,7 @@ public interface InvoiceProductRepository extends JpaRepository<InvoiceProduct, 
 #### Request DTOs
 
 ```java
-public record InvoiceServiceItemRequest(
+public record DeliveryNoteServiceItemRequest(
         @NotBlank(message = "El nombre del servicio es obligatorio")
         @Size(max = 255, message = "El nombre no puede superar los 255 caracteres")
         String serviceName,
@@ -358,7 +358,7 @@ public record InvoiceServiceItemRequest(
         BigDecimal price
 ) {}
 
-public record InvoiceProductRequest(
+public record DeliveryNoteProductRequest(
         @NotBlank(message = "El nombre del producto es obligatorio")
         @Size(max = 255, message = "El nombre no puede superar los 255 caracteres")
         String productName,
@@ -373,11 +373,11 @@ public record InvoiceProductRequest(
         BigDecimal unitPrice
 ) {}
 
-public record InvoiceRequest(
+public record DeliveryNoteRequest(
         @NotNull(message = "El cliente es obligatorio")
         Long clientId,
 
-        Long vehicleId,            // nullable — not required for TEMPORAL client invoices
+        Long vehicleId,            // nullable — not required for TEMPORAL client delivery notes
 
         Long repairOrderId,        // nullable — only set when creating from a repair order
 
@@ -394,23 +394,23 @@ public record InvoiceRequest(
         BigDecimal taxPercentage,
 
         @Valid
-        List<InvoiceServiceItemRequest> services,
+        List<DeliveryNoteServiceItemRequest> services,
 
         @Valid
-        List<InvoiceProductRequest> products
+        List<DeliveryNoteProductRequest> products
 ) {}
 ```
 
 #### Response DTOs
 
 ```java
-public record InvoiceServiceItemResponse(
+public record DeliveryNoteServiceItemResponse(
         Long id,
         String serviceName,
         BigDecimal price
 ) {}
 
-public record InvoiceProductResponse(
+public record DeliveryNoteProductResponse(
         Long id,
         String productName,
         Integer quantity,
@@ -418,8 +418,8 @@ public record InvoiceProductResponse(
         BigDecimal totalPrice
 ) {}
 
-// Used in the list view (InvoicesPage grid)
-public record InvoiceResponse(
+// Used in the list view (DeliveryNotesPage grid)
+public record DeliveryNoteResponse(
         Long id,
         Long clientId,
         String clientFullName,
@@ -428,7 +428,7 @@ public record InvoiceResponse(
         String vehicleModel,
         Long repairOrderId,
         Long estimateId,
-        InvoiceStatus status,
+        DeliveryNoteStatus status,
         BigDecimal discountPercentage,
         BigDecimal taxPercentage,
         BigDecimal total,
@@ -436,8 +436,8 @@ public record InvoiceResponse(
         LocalDateTime updatedAt
 ) {}
 
-// Used in the detail view (InvoiceDetailPage / InvoiceTab)
-public record InvoiceDetailResponse(
+// Used in the detail view (DeliveryNoteDetailPage / DeliveryNoteTab)
+public record DeliveryNoteDetailResponse(
         Long id,
         Long clientId,
         String clientFullName,
@@ -452,12 +452,12 @@ public record InvoiceDetailResponse(
         Integer vehicleYear,
         Long repairOrderId,
         Long estimateId,
-        InvoiceStatus status,
+        DeliveryNoteStatus status,
         BigDecimal discountPercentage,
         BigDecimal taxPercentage,
         BigDecimal total,
-        List<InvoiceServiceItemResponse> services,
-        List<InvoiceProductResponse> products,
+        List<DeliveryNoteServiceItemResponse> services,
+        List<DeliveryNoteProductResponse> products,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {}
@@ -465,11 +465,11 @@ public record InvoiceDetailResponse(
 
 ---
 
-### 4.6 Mapper — `InvoiceMapper`
+### 4.6 Mapper — `DeliveryNoteMapper`
 
 ```java
 @Mapper(componentModel = "spring")
-public interface InvoiceMapper {
+public interface DeliveryNoteMapper {
 
     @Mapping(target = "clientId", source = "client.id")
     @Mapping(target = "clientFullName", expression = "java(entity.getClient().getFirstName() + \" \" + entity.getClient().getLastName())")
@@ -478,7 +478,7 @@ public interface InvoiceMapper {
     @Mapping(target = "vehicleModel", source = "vehicle.model")
     @Mapping(target = "repairOrderId", source = "repairOrder.id")
     @Mapping(target = "estimateId", source = "estimate.id")
-    InvoiceResponse toResponse(Invoice entity);
+    DeliveryNoteResponse toResponse(DeliveryNote entity);
 
     @Mapping(target = "clientId", source = "client.id")
     @Mapping(target = "clientFullName", expression = "java(entity.getClient().getFirstName() + \" \" + entity.getClient().getLastName())")
@@ -493,11 +493,11 @@ public interface InvoiceMapper {
     @Mapping(target = "vehicleYear", source = "vehicle.year")
     @Mapping(target = "repairOrderId", source = "repairOrder.id")
     @Mapping(target = "estimateId", source = "estimate.id")
-    InvoiceDetailResponse toDetailResponse(Invoice entity);
+    DeliveryNoteDetailResponse toDetailResponse(DeliveryNote entity);
 
-    InvoiceServiceItemResponse toServiceItemResponse(InvoiceServiceItem entity);
+    DeliveryNoteServiceItemResponse toServiceItemResponse(DeliveryNoteServiceItem entity);
 
-    InvoiceProductResponse toProductResponse(InvoiceProduct entity);
+    DeliveryNoteProductResponse toProductResponse(DeliveryNoteProduct entity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
@@ -510,35 +510,35 @@ public interface InvoiceMapper {
     @Mapping(target = "products", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "total", ignore = true)
-    Invoice toEntity(InvoiceRequest request);
+    DeliveryNote toEntity(DeliveryNoteRequest request);
 }
 ```
 
 ---
 
-### 4.7 Service — `InvoiceService`
+### 4.7 Service — `DeliveryNoteService`
 
 #### Interface
 
 ```java
-public interface InvoiceService {
+public interface DeliveryNoteService {
 
-    Page<InvoiceResponse> getAll(Pageable pageable);
+    Page<DeliveryNoteResponse> getAll(Pageable pageable);
 
-    Page<InvoiceResponse> search(String clientName, String plate, InvoiceStatus status, Pageable pageable);
+    Page<DeliveryNoteResponse> search(String clientName, String plate, DeliveryNoteStatus status, Pageable pageable);
 
-    InvoiceDetailResponse getById(Long id);
+    DeliveryNoteDetailResponse getById(Long id);
 
-    InvoiceDetailResponse getByRepairOrderId(Long repairOrderId);
+    DeliveryNoteDetailResponse getByRepairOrderId(Long repairOrderId);
 
-    InvoiceDetailResponse create(InvoiceRequest request);
+    DeliveryNoteDetailResponse create(DeliveryNoteRequest request);
 
-    InvoiceDetailResponse createFromEstimate(Long estimateId);
+    DeliveryNoteDetailResponse createFromEstimate(Long estimateId);
 
     void delete(Long id);
 
-    BigDecimal calculateTotal(List<InvoiceServiceItemRequest> services,
-                              List<InvoiceProductRequest> products,
+    BigDecimal calculateTotal(List<DeliveryNoteServiceItemRequest> services,
+                              List<DeliveryNoteProductRequest> products,
                               BigDecimal discountPercentage,
                               BigDecimal taxPercentage);
 
@@ -546,16 +546,16 @@ public interface InvoiceService {
 }
 ```
 
-#### Implementation — `InvoiceServiceImpl`
+#### Implementation — `DeliveryNoteServiceImpl`
 
 ```java
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class InvoiceServiceImpl implements InvoiceService {
+public class DeliveryNoteServiceImpl implements DeliveryNoteService {
 
-    private final InvoiceRepository invoiceRepository;
-    private final InvoiceMapper invoiceMapper;
+    private final DeliveryNoteRepository deliveryNoteRepository;
+    private final DeliveryNoteMapper deliveryNoteMapper;
     private final ClientRepository clientRepository;           // from client module
     private final VehicleRepository vehicleRepository;         // from vehicle module
     private final RepairOrderRepository repairOrderRepository; // from repairorder module
@@ -563,41 +563,41 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<InvoiceResponse> getAll(Pageable pageable) {
-        log.debug("Fetching all invoices");
-        return invoiceRepository.findAll(pageable)
-                .map(invoiceMapper::toResponse);
+        public Page<DeliveryNoteResponse> getAll(Pageable pageable) {
+            log.debug("Fetching all delivery notes");
+            return deliveryNoteRepository.findAll(pageable)
+                    .map(deliveryNoteMapper::toResponse);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<InvoiceResponse> search(String clientName, String plate, InvoiceStatus status, Pageable pageable) {
-        log.debug("Searching invoices - clientName: '{}', plate: '{}', status: '{}'", clientName, plate, status);
-        return invoiceRepository.search(clientName, plate, status, pageable)
-                .map(invoiceMapper::toResponse);
+        public Page<DeliveryNoteResponse> search(String clientName, String plate, DeliveryNoteStatus status, Pageable pageable) {
+            log.debug("Searching delivery notes - clientName: '{}', plate: '{}', status: '{}'", clientName, plate, status);
+            return deliveryNoteRepository.search(clientName, plate, status, pageable)
+                    .map(deliveryNoteMapper::toResponse);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public InvoiceDetailResponse getById(Long id) {
-        log.debug("Fetching invoice with id {}", id);
-        Invoice entity = invoiceRepository.findWithDetailsById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Invoice", id));
-        return invoiceMapper.toDetailResponse(entity);
+        public DeliveryNoteDetailResponse getById(Long id) {
+            log.debug("Fetching delivery note with id {}", id);
+            DeliveryNote entity = deliveryNoteRepository.findWithDetailsById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("DeliveryNote", id));
+            return deliveryNoteMapper.toDetailResponse(entity);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public InvoiceDetailResponse getByRepairOrderId(Long repairOrderId) {
-        log.debug("Fetching invoice for repair order {}", repairOrderId);
-        Invoice entity = invoiceRepository.findByRepairOrderId(repairOrderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Invoice for RepairOrder", repairOrderId));
-        return invoiceMapper.toDetailResponse(entity);
+        public DeliveryNoteDetailResponse getByRepairOrderId(Long repairOrderId) {
+            log.debug("Fetching delivery note for repair order {}", repairOrderId);
+            DeliveryNote entity = deliveryNoteRepository.findByRepairOrderId(repairOrderId)
+                    .orElseThrow(() -> new ResourceNotFoundException("DeliveryNote for RepairOrder", repairOrderId));
+            return deliveryNoteMapper.toDetailResponse(entity);
     }
 
     @Override
     @Transactional
-    public InvoiceDetailResponse create(InvoiceRequest request) {
+        public DeliveryNoteDetailResponse create(DeliveryNoteRequest request) {
         // 1. Resolve client
         Client client = clientRepository.findById(request.clientId())
                 .orElseThrow(() -> new ResourceNotFoundException("Client", request.clientId()));
@@ -606,11 +606,11 @@ public class InvoiceServiceImpl implements InvoiceService {
         if (client.getClientType() == ClientType.TEMPORAL) {
             if (request.services() != null && !request.services().isEmpty()) {
                 throw new BusinessRuleException(
-                        "Los clientes temporales solo pueden tener facturas de productos, no de servicios");
+                            "Los clientes temporales solo pueden tener remitos de productos, no de servicios");
             }
         }
 
-        // 3. Optionally resolve vehicle (nullable for TEMPORAL client invoices)
+            // 3. Optionally resolve vehicle (nullable for TEMPORAL client delivery notes)
         Vehicle vehicle = null;
         if (request.vehicleId() != null) {
             vehicle = vehicleRepository.findById(request.vehicleId())
@@ -632,12 +632,12 @@ public class InvoiceServiceImpl implements InvoiceService {
         }
 
         // 6. Build entity
-        Invoice entity = invoiceMapper.toEntity(request);
+            DeliveryNote entity = deliveryNoteMapper.toEntity(request);
         entity.setClient(client);
         entity.setVehicle(vehicle);
         entity.setRepairOrder(repairOrder);
         entity.setEstimate(estimate);
-        entity.setStatus(InvoiceStatus.PENDIENTE);
+            entity.setStatus(DeliveryNoteStatus.PENDIENTE);
 
         // 7. Add child entities (snapshot line items)
         addChildEntities(entity, request);
@@ -648,28 +648,28 @@ public class InvoiceServiceImpl implements InvoiceService {
         entity.setTotal(total);
 
         // 9. Save
-        Invoice saved = invoiceRepository.save(entity);
-        log.info("Created invoice with id {}", saved.getId());
+                DeliveryNote saved = deliveryNoteRepository.save(entity);
+                log.info("Created delivery note with id {}", saved.getId());
         return getById(saved.getId());
     }
 
     @Override
     @Transactional
-    public InvoiceDetailResponse createFromEstimate(Long estimateId) {
-        // 1. Get estimate invoice data (validates ACEPTADO status)
-        EstimateInvoiceDataResponse estimateData = estimateService.convertToInvoiceData(estimateId);
+            public DeliveryNoteDetailResponse createFromEstimate(Long estimateId) {
+                // 1. Get estimate delivery note data (validates ACEPTADO status)
+                EstimatedDeliveryNoteDataResponse estimateData = estimateService.convertToDeliveryNoteData(estimateId);
 
-        // 2. Map estimate line items to invoice request DTOs
-        List<InvoiceServiceItemRequest> services = estimateData.services().stream()
-                .map(s -> new InvoiceServiceItemRequest(s.serviceName(), s.price()))
+                // 2. Map estimate line items to delivery note request DTOs
+                List<DeliveryNoteServiceItemRequest> services = estimateData.services().stream()
+                        .map(s -> new DeliveryNoteServiceItemRequest(s.serviceName(), s.price()))
                 .toList();
 
-        List<InvoiceProductRequest> products = estimateData.products().stream()
-                .map(p -> new InvoiceProductRequest(p.productName(), p.quantity(), p.unitPrice()))
+                List<DeliveryNoteProductRequest> products = estimateData.products().stream()
+                        .map(p -> new DeliveryNoteProductRequest(p.productName(), p.quantity(), p.unitPrice()))
                 .toList();
 
-        // 3. Build invoice request from estimate data
-        InvoiceRequest request = new InvoiceRequest(
+                // 3. Build delivery note request from estimate data
+                DeliveryNoteRequest request = new DeliveryNoteRequest(
                 estimateData.clientId(),
                 estimateData.vehicleId(),
                 estimateData.repairOrderId(),
@@ -687,38 +687,38 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     @Transactional
     public void delete(Long id) {
-        Invoice invoice = invoiceRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Invoice", id));
+                DeliveryNote deliveryNote = deliveryNoteRepository.findById(id)
+                        .orElseThrow(() -> new ResourceNotFoundException("DeliveryNote", id));
 
-        // Cannot delete invoices linked to a repair order
-        if (invoice.getRepairOrder() != null) {
+                // Cannot delete delivery notes linked to a repair order
+                if (deliveryNote.getRepairOrder() != null) {
             throw new BusinessRuleException(
-                    "No se puede eliminar una factura asociada a una orden de trabajo");
+                            "No se puede eliminar un remito asociado a una orden de trabajo");
         }
 
-        // Cannot delete paid invoices
-        if (invoice.getStatus() == InvoiceStatus.PAGADA) {
-            throw new BusinessRuleException("No se puede eliminar una factura que ya fue pagada");
+                // Cannot delete paid delivery notes
+                if (deliveryNote.getStatus() == DeliveryNoteStatus.PAGADA) {
+                    throw new BusinessRuleException("No se puede eliminar un remito que ya fue pagado");
         }
 
-        invoiceRepository.deleteById(id);
-        log.info("Deleted invoice with id {}", id);
+                deliveryNoteRepository.deleteById(id);
+                log.info("Deleted delivery note with id {}", id);
     }
 
     @Override
-    public BigDecimal calculateTotal(List<InvoiceServiceItemRequest> services,
-                                     List<InvoiceProductRequest> products,
+            public BigDecimal calculateTotal(List<DeliveryNoteServiceItemRequest> services,
+                                             List<DeliveryNoteProductRequest> products,
                                      BigDecimal discountPercentage,
                                      BigDecimal taxPercentage) {
         BigDecimal servicesTotal = BigDecimal.ZERO;
         if (services != null) {
-            for (InvoiceServiceItemRequest svc : services) {
+                    for (DeliveryNoteServiceItemRequest svc : services) {
                 servicesTotal = servicesTotal.add(svc.price());
             }
         }
         BigDecimal productsTotal = BigDecimal.ZERO;
         if (products != null) {
-            for (InvoiceProductRequest prod : products) {
+                    for (DeliveryNoteProductRequest prod : products) {
                 productsTotal = productsTotal.add(prod.unitPrice().multiply(BigDecimal.valueOf(prod.quantity())));
             }
         }
@@ -736,20 +736,20 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     @Transactional
     public void markAsPaid(Long id) {
-        Invoice entity = invoiceRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Invoice", id));
-        entity.setStatus(InvoiceStatus.PAGADA);
-        invoiceRepository.save(entity);
-        log.info("Marked invoice {} as PAGADA", id);
+                DeliveryNote entity = deliveryNoteRepository.findById(id)
+                        .orElseThrow(() -> new ResourceNotFoundException("DeliveryNote", id));
+                entity.setStatus(DeliveryNoteStatus.PAGADA);
+                deliveryNoteRepository.save(entity);
+                log.info("Marked delivery note {} as PAGADA", id);
     }
 
     // --- Private helpers ---
 
-    private void addChildEntities(Invoice entity, InvoiceRequest request) {
+            private void addChildEntities(DeliveryNote entity, DeliveryNoteRequest request) {
         if (request.services() != null) {
-            for (InvoiceServiceItemRequest svcReq : request.services()) {
-                InvoiceServiceItem svc = InvoiceServiceItem.builder()
-                        .invoice(entity)
+                    for (DeliveryNoteServiceItemRequest svcReq : request.services()) {
+                        DeliveryNoteServiceItem svc = DeliveryNoteServiceItem.builder()
+                                .deliveryNote(entity)
                         .serviceName(svcReq.serviceName())
                         .price(svcReq.price())
                         .build();
@@ -757,9 +757,9 @@ public class InvoiceServiceImpl implements InvoiceService {
             }
         }
         if (request.products() != null) {
-            for (InvoiceProductRequest prodReq : request.products()) {
-                InvoiceProduct prod = InvoiceProduct.builder()
-                        .invoice(entity)
+                    for (DeliveryNoteProductRequest prodReq : request.products()) {
+                        DeliveryNoteProduct prod = DeliveryNoteProduct.builder()
+                                .deliveryNote(entity)
                         .productName(prodReq.productName())
                         .quantity(prodReq.quantity())
                         .unitPrice(prodReq.unitPrice())
@@ -774,91 +774,91 @@ public class InvoiceServiceImpl implements InvoiceService {
 
 ---
 
-### 4.8 Controller — `InvoiceController`
+        ### 4.8 Controller — `DeliveryNoteController`
 
-Base path: `/api/invoices`
+        Base path: `/api/delivery-notes`
 
 ```java
 @RestController
-@RequestMapping("/api/invoices")
+        @RequestMapping("/api/delivery-notes")
 @RequiredArgsConstructor
-public class InvoiceController {
+        public class DeliveryNoteController {
 
-    private final InvoiceService invoiceService;
+            private final DeliveryNoteService deliveryNoteService;
 
-    // GET /api/invoices?clientName={}&plate={}&status={}&page=0&size=12&sort=createdAt,desc
+            // GET /api/delivery-notes?clientName={}&plate={}&status={}&page=0&size=12&sort=createdAt,desc
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<InvoiceResponse>>> getAll(
+            public ResponseEntity<ApiResponse<Page<DeliveryNoteResponse>>> getAll(
             @RequestParam(required = false) String clientName,
             @RequestParam(required = false) String plate,
-            @RequestParam(required = false) InvoiceStatus status,
+                    @RequestParam(required = false) DeliveryNoteStatus status,
             @PageableDefault(size = 12, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         if (clientName != null || plate != null || status != null) {
-            return ResponseEntity.ok(ApiResponse.success(invoiceService.search(clientName, plate, status, pageable)));
+                    return ResponseEntity.ok(ApiResponse.success(deliveryNoteService.search(clientName, plate, status, pageable)));
         }
-        return ResponseEntity.ok(ApiResponse.success(invoiceService.getAll(pageable)));
+                return ResponseEntity.ok(ApiResponse.success(deliveryNoteService.getAll(pageable)));
     }
 
-    // GET /api/invoices/{id}
+            // GET /api/delivery-notes/{id}
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<InvoiceDetailResponse>> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(invoiceService.getById(id)));
+            public ResponseEntity<ApiResponse<DeliveryNoteDetailResponse>> getById(@PathVariable Long id) {
+                return ResponseEntity.ok(ApiResponse.success(deliveryNoteService.getById(id)));
     }
 
-    // POST /api/invoices
+            // POST /api/delivery-notes
     @PostMapping
-    public ResponseEntity<ApiResponse<InvoiceDetailResponse>> create(
-            @Valid @RequestBody InvoiceRequest request) {
-        InvoiceDetailResponse created = invoiceService.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Factura creada", created));
+            public ResponseEntity<ApiResponse<DeliveryNoteDetailResponse>> create(
+                    @Valid @RequestBody DeliveryNoteRequest request) {
+                DeliveryNoteDetailResponse created = deliveryNoteService.create(request);
+                return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Remito creado", created));
     }
 
-    // POST /api/invoices/from-estimate/{estimateId}
+            // POST /api/delivery-notes/from-estimate/{estimateId}
     @PostMapping("/from-estimate/{estimateId}")
-    public ResponseEntity<ApiResponse<InvoiceDetailResponse>> createFromEstimate(
+            public ResponseEntity<ApiResponse<DeliveryNoteDetailResponse>> createFromEstimate(
             @PathVariable Long estimateId) {
-        InvoiceDetailResponse created = invoiceService.createFromEstimate(estimateId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Factura creada desde presupuesto", created));
+                DeliveryNoteDetailResponse created = deliveryNoteService.createFromEstimate(estimateId);
+                return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Remito creado desde presupuesto", created));
     }
 
-    // DELETE /api/invoices/{id}
+            // DELETE /api/delivery-notes/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
-        invoiceService.delete(id);
-        return ResponseEntity.ok(ApiResponse.success("Factura eliminada", null));
+                deliveryNoteService.delete(id);
+                return ResponseEntity.ok(ApiResponse.success("Remito eliminado", null));
     }
 }
 ```
 
 ### 4.9 Repair Order Integration
 
-Add an endpoint in `RepairOrderController` to access the invoice for a specific repair order:
+        Add an endpoint in `RepairOrderController` to access the delivery note for a specific repair order:
 
 ```
-GET /api/repair-orders/{id}/invoice
+        GET /api/repair-orders/{id}/delivery-note
 ```
 
 ```java
 // In RepairOrderController (existing controller, add this endpoint)
 
-@GetMapping("/{id}/invoice")
-public ResponseEntity<ApiResponse<InvoiceDetailResponse>> getInvoiceByRepairOrder(@PathVariable Long id) {
-    return ResponseEntity.ok(ApiResponse.success(invoiceService.getByRepairOrderId(id)));
+        @GetMapping("/{id}/delivery-note")
+        public ResponseEntity<ApiResponse<DeliveryNoteDetailResponse>> getDeliveryNoteByRepairOrder(@PathVariable Long id) {
+            return ResponseEntity.ok(ApiResponse.success(deliveryNoteService.getByRepairOrderId(id)));
 }
 ```
 
-The `RepairOrderService` injects `InvoiceService` to coordinate, as per the cross-module orchestration pattern.
+        The `RepairOrderService` injects `DeliveryNoteService` to coordinate, as per the cross-module orchestration pattern.
 
 #### Endpoint Summary
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/invoices?clientName=&plate=&status=&page=0&size=12&sort=createdAt,desc` | List/search invoices (paginated, sortable by date) |
-| `GET` | `/api/invoices/{id}` | Get invoice detail by ID |
-| `POST` | `/api/invoices` | Create new invoice |
-| `POST` | `/api/invoices/from-estimate/{estimateId}` | Create invoice pre-loaded from accepted estimate |
-| `DELETE` | `/api/invoices/{id}` | Delete invoice (only standalone, not paid) |
-| `GET` | `/api/repair-orders/{id}/invoice` | Get invoice linked to a repair order |
+| `GET` | `/api/delivery-notes?clientName=&plate=&status=&page=0&size=12&sort=createdAt,desc` | List/search delivery notes (paginated, sortable by date) |
+| `GET` | `/api/delivery-notes/{id}` | Get delivery note detail by ID |
+| `POST` | `/api/delivery-notes` | Create new delivery note |
+| `POST` | `/api/delivery-notes/from-estimate/{estimateId}` | Create delivery note pre-loaded from accepted estimate |
+| `DELETE` | `/api/delivery-notes/{id}` | Delete delivery note (only standalone, not paid) |
+| `GET` | `/api/repair-orders/{id}/delivery-note` | Get delivery note linked to a repair order |
 
 ---
 
@@ -869,45 +869,45 @@ The `RepairOrderService` injects `InvoiceService` to coordinate, as per the cros
 ```
 src/
 ├── api/
-│   └── invoices.ts
+│   └── deliveryNotes.ts
 ├── features/
-│   └── invoices/
+│   └── delivery-notes/
 │       ├── components/
-│       │   ├── InvoiceList.tsx
-│       │   ├── InvoiceDetail.tsx
-│       │   ├── InvoiceDataTab.tsx
+│       │   ├── DeliveryNoteList.tsx
+│       │   ├── DeliveryNoteDetail.tsx
+│       │   ├── DeliveryNoteDataTab.tsx
 │       │   ├── PaymentsTabPlaceholder.tsx
 │       │   ├── ServicesGrid.tsx
 │       │   ├── ProductsGrid.tsx
-│       │   ├── InvoiceSummary.tsx
-│       │   └── InvoiceTab.tsx              ← for repair order detail
+│       │   ├── DeliveryNoteSummary.tsx
+│       │   └── DeliveryNoteTab.tsx          ← for repair order detail
 │       └── hooks/
-│           ├── useInvoices.ts
-│           └── useInvoice.ts
+│           ├── useDeliveryNotes.ts
+│           └── useDeliveryNote.ts
 ├── pages/
-│   ├── InvoicesPage.tsx
-│   └── InvoiceDetailPage.tsx
+│   ├── DeliveryNotesPage.tsx
+│   └── DeliveryNoteDetailPage.tsx
 └── types/
-    └── invoice.ts
+    └── deliveryNote.ts
 ```
 
 ---
 
-### 5.2 Types (`src/types/invoice.ts`)
+### 5.2 Types (`src/types/deliveryNote.ts`)
 
 ```ts
-// ---- Invoice Status ----
+// ---- Delivery Note Status ----
 
-export type InvoiceStatus = "PENDIENTE" | "PAGADA";
+export type DeliveryNoteStatus = "PENDIENTE" | "PAGADA";
 
 // ---- Service Line Item ----
 
-export interface InvoiceServiceItemRequest {
+export interface DeliveryNoteServiceItemRequest {
   serviceName: string;
   price: number;
 }
 
-export interface InvoiceServiceItemResponse {
+export interface DeliveryNoteServiceItemResponse {
   id: number;
   serviceName: string;
   price: number;
@@ -915,13 +915,13 @@ export interface InvoiceServiceItemResponse {
 
 // ---- Product Line Item ----
 
-export interface InvoiceProductRequest {
+export interface DeliveryNoteProductRequest {
   productName: string;
   quantity: number;
   unitPrice: number;
 }
 
-export interface InvoiceProductResponse {
+export interface DeliveryNoteProductResponse {
   id: number;
   productName: string;
   quantity: number;
@@ -929,21 +929,21 @@ export interface InvoiceProductResponse {
   totalPrice: number;
 }
 
-// ---- Invoice ----
+// ---- Delivery Note ----
 
-export interface InvoiceRequest {
+export interface DeliveryNoteRequest {
   clientId: number;
   vehicleId: number | null;
   repairOrderId: number | null;
   estimateId: number | null;
   discountPercentage: number;
   taxPercentage: number;
-  services: InvoiceServiceItemRequest[];
-  products: InvoiceProductRequest[];
+  services: DeliveryNoteServiceItemRequest[];
+  products: DeliveryNoteProductRequest[];
 }
 
 // List view row
-export interface InvoiceResponse {
+export interface DeliveryNoteResponse {
   id: number;
   clientId: number;
   clientFullName: string;
@@ -952,7 +952,7 @@ export interface InvoiceResponse {
   vehicleModel: string | null;
   repairOrderId: number | null;
   estimateId: number | null;
-  status: InvoiceStatus;
+  status: DeliveryNoteStatus;
   discountPercentage: number;
   taxPercentage: number;
   total: number | null;
@@ -961,7 +961,7 @@ export interface InvoiceResponse {
 }
 
 // Detail view
-export interface InvoiceDetailResponse {
+export interface DeliveryNoteDetailResponse {
   id: number;
   clientId: number;
   clientFullName: string;
@@ -976,12 +976,12 @@ export interface InvoiceDetailResponse {
   vehicleYear: number | null;
   repairOrderId: number | null;
   estimateId: number | null;
-  status: InvoiceStatus;
+  status: DeliveryNoteStatus;
   discountPercentage: number;
   taxPercentage: number;
   total: number | null;
-  services: InvoiceServiceItemResponse[];
-  products: InvoiceProductResponse[];
+  services: DeliveryNoteServiceItemResponse[];
+  products: DeliveryNoteProductResponse[];
   createdAt: string;
   updatedAt: string;
 }
@@ -989,29 +989,29 @@ export interface InvoiceDetailResponse {
 
 ---
 
-### 5.3 API Layer (`src/api/invoices.ts`)
+### 5.3 API Layer (`src/api/deliveryNotes.ts`)
 
 ```ts
 import apiClient from "./client";
 import type { ApiResponse } from "@/types/api";
 import type { Page } from "@/types/pagination";
 import type {
-  InvoiceResponse,
-  InvoiceDetailResponse,
-  InvoiceRequest,
-  InvoiceStatus,
-} from "@/types/invoice";
+  DeliveryNoteResponse,
+  DeliveryNoteDetailResponse,
+  DeliveryNoteRequest,
+  DeliveryNoteStatus,
+} from "@/types/deliveryNote";
 
-export const invoicesApi = {
+export const deliveryNotesApi = {
   getAll: (params: {
     clientName?: string;
     plate?: string;
-    status?: InvoiceStatus;
+    status?: DeliveryNoteStatus;
     page?: number;
     size?: number;
     sort?: string;
   }) =>
-    apiClient.get<ApiResponse<Page<InvoiceResponse>>>("/invoices", {
+    apiClient.get<ApiResponse<Page<DeliveryNoteResponse>>>("/delivery-notes", {
       params: {
         clientName: params.clientName,
         plate: params.plate,
@@ -1023,23 +1023,23 @@ export const invoicesApi = {
     }),
 
   getById: (id: number) =>
-    apiClient.get<ApiResponse<InvoiceDetailResponse>>(`/invoices/${id}`),
+    apiClient.get<ApiResponse<DeliveryNoteDetailResponse>>(`/delivery-notes/${id}`),
 
   getByRepairOrderId: (repairOrderId: number) =>
-    apiClient.get<ApiResponse<InvoiceDetailResponse>>(
-      `/repair-orders/${repairOrderId}/invoice`
+    apiClient.get<ApiResponse<DeliveryNoteDetailResponse>>(
+      `/repair-orders/${repairOrderId}/delivery-note`
     ),
 
-  create: (data: InvoiceRequest) =>
-    apiClient.post<ApiResponse<InvoiceDetailResponse>>("/invoices", data),
+  create: (data: DeliveryNoteRequest) =>
+    apiClient.post<ApiResponse<DeliveryNoteDetailResponse>>("/delivery-notes", data),
 
   createFromEstimate: (estimateId: number) =>
-    apiClient.post<ApiResponse<InvoiceDetailResponse>>(
-      `/invoices/from-estimate/${estimateId}`
+    apiClient.post<ApiResponse<DeliveryNoteDetailResponse>>(
+      `/delivery-notes/from-estimate/${estimateId}`
     ),
 
   delete: (id: number) =>
-    apiClient.delete<ApiResponse<void>>(`/invoices/${id}`),
+    apiClient.delete<ApiResponse<void>>(`/delivery-notes/${id}`),
 };
 ```
 
@@ -1047,15 +1047,15 @@ export const invoicesApi = {
 
 ### 5.4 Hooks
 
-#### `src/features/invoices/hooks/useInvoices.ts`
+#### `src/features/delivery-notes/hooks/useDeliveryNotes.ts`
 
 ```ts
 import { useState, useEffect, useCallback } from "react";
-import { invoicesApi } from "@/api/invoices";
-import type { InvoiceResponse, InvoiceStatus } from "@/types/invoice";
+import { deliveryNotesApi } from "@/api/deliveryNotes";
+import type { DeliveryNoteResponse, DeliveryNoteStatus } from "@/types/deliveryNote";
 
-export function useInvoices() {
-  const [invoices, setInvoices] = useState<InvoiceResponse[]>([]);
+export function useDeliveryNotes() {
+  const [deliveryNotes, setDeliveryNotes] = useState<DeliveryNoteResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
@@ -1063,38 +1063,38 @@ export function useInvoices() {
   const [pageSize, setPageSize] = useState(12);
   const [clientName, setClientName] = useState<string | undefined>(undefined);
   const [plate, setPlate] = useState<string | undefined>(undefined);
-  const [status, setStatus] = useState<InvoiceStatus | undefined>(undefined);
+  const [status, setStatus] = useState<DeliveryNoteStatus | undefined>(undefined);
 
-  const fetchInvoices = useCallback(async () => {
+  const fetchDeliveryNotes = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await invoicesApi.getAll({
+      const res = await deliveryNotesApi.getAll({
         clientName,
         plate,
         status,
         page,
         size: pageSize,
       });
-      setInvoices(res.data.data.content);
+      setDeliveryNotes(res.data.data.content);
       setTotalCount(res.data.data.totalElements);
     } catch (err) {
-      setError("Error al cargar facturas");
+      setError("Error al cargar remitos");
     } finally {
       setLoading(false);
     }
   }, [clientName, plate, status, page, pageSize]);
 
   useEffect(() => {
-    fetchInvoices();
-  }, [fetchInvoices]);
+    fetchDeliveryNotes();
+  }, [fetchDeliveryNotes]);
 
-  const deleteInvoice = async (id: number) => {
-    await invoicesApi.delete(id);
-    fetchInvoices();
+  const deleteDeliveryNote = async (id: number) => {
+    await deliveryNotesApi.delete(id);
+    fetchDeliveryNotes();
   };
 
   return {
-    invoices,
+    deliveryNotes,
     loading,
     error,
     totalCount,
@@ -1108,28 +1108,28 @@ export function useInvoices() {
     setPlate,
     status,
     setStatus,
-    deleteInvoice,
-    refetch: fetchInvoices,
+    deleteDeliveryNote,
+    refetch: fetchDeliveryNotes,
   };
 }
 ```
 
-#### `src/features/invoices/hooks/useInvoice.ts`
+#### `src/features/delivery-notes/hooks/useDeliveryNote.ts`
 
 ```ts
 import { useState, useEffect, useCallback } from "react";
-import { invoicesApi } from "@/api/invoices";
+import { deliveryNotesApi } from "@/api/deliveryNotes";
 import type {
-  InvoiceDetailResponse,
-  InvoiceRequest,
-} from "@/types/invoice";
+  DeliveryNoteDetailResponse,
+  DeliveryNoteRequest,
+} from "@/types/deliveryNote";
 
-export function useInvoice(id?: number, repairOrderId?: number) {
-  const [invoice, setInvoice] = useState<InvoiceDetailResponse | null>(null);
+export function useDeliveryNote(id?: number, repairOrderId?: number) {
+  const [deliveryNote, setDeliveryNote] = useState<DeliveryNoteDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchInvoice = useCallback(async () => {
+  const fetchDeliveryNote = useCallback(async () => {
     if (!id && !repairOrderId) {
       setLoading(false);
       return;
@@ -1137,42 +1137,42 @@ export function useInvoice(id?: number, repairOrderId?: number) {
     setLoading(true);
     try {
       if (id) {
-        const res = await invoicesApi.getById(id);
-        setInvoice(res.data.data);
+        const res = await deliveryNotesApi.getById(id);
+        setDeliveryNote(res.data.data);
       } else if (repairOrderId) {
-        const res = await invoicesApi.getByRepairOrderId(repairOrderId);
-        setInvoice(res.data.data);
+        const res = await deliveryNotesApi.getByRepairOrderId(repairOrderId);
+        setDeliveryNote(res.data.data);
       }
     } catch (err) {
-      setError("Error al cargar la factura");
+      setError("Error al cargar el remito");
     } finally {
       setLoading(false);
     }
   }, [id, repairOrderId]);
 
   useEffect(() => {
-    fetchInvoice();
-  }, [fetchInvoice]);
+      fetchDeliveryNote();
+    }, [fetchDeliveryNote]);
 
-  const createInvoice = async (data: InvoiceRequest) => {
-    const res = await invoicesApi.create(data);
-    setInvoice(res.data.data);
+    const createDeliveryNote = async (data: DeliveryNoteRequest) => {
+    const res = await deliveryNotesApi.create(data);
+      setDeliveryNote(res.data.data);
     return res.data.data;
   };
 
   const createFromEstimate = async (estimateId: number) => {
-    const res = await invoicesApi.createFromEstimate(estimateId);
-    setInvoice(res.data.data);
+    const res = await deliveryNotesApi.createFromEstimate(estimateId);
+      setDeliveryNote(res.data.data);
     return res.data.data;
   };
 
   return {
-    invoice,
+    deliveryNote,
     loading,
     error,
-    createInvoice,
+      createDeliveryNote,
     createFromEstimate,
-    refetch: fetchInvoice,
+      refetch: fetchDeliveryNote,
   };
 }
 ```
@@ -1181,41 +1181,41 @@ export function useInvoice(id?: number, repairOrderId?: number) {
 
 ### 5.5 Pages
 
-#### `InvoicesPage` — route: `/facturas`
+#### `DeliveryNotesPage` — route: `/remitos`
 
 **UI Layout:**
-- Page title: **"Facturas"**
+- Page title: **"Remitos"**
 - Filter bar:
   - `TextField` with placeholder: "Buscar por nombre de cliente o patente..."
   - `Select` for status: Todos, Pendiente, Pagada
-- `Button` "Crear nueva factura" → navigates to `/facturas/nueva`
-- `InvoiceList` DataGrid component (see below)
+- `Button` "Crear nuevo remito" → navigates to `/remitos/nueva`
+- `DeliveryNoteList` DataGrid component (see below)
 
 ```tsx
-// src/pages/InvoicesPage.tsx
-export default function InvoicesPage() {
+// src/pages/DeliveryNotesPage.tsx
+export default function DeliveryNotesPage() {
   const {
-    invoices, loading, error, totalCount,
+    deliveryNotes, loading, error, totalCount,
     page, setPage, pageSize, setPageSize,
     clientName, setClientName, plate, setPlate,
-    status, setStatus, deleteInvoice,
-  } = useInvoices();
+    status, setStatus, deleteDeliveryNote,
+  } = useDeliveryNotes();
 
   const navigate = useNavigate();
 
-  const handleRowClick = (row: InvoiceResponse) => {
+  const handleRowClick = (row: DeliveryNoteResponse) => {
     if (row.repairOrderId != null) {
-      // Navigate to repair order detail, "Factura" tab
-      navigate(`/ordenes-trabajo/${row.repairOrderId}?tab=factura`);
+      // Navigate to repair order detail, "remito" tab
+      navigate(`/ordenes-trabajo/${row.repairOrderId}?tab=remito`);
     } else {
-      navigate(`/facturas/${row.id}`);
+      navigate(`/remitos/${row.id}`);
     }
   };
-  const handleCreate = () => navigate("/facturas/nueva");
+  const handleCreate = () => navigate("/remitos/nueva");
 
   return (
     <Box>
-      <Typography variant="h4">Facturas</Typography>
+      <Typography variant="h4">remitos</Typography>
       <Box /* filter bar */>
         <TextField placeholder="Buscar por nombre de cliente..." onChange={...} />
         <TextField placeholder="Buscar por patente..." onChange={...} />
@@ -1225,11 +1225,11 @@ export default function InvoicesPage() {
           <MenuItem value="PAGADA">Pagada</MenuItem>
         </Select>
         <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-          Crear nueva factura
+          Crear nuevo remito
         </Button>
       </Box>
-      <InvoiceList
-        rows={invoices}
+      <DeliveryNoteList
+        rows={deliveryNotes}
         loading={loading}
         totalCount={totalCount}
         page={page}
@@ -1237,18 +1237,18 @@ export default function InvoicesPage() {
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
         onRowClick={handleRowClick}
-        onDelete={deleteInvoice}
+        onDelete={deleteDeliveryNote}
       />
     </Box>
   );
 }
 ```
 
-#### `InvoiceDetailPage` — route: `/facturas/:id` and `/facturas/nueva`
+#### `DeliveryNoteDetailPage` — route: `/remitos/:id` and `/remitos/nuevo`
 
 ```tsx
-// src/pages/InvoiceDetailPage.tsx
-export default function InvoiceDetailPage() {
+// src/pages/DeliveryNoteDetailPage.tsx
+export default function DeliveryNoteDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const estimateId = searchParams.get("estimateId")
@@ -1256,11 +1256,11 @@ export default function InvoiceDetailPage() {
     : undefined;
 
   const isNew = id === "nueva";
-  const invoiceId = isNew ? undefined : Number(id);
+  const deliveryNoteId = isNew ? undefined : Number(id);
 
-  // Uses useInvoice hook to fetch existing or start with empty state
-  // If estimateId is present, pre-loads from estimate via estimatesApi.getInvoiceData(estimateId)
-  return <InvoiceDetail invoiceId={invoiceId} estimateId={estimateId} />;
+  // Uses useDeliveryNote hook to fetch existing or start with empty state
+  // If estimateId is present, pre-loads from estimate via estimatesApi.getDeliveryNoteData(estimateId)
+  return <DeliveryNoteDetail deliveryNoteId={deliveryNoteId} estimateId={estimateId} />;
 }
 ```
 
@@ -1268,24 +1268,24 @@ export default function InvoiceDetailPage() {
 
 ### 5.6 Components
 
-#### `InvoiceList` (`src/features/invoices/components/InvoiceList.tsx`)
+#### `DeliveryNoteList` (`src/features/deliveryNotes/components/DeliveryNoteList.tsx`)
 
 Uses MUI `DataGrid` from `@mui/x-data-grid`.
 
 ```tsx
-interface InvoiceListProps {
-  rows: InvoiceResponse[];
+interface DeliveryNoteListProps {
+  rows: DeliveryNoteResponse[];
   loading: boolean;
   totalCount: number;
   page: number;
   pageSize: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
-  onRowClick: (row: InvoiceResponse) => void;
+  onRowClick: (row: DeliveryNoteResponse) => void;
   onDelete: (id: number) => void;
 }
 
-export function InvoiceList({ ... }: InvoiceListProps) {
+export function DeliveryNoteList({ ... }: DeliveryNoteListProps) {
   const columns: GridColDef[] = [
     {
       field: "createdAt",
@@ -1339,7 +1339,7 @@ export function InvoiceList({ ... }: InvoiceListProps) {
             >
               <VisibilityIcon />
             </IconButton>
-            <Tooltip title={isFromRepairOrder ? "No se puede eliminar una factura de orden de trabajo" : "Eliminar"}>
+            <Tooltip title={isFromRepairOrder ? "No se puede eliminar un remito de orden de trabajo" : "Eliminar"}>
               <span>
                 <IconButton
                   onClick={(e) => { e.stopPropagation(); onDelete(params.row.id); }}
@@ -1377,86 +1377,86 @@ export function InvoiceList({ ... }: InvoiceListProps) {
 }
 ```
 
-#### `InvoiceDetail` (`src/features/invoices/components/InvoiceDetail.tsx`)
+#### `DeliveryNoteDetail` (`src/features/deliveryNotes/components/DeliveryNoteDetail.tsx`)
 
-The main detail component, used both from `InvoiceDetailPage` and `InvoiceTab`.
+The main detail component, used both from `DeliveryNoteDetailPage` and `DeliveryNoteTab`.
 
 ```tsx
-interface InvoiceDetailProps {
-  invoiceId?: number;        // undefined = create mode
+interface DeliveryNoteDetailProps {
+  deliveryNoteId?: number;        // undefined = create mode
   repairOrderId?: number;    // set when rendered inside repair order tab
   estimateId?: number;       // set when pre-loading from an estimate
 }
 
-export function InvoiceDetail({ invoiceId, repairOrderId, estimateId }: InvoiceDetailProps) {
-  const { invoice, loading, error, createInvoice, createFromEstimate } =
-    useInvoice(invoiceId, repairOrderId);
+export function DeliveryNoteDetail({ deliveryNoteId, repairOrderId, estimateId }: DeliveryNoteDetailProps) {
+  const { deliveryNote, loading, error, createDeliveryNote, createFromEstimate } =
+    useDeliveryNote(deliveryNoteId, repairOrderId);
 
   const [activeTab, setActiveTab] = useState(0);
-  const isCreateMode = !invoiceId && !invoice;
+  const isCreateMode = !deliveryNoteId && !deliveryNote;
 
-  // If estimateId provided, pre-load data from estimate via estimatesApi.getInvoiceData(estimateId)
+  // If estimateId provided, pre-load data from estimate via estimatesApi.getDeliveryNoteData(estimateId)
   // This populates the form with services, products, discount, tax, client, vehicle
 
   return (
     <Box>
       <Typography variant="h4">
-        {isCreateMode ? "Nueva Factura" : `Factura #${invoice?.id}`}
+        {isCreateMode ? "Nuevo remito" : `Remito #${deliveryNote?.id}`}
       </Typography>
 
       {/* Download button (only in view mode) */}
       {!isCreateMode && (
         <Button startIcon={<DownloadIcon />} onClick={() => window.print()}>
-          Descargar factura
+          Descargar remito
         </Button>
       )}
 
       <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
-        <Tab label="Datos de la Factura" />
+        <Tab label="Datos de la remito" />
         <Tab label="Pagos" disabled={isCreateMode} />
       </Tabs>
 
       {activeTab === 0 && (
-        <InvoiceDataTab
-          invoice={invoice}
+        <DeliveryNoteDataTab
+          deliveryNote={deliveryNote}
           isCreateMode={isCreateMode}
           estimateId={estimateId}
-          onSubmit={createInvoice}
+          onSubmit={createDeliveryNote}
         />
       )}
 
       {activeTab === 1 && (
-        <PaymentsTabPlaceholder invoiceId={invoice?.id} />
+        <PaymentsTabPlaceholder deliveryNoteId={deliveryNote?.id} />
       )}
     </Box>
   );
 }
 ```
 
-#### `InvoiceDataTab` (`src/features/invoices/components/InvoiceDataTab.tsx`)
+#### `DeliveryNoteDataTab` (`src/features/deliveryNotes/components/DeliveryNoteDataTab.tsx`)
 
-Contains the invoice form content for the first tab.
+Contains the delivery note form content for the first tab.
 
 ```tsx
-interface InvoiceDataTabProps {
-  invoice: InvoiceDetailResponse | null;
+interface DeliveryNoteDataTabProps {
+  deliveryNote: DeliveryNoteDetailResponse | null;
   isCreateMode: boolean;
   estimateId?: number;
-  onSubmit: (data: InvoiceRequest) => Promise<InvoiceDetailResponse>;
+  onSubmit: (data: DeliveryNoteRequest) => Promise<DeliveryNoteDetailResponse>;
 }
 
-export function InvoiceDataTab({ invoice, isCreateMode, estimateId, onSubmit }: InvoiceDataTabProps) {
+export function DeliveryNoteDataTab({ deliveryNote, isCreateMode, estimateId, onSubmit }: DeliveryNoteDataTabProps) {
   // State for form fields
   const [clientId, setClientId] = useState<number | null>(null);
   const [vehicleId, setVehicleId] = useState<number | null>(null);
-  const [services, setServices] = useState<InvoiceServiceItemRequest[]>([]);
-  const [products, setProducts] = useState<InvoiceProductRequest[]>([]);
+  const [services, setServices] = useState<DeliveryNoteServiceItemRequest[]>([]);
+  const [products, setProducts] = useState<DeliveryNoteProductRequest[]>([]);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [taxPercentage, setTaxPercentage] = useState(0);
   const [isTemporalClient, setIsTemporalClient] = useState(false);
 
-  // If estimateId → pre-load from estimate via estimatesApi.getInvoiceData(estimateId)
-  // If viewing existing → populate from invoice prop (readonly)
+  // If estimateId → pre-load from estimate via estimatesApi.getDeliveryNoteData(estimateId)
+  // If viewing existing → populate from deliveryNote prop (readonly)
 
   // --- Header: Client fields ---
   // Autocomplete for client (dropdown + auto-fill readonly fields: name, dni, phone, email)
@@ -1477,8 +1477,8 @@ export function InvoiceDataTab({ invoice, isCreateMode, estimateId, onSubmit }: 
   // --- ProductsGrid ---
   <ProductsGrid products={products} onChange={setProducts} readonly={!isCreateMode} />
 
-  // --- InvoiceSummary ---
-  <InvoiceSummary
+  // --- DeliveryNoteSummary ---
+  <DeliveryNoteSummary
     servicesSubtotal={servicesSubtotal}
     productsSubtotal={productsSubtotal}
     discountPercentage={discountPercentage}
@@ -1491,12 +1491,12 @@ export function InvoiceDataTab({ invoice, isCreateMode, estimateId, onSubmit }: 
   // --- Create button with confirmation dialog ---
   {isCreateMode && (
     <Button variant="contained" onClick={handleCreateWithConfirmation}>
-      Crear factura
+      Crear remito
     </Button>
   )}
 
   // Confirmation dialog (MUI Dialog):
-  // "¿Está seguro de que los datos son correctos? Una vez creada, la factura no se podrá editar."
+  // "¿Está seguro de que los datos son correctos? Una vez creada, la remito no se podrá editar."
   // Buttons: "Cancelar", "Confirmar"
 
   return ( /* ... */ );
@@ -1509,25 +1509,25 @@ export function InvoiceDataTab({ invoice, isCreateMode, estimateId, onSubmit }: 
 - `Autocomplete` for vehicle (cascading): disabled until a client is selected. Fetches vehicles for the selected client. Optional for TEMPORAL clients.
 - On vehicle selection: auto-fills readonly `TextField` fields for plate, brand, model.
 - If client changes after a vehicle is already selected: vehicle selection and its fields are cleared.
-- In **view mode** (existing invoice): all fields are readonly. Data is populated from the `invoice` prop.
+- In **view mode** (existing deliveryNote): all fields are readonly. Data is populated from the `deliveryNote` prop.
 
-#### `PaymentsTabPlaceholder` (`src/features/invoices/components/PaymentsTabPlaceholder.tsx`)
+#### `PaymentsTabPlaceholder` (`src/features/deliveryNotes/components/PaymentsTabPlaceholder.tsx`)
 
 Temporary placeholder until spec 10 (Pagos) is implemented.
 
 ```tsx
 interface PaymentsTabPlaceholderProps {
-  invoiceId?: number;
+  deliveryNoteId?: number;
 }
 
-export function PaymentsTabPlaceholder({ invoiceId }: PaymentsTabPlaceholderProps) {
+export function PaymentsTabPlaceholder({ deliveryNoteId }: PaymentsTabPlaceholderProps) {
   return (
     <Box sx={{ p: 4, textAlign: "center" }}>
       <Typography variant="h6" color="text.secondary">
         Pagos — Próximamente
       </Typography>
       <Typography color="text.secondary">
-        La gestión de pagos para esta factura estará disponible pronto.
+        La gestión de pagos para esta remito estará disponible pronto.
       </Typography>
     </Box>
   );
@@ -1536,12 +1536,12 @@ export function PaymentsTabPlaceholder({ invoiceId }: PaymentsTabPlaceholderProp
 
 > **Note**: This component will be fully replaced by spec 10 (Pagos) which implements the payment summary, cash payment modal, bank account payment modal, and payment history grid.
 
-#### `ServicesGrid` (`src/features/invoices/components/ServicesGrid.tsx`)
+#### `ServicesGrid` (`src/features/deliveryNotes/components/ServicesGrid.tsx`)
 
 ```tsx
 interface ServicesGridProps {
-  services: InvoiceServiceItemRequest[];
-  onChange: (services: InvoiceServiceItemRequest[]) => void;
+  services: DeliveryNoteServiceItemRequest[];
+  onChange: (services: DeliveryNoteServiceItemRequest[]) => void;
   readonly?: boolean;
 }
 
@@ -1604,12 +1604,12 @@ export function ServicesGrid({ services, onChange, readonly = false }: ServicesG
 }
 ```
 
-#### `ProductsGrid` (`src/features/invoices/components/ProductsGrid.tsx`)
+#### `ProductsGrid` (`src/features/deliveryNotes/components/ProductsGrid.tsx`)
 
 ```tsx
 interface ProductsGridProps {
-  products: InvoiceProductRequest[];
-  onChange: (products: InvoiceProductRequest[]) => void;
+  products: DeliveryNoteProductRequest[];
+  onChange: (products: DeliveryNoteProductRequest[]) => void;
   readonly?: boolean;
 }
 
@@ -1692,10 +1692,10 @@ export function ProductsGrid({ products, onChange, readonly = false }: ProductsG
 }
 ```
 
-#### `InvoiceSummary` (`src/features/invoices/components/InvoiceSummary.tsx`)
+#### `DeliveryNoteSummary` (`src/features/deliveryNotes/components/DeliveryNoteSummary.tsx`)
 
 ```tsx
-interface InvoiceSummaryProps {
+interface DeliveryNoteSummaryProps {
   servicesSubtotal: number;
   productsSubtotal: number;
   discountPercentage: number;
@@ -1705,7 +1705,7 @@ interface InvoiceSummaryProps {
   readonly?: boolean;
 }
 
-export function InvoiceSummary({
+export function DeliveryNoteSummary({
   servicesSubtotal,
   productsSubtotal,
   discountPercentage,
@@ -1713,7 +1713,7 @@ export function InvoiceSummary({
   onDiscountChange,
   onTaxChange,
   readonly = false,
-}: InvoiceSummaryProps) {
+}: DeliveryNoteSummaryProps) {
   const subtotal = servicesSubtotal + productsSubtotal;
   const discountAmount = subtotal * (discountPercentage / 100);
   const afterDiscount = subtotal - discountAmount;
@@ -1758,35 +1758,35 @@ export function InvoiceSummary({
 }
 ```
 
-#### `InvoiceTab` (`src/features/invoices/components/InvoiceTab.tsx`)
+#### `DeliveryNoteTab` (`src/features/deliveryNotes/components/DeliveryNoteTab.tsx`)
 
-This component replaces the placeholder "Factura" tab in the repair order detail view (from spec 06).
+This component replaces the placeholder "remito" tab in the repair order detail view (from spec 06).
 
 ```tsx
-interface InvoiceTabProps {
+interface DeliveryNoteTabProps {
   repairOrderId: number;
 }
 
-export function InvoiceTab({ repairOrderId }: InvoiceTabProps) {
-  const { invoice, loading, error, createInvoice } = useInvoice(undefined, repairOrderId);
+export function DeliveryNoteTab({ repairOrderId }: DeliveryNoteTabProps) {
+  const { deliveryNote, loading, error, createDeliveryNote } = useDeliveryNote(undefined, repairOrderId);
 
   if (loading) return <CircularProgress />;
-  if (error && !invoice) {
-    // No invoice yet — show creation form
-    return <InvoiceDetail repairOrderId={repairOrderId} />;
+  if (error && !deliveryNote) {
+    // No deliveryNote yet — show creation form
+    return <DeliveryNoteDetail repairOrderId={repairOrderId} />;
   }
 
-  // Invoice exists — show detail view (readonly data tab + payments tab)
-  return <InvoiceDetail invoiceId={invoice?.id} repairOrderId={repairOrderId} />;
+  // deliveryNote exists — show detail view (readonly data tab + payments tab)
+  return <DeliveryNoteDetail deliveryNoteId={deliveryNote?.id} repairOrderId={repairOrderId} />;
 }
 ```
 
 **Integration with Repair Order Detail:**
 
-In `RepairOrderDetailPage`, replace the placeholder `<Typography>Próximamente</Typography>` for the "Factura" tab with:
+In `RepairOrderDetailPage`, replace the placeholder `<Typography>Próximamente</Typography>` for the "remito" tab with:
 
 ```tsx
-{activeTab === 4 && <InvoiceTab repairOrderId={repairOrderId} />}
+{activeTab === 4 && <DeliveryNoteTab repairOrderId={repairOrderId} />}
 ```
 
 ---
@@ -1798,13 +1798,13 @@ Add the following routes to `src/routes/`:
 ```tsx
 import { lazy } from "react";
 
-const InvoicesPage = lazy(() => import("@/pages/InvoicesPage"));
-const InvoiceDetailPage = lazy(() => import("@/pages/InvoiceDetailPage"));
+const DeliveryNotesPage = lazy(() => import("@/pages/DeliveryNotesPage"));
+const DeliveryNoteDetailPage = lazy(() => import("@/pages/DeliveryNoteDetailPage"));
 
 // Route definitions
-{ path: "/facturas", element: <InvoicesPage /> }
-{ path: "/facturas/nueva", element: <InvoiceDetailPage /> }
-{ path: "/facturas/:id", element: <InvoiceDetailPage /> }
+{ path: "/remitos", element: <DeliveryNotesPage /> }
+{ path: "/remitos/nueva", element: <DeliveryNoteDetailPage /> }
+{ path: "/remitos/:id", element: <DeliveryNoteDetailPage /> }
 ```
 
 ---
@@ -1813,23 +1813,23 @@ const InvoiceDetailPage = lazy(() => import("@/pages/InvoiceDetailPage"));
 
 ### 6.1 Immutability After Creation
 
-Once an invoice is created, its data cannot be edited. This includes:
+Once a delivery note is created, its data cannot be edited. This includes:
 - Client and vehicle information
 - Services and products line items (names, quantities, prices)
 - Discount and tax percentages
 - Total amount
 
-The only mutable field is `status`, which transitions from `PENDIENTE` to `PAGADA` automatically when total payments equal the invoice total (handled by spec 10 — Pagos).
+The only mutable field is `status`, which transitions from `PENDIENTE` to `PAGADA` automatically when total payments equal the delivery note total (handled by spec 10 — Pagos).
 
 **UI enforcement**: In view mode (`isCreateMode = false`), all form fields, grids, and summary fields are rendered as `readonly` / `disabled`.
 
-**Backend enforcement**: There is no `PUT /api/invoices/{id}` endpoint. The only write operations are `POST` (create) and `DELETE` (delete, with restrictions).
+**Backend enforcement**: There is no `PUT /api/delivery-notes/{id}` endpoint. The only write operations are `POST` (create) and `DELETE` (delete, with restrictions).
 
-### 6.2 TEMPORAL Client Restriction (Factura Anónima)
+### 6.2 TEMPORAL Client Restriction (remito Anónima)
 
 When the selected client has `clientType = "TEMPORAL"`:
 - **Only products are allowed** — the services grid is hidden/disabled.
-- The invoice request must have an empty `services` list. If non-empty, the backend throws a `BusinessRuleException` with message: `"Los clientes temporales solo pueden tener facturas de productos, no de servicios"`.
+- The delivery note request must have an empty `services` list. If non-empty, the backend throws a `BusinessRuleException` with message: `"Los clientes temporales solo pueden tener remitos de productos, no de servicios"`.
 - Vehicle is **optional** for TEMPORAL clients (the DB column `vehicle_id` is nullable).
 - The TEMPORAL client must already exist in the system (created via the client creation form with type `TEMPORAL` — only name + phone required).
 
@@ -1837,30 +1837,30 @@ When the selected client has `clientType = "TEMPORAL"`:
 
 ### 6.3 Estimate Pre-Loading
 
-When creating an invoice from an approved estimate (via the "Facturar" action in spec 08):
+When creating a delivery note from an approved estimate (via the "remitir" action in spec 08):
 
-1. The user clicks "Facturar" on an `ACEPTADO` estimate → navigates to `/facturas/nueva?estimateId={id}`.
-2. The `InvoiceDetailPage` reads the `estimateId` query parameter.
-3. On mount, calls `GET /api/estimates/{id}/invoice-data` to get the `EstimateInvoiceDataResponse`.
-4. Pre-populates the invoice creation form with: `clientId`, `vehicleId`, `repairOrderId`, services, products, discount %, tax %.
+1. The user clicks "remitir" on an `ACEPTADO` estimate → navigates to `/remitos/nueva?estimateId={id}`.
+2. The `DeliveryNoteDetailPage` reads the `estimateId` query parameter.
+3. On mount, calls `GET /api/estimates/{id}/deliveryNote-data` to get the `EstimatedDeliveryNoteDataResponse`.
+4. Pre-populates the delivery note creation form with: `clientId`, `vehicleId`, `repairOrderId`, services, products, discount %, tax %.
 5. The user can review and modify the pre-loaded data before confirming creation.
-6. On submit, sends `POST /api/invoices` with the `estimateId` field set to link the invoice to the estimate.
+6. On submit, sends `POST /api/delivery-notes` with the `estimateId` field set to link the delivery note to the estimate.
 
-Alternatively, the backend endpoint `POST /api/invoices/from-estimate/{estimateId}` can be used to create the invoice directly from the estimate data without user modification.
+Alternatively, the backend endpoint `POST /api/delivery-notes/from-estimate/{estimateId}` can be used to create the delivery note directly from the estimate data without user modification.
 
 ### 6.4 Snapshot Line Items
 
-Service and product line items in invoices are **snapshots** — they copy the name and price values at creation time. They do not reference the services/products catalog tables via FK. If catalog prices change later, existing invoices are unaffected.
+Service and product line items in deliveryNotes are **snapshots** — they copy the name and price values at creation time. They do not reference the services/products catalog tables via FK. If catalog prices change later, existing deliveryNotes are unaffected.
 
 ### 6.5 Status Auto-Update
 
-The invoice `status` auto-transitions from `PENDIENTE` to `PAGADA` when the sum of all associated payments equals or exceeds the invoice `total`. This logic is handled by the payment module (spec 10), which calls `invoiceService.markAsPaid(invoiceId)` after each payment is recorded.
+The delivery note `status` auto-transitions from `PENDIENTE` to `PAGADA` when the sum of all associated payments equals or exceeds the delivery note `total`. This logic is handled by the payment module (spec 10), which calls `DeliveryNoteService.markAsPaid(deliveryNoteId)` after each payment is recorded.
 
 ### 6.6 Deletion Restrictions
 
-- **Cannot delete** invoices linked to a repair order (`repairOrderId != null`). The backend throws: `"No se puede eliminar una factura asociada a una orden de trabajo"`.
-- **Cannot delete** invoices that have been fully paid (`status = PAGADA`). The backend throws: `"No se puede eliminar una factura que ya fue pagada"`.
-- **UI enforcement**: In the `InvoiceList` grid, the delete action button is disabled for invoices that came from a repair order. A tooltip explains the restriction.
+- **Cannot delete** delivery notes linked to a repair order (`repairOrderId != null`). The backend throws: `"No se puede eliminar un remito asociado a una orden de trabajo"`.
+- **Cannot delete** delivery notes that have been fully paid (`status = PAGADA`). The backend throws: `"No se puede eliminar un remito que ya fue pagado"`.
+- **UI enforcement**: In the `DeliveryNoteList` grid, the delete action button is disabled for deliveryNotes that came from a repair order. A tooltip explains the restriction.
 
 ### 6.7 Total Calculation
 
@@ -1882,19 +1882,19 @@ Rounding: `HALF_UP` to 2 decimal places at each step.
 
 ### 7.1 Backend — Unit Tests
 
-#### `InvoiceServiceImplTest`
+#### `DeliveryNoteServiceImplTest`
 
 Use JUnit 5 + Mockito. Mock all repositories and the `EstimateService` interface.
 
 ```java
 @ExtendWith(MockitoExtension.class)
-class InvoiceServiceImplTest {
+class DeliveryNoteServiceImplTest {
 
     @InjectMocks
-    private InvoiceServiceImpl invoiceService;
+    private DeliveryNoteServiceImpl DeliveryNoteService;
 
-    @Mock private InvoiceRepository invoiceRepository;
-    @Mock private InvoiceMapper invoiceMapper;
+    @Mock private DeliveryNoteRepository DeliveryNoteRepository;
+    @Mock private DeliveryNoteMapper DeliveryNoteMapper;
     @Mock private ClientRepository clientRepository;
     @Mock private VehicleRepository vehicleRepository;
     @Mock private RepairOrderRepository repairOrderRepository;
@@ -1906,32 +1906,32 @@ class InvoiceServiceImplTest {
 
 | Method | Test | Description |
 |---|---|---|
-| `create` | `shouldCreateInvoiceSuccessfully` | Happy path: valid client, vehicle, services, products → returns `InvoiceDetailResponse` |
+| `create` | `shouldcreateDeliveryNoteSuccessfully` | Happy path: valid client, vehicle, services, products → returns `DeliveryNoteDetailResponse` |
 | `create` | `shouldThrowWhenClientNotFound` | Client ID does not exist → `ResourceNotFoundException` |
 | `create` | `shouldThrowWhenTemporalClientHasServices` | TEMPORAL client with non-empty services list → `BusinessRuleException` |
-| `create` | `shouldCreateInvoiceForTemporalClientWithProductsOnly` | TEMPORAL client with only products → success |
-| `create` | `shouldCreateInvoiceWithNullVehicleForTemporalClient` | TEMPORAL client with null vehicleId → success |
-| `create` | `shouldCreateInvoiceWithEstimateLink` | Request with estimateId set → invoice links to estimate |
-| `createFromEstimate` | `shouldCreateInvoiceFromAcceptedEstimate` | ACEPTADO estimate → invoice pre-loaded from estimate data |
-| `createFromEstimate` | `shouldThrowWhenEstimateNotAccepted` | Non-ACEPTADO estimate → `BusinessRuleException` from `estimateService.convertToInvoiceData` |
-| `getById` | `shouldReturnInvoiceById` | Existing ID → returns detail response |
-| `getById` | `shouldThrowWhenInvoiceNotFound` | Non-existing ID → `ResourceNotFoundException` |
-| `getByRepairOrderId` | `shouldReturnInvoiceByRepairOrderId` | Existing repair order with invoice → returns detail response |
-| `getByRepairOrderId` | `shouldThrowWhenNoInvoiceForRepairOrder` | Repair order without invoice → `ResourceNotFoundException` |
-| `getAll` | `shouldReturnPaginatedInvoices` | Returns paginated list of `InvoiceResponse` |
+| `create` | `shouldcreateDeliveryNoteForTemporalClientWithProductsOnly` | TEMPORAL client with only products → success |
+| `create` | `shouldcreateDeliveryNoteWithNullVehicleForTemporalClient` | TEMPORAL client with null vehicleId → success |
+| `create` | `shouldCreateDeliveryNoteWithEstimateLink` | Request with estimateId set → deliveryNote links to estimate |
+| `createFromEstimate` | `shouldCreateDeliveryNoteFromAcceptedEstimate` | ACEPTADO estimate → deliveryNote pre-loaded from estimate data |
+| `createFromEstimate` | `shouldThrowWhenEstimateNotAccepted` | Non-ACEPTADO estimate → `BusinessRuleException` from `estimateService.convertToDeliveryNoteData` |
+| `getById` | `shouldReturnDeliveryNoteById` | Existing ID → returns detail response |
+| `getById` | `shouldThrowWhenDeliveryNoteNotFound` | Non-existing ID → `ResourceNotFoundException` |
+| `getByRepairOrderId` | `shouldReturnDeliveryNoteByRepairOrderId` | Existing repair order with deliveryNote → returns detail response |
+| `getByRepairOrderId` | `shouldThrowWhenNoDeliveryNoteForRepairOrder` | Repair order without deliveryNote → `ResourceNotFoundException` |
+| `getAll` | `shouldReturnPaginateddeliveryNotes` | Returns paginated list of `DeliveryNoteResponse` |
 | `search` | `shouldFilterByClientName` | Search by client name → filtered results |
 | `search` | `shouldFilterByPlate` | Search by plate → filtered results |
 | `search` | `shouldFilterByStatus` | Search by status → filtered results |
-| `delete` | `shouldDeleteStandaloneInvoice` | Invoice without repair order, not paid → deleted |
-| `delete` | `shouldThrowWhenDeletingRepairOrderInvoice` | Invoice with repairOrderId → `BusinessRuleException` |
-| `delete` | `shouldThrowWhenDeletingPaidInvoice` | Invoice with status PAGADA → `BusinessRuleException` |
-| `delete` | `shouldThrowWhenInvoiceNotFoundForDelete` | Non-existing ID → `ResourceNotFoundException` |
+| `delete` | `shouldDeleteStandaloneDeliveryNote` | deliveryNote without repair order, not paid → deleted |
+| `delete` | `shouldThrowWhenDeletingRepairOrderDeliveryNote` | deliveryNote with repairOrderId → `BusinessRuleException` |
+| `delete` | `shouldThrowWhenDeletingPaidDeliveryNote` | deliveryNote with status PAGADA → `BusinessRuleException` |
+| `delete` | `shouldThrowWhenDeliveryNoteNotFoundForDelete` | Non-existing ID → `ResourceNotFoundException` |
 | `calculateTotal` | `shouldCalculateTotalCorrectly` | Services + products + discount + tax → correct total |
 | `calculateTotal` | `shouldHandleZeroDiscountAndTax` | No discount, no tax → total = subtotal |
 | `calculateTotal` | `shouldHandleEmptyServicesList` | No services, only products → correct total |
 | `calculateTotal` | `shouldHandleEmptyProductsList` | No products, only services → correct total |
-| `markAsPaid` | `shouldMarkInvoiceAsPaid` | Existing invoice → status set to PAGADA |
-| `markAsPaid` | `shouldThrowWhenInvoiceNotFoundForMarkAsPaid` | Non-existing ID → `ResourceNotFoundException` |
+| `markAsPaid` | `shouldMarkDeliveryNoteAsPaid` | Existing deliveryNote → status set to PAGADA |
+| `markAsPaid` | `shouldThrowWhenDeliveryNoteNotFoundFormarkAsPaid` | Non-existing ID → `ResourceNotFoundException` |
 
 ### 7.2 Frontend — Component Tests
 
@@ -1941,13 +1941,13 @@ Use Vitest + React Testing Library.
 
 | Component | Test file | Key tests |
 |---|---|---|
-| `InvoiceList` | `InvoiceList.test.tsx` | Renders grid columns; handles empty state; calls `onRowClick`; disables delete for repair order invoices; calls `onDelete` for standalone invoices |
-| `InvoiceDetail` | `InvoiceDetail.test.tsx` | Renders create mode with empty form; renders view mode with readonly fields; shows confirmation dialog on create; switches between tabs |
-| `InvoiceDataTab` | `InvoiceDataTab.test.tsx` | Shows client/vehicle autocompletes in create mode; hides services grid for TEMPORAL clients; pre-loads estimate data; disables fields in view mode |
+| `DeliveryNoteList` | `DeliveryNoteList.test.tsx` | Renders grid columns; handles empty state; calls `onRowClick`; disables delete for repair order deliveryNotes; calls `onDelete` for standalone deliveryNotes |
+| `DeliveryNoteDetail` | `DeliveryNoteDetail.test.tsx` | Renders create mode with empty form; renders view mode with readonly fields; shows confirmation dialog on create; switches between tabs |
+| `DeliveryNoteDataTab` | `DeliveryNoteDataTab.test.tsx` | Shows client/vehicle autocompletes in create mode; hides services grid for TEMPORAL clients; pre-loads estimate data; disables fields in view mode |
 | `ServicesGrid` | `ServicesGrid.test.tsx` | Adds service row; removes service row; updates service name and price; shows subtotal; renders readonly |
 | `ProductsGrid` | `ProductsGrid.test.tsx` | Adds product row; removes product row; updates quantity/price; calculates row total; shows subtotal; renders readonly |
-| `InvoiceSummary` | `InvoiceSummary.test.tsx` | Calculates final price; clamps discount 0–100; clamps tax 0–100; renders readonly |
-| `InvoiceTab` | `InvoiceTab.test.tsx` | Shows creation form when no invoice exists; shows detail view when invoice exists |
+| `DeliveryNoteSummary` | `DeliveryNoteSummary.test.tsx` | Calculates final price; clamps discount 0–100; clamps tax 0–100; renders readonly |
+| `DeliveryNoteTab` | `DeliveryNoteTab.test.tsx` | Shows creation form when no deliveryNote exists; shows detail view when deliveryNote exists |
 | `PaymentsTabPlaceholder` | `PaymentsTabPlaceholder.test.tsx` | Renders placeholder text "Próximamente" |
 
 ---
@@ -1958,64 +1958,64 @@ Use Vitest + React Testing Library.
 
 ### 8.1 Backend
 
-- [x] Create `InvoiceStatus` enum (`PENDIENTE`, `PAGADA`)
-- [x] Create `Invoice` entity (relationships: `Client`, `Vehicle`, `RepairOrder`, `Estimate`, `InvoiceServiceItem`, `InvoiceProduct`)
-- [x] Create `InvoiceServiceItem` entity (relationship: `Invoice`)
-- [x] Create `InvoiceProduct` entity (relationship: `Invoice`)
-- [x] Create `InvoiceRepository` with methods: `findWithDetailsById`, `findByRepairOrderId`, `findByEstimateId`, `search` (custom JPQL query)
-- [x] Create `InvoiceServiceItemRepository` with methods: `findByInvoiceId`, `deleteByInvoiceId`
-- [x] Create `InvoiceProductRepository` with methods: `findByInvoiceId`, `deleteByInvoiceId`
-- [x] Create `InvoiceRequest` record with Jakarta Validation annotations (`@NotNull`, `@DecimalMin`, `@DecimalMax`, `@Digits`, `@Valid`)
-- [x] Create `InvoiceServiceItemRequest` record with Jakarta Validation annotations (`@NotBlank`, `@Size`, `@NotNull`, `@DecimalMin`, `@Digits`)
-- [x] Create `InvoiceProductRequest` record with Jakarta Validation annotations (`@NotBlank`, `@Size`, `@NotNull`, `@Min`, `@DecimalMin`, `@Digits`)
-- [x] Create `InvoiceResponse` record (list view DTO)
-- [x] Create `InvoiceDetailResponse` record (detail view DTO with client/vehicle/estimate data)
-- [x] Create `InvoiceServiceItemResponse` record
-- [x] Create `InvoiceProductResponse` record
-- [x] Create `InvoiceMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
-  - [x] `toResponse(Invoice)` → `InvoiceResponse`
-  - [x] `toDetailResponse(Invoice)` → `InvoiceDetailResponse`
-  - [x] `toServiceItemResponse(InvoiceServiceItem)` → `InvoiceServiceItemResponse`
-  - [x] `toProductResponse(InvoiceProduct)` → `InvoiceProductResponse`
-  - [x] `toEntity(InvoiceRequest)` → `Invoice`
-- [x] Create `InvoiceService` interface
-- [x] Create `InvoiceServiceImpl` implementation
-  - [x] `getAll(Pageable)` — paginated list of all invoices
+- [x] Create `DeliveryNoteStatus` enum (`PENDIENTE`, `PAGADA`)
+- [x] Create `deliveryNote` entity (relationships: `Client`, `Vehicle`, `RepairOrder`, `Estimate`, `DeliveryNoteServiceItem`, `DeliveryNoteProduct`)
+- [x] Create `DeliveryNoteServiceItem` entity (relationship: `deliveryNote`)
+- [x] Create `DeliveryNoteProduct` entity (relationship: `deliveryNote`)
+- [x] Create `DeliveryNoteRepository` with methods: `findWithDetailsById`, `findByRepairOrderId`, `findByestimateId`, `search` (custom JPQL query)
+- [x] Create `DeliveryNoteServiceItemRepository` with methods: `findByDeliveryNoteId`, `deleteByDeliveryNoteId`
+- [x] Create `DeliveryNoteProductRepository` with methods: `findByDeliveryNoteId`, `deleteByDeliveryNoteId`
+- [x] Create `DeliveryNoteRequest` record with Jakarta Validation annotations (`@NotNull`, `@DecimalMin`, `@DecimalMax`, `@Digits`, `@Valid`)
+- [x] Create `DeliveryNoteServiceItemRequest` record with Jakarta Validation annotations (`@NotBlank`, `@Size`, `@NotNull`, `@DecimalMin`, `@Digits`)
+- [x] Create `DeliveryNoteProductRequest` record with Jakarta Validation annotations (`@NotBlank`, `@Size`, `@NotNull`, `@Min`, `@DecimalMin`, `@Digits`)
+- [x] Create `DeliveryNoteResponse` record (list view DTO)
+- [x] Create `DeliveryNoteDetailResponse` record (detail view DTO with client/vehicle/estimate data)
+- [x] Create `DeliveryNoteServiceItemResponse` record
+- [x] Create `DeliveryNoteProductResponse` record
+- [x] Create `DeliveryNoteMapper` as a manual `@Component` class (NOT MapStruct — see AGENTS.md)
+  - [x] `toResponse(deliveryNote)` → `DeliveryNoteResponse`
+  - [x] `toDetailResponse(deliveryNote)` → `DeliveryNoteDetailResponse`
+  - [x] `toServiceItemResponse(DeliveryNoteServiceItem)` → `DeliveryNoteServiceItemResponse`
+  - [x] `toProductResponse(DeliveryNoteProduct)` → `DeliveryNoteProductResponse`
+  - [x] `toEntity(DeliveryNoteRequest)` → `deliveryNote`
+- [x] Create `DeliveryNoteService` interface
+- [x] Create `DeliveryNoteServiceImpl` implementation
+  - [x] `getAll(Pageable)` — paginated list of all deliveryNotes
   - [x] `search(clientName, plate, status, Pageable)` — filtered search
   - [x] `getById(Long)` — detail response
-  - [x] `getByRepairOrderId(Long)` — detail for repair order's invoice
-  - [x] `create(InvoiceRequest)` — create invoice with children, validate TEMPORAL client restriction, calculate total
-  - [x] `createFromEstimate(Long)` — create invoice pre-loaded from ACEPTADO estimate
-  - [x] `delete(Long)` — delete invoice (only standalone, not paid)
+  - [x] `getByRepairOrderId(Long)` — detail for repair order's deliveryNote
+  - [x] `create(DeliveryNoteRequest)` — create deliveryNote with children, validate TEMPORAL client restriction, calculate total
+  - [x] `createFromEstimate(Long)` — create deliveryNote pre-loaded from ACEPTADO estimate
+  - [x] `delete(Long)` — delete deliveryNote (only standalone, not paid)
   - [x] `calculateTotal(services, products, discount, tax)` — total calculation logic
   - [x] `markAsPaid(Long)` — set status to PAGADA
-- [x] Create `InvoiceController` with all endpoints:
-  - [x] `GET /api/invoices` — list/search (paginated)
-  - [x] `GET /api/invoices/{id}` — get by ID
-  - [x] `POST /api/invoices` — create
-  - [x] `POST /api/invoices/from-estimate/{estimateId}` — create from accepted estimate
-  - [x] `DELETE /api/invoices/{id}` — delete
-- [x] Add `GET /api/repair-orders/{id}/invoice` endpoint in `RepairOrderController`
+- [x] Create `DeliveryNoteController` with all endpoints:
+  - [x] `GET /api/delivery-notes` — list/search (paginated)
+- [x] `GET /api/delivery-notes/{id}` — get by ID
+- [x] `POST /api/delivery-notes` — create
+- [x] `POST /api/delivery-notes/from-estimate/{estimateId}` — create from accepted estimate
+- [x] `DELETE /api/delivery-notes/{id}` — delete
+- [x] `GET /api/repair-orders/{id}/delivery-note` endpoint in `RepairOrderController`
 - [x] Verify backend compiles: `./mvnw clean compile`
 - [x] Verify backend starts: `./mvnw clean spring-boot:run` (N/A — verified via compile + all tests pass)
 
 ### 8.2 Frontend
 
-- [x] Create types file `src/types/invoice.ts` (`InvoiceStatus`, `InvoiceServiceItemRequest`, `InvoiceServiceItemResponse`, `InvoiceProductRequest`, `InvoiceProductResponse`, `InvoiceRequest`, `InvoiceResponse`, `InvoiceDetailResponse`)
-- [x] Create API layer `src/api/invoices.ts` (all invoice API methods)
-- [x] Create `useInvoices` hook — list with pagination, filtering, delete
-- [x] Create `useInvoice` hook — single invoice fetch, create, createFromEstimate
-- [x] Create `InvoicesPage` — route `/facturas` with filters and DataGrid
-- [x] Create `InvoiceDetailPage` — route `/facturas/:id` and `/facturas/nueva` with estimateId query param support (note: uses `/facturas/nuevo` to match Spanish convention)
-- [x] Create `InvoiceList` component — DataGrid with columns (date, client, plate, status chip, repair order, total, actions with view/delete)
-- [x] Create `InvoiceDetail` component — main detail with tabs (Datos de la Factura / Pagos), download button
-- [x] Create `InvoiceDataTab` component — merged into `InvoiceDetail` (following EstimateDetail pattern)
+- [x] Create types file `src/types/deliveryNote.ts` (`DeliveryNoteStatus`, `DeliveryNoteServiceItemRequest`, `DeliveryNoteServiceItemResponse`, `DeliveryNoteProductRequest`, `DeliveryNoteProductResponse`, `DeliveryNoteRequest`, `DeliveryNoteResponse`, `DeliveryNoteDetailResponse`)
+- [x] Create API layer `src/api/deliveryNotes.ts` (all deliveryNote API methods)
+- [x] Create `useDeliveryNotes` hook — list with pagination, filtering, delete
+- [x] Create `useDeliveryNote` hook — single deliveryNote fetch, create, createFromEstimate
+- [x] Create `DeliveryNotesPage` — route `/remitos` with filters and DataGrid
+- [x] Create `DeliveryNoteDetailPage` — route `/remitos/:id` and `/remitos/nueva` with estimateId query param support (note: uses `/remitos/nuevo` to match Spanish convention)
+- [x] Create `DeliveryNoteList` component — DataGrid with columns (date, client, plate, status chip, repair order, total, actions with view/delete)
+- [x] Create `DeliveryNoteDetail` component — main detail with tabs (Datos de la remito / Pagos), download button
+- [x] Create `DeliveryNoteDataTab` component — merged into `DeliveryNoteDetail` (following EstimateDetail pattern)
 - [x] Create `PaymentsTabPlaceholder` component — placeholder "Próximamente" for payments tab
 - [x] Create `ServicesGrid` component — editable services grid with catalog autocomplete, add/remove rows, subtotal (hidden for TEMPORAL clients)
 - [x] Create `ProductsGrid` component — editable products grid with catalog autocomplete, quantity, unit price, total price, add/remove rows, subtotal
-- [x] Create `InvoiceSummary` component — discount %, tax %, final price calculation
-- [x] Create `InvoiceTab` component — for repair order detail "Factura" tab
-- [x] Register routes with lazy loading (`/facturas`, `/facturas/nuevo`, `/facturas/:id`)
+- [x] Create `DeliveryNoteSummary` component — discount %, tax %, final price calculation
+- [x] Create `DeliveryNoteTab` component — for repair order detail "remito" tab
+- [x] Register routes with lazy loading (`/remitos`, `/remitos/nuevo`, `/remitos/:id`)
 - [x] Verify frontend compiles
 - [x] Verify frontend runs (vite build passes)
 
@@ -2023,24 +2023,24 @@ Use Vitest + React Testing Library.
 
 - [x] Immutability after creation: no PUT endpoint, all fields readonly in view mode
 - [x] TEMPORAL client restriction: only products allowed, no services; vehicle optional
-- [x] Estimate pre-loading: `/facturas/nuevo?estimateId={id}` copies services, products, discount, tax from ACEPTADO estimate
+- [x] Estimate pre-loading: `/remitos/nuevo?estimateId={id}` copies services, products, discount, tax from ACEPTADO estimate
 - [x] Snapshot line items: service/product names and prices are copied by value at creation
-- [x] Status auto-update: PENDIENTE → PAGADA when total payments equal invoice total (handled by spec 10)
-- [x] Deletion restrictions: cannot delete invoices linked to repair order or with status PAGADA
+- [x] Status auto-update: PENDIENTE → PAGADA when total payments equal delivery note total (handled by spec 10)
+- [x] Deletion restrictions: cannot delete deliveryNotes linked to repair order or with status PAGADA
 - [x] Total calculation: `(servicesSum + productsSum) - discount + tax` with HALF_UP rounding
-- [x] Confirmation dialog before invoice creation ("Una vez creada, la factura no se podrá editar")
-- [x] Invoices linked to repair orders navigate to repair order detail on row click
+- [x] Confirmation dialog before delivery note creation ("Una vez creada, el remito no se podrá editar")
+- [x] deliveryNotes linked to repair orders navigate to repair order detail on row click
 
 ### 8.4 Testing
 
-- [x] `InvoiceServiceImplTest` — all service layer test methods (create, createFromEstimate, TEMPORAL client, delete restrictions, calculateTotal, markAsPaid)
-- [x] `InvoiceControllerTest` (if applicable) — controller layer tests
-- [x] `InvoiceMapperTest` (if applicable) — mapper tests
-- [x] `InvoiceList.test.tsx` — grid rendering, actions, delete disabled for repair order invoices
-- [x] `InvoiceDetail.test.tsx` — (N/A) InvoiceDataTab merged into InvoiceDetail; tested via InvoiceTab test
-- [x] `InvoiceDataTab.test.tsx` — (N/A) merged into InvoiceDetail component
+- [x] `DeliveryNoteServiceImplTest` — all service layer test methods (create, createFromEstimate, TEMPORAL client, delete restrictions, calculateTotal, markAsPaid)
+- [x] `DeliveryNoteControllerTest` (if applicable) — controller layer tests
+- [x] `DeliveryNoteMapperTest` (if applicable) — mapper tests
+- [x] `DeliveryNoteList.test.tsx` — grid rendering, actions, delete disabled for repair order deliveryNotes
+- [x] `DeliveryNoteDetail.test.tsx` — (N/A) DeliveryNoteDataTab merged into DeliveryNoteDetail; tested via DeliveryNoteTab test
+- [x] `DeliveryNoteDataTab.test.tsx` — (N/A) merged into DeliveryNoteDetail component
 - [x] `ServicesGrid.test.tsx` — add/remove rows, catalog autocomplete, subtotal, readonly mode
 - [x] `ProductsGrid.test.tsx` — add/remove rows, catalog autocomplete, quantity × price, subtotal, readonly mode
-- [x] `InvoiceSummary.test.tsx` — subtotal, discount/tax clamping, final price, readonly mode
-- [x] `InvoiceTab.test.tsx` — renders inside repair order, create/load behavior
+- [x] `DeliveryNoteSummary.test.tsx` — subtotal, discount/tax clamping, final price, readonly mode
+- [x] `DeliveryNoteTab.test.tsx` — renders inside repair order, create/load behavior
 - [x] `PaymentsTabPlaceholder.test.tsx` — renders placeholder text "Próximamente"

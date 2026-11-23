@@ -54,7 +54,7 @@ export function FinancieroTab() {
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <StatCard
-            label="Remitos pendiente"
+            label="Remitos pendientes"
             value={formatCurrency(data.totalPendingBilling)}
             alignValue="right"
             icon={<AttachMoneyIcon color="warning" fontSize="small" />}
