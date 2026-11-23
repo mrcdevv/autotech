@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Button, Stack } from "@mui/material";
+import { Alert, Button, Stack } from "@mui/material";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -30,12 +30,16 @@ export function AppointmentEditDialog({
   const [endTime, setEndTime] = useState<Dayjs | null>(null);
   const [saving, setSaving] = useState(false);
   const [notifyClientOverride, setNotifyClientOverride] = useState<boolean | null>(null);
+  const [timeError, setTimeError] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (appointment && open) {
       setStartTime(dayjs(appointment.startTime));
       setEndTime(dayjs(appointment.endTime));
       setNotifyClientOverride(null);
+      setTimeError(false);
+      setSaveError(null);
     }
   }, [appointment, open]);
 
@@ -48,11 +52,13 @@ export function AppointmentEditDialog({
     if (!appointment || !startTime || !endTime) return;
 
     if (endTime.isBefore(startTime) || endTime.isSame(startTime)) {
-      alert("La hora de fin debe ser posterior a la hora de inicio");
+      setTimeError(true);
       return;
     }
+    setTimeError(false);
 
     setSaving(true);
+    setSaveError(null);
     try {
       await onSave(appointment.id, {
         startTime: startTime.format("YYYY-MM-DDTHH:mm:ss"),
@@ -60,8 +66,8 @@ export function AppointmentEditDialog({
         notifyClient: clientHasEmail && notifyClient,
       });
       onClose();
-    } catch (error) {
-      console.error("Error updating appointment:", error);
+    } catch {
+      setSaveError("No se pudo guardar el turno. Intente nuevamente.");
     } finally {
       setSaving(false);
     }
@@ -96,6 +102,7 @@ export function AppointmentEditDialog({
         }
       >
         <Stack spacing={3} sx={{ mt: 0.5 }}>
+          {saveError && <Alert severity="error">{saveError}</Alert>}
           <DateTimePicker
             label="Fecha y hora de inicio"
             value={startTime}
@@ -105,8 +112,17 @@ export function AppointmentEditDialog({
           <DateTimePicker
             label="Fecha y hora de fin"
             value={endTime}
-            onChange={(newValue) => setEndTime(newValue)}
+            onChange={(newValue) => {
+              setEndTime(newValue);
+              setTimeError(false);
+            }}
             disabled={saving}
+            slotProps={{
+              textField: {
+                error: timeError,
+                helperText: timeError ? "La hora de fin debe ser posterior a la hora de inicio" : undefined,
+              },
+            }}
           />
           {appointment?.clientId && (
             <NotifyClientCheckbox
