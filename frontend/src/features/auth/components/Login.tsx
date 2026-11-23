@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link as RouterLink, useNavigate } from "react-router";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router";
 import { isAxiosError } from "axios";
 
 import {
@@ -37,6 +37,9 @@ export function Login() {
   
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +56,7 @@ export function Login() {
       if (response.data.mustChangePassword) {
         navigate("/change-password", { replace: true });
       } else {
-        navigate("/", { replace: true });
+        navigate(from, { replace: true });
       }
     } catch (err: unknown) {
       setError(getLoginErrorMessage(err));
