@@ -129,17 +129,19 @@ export default function InspectionTemplateListPage() {
             <IconButton
               onClick={() => navigate(`/configuracion/plantillas-inspeccion/${template.id}/editar`)}
               title="Editar"
+                          aria-label="Editar plantilla"
               size="small"
             >
               <EditIcon fontSize="small" />
             </IconButton>
-            <IconButton onClick={() => handleDuplicate(template.id)} title="Duplicar" size="small">
+            <IconButton onClick={() => handleDuplicate(template.id)} title="Duplicar" aria-label="Duplicar" size="small">
               <ContentCopyIcon fontSize="small" />
             </IconButton>
             <IconButton
               onClick={() => handleDeleteClick(template.id)}
               color="error"
               title="Eliminar"
+                          aria-label="Eliminar plantilla"
               size="small"
             >
               <DeleteIcon fontSize="small" />
