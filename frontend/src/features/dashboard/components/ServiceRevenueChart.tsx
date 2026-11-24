@@ -7,6 +7,7 @@ import {
   BASE_CHART_SX,
   CHART_ANIMATION_SX,
   CHART_COLORS,
+  CURRENCY_AXIS_WIDTH,
   wrapLabel,
 } from "@/features/dashboard/utils/chartTheme";
 import { formatCurrencyWhole } from "@/utils/formatCurrency";
@@ -43,6 +44,7 @@ export function ServiceRevenueChart({ data }: ServiceRevenueChartProps) {
         ]}
         yAxis={[
           {
+            width: CURRENCY_AXIS_WIDTH,
             disableLine: true,
             disableTicks: true,
             tickLabelStyle: AXIS_TICK_LABEL,

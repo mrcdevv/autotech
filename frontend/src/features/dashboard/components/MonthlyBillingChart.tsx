@@ -11,6 +11,7 @@ import {
   BASE_CHART_SX,
   CHART_ANIMATION_SX,
   CHART_COLORS,
+  CURRENCY_AXIS_WIDTH,
 } from "@/features/dashboard/utils/chartTheme";
 import { formatCurrencyWhole } from "@/utils/formatCurrency";
 
@@ -49,6 +50,7 @@ export function MonthlyBillingChart({ data, from, to }: MonthlyBillingChartProps
         ]}
         yAxis={[
           {
+            width: CURRENCY_AXIS_WIDTH,
             disableLine: true,
             disableTicks: true,
             tickLabelStyle: AXIS_TICK_LABEL,

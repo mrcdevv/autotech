@@ -102,6 +102,7 @@ describe("MonthlyBillingChart formatters (decision D2)", () => {
 
     const { yAxis } = lastChartProps();
     expect(yAxis?.[0]).toMatchObject({
+      width: 80,
       disableLine: true,
       disableTicks: true,
       tickLabelStyle: { fill: "#8A909B", fontSize: 11 },

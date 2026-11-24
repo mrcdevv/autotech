@@ -26,6 +26,15 @@ export const AXIS_TICK_LABEL = {
   fontSize: 11,
 };
 
+/**
+ * Reserved width for a currency Y-axis. MUI X Charts caps tick-label text to the
+ * axis `width` and ellipsizes longer labels, so a small default (45px) truncates
+ * values like `$ 123.456`. This size also reserves the left space of the drawing
+ * area. Sized to render the `$` symbol plus up to 6 digits (with the es-AR
+ * thousands separator) fully; ~80px also covers 7 digits.
+ */
+export const CURRENCY_AXIS_WIDTH = 80;
+
 export function wrapLabel(text: string, maxCharsPerLine = 12): string {
   const words = text.split(" ");
   const lines: string[] = [];
