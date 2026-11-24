@@ -4,6 +4,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildMonthlyBillingBuckets,
   resolvePeriod,
+  resolvePreviousPeriod,
 } from "./reportPeriod";
 
 describe("resolvePeriod", () => {
@@ -30,18 +31,41 @@ describe("resolvePeriod", () => {
   });
 });
 
+describe("resolvePreviousPeriod", () => {
+  it("given a whole calendar month, when resolving, then returns the previous calendar month", () => {
+    expect(resolvePreviousPeriod("2026-03-01", "2026-03-31")).toEqual({
+      from: "2026-02-01",
+      to: "2026-02-28",
+    });
+  });
+
+  it("given a whole year, when resolving, then returns the previous year", () => {
+    expect(resolvePreviousPeriod("2026-01-01", "2026-12-31")).toEqual({
+      from: "2025-01-01",
+      to: "2025-12-31",
+    });
+  });
+
+  it("given an arbitrary range, when resolving, then returns the same number of days right before it", () => {
+    expect(resolvePreviousPeriod("2026-03-10", "2026-03-19")).toEqual({
+      from: "2026-02-28",
+      to: "2026-03-09",
+    });
+  });
+});
+
 describe("buildMonthlyBillingBuckets", () => {
   it("given missing months, when building, then fills every month in range with zero", () => {
     const buckets = buildMonthlyBillingBuckets(
-      [{ year: 2026, month: 9, total: 1000 }],
+      [{ year: 2026, month: 9, billed: 1000, collected: 400 }],
       "2026-07-01",
       "2026-09-30"
     );
 
     expect(buckets).toEqual([
-      { year: 2026, month: 7, total: 0 },
-      { year: 2026, month: 8, total: 0 },
-      { year: 2026, month: 9, total: 1000 },
+      { year: 2026, month: 7, billed: 0, collected: 0 },
+      { year: 2026, month: 8, billed: 0, collected: 0 },
+      { year: 2026, month: 9, billed: 1000, collected: 400 },
     ]);
   });
 });

@@ -36,14 +36,14 @@ public class DashboardController {
         return ResponseEntity.ok(ApiResponse.success(dashboardService.getSummary()));
     }
 
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('view_reports')")
     @GetMapping("/financiero")
     public ResponseEntity<ApiResponse<DashboardFinancieroResponse>> getFinanciero(
             @RequestParam(defaultValue = "6") int months) {
         return ResponseEntity.ok(ApiResponse.success(dashboardService.getFinanciero(months)));
     }
 
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('view_reports')")
     @GetMapping("/productividad")
     public ResponseEntity<ApiResponse<DashboardProductividadResponse>> getProductividad() {
         return ResponseEntity.ok(ApiResponse.success(dashboardService.getProductividad()));
@@ -66,7 +66,7 @@ public class DashboardController {
                 new DashboardConfigResponse(config.getStaleThresholdDays())));
     }
 
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('view_reports')")
     @GetMapping("/export/financiero")
     public ResponseEntity<byte[]> exportFinanciero(
             @RequestParam(defaultValue = "6") int months) {
@@ -78,7 +78,7 @@ public class DashboardController {
                 .body(file);
     }
 
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('view_reports')")
     @GetMapping("/export/productividad")
     public ResponseEntity<byte[]> exportProductividad() {
         byte[] file = dashboardExportService.exportProductividad();

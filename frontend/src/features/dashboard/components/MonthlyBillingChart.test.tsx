@@ -1,23 +1,20 @@
 import { render } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
+
 import { MonthlyBillingChart } from "./MonthlyBillingChart";
 
-// The real BarChart renders ticks with canvas/svg internals that jsdom cannot lay out,
-// so this stub replaces it. It must NOT discard the formatter props: it captures them so
-// the tests can exercise the series and yAxis formatters directly (decision D2).
+// The real BarChart needs layout that jsdom lacks; this stub captures its props so the
+// tests can check the series and formatters (decision D2).
 interface MockSeries {
   data: number[];
   label?: string;
-  valueFormatter?: (value: number | null | undefined) => string;
-}
-
-interface MockYAxis {
+  stack?: string;
   valueFormatter?: (value: number | null | undefined) => string;
 }
 
 interface MockBarChartProps {
   xAxis: [{ data: string[] }];
-  yAxis?: MockYAxis[];
+  yAxis?: { width?: number; valueFormatter?: (value: number | null | undefined) => string }[];
   series: MockSeries[];
 }
 
@@ -26,85 +23,45 @@ const chartPropsHolder = vi.hoisted(() => ({ current: [] as MockBarChartProps[] 
 vi.mock("@mui/x-charts/BarChart", () => ({
   BarChart: (props: MockBarChartProps) => {
     chartPropsHolder.current.push(props);
-    const xAxisData = props.xAxis[0]?.data ?? [];
-    const seriesData = props.series[0]?.data ?? [];
-    return (
-      <div data-testid="bar-chart">
-        {xAxisData.join(",")}
-        {seriesData.join(",")}
-      </div>
-    );
+    return <div data-testid="bar-chart" />;
   },
 }));
 
 function lastChartProps(): MockBarChartProps {
   const props = chartPropsHolder.current.at(-1);
-  if (!props) {
-    throw new Error("BarChart was never rendered");
-  }
+  if (!props) throw new Error("BarChart was never rendered");
   return props;
 }
 
-// Literal expectations (not derived from formatCurrencyWhole) so a helper regression is
-// caught instead of silently re-asserted. es-AR emits a NON-BREAKING SPACE (U+00A0) after
-// the "$" symbol and uses "." for thousands grouping.
-describe("MonthlyBillingChart formatters (decision D2)", () => {
+describe("MonthlyBillingChart", () => {
   beforeEach(() => {
     chartPropsHolder.current = [];
   });
 
-  it("given a chart, when rendered, then the series formatter renders whole-number es-AR currency and empty for null and undefined", () => {
+  it("given billed and collected months, when rendered, then stacks collected and pending per month", () => {
     render(
       <MonthlyBillingChart
-        data={[{ year: 2025, month: 1, total: 1234567.89 }]}
-        from="2025-01-01"
-        to="2025-03-31"
-      />,
+        data={[{ year: 2026, month: 11, billed: 1000, collected: 400 }]}
+        from="2026-10-01"
+        to="2026-11-30"
+      />
     );
 
-    const { series } = lastChartProps();
-    const formatter = series[0]?.valueFormatter;
-    expect(formatter).toBeDefined();
-    // Whole number: "$" + U+00A0, "." thousands separator, no decimals. 1234567.89
-    // rounds UP under ECMA-402 half-expand to 1.234.568.
-    expect(formatter!(1234567.89)).toMatch(/^\$\u00A01\.234\.568$/);
-    expect(formatter!(950)).toMatch(/^\$\u00A0950$/);
-    expect(formatter!(null)).toBe("");
-    expect(formatter!(undefined)).toBe("");
+    const { xAxis, series } = lastChartProps();
+    expect(xAxis[0].data).toEqual(["Oct 2026", "Nov 2026"]);
+    expect(series.map((s) => [s.label, s.stack, s.data])).toEqual([
+      ["Cobrado", "billed", [0, 400]],
+      ["Pendiente", "billed", [0, 600]],
+    ]);
   });
 
-  it("given a chart, when rendered, then the yAxis tick formatter renders whole-number es-AR currency and empty for null and undefined", () => {
-    render(
-      <MonthlyBillingChart
-        data={[{ year: 2025, month: 1, total: 1234567.89 }]}
-        from="2025-01-01"
-        to="2025-03-31"
-      />,
-    );
+  it("given a chart, when rendered, then the Y axis is wide enough and formats whole es-AR currency", () => {
+    render(<MonthlyBillingChart data={[]} from="2026-11-01" to="2026-11-30" />);
 
-    const { yAxis } = lastChartProps();
-    const formatter = yAxis?.[0]?.valueFormatter;
-    expect(formatter).toBeDefined();
-    expect(formatter!(1234567.89)).toMatch(/^\$\u00A01\.234\.568$/);
-    expect(formatter!(950)).toMatch(/^\$\u00A0950$/);
-    expect(formatter!(null)).toBe("");
-    expect(formatter!(undefined)).toBe("");
-  });
-
-  it("given billing data, when rendered, then keeps the existing yAxis tick properties alongside the formatter", () => {
-    render(
-      <MonthlyBillingChart
-        data={[{ year: 2025, month: 1, total: 1234567.89 }]}
-        from="2025-01-01"
-        to="2025-03-31"
-      />,
-    );
-
-    const { yAxis } = lastChartProps();
-    expect(yAxis?.[0]).toMatchObject({
-      disableLine: true,
-      disableTicks: true,
-      tickLabelStyle: { fill: "#8A909B", fontSize: 11 },
-    });
+    const axis = lastChartProps().yAxis?.[0];
+    expect(axis?.width).toBe(80);
+    // es-AR puts a non-breaking space after "$" and "." as thousands separator.
+    expect(axis?.valueFormatter?.(400000)).toBe("$ 400.000");
+    expect(axis?.valueFormatter?.(null)).toBe("");
   });
 });

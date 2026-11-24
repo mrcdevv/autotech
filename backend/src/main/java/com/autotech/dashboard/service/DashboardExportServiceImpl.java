@@ -1,10 +1,15 @@
 package com.autotech.dashboard.service;
 
+import com.autotech.dashboard.dto.BrandCountResponse;
+import com.autotech.dashboard.dto.DashboardReportsResponse;
 import com.autotech.dashboard.dto.DashboardFinancieroResponse;
 import com.autotech.dashboard.dto.DashboardProductividadResponse;
 import com.autotech.dashboard.dto.DebtAgingResponse;
 import com.autotech.dashboard.dto.MechanicProductivityResponse;
+import com.autotech.dashboard.dto.MonthlyBillingResponse;
 import com.autotech.dashboard.dto.MonthlyRevenueResponse;
+import com.autotech.dashboard.dto.ReportKpisResponse;
+import com.autotech.dashboard.dto.ServiceStatsResponse;
 import com.autotech.dashboard.dto.TopServiceResponse;
 import com.autotech.dashboard.dto.UnpaidDeliveryNoteResponse;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +26,7 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -31,6 +37,7 @@ public class DashboardExportServiceImpl implements DashboardExportService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private final DashboardService dashboardService;
+    private final ReportService reportService;
 
     @Override
     public byte[] exportFinanciero(int months) {
@@ -64,6 +71,137 @@ public class DashboardExportServiceImpl implements DashboardExportService {
         } catch (IOException e) {
             throw new RuntimeException("Error generating Excel file", e);
         }
+    }
+
+    @Override
+    public byte[] exportReports(LocalDate from, LocalDate to) {
+        DashboardReportsResponse data = reportService.getReports(from, to);
+
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            createReportSummarySheet(workbook, data.kpis(), from, to);
+            createMonthlyBillingSheet(workbook, data.monthlyBilling());
+            createServiceStatsSheet(workbook, data.services());
+            createBrandCountSheet(workbook, data.brandCounts());
+            createDebtAgingSheet(workbook, data.debtAging());
+            createUnpaidDeliveryNotesSheet(workbook, data.unpaidDeliveryNotes());
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            workbook.write(out);
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException("Error generating Excel file", e);
+        }
+    }
+
+    private void createReportSummarySheet(XSSFWorkbook workbook, ReportKpisResponse kpis,
+                                          LocalDate from, LocalDate to) {
+        String[] headers = {"Indicador", "Valor"};
+        XSSFSheet sheet = workbook.createSheet("Resumen");
+        XSSFCellStyle currencyStyle = createCurrencyStyle(workbook);
+        DateTimeFormatter dayFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+        XSSFRow headerRow = sheet.createRow(0);
+        for (int i = 0; i < headers.length; i++) {
+            headerRow.createCell(i).setCellValue(headers[i]);
+        }
+
+        Object[][] rows = {
+                {"Período", from.format(dayFormatter) + " al " + to.format(dayFormatter)},
+                {"Facturado", kpis.totalBilled()},
+                {"Cobrado", kpis.totalCollected()},
+                {"Pendiente de cobro", kpis.totalPending()},
+                {"Remitos emitidos", kpis.deliveryNoteCount()},
+                {"Remitos pendientes", kpis.pendingDeliveryNoteCount()},
+                {"Ticket promedio", kpis.averageTicket()},
+                {"Presupuestos emitidos", kpis.estimatesTotal()},
+                {"Presupuestos aceptados", kpis.estimatesAccepted()},
+                {"Órdenes de trabajo", kpis.repairOrderCount()},
+        };
+
+        for (int i = 0; i < rows.length; i++) {
+            XSSFRow row = sheet.createRow(i + 1);
+            row.createCell(0).setCellValue((String) rows[i][0]);
+            var cell = row.createCell(1);
+            Object value = rows[i][1];
+            if (value instanceof BigDecimal amount) {
+                cell.setCellValue(amount.doubleValue());
+                cell.setCellStyle(currencyStyle);
+            } else if (value instanceof Long count) {
+                cell.setCellValue(count);
+            } else {
+                cell.setCellValue(value.toString());
+            }
+        }
+
+        createTableInSheet(sheet, "Resumen", headers, rows.length);
+    }
+
+    private void createMonthlyBillingSheet(XSSFWorkbook workbook, List<MonthlyBillingResponse> data) {
+        String[] headers = {"Año", "Mes", "Facturado", "Cobrado", "Pendiente"};
+        XSSFSheet sheet = workbook.createSheet("Facturación Mensual");
+        XSSFCellStyle currencyStyle = createCurrencyStyle(workbook);
+
+        XSSFRow headerRow = sheet.createRow(0);
+        for (int i = 0; i < headers.length; i++) {
+            headerRow.createCell(i).setCellValue(headers[i]);
+        }
+
+        for (int i = 0; i < data.size(); i++) {
+            MonthlyBillingResponse item = data.get(i);
+            XSSFRow row = sheet.createRow(i + 1);
+            row.createCell(0).setCellValue(item.year());
+            row.createCell(1).setCellValue(item.month());
+            BigDecimal[] amounts = {item.billed(), item.collected(), item.billed().subtract(item.collected())};
+            for (int j = 0; j < amounts.length; j++) {
+                var cell = row.createCell(2 + j);
+                cell.setCellValue(amounts[j].doubleValue());
+                cell.setCellStyle(currencyStyle);
+            }
+        }
+
+        createTableInSheet(sheet, "FacturacionMensual", headers, data.size());
+    }
+
+    private void createServiceStatsSheet(XSSFWorkbook workbook, List<ServiceStatsResponse> data) {
+        String[] headers = {"Servicio", "Cantidad", "Ingresos"};
+        XSSFSheet sheet = workbook.createSheet("Servicios");
+        XSSFCellStyle currencyStyle = createCurrencyStyle(workbook);
+
+        XSSFRow headerRow = sheet.createRow(0);
+        for (int i = 0; i < headers.length; i++) {
+            headerRow.createCell(i).setCellValue(headers[i]);
+        }
+
+        for (int i = 0; i < data.size(); i++) {
+            ServiceStatsResponse item = data.get(i);
+            XSSFRow row = sheet.createRow(i + 1);
+            row.createCell(0).setCellValue(item.serviceName());
+            row.createCell(1).setCellValue(item.count());
+            var cell = row.createCell(2);
+            cell.setCellValue(item.totalRevenue().doubleValue());
+            cell.setCellStyle(currencyStyle);
+        }
+
+        createTableInSheet(sheet, "Servicios", headers, data.size());
+    }
+
+    private void createBrandCountSheet(XSSFWorkbook workbook, List<BrandCountResponse> data) {
+        String[] headers = {"Marca", "Órdenes"};
+        XSSFSheet sheet = workbook.createSheet("Marcas");
+
+        XSSFRow headerRow = sheet.createRow(0);
+        for (int i = 0; i < headers.length; i++) {
+            headerRow.createCell(i).setCellValue(headers[i]);
+        }
+
+        for (int i = 0; i < data.size(); i++) {
+            BrandCountResponse item = data.get(i);
+            XSSFRow row = sheet.createRow(i + 1);
+            row.createCell(0).setCellValue(item.brandName());
+            row.createCell(1).setCellValue(item.count());
+        }
+
+        createTableInSheet(sheet, "Marcas", headers, data.size());
     }
 
     private void createMonthlyRevenueSheet(XSSFWorkbook workbook, List<MonthlyRevenueResponse> data) {

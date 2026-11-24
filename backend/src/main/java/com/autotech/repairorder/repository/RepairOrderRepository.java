@@ -87,20 +87,29 @@ public interface RepairOrderRepository
             @Param("threshold") LocalDateTime threshold,
             @Param("excludedStatuses") Collection<RepairOrderStatus> excludedStatuses);
 
+    /**
+     * Average days from intake to delivery. Uses {@code delivered_at}, not {@code updated_at}:
+     * any later edit of a delivered order would otherwise stretch its repair time.
+     */
     @Query(value = """
-            SELECT AVG(EXTRACT(EPOCH FROM (ro.updated_at - ro.created_at)) / 86400)
+            SELECT AVG(EXTRACT(EPOCH FROM (ro.delivered_at - ro.created_at)) / 86400)
             FROM repair_orders ro
-            WHERE ro.status = :#{#status.name()} AND ro.updated_at >= :start AND ro.updated_at < :end
+            WHERE ro.status = :#{#status.name()} AND ro.delivered_at >= :start AND ro.delivered_at < :end
             """, nativeQuery = true)
-    BigDecimal avgRepairDaysByStatusAndUpdatedAtBetween(
+    BigDecimal avgRepairDaysByStatusAndDeliveredAtBetween(
             @Param("status") RepairOrderStatus status,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
+
+    @Query("SELECT COUNT(ro) FROM RepairOrder ro WHERE ro.createdAt >= :start AND ro.createdAt < :end")
+    long countCreatedBetween(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end);
 
     @Query("""
             SELECT e.id, CONCAT(e.firstName, ' ', e.lastName), COUNT(ro)
             FROM RepairOrder ro JOIN ro.employees e
-            WHERE ro.status = :status AND ro.updatedAt >= :start AND ro.updatedAt < :end
+            WHERE ro.status = :status AND ro.deliveredAt >= :start AND ro.deliveredAt < :end
             GROUP BY e.id, e.firstName, e.lastName
             ORDER BY COUNT(ro) DESC
             """)

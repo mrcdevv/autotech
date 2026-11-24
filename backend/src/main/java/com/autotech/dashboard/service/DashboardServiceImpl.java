@@ -179,7 +179,7 @@ public class DashboardServiceImpl implements DashboardService {
         LocalDateTime monthStart = LocalDate.now().withDayOfMonth(1).atStartOfDay();
         LocalDateTime monthEnd = monthStart.plusMonths(1);
 
-        BigDecimal avgRepairDays = repairOrderRepository.avgRepairDaysByStatusAndUpdatedAtBetween(
+        BigDecimal avgRepairDays = repairOrderRepository.avgRepairDaysByStatusAndDeliveredAtBetween(
                 RepairOrderStatus.ENTREGADO, monthStart, monthEnd);
         if (avgRepairDays == null) avgRepairDays = BigDecimal.ZERO;
 

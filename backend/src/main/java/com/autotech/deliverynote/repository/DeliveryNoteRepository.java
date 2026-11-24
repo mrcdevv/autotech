@@ -117,36 +117,44 @@ public interface DeliveryNoteRepository extends JpaRepository<DeliveryNote, Long
             @Param("end") LocalDateTime end,
             Pageable pageable);
 
+    /** Per month: [year, month, billed total, total of the ones with {@code paidStatus}]. */
     @Query("""
-            SELECT YEAR(i.createdAt), MONTH(i.createdAt), COALESCE(SUM(i.total), 0)
+            SELECT YEAR(i.createdAt), MONTH(i.createdAt),
+                   COALESCE(SUM(i.total), 0),
+                   COALESCE(SUM(CASE WHEN i.status = :paidStatus THEN i.total ELSE 0 END), 0)
             FROM DeliveryNote i
             WHERE i.createdAt >= :start AND i.createdAt < :end
             GROUP BY YEAR(i.createdAt), MONTH(i.createdAt)
             ORDER BY YEAR(i.createdAt), MONTH(i.createdAt)
             """)
-    List<Object[]> sumTotalGroupByMonth(
+    List<Object[]> sumBilledAndCollectedGroupByMonth(
+            @Param("paidStatus") DeliveryNoteStatus paidStatus,
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end);
 
+    /** A single row: [count, billed total, count with {@code paidStatus}, total with {@code paidStatus}]. */
     @Query("""
-            SELECT s.serviceName, COUNT(s)
-            FROM DeliveryNote i JOIN i.services s
+            SELECT COUNT(i),
+                   COALESCE(SUM(i.total), 0),
+                   COALESCE(SUM(CASE WHEN i.status = :paidStatus THEN 1 ELSE 0 END), 0),
+                   COALESCE(SUM(CASE WHEN i.status = :paidStatus THEN i.total ELSE 0 END), 0)
+            FROM DeliveryNote i
             WHERE i.createdAt >= :start AND i.createdAt < :end
-            GROUP BY s.serviceName
-            ORDER BY COUNT(s) DESC
             """)
-    List<Object[]> countServiceOccurrences(
+    List<Object[]> summarizeBilling(
+            @Param("paidStatus") DeliveryNoteStatus paidStatus,
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end);
 
+    /** Per service name: [name, times billed, revenue], most frequent first. */
     @Query("""
-            SELECT s.serviceName, COALESCE(SUM(s.price), 0)
+            SELECT s.serviceName, COUNT(s), COALESCE(SUM(s.price), 0)
             FROM DeliveryNote i JOIN i.services s
             WHERE i.createdAt >= :start AND i.createdAt < :end
             GROUP BY s.serviceName
-            ORDER BY SUM(s.price) DESC
+            ORDER BY COUNT(s) DESC, SUM(s.price) DESC
             """)
-    List<Object[]> sumServiceRevenue(
+    List<Object[]> summarizeServices(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end);
 

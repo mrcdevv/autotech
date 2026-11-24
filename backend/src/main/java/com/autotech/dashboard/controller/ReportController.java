@@ -3,9 +3,12 @@ package com.autotech.dashboard.controller;
 import com.autotech.common.dto.ApiResponse;
 import com.autotech.dashboard.dto.DashboardReportsResponse;
 import com.autotech.dashboard.dto.FaultCountResponse;
+import com.autotech.dashboard.service.DashboardExportService;
 import com.autotech.dashboard.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +25,7 @@ import java.util.List;
 public class ReportController {
 
     private final ReportService reportService;
+    private final DashboardExportService dashboardExportService;
 
     @PreAuthorize("hasAuthority('view_reports')")
     @GetMapping("/summary")
@@ -38,5 +42,18 @@ public class ReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(required = false) Long brandId) {
         return ResponseEntity.ok(ApiResponse.success(reportService.getFaults(from, to, brandId)));
+    }
+
+    @PreAuthorize("hasAuthority('view_reports')")
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> export(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        byte[] file = dashboardExportService.exportReports(from, to);
+        String filename = "reportes_" + from + "_" + to + ".xlsx";
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(file);
     }
 }
