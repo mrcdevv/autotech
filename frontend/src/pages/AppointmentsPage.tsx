@@ -290,7 +290,7 @@ export default function AppointmentsPage() {
       <PageToolbar
         filters={
           <>
-            <IconButton size="small" onClick={() => navigateDate(-1)} sx={{ color: "text.secondary" }}>
+            <IconButton size="small" onClick={() => navigateDate(-1)} sx={{ color: "text.secondary" }} aria-label="Ir al día anterior">
               <ChevronLeftIcon fontSize="small" />
             </IconButton>
             <Typography
@@ -306,7 +306,7 @@ export default function AppointmentsPage() {
             >
               {getNavigationLabel()}
             </Typography>
-            <IconButton size="small" onClick={() => navigateDate(1)} sx={{ color: "text.secondary" }}>
+            <IconButton size="small" onClick={() => navigateDate(1)} sx={{ color: "text.secondary" }} aria-label="Ir al día siguiente">
               <ChevronRightIcon fontSize="small" />
             </IconButton>
             <Chip

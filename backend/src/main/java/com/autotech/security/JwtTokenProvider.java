@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
@@ -12,6 +13,7 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 
 @Component
+@Slf4j
 public class JwtTokenProvider {
 
     @Value("${app.jwt.secret:defaultSecretKeyForDevelopmentLetItBeLongEnoughForHS512AndNotFailPlease1234567890qwertyuiopasdfghjklzxcvbnm}")
@@ -54,7 +56,9 @@ public class JwtTokenProvider {
             Jwts.parser().verifyWith(key()).build().parseSignedClaims(token);
             return true;
         } catch (Exception ex) {
-            // Logs omitted for brevity (ExpiredJwtException, MalformedJwtException, etc)
+            // Never log the token itself; only why it was rejected
+            log.warn("Invalid JWT rejected: {}", ex.getClass().getSimpleName());
+            log.debug("Invalid JWT rejection details", ex);
         }
         return false;
     }

@@ -1,16 +1,25 @@
 services:
+  # NOTE: Mailpit UI (port 8025) has no authentication. Do not expose it
+  # when sharing the network (e.g. over SSH tunnels or WSL port-forwarding).
+  # Use 127.0.0.1 bindings or restrict firewall access.
   postgres:
     image: postgres:16
     container_name: autotech-db
     environment:
       POSTGRES_DB: autotech
       POSTGRES_USER: autotech
-      POSTGRES_PASSWORD: autotech
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-autotech}
       TZ: UTC
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - autotech-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U autotech -d autotech"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   # Local SMTP server for development and demos: captures every email (nothing leaves the machine).
   # Web UI: http://localhost:8025
@@ -18,8 +27,14 @@ services:
     image: axllent/mailpit:v1.21
     container_name: autotech-mailpit
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:8025/readyz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
 volumes:
   autotech-pgdata:

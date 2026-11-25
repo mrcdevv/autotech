@@ -11,6 +11,7 @@ Management software for a mechanical workshop. Handles employees, clients, vehic
 
 ### Backend
 ```bash
+# For email features (dev/demo): docker compose up -d postgres mailpit first
 cd backend
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```

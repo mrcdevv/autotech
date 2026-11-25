@@ -34,6 +34,7 @@ const SettingsPage = lazy(() => import("@/pages/SettingsPage"));
 const PublicAppointmentPage = lazy(() => import("@/pages/PublicAppointmentPage"));
 const PublicEstimatePage = lazy(() => import("@/pages/PublicEstimatePage"));
 const PublicUnsubscribePage = lazy(() => import("@/pages/PublicUnsubscribePage"));
+const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
 
 function Loading() {
   return (
@@ -100,6 +101,7 @@ export default function AppRoutes() {
             <Route element={<RequirePermission permission={SETTINGS_PERMISSIONS} />}>
               <Route path="/configuracion" element={<SettingsPage />} />
             </Route>
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Route>
       </Routes>

@@ -149,6 +149,7 @@ class AppointmentServiceImplTest {
 
         // Assert
         assertThat(result.id()).isEqualTo(1L);
+        assertThat(entity.getConfirmationTokenExpiresAt()).isAfter(LocalDateTime.now().plusDays(6));
     }
 
     @Test
@@ -704,6 +705,45 @@ class AppointmentServiceImplTest {
     }
 
     @Test
+    void givenExpiredLink_whenGetByConfirmationToken_thenThrowResourceNotFoundException() {
+        // Arrange
+        Appointment entity = buildAppointment(1L);
+        entity.setConfirmationTokenExpiresAt(LocalDateTime.now().minusMinutes(1));
+        when(appointmentRepository.findByConfirmationToken("tok")).thenReturn(Optional.of(entity));
+
+        // Act & Assert
+        assertThatThrownBy(() -> appointmentService.getByConfirmationToken("tok"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("El enlace del turno no es válido");
+    }
+
+    @Test
+    void givenNullExpiry_whenGetByConfirmationToken_thenThrowResourceNotFoundException() {
+        // Arrange
+        Appointment entity = buildAppointment(1L);
+        entity.setConfirmationTokenExpiresAt(null);
+        when(appointmentRepository.findByConfirmationToken("tok")).thenReturn(Optional.of(entity));
+
+        // Act & Assert
+        assertThatThrownBy(() -> appointmentService.getByConfirmationToken("tok"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("El enlace del turno no es válido");
+    }
+
+    @Test
+    void givenExpiredLink_whenConfirmByToken_thenThrowResourceNotFoundException() {
+        // Arrange
+        Appointment entity = buildAppointment(1L);
+        entity.setConfirmationTokenExpiresAt(LocalDateTime.now().minusMinutes(1));
+        when(appointmentRepository.findByConfirmationToken("tok")).thenReturn(Optional.of(entity));
+
+        // Act & Assert
+        assertThatThrownBy(() -> appointmentService.confirmByToken("tok"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("El enlace del turno no es válido");
+    }
+
+    @Test
     void givenNewAppointment_whenBuilt_thenHasRandomConfirmationToken() {
         // Act
         Appointment first = buildAppointment(null);
@@ -721,6 +761,7 @@ class AppointmentServiceImplTest {
                 .startTime(startTime)
                 .endTime(endTime)
                 .build();
+        appointment.setConfirmationTokenExpiresAt(LocalDateTime.now().plusDays(3));
         if (id != null) appointment.setId(id);
         return appointment;
     }

@@ -374,7 +374,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           </Typography>
         </Reveal>
         {isMobile && (
-          <IconButton onClick={onClose} size="small" sx={{ ml: "auto", color: "shell.text" }}>
+          <IconButton onClick={onClose} size="small" aria-label="Cerrar menú" sx={{ ml: "auto", color: "shell.text" }}>
             <ChevronLeftIcon fontSize="small" />
           </IconButton>
         )}

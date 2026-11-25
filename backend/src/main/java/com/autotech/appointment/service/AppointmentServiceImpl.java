@@ -40,6 +40,8 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class AppointmentServiceImpl implements AppointmentService {
 
+    static final int CONFIRMATION_LINK_DAYS = 7;
+
     private final AppointmentRepository appointmentRepository;
     private final AppointmentMapper appointmentMapper;
     private final ClientRepository clientRepository;
@@ -73,6 +75,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         validateTimeRange(request.startTime(), request.endTime());
 
         Appointment entity = appointmentMapper.toEntity(request);
+        entity.setConfirmationTokenExpiresAt(LocalDateTime.now().plusDays(CONFIRMATION_LINK_DAYS));
 
         if (request.clientId() != null) {
             Client client = clientRepository.findById(request.clientId())
@@ -258,8 +261,18 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     private Appointment findByToken(String token) {
-        return appointmentRepository.findByConfirmationToken(token)
+        Appointment entity = appointmentRepository.findByConfirmationToken(token)
                 .orElseThrow(() -> new ResourceNotFoundException("El enlace del turno no es válido"));
+        if (isLinkExpired(entity)) {
+            // Same generic message as an unknown token so clients cannot probe link validity
+            throw new ResourceNotFoundException("El enlace del turno no es válido");
+        }
+        return entity;
+    }
+
+    private boolean isLinkExpired(Appointment entity) {
+        return entity.getConfirmationTokenExpiresAt() == null
+                || !entity.getConfirmationTokenExpiresAt().isAfter(LocalDateTime.now());
     }
 
     private boolean canRespond(Appointment entity) {

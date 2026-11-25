@@ -102,7 +102,7 @@ export function DeliveryNoteTab({ repairOrderId }: DeliveryNoteTabProps) {
       const res = await deliveryNotesApi.createFromEstimate(estimateId);
       setDeliveryNote(res.data.data);
     } catch {
-      setCreateError("Error al generar la remito. Intente nuevamente.");
+      setCreateError("Error al generar el remito. Intente nuevamente.");
     } finally {
       setCreating(false);
     }

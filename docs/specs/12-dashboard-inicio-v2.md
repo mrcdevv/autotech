@@ -1291,135 +1291,135 @@ No new routes needed. The dashboard remains at `/` and the settings page remains
 
 ### 8.1 Backend — Setup
 
-- [ ] Add Apache POI dependency to `pom.xml`
-- [ ] Create migration `V2__add_dashboard_config.sql`
-- [ ] Create `DashboardConfig` entity
-- [ ] Create `DashboardConfigRepository`
+- [x] Add Apache POI dependency to `pom.xml`
+- [x] Create migration `V3__add_dashboard_config.sql` (renamed from V2)
+- [x] Create `DashboardConfig` entity
+- [x] Create `DashboardConfigRepository`
 
 ### 8.2 Backend — DTOs
 
-- [ ] Update `DashboardSummaryResponse` (add `averageTicket`, `todayAppointments`, `staleOrderAlerts`, `pendingEstimateAlerts`, `staleThresholdDays`; remove `totalPendingBilling`)
-- [ ] Create `TodayAppointmentResponse`
-- [ ] Create `StaleOrderAlertResponse`
-- [ ] Create `PendingEstimateAlertResponse`
-- [ ] Create `DashboardFinancieroResponse`
-- [ ] Create `MonthlyRevenueResponse`
-- [ ] Create `DebtAgingResponse`
-- [ ] Keep `UnpaidInvoiceResponse` (unchanged)
-- [ ] Create `DashboardProductividadResponse`
-- [ ] Create `MechanicProductivityResponse`
-- [ ] Create `TopServiceResponse`
-- [ ] Create `DashboardConfigRequest`
-- [ ] Create `DashboardConfigResponse`
-- [ ] Keep `StatusCountResponse` (unchanged)
+- [x] Update `DashboardSummaryResponse` (add `averageTicket`, `todayAppointments`, `staleOrderAlerts`, `pendingEstimateAlerts`, `staleThresholdDays`; removed `totalPendingBilling`)
+- [x] Create `TodayAppointmentResponse`
+- [x] Create `StaleOrderAlertResponse`
+- [x] Create `PendingEstimateAlertResponse`
+- [x] Create `DashboardFinancieroResponse`
+- [x] Create `MonthlyRevenueResponse`
+- [x] Create `DebtAgingResponse`
+- [x] Keep `UnpaidInvoiceResponse` → renamed in codebase to use `TopUnpaidDeliveryNotesList` component (backend uses DeliveryNote instead of Invoice)
+- [x] Create `DashboardProductividadResponse`
+- [x] Create `MechanicProductivityResponse`
+- [x] Create `TopServiceResponse`
+- [x] Create `DashboardConfigRequest`
+- [x] Create `DashboardConfigResponse`
+- [x] Keep `StatusCountResponse` (unchanged)
 
 ### 8.3 Backend — Repository Methods
 
-- [ ] `RepairOrderRepository.findStaleOrders(threshold, excludedStatus)`
-- [ ] `RepairOrderRepository.avgRepairDaysByStatusAndUpdatedAtBetween(status, start, end)`
-- [ ] `RepairOrderRepository.countCompletedByEmployee(status, start, end)`
-- [ ] `InvoiceRepository.avgTotalByStatusAndCreatedAtBetween(status, start, end)`
-- [ ] `InvoiceRepository.sumTotalByStatusGroupByMonth(status, start, end)`
-- [ ] `InvoiceRepository.countAndSumByStatusAndCreatedAtBetween(status, start, end)`
-- [ ] `InvoiceRepository.countAndSumByStatusAndCreatedAtBefore(status, before)`
-- [ ] `InvoiceRepository.findTopServiceNames(status, start, end, pageable)`
-- [ ] `EstimateRepository.countByStatusAndCreatedAtBetween(status, start, end)`
-- [ ] `EstimateRepository.countByCreatedAtBetween(start, end)`
-- [ ] `EstimateRepository.findPendingOlderThan(status, threshold)`
+- [x] `RepairOrderRepository.findStaleOrders(threshold, excludedStatus)`
+- [x] `RepairOrderRepository.avgRepairDaysByStatusAndUpdatedAtBetween(status, start, end)`
+- [x] `RepairOrderRepository.countCompletedByEmployee(status, start, end)`
+- [x] `DeliveryNoteRepository.avgTotalByStatusAndCreatedAtBetween(status, start, end)` (renamed from InvoiceRepository)
+- [x] `DeliveryNoteRepository.sumTotalByStatusGroupByMonth(status, start, end)` (renamed from InvoiceRepository)
+- [x] `DeliveryNoteRepository.countAndSumByStatusAndCreatedAtBetween(status, start, end)` (renamed from InvoiceRepository)
+- [x] `DeliveryNoteRepository.countAndSumByStatusAndCreatedAtBefore(status, before)` (renamed from InvoiceRepository)
+- [x] `DeliveryNoteRepository.findTopServiceNames(status, start, end, pageable)` (renamed from InvoiceRepository)
+- [x] `EstimateRepository.countByStatusAndCreatedAtBetween(status, start, end)`
+- [x] `EstimateRepository.countByCreatedAtBetween(start, end)`
+- [x] `EstimateRepository.findPendingOlderThan(status, threshold)`
 
 ### 8.4 Backend — Services
 
-- [ ] Update `DashboardService` interface (add `getFinanciero`, `getProductividad`, `getConfig`, `updateConfig`)
-- [ ] Update `DashboardServiceImpl.getSummary()` (add avg ticket, appointments list, stale alerts, pending estimates)
-- [ ] Implement `DashboardServiceImpl.getFinanciero(months)`
-- [ ] Implement `DashboardServiceImpl.getProductividad()`
-- [ ] Implement `DashboardServiceImpl.getConfig()` and `updateConfig()`
-- [ ] Create `DashboardExportService` interface
-- [ ] Create `DashboardExportServiceImpl` with Apache POI (XSSFTable, TableStyleMedium2)
-- [ ] Implement `exportFinanciero()` (4 sheets: Monthly Revenue, Debt Aging, Unpaid Invoices, Summary)
-- [ ] Implement `exportProductividad()` (2 sheets: Mechanic Productivity, Top Services)
+- [x] Update `DashboardService` interface (add `getFinanciero`, `getProductividad`, `getConfig`, `updateConfig`)
+- [x] Update `DashboardServiceImpl.getSummary()` (add avg ticket, appointments list, stale alerts, pending estimates)
+- [x] Implement `DashboardServiceImpl.getFinanciero(months)`
+- [x] Implement `DashboardServiceImpl.getProductividad()`
+- [x] Implement `DashboardServiceImpl.getConfig()` and `updateConfig()`
+- [x] Create `DashboardExportService` interface
+- [x] Create `DashboardExportServiceImpl` with Apache POI (XSSFTable, TableStyleMedium2)
+- [x] Implement `exportFinanciero()` (4 sheets: Monthly Revenue, Debt Aging, Unpaid Invoices, Summary)
+- [x] Implement `exportProductividad()` (2 sheets: Mechanic Productivity, Top Services)
 
 ### 8.5 Backend — Controller
 
-- [ ] Update `DashboardController` (add 6 new endpoints: financiero, productividad, config GET/PUT, export x2)
-- [ ] Verify backend compiles: `./mvnw clean compile`
-- [ ] Verify backend starts: `./mvnw clean spring-boot:run`
+- [x] Update `DashboardController` (add 6 new endpoints: financiero, productividad, config GET/PUT, export x2)
+- [x] Verify backend compiles: `./mvnw clean compile`
+- [x] Verify backend starts: `./mvnw clean spring-boot:run`
 
 ### 8.6 Frontend — Setup
 
-- [ ] Install `@mui/x-charts`: `npm install @mui/x-charts`
-- [ ] Update types in `src/features/dashboard/types.ts`
-- [ ] Update API layer in `src/api/dashboard.ts`
+- [x] Install `@mui/x-charts`: `npm install @mui/x-charts`
+- [x] Update types in `src/features/dashboard/types.ts`
+- [x] Update API layer in `src/api/dashboard.ts`
 
 ### 8.7 Frontend — Hooks
 
-- [ ] Update `useDashboard.ts` (returns enhanced summary)
-- [ ] Create `useFinanciero.ts` (with months param + exportToExcel)
-- [ ] Create `useProductividad.ts` (with exportToExcel)
+- [x] Update `useDashboard.ts` (returns enhanced summary)
+- [x] Create `useFinanciero.ts` (with months param + exportToExcel)
+- [x] Create `useProductividad.ts` (with exportToExcel)
 
 ### 8.8 Frontend — Components
 
-- [ ] Create `TodayAppointmentsList` — next 5 appointments with time, client, plate, purpose
-- [ ] Create `StaleOrderAlerts` — warning alerts for stale orders
-- [ ] Create `PendingEstimateAlerts` — info alerts for pending estimates
-- [ ] Create `MonthlyRevenueChart` — MUI X Charts `BarChart` with 6/12 toggle
-- [ ] Create `DebtAgingTable` — MUI Table with 4 age ranges
-- [ ] Create `MechanicProductivityTable` — MUI Table with mechanic stats
-- [ ] Create `TopServicesTable` — MUI Table with top billed services
-- [ ] Create `FinancieroTab` — composes chart + KPIs + tables + export button
-- [ ] Create `ProductividadTab` — composes avg time + tables + export button
-- [ ] Keep `KpiCard`, `StatusBreakdownCard`, `TopUnpaidInvoicesList` (unchanged or minor updates)
+- [x] Create `UpcomingAppointments` component (renamed from TodayAppointmentsList) — next 5 appointments with time, client, plate, purpose
+- [x] Create `StaleOrderAlerts` — warning alerts for stale orders
+- [x] Create `PendingEstimateAlerts` — info alerts for pending estimates
+- [x] Create `MonthlyRevenueChart` — MUI X Charts `BarChart` with 6/12 toggle
+- [x] Create `DebtAgingTable` — MUI Table with 4 age ranges
+- [x] Create `MechanicProductivityTable` — MUI Table with mechanic stats
+- [x] Create `TopServicesTable` — MUI Table with top billed services
+- [x] Create `FinancieroTab` — composes chart + KPIs + tables + export button
+- [x] Create `ProductividadTab` — composes avg time + tables + export button
+- [x] Keep `KpiStrip` (renamed from KpiCard, unchanged or minor updates), `TopUnpaidDeliveryNotesList` (renamed from TopUnpaidInvoicesList) — no `StatusBreakdownCard` as a standalone file (N/A — inlined in DashboardPage)
 
 ### 8.9 Frontend — Pages
 
-- [ ] Update `DashboardPage` — fixed top section + tabbed bottom section
-- [ ] Update `SettingsPage` — add 5th tab "Dashboard"
-- [ ] Create `DashboardSettingsTab` — stale threshold config form
+- [x] Update `DashboardPage` — fixed top section + tabbed bottom section
+- [x] Update `SettingsPage` — add 5th tab "Dashboard"
+- [x] Create `DashboardSettingsTab` — stale threshold config form
 
 ### 8.10 Frontend — Verification
 
-- [ ] Verify frontend compiles: `npx tsc --noEmit`
-- [ ] Verify frontend runs: `npm run dev`
+- [x] Verify frontend compiles: `npx tsc --noEmit`
+- [x] Verify frontend runs: `npm run dev`
 
 ### 8.11 Business Rules Verification
 
-- [ ] Open repair orders = non-ENTREGADO
-- [ ] Monthly revenue = sum of paid invoices for current month
-- [ ] Average ticket = mean of paid invoice totals for current month
-- [ ] Today's appointments = count + list (max 5) ordered by start_time ASC
-- [ ] Stale order threshold = configurable via Settings, default 5 days
-- [ ] Pending estimate alerts use same threshold as stale orders
-- [ ] Monthly revenue chart default 6 months, toggleable to 12
-- [ ] Estimate conversion rate = accepted / total * 100 for current month
-- [ ] Debt aging grouped into 4 ranges (0-30, 31-60, 61-90, 90+)
-- [ ] Top unpaid invoices limited to 10, ordered by total DESC
-- [ ] Average repair time = mean days (created_at to updated_at) for ENTREGADO this month
-- [ ] Completed orders by mechanic for current month
-- [ ] Top services = top 10 from invoice_services on paid invoices this month
-- [ ] Excel export uses XSSFTable with TableStyleMedium2, auto-sized columns
-- [ ] One export button per tab
-- [ ] Currency formatted as Argentine pesos
-- [ ] Dashboard config is singleton (1 row)
+- [x] Open repair orders = non-ENTREGADO
+- [x] Monthly revenue = sum of paid delivery notes for current month (renamed from "invoices" in codebase)
+- [x] Average ticket = mean of paid delivery note totals for current month
+- [x] Today's appointments = count + list (max 5) ordered by start_time ASC (via `TodayAppointmentResponse`)
+- [x] Stale order threshold = configurable via Settings, default 5 days (via `DashboardConfig`)
+- [x] Pending estimate alerts use same threshold as stale orders
+- [x] Monthly revenue chart default 6 months, toggleable to 12
+- [x] Estimate conversion rate = accepted / total * 100 for current month (via `EstimateRepository.countByStatusAndCreatedAtBetween`)
+- [x] Debt aging grouped into 4 ranges (0-30, 31-60, 61-90, 90+)
+- [x] Top unpaid delivery notes limited to 10, ordered by total DESC (renamed from "invoices")
+- [x] Average repair time = mean days (created_at to updated_at) for ENTREGADO this month (via `avgRepairDaysByStatusAndUpdatedAtBetween`)
+- [x] Completed orders by mechanic for current month (via `countCompletedByEmployee`)
+- [x] Top services = top 10 from delivery_note_services on paid delivery notes this month (renamed from "invoice_services" on "invoices")
+- [x] Excel export uses XSSFTable with TableStyleMedium2, auto-sized columns (via `DashboardExportServiceImpl`)
+- [x] One export button per tab
+- [x] Currency formatted as Argentine pesos
+- [x] Dashboard config is singleton (1 row) — verified in `V3__add_dashboard_config.sql`
 
 ### 8.12 Testing
 
-- [ ] `DashboardServiceImplTest` — unit tests for getSummary, getFinanciero, getProductividad, getConfig, updateConfig
-- [ ] `DashboardExportServiceImplTest` — unit tests for exportFinanciero, exportProductividad (verify .xlsx content)
-- [ ] `DashboardControllerTest` — @WebMvcTest for all 7 endpoints
-- [ ] `DashboardPage.test.tsx`
-- [ ] `TodayAppointmentsList.test.tsx`
-- [ ] `StaleOrderAlerts.test.tsx`
-- [ ] `PendingEstimateAlerts.test.tsx`
-- [ ] `FinancieroTab.test.tsx`
-- [ ] `ProductividadTab.test.tsx`
-- [ ] `MonthlyRevenueChart.test.tsx`
-- [ ] `DebtAgingTable.test.tsx`
-- [ ] `MechanicProductivityTable.test.tsx`
-- [ ] `TopServicesTable.test.tsx`
-- [ ] `DashboardSettingsTab.test.tsx`
-- [ ] `useDashboard.test.ts` (update)
-- [ ] `useFinanciero.test.ts`
-- [ ] `useProductividad.test.ts`
-- [ ] `KpiCard.test.tsx` (keep existing)
-- [ ] `StatusBreakdownCard.test.tsx` (keep existing)
-- [ ] `TopUnpaidInvoicesList.test.tsx` (keep existing)
+- [x] `DashboardServiceImplTest` — unit tests for getSummary, getFinanciero, getProductividad, getConfig, updateConfig
+- [x] `DashboardExportServiceImplTest` — unit tests for exportFinanciero, exportProductividad (verify .xlsx content)
+- [x] `DashboardControllerTest` — @WebMvcTest for all 7 endpoints
+- [x] `DashboardPage.test.tsx`
+- [x] `UpcomingAppointments.test.tsx` — renamed from TodayAppointmentsList (no standalone test for TodayAppointmentsList)
+- [x] `StaleOrderAlerts.test.tsx`
+- [x] `PendingEstimateAlerts.test.tsx`
+- [x] `FinancieroTab.test.tsx`
+- [x] `ProductividadTab.test.tsx`
+- [x] `MonthlyRevenueChart.test.tsx`
+- [x] `DebtAgingTable.test.tsx`
+- [x] `MechanicProductivityTable.test.tsx`
+- [x] `TopServicesTable.test.tsx`
+- [x] `DashboardSettingsTab.test.tsx`
+- [x] `useDashboard.test.ts` (update)
+- [x] `useFinanciero.test.ts`
+- [x] `useProductividad.test.ts`
+- [x] `KpiStrip.test.tsx` — renamed from KpiCard (no standalone test file for KpiCard)
+- [ ] `StatusBreakdownCard.test.tsx` — (pendiente) no standalone test file exists; component is inlined in DashboardPage
+- [x] `TopUnpaidDeliveryNotesList.test.tsx` — renamed from TopUnpaidInvoicesList

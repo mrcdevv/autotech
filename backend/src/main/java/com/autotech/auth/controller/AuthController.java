@@ -11,6 +11,7 @@ import com.autotech.common.dto.ApiResponse;
 import com.autotech.security.JwtTokenProvider;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -64,6 +65,10 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<CurrentUserResponse>> me(@AuthenticationPrincipal UserDetails currentUser) {
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("No autenticado. Inicie sesión para continuar"));
+        }
         return ResponseEntity.ok(ApiResponse.success(authService.getCurrentUser(currentUser.getUsername())));
     }
 
