@@ -354,7 +354,7 @@ class DashboardServiceImplTest {
     @Test
     void givenData_whenGetProductividad_thenReturnAllFields() {
         // Arrange
-        when(repairOrderRepository.avgRepairDaysByStatusAndUpdatedAtBetween(
+        when(repairOrderRepository.avgRepairDaysByStatusAndDeliveredAtBetween(
                 eq(RepairOrderStatus.ENTREGADO), any(), any()))
                 .thenReturn(new BigDecimal("3.5"));
         List<Object[]> mechanicData = new java.util.ArrayList<>();
@@ -380,7 +380,7 @@ class DashboardServiceImplTest {
     @Test
     void givenNoData_whenGetProductividad_thenReturnZeros() {
         // Arrange
-        when(repairOrderRepository.avgRepairDaysByStatusAndUpdatedAtBetween(any(), any(), any()))
+        when(repairOrderRepository.avgRepairDaysByStatusAndDeliveredAtBetween(any(), any(), any()))
                 .thenReturn(null);
         when(repairOrderRepository.countCompletedByEmployee(any(), any(), any()))
                 .thenReturn(Collections.emptyList());

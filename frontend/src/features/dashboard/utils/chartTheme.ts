@@ -88,3 +88,15 @@ export const CHART_ANIMATION_SX = {
     transition: "filter 200ms ease, opacity 200ms ease",
   },
 };
+
+/** Fixed width for currency Y axes so labels like "$ 400.000" are never cut ("$ 40..."). */
+export const CURRENCY_AXIS_WIDTH = 80;
+
+/** Collected vs. pending: they differ in lightness, not only in hue. */
+export const BILLING_COLORS = {
+  collected: "#1F3F66",
+  pending: "#FFB27A",
+} as const;
+
+/** Debt age buckets 0-30, 31-60, 61-90 and 90+: darker means older. */
+export const DEBT_AGING_COLORS = ["#FFD2AE", "#FF9A52", "#D95E00", "#8A2A12"] as const;

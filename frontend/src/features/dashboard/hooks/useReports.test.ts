@@ -27,20 +27,31 @@ function makeResponse(payload: DashboardReportsResponse) {
   return { data: { data: payload } };
 }
 
-const OLDER: DashboardReportsResponse = {
-  monthlyBilling: [{ year: 2025, month: 1, total: 100 }],
-  topServices: [],
-  serviceRevenue: [],
-  brandCounts: [],
-};
+function makeReport(month: number, billed: number): DashboardReportsResponse {
+  return {
+    kpis: {
+      totalBilled: billed,
+      totalCollected: 0,
+      totalPending: billed,
+      deliveryNoteCount: 1,
+      pendingDeliveryNoteCount: 1,
+      averageTicket: billed,
+      estimatesTotal: 0,
+      estimatesAccepted: 0,
+      repairOrderCount: 0,
+    },
+    monthlyBilling: [{ year: 2025, month, billed, collected: 0 }],
+    services: [],
+    brandCounts: [],
+    debtAging: [],
+    unpaidDeliveryNotes: [],
+    mechanicProductivity: [],
+    averageRepairDays: 0,
+  };
+}
 
-const NEWER: DashboardReportsResponse = {
-  monthlyBilling: [{ year: 2025, month: 2, total: 200 }],
-  topServices: [],
-  serviceRevenue: [],
-  brandCounts: [],
-};
-
+const OLDER = makeReport(1, 100);
+const NEWER = makeReport(2, 200);
 describe("useReports", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -85,5 +96,15 @@ describe("useReports", () => {
     expect(result.current.loading).toBe(false);
     expect(result.current.error).toBe("No se pudieron cargar los datos de este informe.");
     expect(result.current.data).toBeNull();
+  });
+
+  it("given an empty period, when rendered, then skips the request and returns null", async () => {
+    const { result } = renderHook(() => useReports("", ""));
+
+    await act(async () => {});
+
+    expect(mockGetReports).not.toHaveBeenCalled();
+    expect(result.current.data).toBeNull();
+    expect(result.current.error).toBeNull();
   });
 });

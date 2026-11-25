@@ -1,4 +1,4 @@
-import { MenuItem, Stack, TextField } from "@mui/material";
+import { Stack, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 
@@ -26,39 +26,56 @@ export function ReportPeriodFilter({
   return (
     <Stack
       direction={{ xs: "column", sm: "row" }}
-      spacing={2}
+      spacing={1.5}
       alignItems={{ xs: "stretch", sm: "center" }}
+      useFlexGap
+      flexWrap="wrap"
     >
-      <TextField
-        select
+      <ToggleButtonGroup
+        exclusive
         size="small"
-        label="Período"
+        aria-label="Período"
         value={preset}
-        onChange={(event) => onPresetChange(event.target.value as ReportPeriodPreset)}
-        sx={{ minWidth: 200 }}
+        // A click on the selected option sends null: keep the current period.
+        onChange={(_, value: ReportPeriodPreset | null) => value && onPresetChange(value)}
+        sx={{ flexWrap: "wrap", bgcolor: "background.paper" }}
       >
         {REPORT_PERIOD_OPTIONS.map((option) => (
-          <MenuItem key={option.value} value={option.value}>
+          <ToggleButton
+            key={option.value}
+            value={option.value}
+            sx={{
+              px: 1.75,
+              textTransform: "none",
+              fontWeight: 500,
+              "&.Mui-selected, &.Mui-selected:hover": {
+                bgcolor: "text.primary",
+                color: "background.paper",
+              },
+            }}
+          >
             {option.label}
-          </MenuItem>
+          </ToggleButton>
         ))}
-      </TextField>
+      </ToggleButtonGroup>
 
       {preset === "custom" && (
-        <>
+        <Stack direction="row" spacing={1.5}>
           <DatePicker
             label="Desde"
             value={customFrom ? dayjs(customFrom) : null}
-            onChange={(value) => value && onCustomFromChange(value.format("YYYY-MM-DD"))}
-            slotProps={{ textField: { size: "small" } }}
+            maxDate={customTo ? dayjs(customTo) : undefined}
+            onChange={(value) => value?.isValid() && onCustomFromChange(value.format("YYYY-MM-DD"))}
+            slotProps={{ textField: { size: "small", sx: { width: 160 } } }}
           />
           <DatePicker
             label="Hasta"
             value={customTo ? dayjs(customTo) : null}
-            onChange={(value) => value && onCustomToChange(value.format("YYYY-MM-DD"))}
-            slotProps={{ textField: { size: "small" } }}
+            minDate={customFrom ? dayjs(customFrom) : undefined}
+            onChange={(value) => value?.isValid() && onCustomToChange(value.format("YYYY-MM-DD"))}
+            slotProps={{ textField: { size: "small", sx: { width: 160 } } }}
           />
-        </>
+        </Stack>
       )}
     </Stack>
   );

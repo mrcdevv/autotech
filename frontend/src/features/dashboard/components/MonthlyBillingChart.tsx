@@ -1,7 +1,6 @@
 import { Box } from "@mui/material";
 import { BarChart } from "@mui/x-charts/BarChart";
 
-import { barFillStyle } from "@/features/dashboard/utils/barStyle";
 import {
   MONTH_LABELS,
   buildMonthlyBillingBuckets,
@@ -9,34 +8,39 @@ import {
 import {
   AXIS_TICK_LABEL,
   BASE_CHART_SX,
+  BILLING_COLORS,
   CHART_ANIMATION_SX,
-  CHART_COLORS,
+  CURRENCY_AXIS_WIDTH,
 } from "@/features/dashboard/utils/chartTheme";
 import { formatCurrencyWhole } from "@/utils/formatCurrency";
 
-import { BarGradientDefs } from "./BarGradientDefs";
-
-import type { MonthlyRevenueResponse } from "@/features/dashboard/types";
+import type { MonthlyBillingResponse } from "@/features/dashboard/types";
 
 interface MonthlyBillingChartProps {
-  data: MonthlyRevenueResponse[];
+  data: MonthlyBillingResponse[];
   from: string;
   to: string;
 }
 
+// Whole numbers on purpose (decision D2): chart axes and tooltips stay readable without
+// cents. Do NOT switch to formatCurrency here. null/undefined stay empty.
+function wholeCurrency(value: number | null | undefined): string {
+  return value == null ? "" : formatCurrencyWhole(value);
+}
+
+/** Billed per month, split into the collected part and the part still pending. */
 export function MonthlyBillingChart({ data, from, to }: MonthlyBillingChartProps) {
   const buckets = buildMonthlyBillingBuckets(data, from, to);
   const labels = buckets.map((item) => `${MONTH_LABELS[item.month - 1]} ${item.year}`);
-  const values = buckets.map((item) => item.total);
+  const collected = buckets.map((item) => item.collected);
+  const pending = buckets.map((item) => Math.max(item.billed - item.collected, 0));
 
   return (
     <Box sx={{ width: "100%" }}>
-      <BarGradientDefs />
       <BarChart
         height={320}
-        borderRadius={6}
+        borderRadius={4}
         margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
-        hideLegend
         grid={{ horizontal: true }}
         xAxis={[
           {
@@ -49,28 +53,31 @@ export function MonthlyBillingChart({ data, from, to }: MonthlyBillingChartProps
         ]}
         yAxis={[
           {
+            width: CURRENCY_AXIS_WIDTH,
             disableLine: true,
             disableTicks: true,
             tickLabelStyle: AXIS_TICK_LABEL,
-            // Whole numbers on purpose (decision D2): the series valueFormatter feeds
-            // tooltips/legend only; tick labels need the axis-level formatter.
-            // null/undefined stay empty.
-            valueFormatter: (value: number | null | undefined) =>
-              value == null ? "" : formatCurrencyWhole(value),
+            // The series valueFormatter feeds tooltips only; ticks need the axis one.
+            valueFormatter: wholeCurrency,
           },
         ]}
         series={[
           {
-            data: values,
-            label: "Remitos",
-            color: CHART_COLORS.graphite.base,
-            // Whole numbers on purpose (decision D2): chart tooltips/axes stay readable
-            // without cents. Do NOT switch to formatCurrency here.
-            valueFormatter: (value) =>
-              value == null ? "" : formatCurrencyWhole(value),
+            data: collected,
+            label: "Cobrado",
+            stack: "billed",
+            color: BILLING_COLORS.collected,
+            valueFormatter: wholeCurrency,
+          },
+          {
+            data: pending,
+            label: "Pendiente",
+            stack: "billed",
+            color: BILLING_COLORS.pending,
+            valueFormatter: wholeCurrency,
           },
         ]}
-        slotProps={{ bar: { style: barFillStyle("graphite") } }}
+        slotProps={{ legend: { position: { vertical: "top", horizontal: "end" } } }}
         sx={[BASE_CHART_SX, CHART_ANIMATION_SX]}
       />
     </Box>

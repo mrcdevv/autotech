@@ -2,8 +2,6 @@ import apiClient from "./client";
 import type { ApiResponse } from "@/types/api";
 import type {
   DashboardSummaryResponse,
-  DashboardFinancieroResponse,
-  DashboardProductividadResponse,
   DashboardConfigResponse,
   DashboardConfigRequest,
   DashboardReportsResponse,
@@ -13,16 +11,6 @@ import type {
 export const dashboardApi = {
   getSummary: () =>
     apiClient.get<ApiResponse<DashboardSummaryResponse>>("/dashboard/summary"),
-
-  getFinanciero: (months: number = 6) =>
-    apiClient.get<ApiResponse<DashboardFinancieroResponse>>(
-      `/dashboard/financiero?months=${months}`
-    ),
-
-  getProductividad: () =>
-    apiClient.get<ApiResponse<DashboardProductividadResponse>>(
-      "/dashboard/productividad"
-    ),
 
   getReports: (from: string, to: string) =>
     apiClient.get<ApiResponse<DashboardReportsResponse>>(
@@ -36,6 +24,11 @@ export const dashboardApi = {
     );
   },
 
+  exportReports: (from: string, to: string) =>
+    apiClient.get<Blob>(`/dashboard/reports/export?from=${from}&to=${to}`, {
+      responseType: "blob",
+    }),
+
   getConfig: () =>
     apiClient.get<ApiResponse<DashboardConfigResponse>>("/dashboard/config"),
 
@@ -44,14 +37,4 @@ export const dashboardApi = {
       "/dashboard/config",
       data
     ),
-
-  exportFinanciero: (months: number = 6) =>
-    apiClient.get<Blob>(`/dashboard/export/financiero?months=${months}`, {
-      responseType: "blob",
-    }),
-
-  exportProductividad: () =>
-    apiClient.get<Blob>("/dashboard/export/productividad", {
-      responseType: "blob",
-    }),
 };

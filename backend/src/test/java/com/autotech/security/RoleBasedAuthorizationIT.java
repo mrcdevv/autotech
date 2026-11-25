@@ -165,6 +165,12 @@ class RoleBasedAuthorizationIT {
                 Arguments.of(TestUser.MECANICO, HttpMethod.GET, "/api/products/low-stock", true),
                 Arguments.of(TestUser.MECANICO, HttpMethod.GET, "/api/dashboard/summary", true),
                 Arguments.of(TestUser.MECANICO, HttpMethod.GET, reportsUrl(), false),
+                // Financial data and its exports follow the reports permission
+                Arguments.of(TestUser.MECANICO, HttpMethod.GET, "/api/dashboard/financiero", false),
+                Arguments.of(TestUser.MECANICO, HttpMethod.GET, "/api/dashboard/productividad", false),
+                Arguments.of(TestUser.MECANICO, HttpMethod.GET, "/api/dashboard/export/financiero", false),
+                Arguments.of(TestUser.MECANICO, HttpMethod.GET, "/api/dashboard/export/productividad", false),
+                Arguments.of(TestUser.MECANICO, HttpMethod.GET, reportsExportUrl(), false),
                 // RECEPCIONISTA
                 Arguments.of(TestUser.RECEPCIONISTA, HttpMethod.DELETE, "/api/clients/" + UNKNOWN_ID, true),
                 Arguments.of(TestUser.RECEPCIONISTA, HttpMethod.DELETE, "/api/vehicles/" + UNKNOWN_ID, true),
@@ -197,7 +203,9 @@ class RoleBasedAuthorizationIT {
                 Arguments.of(TestUser.ADMINISTRADOR, HttpMethod.GET, "/api/permissions", true),
                 Arguments.of(TestUser.ADMINISTRADOR, HttpMethod.DELETE, "/api/employees/" + UNKNOWN_ID, true),
                 Arguments.of(TestUser.ADMINISTRADOR, HttpMethod.DELETE, "/api/tags/" + UNKNOWN_ID, true),
-                Arguments.of(TestUser.ADMINISTRADOR, HttpMethod.GET, reportsUrl(), true)
+                Arguments.of(TestUser.ADMINISTRADOR, HttpMethod.GET, reportsUrl(), true),
+                Arguments.of(TestUser.ADMINISTRADOR, HttpMethod.GET, "/api/dashboard/financiero", true),
+                Arguments.of(TestUser.ADMINISTRADOR, HttpMethod.GET, reportsExportUrl(), true)
         );
     }
 
@@ -359,6 +367,10 @@ class RoleBasedAuthorizationIT {
 
     private static String reportsUrl() {
         return "/api/dashboard/reports/summary?from=2026-01-01&to=2026-12-31";
+    }
+
+    private static String reportsExportUrl() {
+        return "/api/dashboard/reports/export?from=2026-01-01&to=2026-12-31";
     }
 
     private void upsertEmployee(TestUser user) {

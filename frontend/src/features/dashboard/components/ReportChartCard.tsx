@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 interface ReportChartCardProps {
   title: string;
+  subtitle?: string;
   loading: boolean;
   error: string | null;
   isEmpty: boolean;
@@ -13,6 +14,7 @@ interface ReportChartCardProps {
 
 export function ReportChartCard({
   title,
+  subtitle,
   loading,
   error,
   isEmpty,
@@ -26,12 +28,22 @@ export function ReportChartCard({
           sx={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center",
+            alignItems: "flex-start",
+            flexWrap: "wrap",
             gap: 1,
             mb: 2,
           }}
         >
-          <Typography variant="h6">{title}</Typography>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="h6" component="h2">
+              {title}
+            </Typography>
+            {subtitle && (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                {subtitle}
+              </Typography>
+            )}
+          </Box>
           {action}
         </Box>
         {loading ? (

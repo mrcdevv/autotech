@@ -60,10 +60,30 @@ export interface DashboardSummaryResponse {
   lowStockAlerts: LowStockAlertResponse[];
 }
 
-export interface MonthlyRevenueResponse {
+export interface ReportKpisResponse {
+  totalBilled: number;
+  /** Total of the delivery notes marked as paid. */
+  totalCollected: number;
+  totalPending: number;
+  deliveryNoteCount: number;
+  pendingDeliveryNoteCount: number;
+  averageTicket: number;
+  estimatesTotal: number;
+  estimatesAccepted: number;
+  repairOrderCount: number;
+}
+
+export interface MonthlyBillingResponse {
   year: number;
   month: number;
-  total: number;
+  billed: number;
+  collected: number;
+}
+
+export interface ServiceStatsResponse {
+  serviceName: string;
+  count: number;
+  totalRevenue: number;
 }
 
 export interface DebtAgingResponse {
@@ -80,36 +100,10 @@ export interface UnpaidDeliveryNoteResponse {
   createdAt: string;
 }
 
-export interface DashboardFinancieroResponse {
-  monthlyRevenue: MonthlyRevenueResponse[];
-  estimateConversionRate: number;
-  estimatesAccepted: number;
-  estimatesTotal: number;
-  totalPendingBilling: number;
-  debtAging: DebtAgingResponse[];
-  topUnpaidDeliveryNotes: UnpaidDeliveryNoteResponse[];
-}
-
 export interface MechanicProductivityResponse {
   employeeId: number;
   employeeFullName: string;
   completedOrders: number;
-}
-
-export interface TopServiceResponse {
-  serviceName: string;
-  count: number;
-}
-
-export interface DashboardProductividadResponse {
-  averageRepairDays: number;
-  mechanicProductivity: MechanicProductivityResponse[];
-  topServices: TopServiceResponse[];
-}
-
-export interface ServiceRevenueResponse {
-  serviceName: string;
-  totalRevenue: number;
 }
 
 export interface BrandCountResponse {
@@ -122,11 +116,16 @@ export interface FaultCountResponse {
   count: number;
 }
 
+/** debtAging and unpaidDeliveryNotes are the debt as of today, regardless of the period. */
 export interface DashboardReportsResponse {
-  monthlyBilling: MonthlyRevenueResponse[];
-  topServices: TopServiceResponse[];
-  serviceRevenue: ServiceRevenueResponse[];
+  kpis: ReportKpisResponse;
+  monthlyBilling: MonthlyBillingResponse[];
+  services: ServiceStatsResponse[];
   brandCounts: BrandCountResponse[];
+  debtAging: DebtAgingResponse[];
+  unpaidDeliveryNotes: UnpaidDeliveryNoteResponse[];
+  mechanicProductivity: MechanicProductivityResponse[];
+  averageRepairDays: number;
 }
 
 export interface DashboardConfigResponse {
