@@ -136,7 +136,7 @@ export function AppointmentCard({
               onMenuOpen(e, appointment);
             }}
           >
-            <MoreVertIcon sx={{ fontSize: 12 }} />
+            <MoreVertIcon sx={{ fontSize: 12 }} aria-label="Más opciones" />
           </IconButton>
         </Box>
       </Box>
@@ -240,7 +240,7 @@ export function AppointmentCard({
                   onMenuOpen(e, appointment);
                 }}
               >
-                <MoreVertIcon sx={{ fontSize: 16 }} />
+                <MoreVertIcon sx={{ fontSize: 16 }} aria-label="Más opciones" />
               </IconButton>
             </Box>
           </Box>
@@ -407,7 +407,7 @@ export function MultiDayBar({ appointment, onClick, onMenuOpen }: MultiDayBarPro
             onMenuOpen(e, appointment);
           }}
         >
-          <MoreVertIcon sx={{ fontSize: 14 }} />
+          <MoreVertIcon sx={{ fontSize: 14 }} aria-label="Más opciones" />
         </IconButton>
       </Box>
     </Box>

@@ -118,7 +118,11 @@ export function ChangePassword() {
                 input: {
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton onClick={() => setShowCurrent(!showCurrent)} edge="end">
+                      <IconButton
+                        aria-label={showCurrent ? "Ocultar contraseña" : "Mostrar contraseña"}
+                        onClick={() => setShowCurrent(!showCurrent)}
+                        edge="end"
+                      >
                         {showCurrent ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
@@ -141,7 +145,11 @@ export function ChangePassword() {
                 input: {
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton onClick={() => setShowNew(!showNew)} edge="end">
+                      <IconButton
+                        aria-label={showNew ? "Ocultar contraseña" : "Mostrar contraseña"}
+                        onClick={() => setShowNew(!showNew)}
+                        edge="end"
+                      >
                         {showNew ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
@@ -164,7 +172,11 @@ export function ChangePassword() {
                 input: {
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton onClick={() => setShowConfirm(!showConfirm)} edge="end">
+                      <IconButton
+                        aria-label={showConfirm ? "Ocultar contraseña" : "Mostrar contraseña"}
+                        onClick={() => setShowConfirm(!showConfirm)}
+                        edge="end"
+                      >
                         {showConfirm ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>

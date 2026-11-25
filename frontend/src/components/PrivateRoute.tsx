@@ -15,7 +15,7 @@ export function PrivateRoute() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   if (user?.mustChangePassword && location.pathname !== "/change-password") {
