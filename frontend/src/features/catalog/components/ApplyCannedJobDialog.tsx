@@ -13,7 +13,7 @@ import {
   TableHead,
   TableRow,
 } from "@mui/material";
-import { Fastfood as FastfoodIcon } from "@mui/icons-material";
+import LayersOutlinedIcon from "@mui/icons-material/LayersOutlined";
 import { formatCurrency } from "@/utils/formatCurrency";
 
 import { cannedJobsApi } from "@/api/cannedJobs";
@@ -226,7 +226,7 @@ export function ApplyCannedJobDialog({ open, onClose, onApply }: ApplyCannedJobD
 
         {!detail && !loadingDetail && !loadError && selected == null && (
           <Box sx={{ py: 3, textAlign: "center" }}>
-            <FastfoodIcon sx={{ fontSize: 36, color: "grey.300", mb: 1 }} />
+            <LayersOutlinedIcon sx={{ fontSize: 36, color: "grey.300", mb: 1 }} />
             <Typography variant="body2" sx={{ color: "text.secondary" }}>
               Seleccioná un paquete para ver su contenido
             </Typography>

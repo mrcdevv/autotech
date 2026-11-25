@@ -652,16 +652,6 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
       )}
       {!isReadonly && (
         <Button
-          variant="outlined"
-          startIcon={<LayersOutlinedIcon />}
-          onClick={() => setCannedJobDialogOpen(true)}
-          fullWidth
-        >
-          Insertar paquete
-        </Button>
-      )}
-      {!isReadonly && (
-        <Button
           variant="contained"
           startIcon={<SaveIcon />}
           onClick={handleSave}
@@ -861,6 +851,15 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
             </Box>
           )}
       </FormSection>
+
+      {/* Canned job: applies to both grids below, so it sits above them, right-aligned */}
+      {!isReadonly && (
+        <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+          <Button onClick={() => setCannedJobDialogOpen(true)} startIcon={<LayersOutlinedIcon />} size="small" variant="outlined">
+            Insertar paquete
+          </Button>
+        </Box>
+      )}
 
       {/* Services Grid */}
       <ServicesGrid services={services} onChange={setServices} readonly={isReadonly} showErrors={showErrors} />

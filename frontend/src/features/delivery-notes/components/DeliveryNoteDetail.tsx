@@ -585,15 +585,6 @@ export function DeliveryNoteDetail({
               {isCreateMode && (
                 <Paper className="no-print" sx={{ p: 2, bgcolor: "grey.50" }}>
                   <Button
-                    variant="outlined"
-                    startIcon={<LayersOutlinedIcon />}
-                    onClick={() => setCannedJobDialogOpen(true)}
-                    fullWidth
-                    sx={{ mb: 1.5 }}
-                  >
-                    Insertar paquete
-                  </Button>
-                  <Button
                     variant="contained"
                     startIcon={<SaveIcon />}
                     onClick={handleCreateClick}
@@ -725,6 +716,15 @@ export function DeliveryNoteDetail({
                 </Box>
               )}
           </FormSection>
+
+          {/* Canned job: applies to both grids below, so it sits above them, right-aligned */}
+          {!isReadonly && !isTemporalClient && (
+            <Box className="no-print" sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <Button onClick={() => setCannedJobDialogOpen(true)} startIcon={<LayersOutlinedIcon />} size="small" variant="outlined">
+                Insertar paquete
+              </Button>
+            </Box>
+          )}
 
           {/* Services */}
           {!isTemporalClient && (
