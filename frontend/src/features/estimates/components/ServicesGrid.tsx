@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 import { Box, Typography, TextField, Button, IconButton, Autocomplete, Paper } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
@@ -17,13 +17,9 @@ interface ServicesGridProps {
   onChange: (services: EstimateServiceItemRequest[]) => void;
   readonly?: boolean;
   showErrors?: boolean;
-  /** Optional extra control rendered next to "Agregar" in the section header (e.g. insert canned job). */
-  headerAction?: ReactNode;
-  /** Whether to render the default "Agregar" button. */
-  hideAdd?: boolean;
 }
 
-export function ServicesGrid({ services, onChange, readonly = false, showErrors = false, headerAction, hideAdd = false }: ServicesGridProps) {
+export function ServicesGrid({ services, onChange, readonly = false, showErrors = false }: ServicesGridProps) {
   const [catalogServices, setCatalogServices] = useState<CatalogServiceResponse[]>([]);
 
   const fetchCatalogServices = useCallback(async (query?: string) => {
@@ -79,14 +75,11 @@ export function ServicesGrid({ services, onChange, readonly = false, showErrors 
             {services.length}
           </Typography>
         </Box>
-        <Box display="flex" alignItems="center" gap={1}>
-          {headerAction}
-          {!readonly && !hideAdd && (
-            <Button onClick={addService} startIcon={<AddIcon />} size="small" variant="outlined">
-              Agregar
-            </Button>
-          )}
-        </Box>
+        {!readonly && (
+          <Button onClick={addService} startIcon={<AddIcon />} size="small" variant="outlined">
+            Agregar
+          </Button>
+        )}
       </Box>
 
       <Box sx={{ p: 2.5 }}>

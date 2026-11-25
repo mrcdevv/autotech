@@ -35,7 +35,7 @@ import { InfoList } from "@/components/InfoList";
 import { useDeliveryNote } from "@/features/delivery-notes/hooks/useDeliveryNote";
 import { ApplyCannedJobDialog } from "@/features/catalog/components/ApplyCannedJobDialog";
 import { mergeCannedJobLines } from "@/features/catalog/utils/applyCannedJob";
-import { Fastfood as FastfoodIcon } from "@mui/icons-material";
+import LayersOutlinedIcon from "@mui/icons-material/LayersOutlined";
 import { ServicesGrid } from "./ServicesGrid";
 import { ProductsGrid } from "./ProductsGrid";
 import { DeliveryNoteSummary } from "./DeliveryNoteSummary";
@@ -585,6 +585,15 @@ export function DeliveryNoteDetail({
               {isCreateMode && (
                 <Paper className="no-print" sx={{ p: 2, bgcolor: "grey.50" }}>
                   <Button
+                    variant="outlined"
+                    startIcon={<LayersOutlinedIcon />}
+                    onClick={() => setCannedJobDialogOpen(true)}
+                    fullWidth
+                    sx={{ mb: 1.5 }}
+                  >
+                    Insertar paquete
+                  </Button>
+                  <Button
                     variant="contained"
                     startIcon={<SaveIcon />}
                     onClick={handleCreateClick}
@@ -724,13 +733,6 @@ export function DeliveryNoteDetail({
               onChange={setServices}
               readonly={isReadonly}
               showErrors={showErrors}
-              headerAction={
-                !isReadonly && (
-                  <Button onClick={() => setCannedJobDialogOpen(true)} startIcon={<FastfoodIcon />} size="small" variant="outlined">
-                    Insertar paquete
-                  </Button>
-                )
-              }
             />
           )}
 

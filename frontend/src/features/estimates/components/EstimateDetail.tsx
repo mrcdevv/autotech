@@ -47,7 +47,7 @@ import { useEstimate } from "@/features/estimates/hooks/useEstimate";
 import { AuditHistoryPanel } from "@/features/repair-orders/components/AuditHistoryPanel";
 import { ApplyCannedJobDialog } from "@/features/catalog/components/ApplyCannedJobDialog";
 import { mergeCannedJobLines } from "@/features/catalog/utils/applyCannedJob";
-import { Fastfood as FastfoodIcon } from "@mui/icons-material";
+import LayersOutlinedIcon from "@mui/icons-material/LayersOutlined";
 import { ServicesGrid } from "./ServicesGrid";
 import { ProductsGrid } from "./ProductsGrid";
 import { EstimateSummary } from "./EstimateSummary";
@@ -652,6 +652,16 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
       )}
       {!isReadonly && (
         <Button
+          variant="outlined"
+          startIcon={<LayersOutlinedIcon />}
+          onClick={() => setCannedJobDialogOpen(true)}
+          fullWidth
+        >
+          Insertar paquete
+        </Button>
+      )}
+      {!isReadonly && (
+        <Button
           variant="contained"
           startIcon={<SaveIcon />}
           onClick={handleSave}
@@ -853,19 +863,7 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
       </FormSection>
 
       {/* Services Grid */}
-      <ServicesGrid
-        services={services}
-        onChange={setServices}
-        readonly={isReadonly}
-        showErrors={showErrors}
-        headerAction={
-          !isReadonly && (
-            <Button onClick={() => setCannedJobDialogOpen(true)} startIcon={<FastfoodIcon />} size="small" variant="outlined">
-              Insertar paquete
-            </Button>
-          )
-        }
-      />
+      <ServicesGrid services={services} onChange={setServices} readonly={isReadonly} showErrors={showErrors} />
 
       {/* Products Grid */}
       <ProductsGrid products={products} onChange={setProducts} readonly={isReadonly} showErrors={showErrors} />
