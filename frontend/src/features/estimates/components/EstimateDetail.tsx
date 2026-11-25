@@ -45,6 +45,9 @@ import { inspectionsApi } from "@/api/inspections";
 import { taxConfigApi } from "@/api/taxConfig";
 import { useEstimate } from "@/features/estimates/hooks/useEstimate";
 import { AuditHistoryPanel } from "@/features/repair-orders/components/AuditHistoryPanel";
+import { ApplyCannedJobDialog } from "@/features/catalog/components/ApplyCannedJobDialog";
+import { mergeCannedJobLines } from "@/features/catalog/utils/applyCannedJob";
+import { Fastfood as FastfoodIcon } from "@mui/icons-material";
 import { ServicesGrid } from "./ServicesGrid";
 import { ProductsGrid } from "./ProductsGrid";
 import { EstimateSummary } from "./EstimateSummary";
@@ -262,6 +265,7 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
   const [attachDialogOpen, setAttachDialogOpen] = useState(false);
+  const [cannedJobDialogOpen, setCannedJobDialogOpen] = useState(false);
 
   const [inspectionIssues, setInspectionIssues] = useState<InspectionIssue[]>([]);
 
@@ -849,13 +853,36 @@ export function EstimateDetail({ estimateId, repairOrderId, repairOrderStatus, r
       </FormSection>
 
       {/* Services Grid */}
-      <ServicesGrid services={services} onChange={setServices} readonly={isReadonly} showErrors={showErrors} />
+      <ServicesGrid
+        services={services}
+        onChange={setServices}
+        readonly={isReadonly}
+        showErrors={showErrors}
+        headerAction={
+          !isReadonly && (
+            <Button onClick={() => setCannedJobDialogOpen(true)} startIcon={<FastfoodIcon />} size="small" variant="outlined">
+              Insertar paquete
+            </Button>
+          )
+        }
+      />
 
       {/* Products Grid */}
       <ProductsGrid products={products} onChange={setProducts} readonly={isReadonly} showErrors={showErrors} />
 
         </Stack>
       </FormPageLayout>
+
+      <ApplyCannedJobDialog
+        open={cannedJobDialogOpen}
+        onClose={() => setCannedJobDialogOpen(false)}
+        onApply={(applied) => {
+          const merged = mergeCannedJobLines(services, products, applied);
+          setServices(merged.services);
+          setProducts(merged.products);
+          setCannedJobDialogOpen(false);
+        }}
+      />
 
       {/* Historial de cambios ("quién cambió el monto aprobado"): secundario y plegado,
           para no competir con el formulario. El panel no titula porque el acordeón ya lo hace. */}
