@@ -17,7 +17,7 @@ export interface AppliedCannedJob {
   products: CannedJobProductLine[];
 }
 
-/** Adds `applied` on top of `existing`: product lines pointing at the same product (by id, otherwise same name free-text lines) get their quantities summed; services always append. */
+/** Adds `applied` on top of the existing document lines: product lines pointing at the same product (by id, otherwise same name free-text lines) get their quantities summed; identical services (same name and price) are not duplicated, differing ones append. */
 export function mergeCannedJobLines<TService extends CannedJobServiceLine, TProduct extends CannedJobProductLine>(
   existingServices: readonly TService[],
   existingProducts: readonly TProduct[],
@@ -39,10 +39,15 @@ export function mergeCannedJobLines<TService extends CannedJobServiceLine, TProd
     }
   }
 
-  return {
-    services: [...existingServices, ...applied.services.map((s) => ({ ...s }) as TService)],
-    products,
-  };
+  const services: TService[] = existingServices.map((s) => ({ ...s }));
+  for (const line of applied.services) {
+    const isDuplicate = services.some((s) => s.serviceName === line.serviceName && s.price === line.price);
+    if (!isDuplicate) {
+      services.push({ ...line } as TService);
+    }
+  }
+
+  return { services, products };
 }
 
 /** Expands a canned job bundle into snapshot lines for the estimate/delivery-note grids. */

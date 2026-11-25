@@ -79,14 +79,29 @@ describe("mergeCannedJobLines", () => {
     expect(merged.products).toHaveLength(3);
   });
 
-  it("given the same service twice, when merged, then services are appended (not summed)", () => {
+  it("given the same service with identical name and price, when merged again, then it is not duplicated", () => {
     const merged = mergeCannedJobLines(
       [{ serviceName: "Oil change", price: 100 }],
       [],
       expandCannedJob(bundle),
     );
 
+    expect(merged.services).toHaveLength(2);
+    expect(merged.services.filter((s) => s.serviceName === "Oil change")).toHaveLength(1);
+  });
+
+  it("given the same service name with a different price, when merged, then the differing line is appended", () => {
+    const merged = mergeCannedJobLines(
+      [{ serviceName: "Oil change", price: 150 }],
+      [],
+      expandCannedJob(bundle),
+    );
+
+    // The existing line (price 150) is kept and the bundle appends its own "Oil change"
+    // (price 100) plus "Filter check": the user's manual price is never overwritten.
     expect(merged.services).toHaveLength(3);
+    expect(merged.services.some((s) => s.serviceName === "Oil change" && s.price === 100)).toBe(true);
+    expect(merged.services.some((s) => s.serviceName === "Oil change" && s.price === 150)).toBe(true);
   });
 
   it("when merged, then existing product lines are not mutated", () => {
