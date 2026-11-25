@@ -33,6 +33,9 @@ import { FormPageLayout } from "@/components/FormPageLayout";
 import { FormSection } from "@/components/FormSection";
 import { InfoList } from "@/components/InfoList";
 import { useDeliveryNote } from "@/features/delivery-notes/hooks/useDeliveryNote";
+import { ApplyCannedJobDialog } from "@/features/catalog/components/ApplyCannedJobDialog";
+import { mergeCannedJobLines } from "@/features/catalog/utils/applyCannedJob";
+import LayersOutlinedIcon from "@mui/icons-material/LayersOutlined";
 import { ServicesGrid } from "./ServicesGrid";
 import { ProductsGrid } from "./ProductsGrid";
 import { DeliveryNoteSummary } from "./DeliveryNoteSummary";
@@ -151,6 +154,7 @@ export function DeliveryNoteDetail({
   const [clientType, setClientType] = useState<string | null>(null);
   const [estimatePreloaded, setEstimatePreloaded] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [cannedJobDialogOpen, setCannedJobDialogOpen] = useState(false);
 
   const isCreateMode = !deliveryNoteId && !deliveryNote;
   const isReadonly = !isCreateMode;
@@ -713,6 +717,15 @@ export function DeliveryNoteDetail({
               )}
           </FormSection>
 
+          {/* Canned job: applies to both grids below, so it sits above them, right-aligned */}
+          {!isReadonly && !isTemporalClient && (
+            <Box className="no-print" sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <Button onClick={() => setCannedJobDialogOpen(true)} startIcon={<LayersOutlinedIcon />} size="small" variant="outlined">
+                Insertar paquete
+              </Button>
+            </Box>
+          )}
+
           {/* Services */}
           {!isTemporalClient && (
             <ServicesGrid
@@ -754,6 +767,17 @@ export function DeliveryNoteDetail({
         confirmLabel="Confirmar"
         onConfirm={handleConfirmCreate}
         onCancel={() => setConfirmDialogOpen(false)}
+      />
+
+      <ApplyCannedJobDialog
+        open={cannedJobDialogOpen}
+        onClose={() => setCannedJobDialogOpen(false)}
+        onApply={(applied) => {
+          const merged = mergeCannedJobLines(services, products, applied);
+          setServices(merged.services);
+          setProducts(merged.products);
+          setCannedJobDialogOpen(false);
+        }}
       />
     </Box>
   );
